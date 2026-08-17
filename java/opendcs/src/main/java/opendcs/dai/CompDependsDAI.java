@@ -5,13 +5,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.opendcs.util.functional.ThrowingConsumer;
+
 import decodes.sql.DbKey;
 import decodes.tsdb.CpCompDependsRecord;
 import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
-import opendcs.util.functional.ThrowingConsumer;
 
 public interface CompDependsDAI
 	extends DaiBase

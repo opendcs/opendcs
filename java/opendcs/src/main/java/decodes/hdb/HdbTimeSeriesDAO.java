@@ -33,7 +33,7 @@ import java.util.Iterator;
 import java.util.TimeZone;
 
 import org.opendcs.database.ExceptionHelpers;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 
 import oracle.jdbc.OracleCallableStatement;
 import decodes.db.Constants;
@@ -113,13 +113,13 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	}
 
 	@Override
-	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
+	public Result<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
 	{
 		return findTimeSeriesIdentifier(uniqueString, false);
 	}
 
 	@Override
-	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime)
+	public Result<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime)
 	{
 		log.trace("getTimeSeriesIdentifier for '{}'", uniqueString);
 
@@ -145,7 +145,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					log.trace("Setting display name to '{}'", displayName);
 					ret.setDisplayName(displayName);
 				}
-				return FailableResult.success(ret);
+				return Result.success(ret);
 			}
 
 
@@ -154,12 +154,12 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			DbKey siteId = siteDAO.lookupSiteID(tsSiteName);
 			if (siteId == Constants.undefinedId)
 			{
-				return FailableResult.failure(new NoSuchObjectException("No hdb site with name '" + tsSiteName + "'"));
+				return Result.failure(new NoSuchObjectException("No hdb site with name '" + tsSiteName + "'"));
 			}
 			DbKey sdi = ((HdbTimeSeriesDb)db).lookupSDI(siteId, htsid.getDataType().getCode());
 			if (sdi == Constants.undefinedId)
 			{
-				return FailableResult.failure(new NoSuchObjectException("No SDI for '" + uniqueString + "'"));
+				return Result.failure(new NoSuchObjectException("No SDI for '" + uniqueString + "'"));
 			}
 			htsid.setSite(siteDAO.getSiteById(siteId));
 			htsid.setSdi(sdi);
@@ -175,7 +175,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				&& tsid.getInterval().equalsIgnoreCase(htsid.getInterval())
 				&& tsid.getTableSelector().equalsIgnoreCase(htsid.getTableSelector()))
 				{
-					return FailableResult.success(tsid);
+					return Result.success(tsid);
 				}
 			}
 
@@ -200,18 +200,18 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				{
 					String msg = "No CP_TS_ID for '" + htsid.getUniqueString() + "' NoSuchObject";
 					log.warn(msg);
-					return FailableResult.failure(new NoSuchObjectException(msg));
+					return Result.failure(new NoSuchObjectException(msg));
 				}
 			}
 			catch(DbIoException ex)
 			{
-				return FailableResult.failure(ex);
+				return Result.failure(ex);
 			}
 			catch(SQLException ex)
 			{
-				return FailableResult.failure(new NoSuchObjectException("Cannot get TS_ID for '" + htsid.getUniqueString() + "'"));
+				return Result.failure(new NoSuchObjectException("Cannot get TS_ID for '" + htsid.getUniqueString() + "'"));
 			}
-			FailableResult<TimeSeriesIdentifier,TsdbException> tmp = findTimeSeriesIdentifier(htsid.getKey());
+			Result<TimeSeriesIdentifier,TsdbException> tmp = findTimeSeriesIdentifier(htsid.getKey());
 			
 			if (tmp.isSuccess())
 			{
@@ -228,12 +228,12 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch (TsdbException ex)
 		{
-			return FailableResult.failure(ex);
+			return Result.failure(ex);
 		}
 	}
 
 	@Override
-	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key)
+	public Result<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key)
 	{
 		String q = tsidQuery + tsidJoinClause + " and a.ts_id = " + key;
 
@@ -241,14 +241,14 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		{
 			if (rs.next())
 			{
-				return FailableResult.success(rs2TsId(rs));
+				return Result.success(rs2TsId(rs));
 			}
 		}
 		catch(Exception ex)
 		{
-			return FailableResult.failure(new DbIoException("Error looking up TS Info for ts_id =" + key, ex));
+			return Result.failure(new DbIoException("Error looking up TS Info for ts_id =" + key, ex));
 		}
-		return FailableResult.failure(new NoSuchObjectException("No time-series with ts_code=" + key));
+		return Result.failure(new NoSuchObjectException("No time-series with ts_code=" + key));
 	}
 
 	/**
@@ -1424,7 +1424,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	@Override
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString) throws DbIoException, NoSuchObjectException 
 	{
-		FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(uniqueString);
+		Result<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(uniqueString);
 		if (ret.isSuccess())
 		{
 			return ret.getSuccess();
@@ -1438,7 +1438,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	@Override
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key) throws DbIoException, NoSuchObjectException
 	{
-		FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
+		Result<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
 		if (ret.isSuccess())
 		{
 			return ret.getSuccess();

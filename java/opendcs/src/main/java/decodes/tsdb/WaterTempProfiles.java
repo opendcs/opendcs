@@ -21,7 +21,8 @@ import decodes.db.SiteName;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import opendcs.dai.TimeSeriesDAI;
-import org.opendcs.utils.FailableResult;
+
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -108,7 +109,7 @@ final public class WaterTempProfiles
                 strsite.setNameValue(resID + "-D" + formattedNumber + "m");
                 newtsid.setSite(strsite.site);
                 newtsid.setSiteName(strsite.getDisplayName());
-                FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newtsid.getUniqueString());
+                Result<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newtsid.getUniqueString());
                 if (check.isSuccess())
                 {
                     CTimeSeries cts = timeSeriesDAO.makeTimeSeries(check.getSuccess());
@@ -179,7 +180,7 @@ final public class WaterTempProfiles
                     newTSID.setSiteName(strsite.getDisplayName());
 
                     CTimeSeries CTProfile;
-                    FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newTSID.getUniqueString());
+                    Result<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newTSID.getUniqueString());
                     if (check.isSuccess())
                     {
                         CTProfile = tseries.getTimeSeriesByTsidKey(check.getSuccess());

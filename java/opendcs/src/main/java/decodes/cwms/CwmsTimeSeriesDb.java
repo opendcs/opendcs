@@ -32,7 +32,7 @@ import java.sql.Statement;
 import java.util.TimeZone;
 
 import org.opendcs.database.ExceptionHelpers;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -352,7 +352,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 			String uniqueString = tsidRet.getUniqueString();
 			log.trace("CwmsTimeSeriesDb.transformTsid origString='{}', new string='{}', parm={}", origString, uniqueString, parm);
 						
-			FailableResult<TimeSeriesIdentifier,TsdbException> tmpTsId = tsDAI.findTimeSeriesIdentifier(uniqueString);
+			Result<TimeSeriesIdentifier,TsdbException> tmpTsId = tsDAI.findTimeSeriesIdentifier(uniqueString);
 
 			if (tmpTsId.isFailure())
 			{
@@ -948,7 +948,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
     {
         try (TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO())
         {
-            FailableResult<TimeSeriesIdentifier,TsdbException> tsid = timeSeriesDAO.findTimeSeriesIdentifier(tsidStr, true);
+            Result<TimeSeriesIdentifier,TsdbException> tsid = timeSeriesDAO.findTimeSeriesIdentifier(tsidStr, true);
 			if (tsid.isSuccess())
 			{
 				TimeSeriesIdentifier tsId = tsid.getSuccess();

@@ -21,7 +21,6 @@ import opendcs.util.functional.DaoConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
-import opendcs.util.functional.ThrowingFunction;
 import opendcs.util.sql.ConnectionInTransaction;
 import opendcs.util.sql.WrappedConnection;
 
@@ -36,6 +35,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.opendcs.util.functional.ThrowingFunction;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlSettings;
 import org.slf4j.Logger;

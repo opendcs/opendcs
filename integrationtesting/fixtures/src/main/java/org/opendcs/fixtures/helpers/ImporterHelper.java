@@ -45,7 +45,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.Programs;
 import org.opendcs.fixtures.spi.Configuration;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -254,7 +254,7 @@ public class ImporterHelper
 					log.info("Saving {}", tsIn.getTimeSeriesIdentifier());
 
 					tsDao.saveTimeSeries(tsIn);
-					FailableResult<TimeSeriesIdentifier, TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
+					Result<TimeSeriesIdentifier, TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
 					if (!tsIdSavedResult.isSuccess())
 					{
 						TsdbException ex = tsIdSavedResult.getFailure();

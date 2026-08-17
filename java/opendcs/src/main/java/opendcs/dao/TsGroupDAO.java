@@ -25,7 +25,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Stack;
 
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -480,7 +480,7 @@ public class TsGroupDAO extends DaoBase  implements TsGroupDAI
 							return;
 						}
 
-						FailableResult<TimeSeriesIdentifier,TsdbException> result = timeSeriesDAO.findTimeSeriesIdentifier(dataId);
+						Result<TimeSeriesIdentifier,TsdbException> result = timeSeriesDAO.findTimeSeriesIdentifier(dataId);
 						if (result.isSuccess())
 						{
 							group.addTsMember(result.getSuccess());

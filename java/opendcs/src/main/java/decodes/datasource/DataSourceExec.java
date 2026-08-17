@@ -24,8 +24,6 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import org.opendcs.utils.FailableResult;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +33,7 @@ import org.slf4j.Logger;
 
 import org.opendcs.decodes.api.DataMessage;
 import org.opendcs.decodes.datasources.DataSourceSpliterator;
+import org.opendcs.util.Result;
 
 import decodes.db.DataSource;
 import decodes.db.Database;
@@ -284,7 +283,7 @@ public abstract class DataSourceExec implements PropertiesOwner
 	 * 
 	 * @return Either a valid DataMessage or the exception thrown by getSourceRawMessage.
 	 */
-	public Stream<FailableResult<DataMessage,DataSourceException>> stream()
+	public Stream<Result<DataMessage,DataSourceException>> stream()
 	{
 		return StreamSupport.stream(new DataSourceSpliterator(this), false);
 	}

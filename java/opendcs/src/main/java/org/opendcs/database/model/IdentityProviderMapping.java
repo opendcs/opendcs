@@ -16,9 +16,9 @@
 package org.opendcs.database.model;
 
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.util.functional.ThrowingFunction;
 
 import decodes.sql.DbKey;
-import opendcs.util.functional.ThrowingFunction;
 
 /**
  * association of this user to an identity provider

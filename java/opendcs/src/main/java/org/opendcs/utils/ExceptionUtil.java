@@ -17,7 +17,7 @@ package org.opendcs.utils;
 
 import java.util.Map;
 
-import opendcs.util.functional.ThrowingFunction;
+import org.opendcs.util.functional.ThrowingFunction;
 
 /**
  * Utility methods for working with exceptions.

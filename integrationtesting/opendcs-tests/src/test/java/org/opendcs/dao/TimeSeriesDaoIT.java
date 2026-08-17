@@ -17,7 +17,7 @@ import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.helpers.TestResources;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +75,7 @@ class TimeSeriesDaoIT extends AppTestBase
                 tsDao.saveTimeSeries(tsIn);
                 // Retrieve the TimeSeriesIdentifier that shouldn't been saved to the database.
                 // This will also fill in required metadata so that the retrieval operations are handled correctly.
-                FailableResult<TimeSeriesIdentifier, TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
+                Result<TimeSeriesIdentifier, TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
                 assertTrue(tsIdSavedResult.isSuccess(), "Time series was not correctly saved.");
                 final TimeSeriesIdentifier tsIdSaved = tsIdSavedResult.getSuccess();
                 final CTimeSeries result = tsDao.makeTimeSeries(tsIdSaved);

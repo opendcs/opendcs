@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.opendcs.database.ExceptionHelpers;
 import org.opendcs.database.OracleSqlExceptionHelper;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.MDCTimer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -100,11 +100,11 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
     }
 
     @Override
-    public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key)
+    public Result<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key)
     {
         if (DbKey.isNull(key))
         {
-            return FailableResult.failure(new NoSuchObjectException("Request for TSID with null ts_code"));
+            return Result.failure(new NoSuchObjectException("Request for TSID with null ts_code"));
         }
 
         synchronized(cache)
@@ -113,7 +113,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
             if (ret != null)
             {
-                return FailableResult.success(ret);
+                return Result.success(ret);
             }
 
             String q = cwmsTsidQueryBase
@@ -140,22 +140,22 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                 if (ret != null)
                 {
                     cache.put(ret);
-                    return FailableResult.success(ret);
+                    return Result.success(ret);
                 }
             }
             catch(Exception ex)
             {
-                return FailableResult.failure(new DbIoException("Error looking up TS Info for TS_CODE=" + key + ": ", ex));
+                return Result.failure(new DbIoException("Error looking up TS Info for TS_CODE=" + key + ": ", ex));
             }
         }
-        return FailableResult.failure(new NoSuchObjectException("No time-series with ts_code=" + key));
+        return Result.failure(new NoSuchObjectException("No time-series with ts_code=" + key));
     }
 
     @Override
     public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
         throws DbIoException, NoSuchObjectException
     {
-        FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
+        Result<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
         if (ret.isSuccess())
         {
             return ret.getSuccess();
@@ -237,13 +237,13 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
     }
 
     @Override
-    public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
+    public Result<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
     {
         return findTimeSeriesIdentifier(uniqueString, false);
     }
 
     @Override
-    public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime)
+    public Result<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime)
     {
 
         int paren = uniqueString.lastIndexOf('(');
@@ -270,22 +270,22 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             {
                 ret.setDisplayName(displayName);
             }
-            return FailableResult.success(ret);
+            return Result.success(ret);
         }
         else if (ret == null && !ignoreCacheTime && lastCacheReloadWithin(1, TimeUnit.HOURS))
         {
-            return FailableResult.failure(new NoSuchObjectException("No TimeSeries in fresh cache."));
+            return Result.failure(new NoSuchObjectException("No TimeSeries in fresh cache."));
         }
 
         DbKey ts_code = ts_id2ts_code(uniqueString);
         if (ts_code == Constants.undefinedId)
         {
-            return FailableResult.failure(
+            return Result.failure(
                 new NoSuchObjectException("No timeseries with name '"+uniqueString+"' is defined in this database.")
             );
         }
 
-        FailableResult<TimeSeriesIdentifier,TsdbException> tmp = findTimeSeriesIdentifier(ts_code);
+        Result<TimeSeriesIdentifier,TsdbException> tmp = findTimeSeriesIdentifier(ts_code);
         if (tmp.isSuccess())
         {
             if (displayName != null)
@@ -1600,7 +1600,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
     @Override
     public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString) throws DbIoException, NoSuchObjectException {
-        FailableResult<TimeSeriesIdentifier,TsdbException> ts = findTimeSeriesIdentifier(uniqueString);
+        Result<TimeSeriesIdentifier,TsdbException> ts = findTimeSeriesIdentifier(uniqueString);
         if (ts.isSuccess())
         {
             return ts.getSuccess();

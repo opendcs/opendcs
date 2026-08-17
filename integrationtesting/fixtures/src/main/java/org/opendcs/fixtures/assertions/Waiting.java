@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
-import opendcs.util.functional.ThrowingFunction;
+import org.opendcs.util.functional.ThrowingFunction;
 
 public class Waiting
 {
