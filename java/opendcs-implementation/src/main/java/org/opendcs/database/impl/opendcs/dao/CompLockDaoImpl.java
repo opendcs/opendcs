@@ -34,7 +34,6 @@ import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
-import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 
 import decodes.sql.DbKey;
@@ -53,12 +52,12 @@ public final class CompLockDaoImpl implements CompLockDao
     {
         queries.defineTemplate(SELECT, "limit,where",
             """
-                select lock.loading_application_id, la.loading_application_name, lock.pid, lock.hostname,
-                        lock.heartbeat, lock.cur_status
-                    from cp_comp_proc_lock lock
-                    left outer join hdb_loading_application la on la.loading_application_id = lock.loading_application_id
+                select lk.loading_application_id, la.loading_application_name, lk.pid, lk.hostname,
+                        lk.heartbeat, lk.cur_status
+                    from cp_comp_proc_lock lk
+                    left outer join hdb_loading_application la on la.loading_application_id = lk.loading_application_id
                     <if(where)> <where> <endif>
-                order by lock.loading_application_id asc
+                order by lk.loading_application_id asc
                 <if(limit)> <limit> <endif>
             """);
     }
@@ -127,7 +126,7 @@ public final class CompLockDaoImpl implements CompLockDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var select = handle.createQuery(
                             queries.getInstanceOf(SELECT)
-                                  .add("where", " where lock.loading_application_id = :id ")
+                                  .add("where", " where lk.loading_application_id = :id ")
                                   .render()))
         {
             select.setSqlLogger(new DetailSqlLogger(log));
@@ -172,10 +171,10 @@ public final class CompLockDaoImpl implements CompLockDao
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
         try (var merge = handle.createUpdate("""
-                merge into cp_comp_proc_lock lock
+                merge into cp_comp_proc_lock lk
                 using (select :loading_application_id loading_application_id, :pid pid, :hostname hostname,
                        :heartbeat heartbeat, :cur_status cur_status <dual>) input
-                on (lock.loading_application_id = input.loading_application_id)
+                on (lk.loading_application_id = input.loading_application_id)
                 when matched then
                     update set pid = input.pid, hostname = input.hostname, heartbeat = input.heartbeat,
                             cur_status = input.cur_status
