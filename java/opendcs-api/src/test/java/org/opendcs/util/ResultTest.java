@@ -24,8 +24,8 @@ class ResultTest
         assertTrue(success.isSuccess());
         assertTrue(other.isFailure());
 
-        assertThrows(IllegalStateException.class, success::failure());
-        assertThrows(IllegalStateException.class, other::success());
+        assertThrows(IllegalStateException.class, success::failure);
+        assertThrows(IllegalStateException.class, other::success);
 
         assertEquals(5, success.orElseThrowing(e ->
         {
