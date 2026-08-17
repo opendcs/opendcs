@@ -63,13 +63,15 @@ public interface CompLockDao extends OpenDcsDao
     void releaseLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException;
 
     /**
-     * Check if given Lock (App) is already set
+     * Check if given Lock (App) is already set. If so, update the heartbeat time and status.
+     *
      * @param tx
      * @param lock
-     * @return The LockBusyException, with details, if busy, otherwise empty.
+     * @return The updated Lock, or the reason the attempt at the lock failed. Returned lock is always
+     * updated from the database regardless of weather or not the heartbeat or status was updated.
      * @throws OpenDcsDataException
      */
-    Optional<LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException;
+    FailableResult<TsdbCompLock,LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException;
 
     /**
      * Retrieve all current app locks.

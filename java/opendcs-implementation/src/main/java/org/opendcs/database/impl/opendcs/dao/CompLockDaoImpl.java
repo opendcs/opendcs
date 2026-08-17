@@ -77,7 +77,7 @@ public final class CompLockDaoImpl implements CompLockDao
     }
 
     @Override
-    public Optional<LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException
+    public FailableResult<TsdbCompLock,LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException
     {
         var tlock = getLock(tx, lock.getAppId()).orElse(null);
         if (tlock != null)
@@ -85,7 +85,7 @@ public final class CompLockDaoImpl implements CompLockDao
             if (lock.getPID() != tlock.getPID()
                 || !lock.getHost().equalsIgnoreCase(tlock.getHost()))
             {
-                return Optional.of(new LockBusyException(
+                return FailableResult.failure(new LockBusyException(
                     "Lock for app ID " + lock.getAppId()
                     + " has been stolen by PID " + tlock.getPID()
                     + " on host '" + tlock.getHost() + "'"
@@ -93,13 +93,12 @@ public final class CompLockDaoImpl implements CompLockDao
                     + ", my host='" + lock.getHost() + "'"));
             }
             lock.setHeartbeat(new Date());
-            saveLock(tx, lock);
+            return FailableResult.success(saveLock(tx, lock));
         }
         else
         {
-            return Optional.of(new LockBusyException("Lock for app ID " + lock.getAppId() + " has been deleted."));
+            return FailableResult.failure(new LockBusyException("Lock for app ID " + lock.getAppId() + " has been deleted."));
         }
-        return Optional.empty();
     }
 
     @Override
@@ -145,17 +144,11 @@ public final class CompLockDaoImpl implements CompLockDao
         var lock = getLock(tx, appInfo.getAppId()).orElse(null);
         if (lock != null)
         {
-            if (lock.getPID() == pid)
+            // check for same application and host. With the introduction of the docker images
+            // every instance generally would have the same PID, just a different hostname.
+            if (lock.getPID() == pid && lock.getHost().equals(host))
             {
-                var check = checkLock(tx, lock);
-                if (check.isEmpty())
-                {
-                    return FailableResult.success(lock);
-                }
-                else
-                {
-                    return FailableResult.failure(check.get());
-                }
+                return checkLock(tx, lock);
             }
             else if (!lock.isStale())
             {
@@ -168,9 +161,6 @@ public final class CompLockDaoImpl implements CompLockDao
 
             releaseLock(tx, lock);
         }
-
-
-        
         return FailableResult.success(saveLock(tx,new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting")));        
     }
     
