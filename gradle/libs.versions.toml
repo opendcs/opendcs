@@ -8,7 +8,6 @@ dom4j = { strictly = "2.1.4" }
 ganymed-ssh = "build210"
 apache-poi="5.5.1"
 jcalendar="1.4"
-jfree="1.0.13"
 jython="2.7.4"
 jep="2.4.5"
 dropwizard="4.2.38"
@@ -96,8 +95,6 @@ dom4j = { module = "org.dom4j:dom4j", version.ref="dom4j" }
 ganymed-ssh = { module = "ch.ethz.ganymed:ganymed-ssh2", version.ref="ganymed-ssh" }
 apache-poi = { module = "org.apache.poi:poi", version.ref="apache-poi" }
 jcalendar = { module = "com.toedter:jcalendar", version.ref="jcalendar" }
-jfree-jcommon = { module = "jfree:jcommon", version.ref = "jfree" }
-jfree-jfreechart = { module = "jfree:jfreechart", version.ref = "jfree" }
 jython-standalone = { module = "org.python:jython-standalone", version.ref ="jython" }
 scijava-jep = { module = "io.github.nathanfunk:jep", version.ref="jep" }
 dropwizard-metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref="dropwizard" }
