@@ -242,6 +242,7 @@ public final class AppResources extends OpenDcsResource
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted application"),
 					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required appId parameter"),
+					@ApiResponse(responseCode = "409", description = "Unable to process request, Application is in use."),
 					@ApiResponse(responseCode = "404", description = "Not Found - No app found with the given ID"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			},
@@ -452,13 +453,12 @@ public final class AppResources extends OpenDcsResource
 			return Response.ok()
 					.entity(
 						tx.wrapErrors(() ->
-						{
-						return dao.getAll(tx, -1, -1)
+							dao.getAll(tx, -1, -1)
 								.stream()
-								.filter(l -> l.isStale())
+								.filter(l -> !l.isStale())
 								.map(l -> map(l))
-								.toList();
-						}))
+								.toList()
+						))
 					.build();
 		}
 		catch (OpenDcsDataException ex)

@@ -387,7 +387,7 @@ final class AppResourcesIT extends BaseApiIT
 	{
 		try
 		{
-		var db = getConfig().getOpenDcsDatabase();
+			var db = getConfig().getOpenDcsDatabase();
 			var dao = db.getDao(CompLockDao.class).orElseThrow();
 			try (var tx = db.newTransaction())
 			{

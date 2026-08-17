@@ -1,5 +1,6 @@
 package org.opendcs.dao;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -70,6 +71,10 @@ class CompLockDaoTestIT extends AppTestBase
 
             assertTrue(locks.stream()
                             .anyMatch(p -> p.getAppId() == appOne.getAppId() || p.getAppId() == appTwo.getAppId()));
+
+            lockDao.releaseLock(tx, updatedLock);
+
+            assertFalse(lockDao.getLock(tx, updatedLock.getAppId()).isPresent());
 
             tx.rollback();
         }
