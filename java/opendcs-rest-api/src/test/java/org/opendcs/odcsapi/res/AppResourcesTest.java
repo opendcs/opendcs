@@ -84,7 +84,7 @@ final class AppResourcesTest
 	}
 
 	@Test
-	void testStatusMap() throws Exception
+	void testStatusMap()
 	{
 		DbKey appId = DbKey.createDbKey(151615L);
 		int pid = 12345;
