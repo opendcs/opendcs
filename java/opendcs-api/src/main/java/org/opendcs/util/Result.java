@@ -110,7 +110,7 @@ public final class Result<S, F>
     {
         if (!isFailure())
         {
-            throw new IllegalStateException("Attempt to retrieve 'failure' result of a succesfull result.");
+            throw new IllegalStateException("Attempt to retrieve 'failure' result of a successful result.");
         }
         return failResult;
     }
