@@ -17,6 +17,7 @@ package org.opendcs.util;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.Objects;
 
 import org.opendcs.util.functional.ThrowingFunction;
 
