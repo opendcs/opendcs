@@ -38,8 +38,6 @@ dependencies {
     implementation(libs.ganymed.ssh)
     implementation(libs.apache.poi)
     implementation(libs.jcalendar)
-    implementation(libs.jfree.jcommon)
-    implementation(libs.jfree.jfreechart)
     implementation(libs.jython.standalone)
 
     implementation(libs.scijava.jep) 
