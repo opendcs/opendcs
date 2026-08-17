@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import org.opendcs.util.functional.ThrowingConsumer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -33,7 +34,6 @@ import opendcs.dai.CompDependsDAI;
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
-import opendcs.util.functional.ThrowingConsumer;
 import opendcs.util.sql.WrappedConnection;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;

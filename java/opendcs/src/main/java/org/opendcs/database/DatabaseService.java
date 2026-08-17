@@ -17,12 +17,12 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.spi.authentication.AuthSource;
 import org.opendcs.spi.database.DatabaseProvider;
+import org.opendcs.util.functional.ThrowingFunction;
 
 import decodes.db.DatabaseException;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertiesOwner;
 import ilex.util.AuthException;
-import opendcs.util.functional.ThrowingFunction;
 
 public class DatabaseService
 {
@@ -70,7 +70,7 @@ public class DatabaseService
             {
                 try
                 {
-                    return createFunc.accept(provider);
+                    return createFunc.apply(provider);
                 }
                 catch (Exception ex)
                 {
