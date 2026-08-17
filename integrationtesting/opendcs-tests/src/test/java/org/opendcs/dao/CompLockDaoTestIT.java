@@ -39,12 +39,12 @@ class CompLockDaoTestIT extends AppTestBase
             tmp.setAppName("app2");
             appTwo = appDao.save(tx, tmp);
         }
-    }    
-    
+    }
+
     @Test
     void test_lock_operations() throws Exception
     {
-        
+
         var lockDao = db.getDao(CompLockDao.class).orElseThrow();
 
         try (var tx = db.newTransaction())
@@ -53,7 +53,7 @@ class CompLockDaoTestIT extends AppTestBase
             assertTrue(lockOne.isSuccess());
             var lockOneFail = lockDao.obtainLock(tx, appOne, 0, "alice");
             assertTrue(lockOneFail.isFailure());
-            
+
             Thread.sleep(1500); // NOSONAR otherwise the dates will match.
 
             var lockOneUpdate = lockDao.obtainLock(tx, appOne, 0, "bob");

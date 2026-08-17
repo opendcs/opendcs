@@ -42,8 +42,8 @@ public interface CompLockDao extends OpenDcsDao
     /**
      * Obtain a specific lock. If the lock already exists, and is not for the same pid and is not stale
      * LockBusyException will be returned instead of the lock.
-     * 
-     * Otherwise the Lock is returned and know owned by that instance.
+     *
+     * Otherwise the Lock is returned and now owned by that instance.
      *
      * @param tx
      * @param appInfo
