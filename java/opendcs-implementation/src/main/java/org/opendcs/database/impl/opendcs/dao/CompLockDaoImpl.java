@@ -28,7 +28,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.CompLockDao;
 import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.apps.CompLockMapper;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -76,7 +76,7 @@ public final class CompLockDaoImpl implements CompLockDao
     }
 
     @Override
-    public FailableResult<TsdbCompLock,LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException
+    public Result<TsdbCompLock,LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException
     {
         var tlock = getLock(tx, lock.getAppId()).orElse(null);
         if (tlock != null)
@@ -84,7 +84,7 @@ public final class CompLockDaoImpl implements CompLockDao
             if (lock.getPID() != tlock.getPID()
                 || !lock.getHost().equalsIgnoreCase(tlock.getHost()))
             {
-                return FailableResult.failure(new LockBusyException(
+                return Result.failure(new LockBusyException(
                     "Lock for app ID " + lock.getAppId()
                     + " has been stolen by PID " + tlock.getPID()
                     + " on host '" + tlock.getHost() + "'"
@@ -92,11 +92,11 @@ public final class CompLockDaoImpl implements CompLockDao
                     + ", my host='" + lock.getHost() + "'"));
             }
             lock.setHeartbeat(new Date());
-            return FailableResult.success(saveLock(tx, lock));
+            return Result.success(saveLock(tx, lock));
         }
         else
         {
-            return FailableResult.failure(new LockBusyException("Lock for app ID " + lock.getAppId() + " has been deleted."));
+            return Result.failure(new LockBusyException("Lock for app ID " + lock.getAppId() + " has been deleted."));
         }
     }
 
@@ -137,7 +137,7 @@ public final class CompLockDaoImpl implements CompLockDao
     }
 
     @Override
-    public FailableResult<TsdbCompLock, LockBusyException> obtainLock(DataTransaction tx, CompAppInfo appInfo, int pid,
+    public Result<TsdbCompLock, LockBusyException> obtainLock(DataTransaction tx, CompAppInfo appInfo, int pid,
             String host) throws OpenDcsDataException
     {
         var lock = getLock(tx, appInfo.getAppId()).orElse(null);
@@ -155,12 +155,12 @@ public final class CompLockDaoImpl implements CompLockDao
                         "Cannot obtain lock for app ID " + appInfo.getAppId()
                         + ". Currently owned by PID " + lock.getPID()
                         + " on host '" + lock.getHost() + "'";
-                return FailableResult.failure( new LockBusyException(msg));
+                return Result.failure( new LockBusyException(msg));
             }
 
             releaseLock(tx, lock);
         }
-        return FailableResult.success(saveLock(tx,new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting")));        
+        return Result.success(saveLock(tx,new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting")));        
     }
     
 

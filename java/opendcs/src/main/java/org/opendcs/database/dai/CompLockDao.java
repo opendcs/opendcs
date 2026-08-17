@@ -20,7 +20,7 @@ import java.util.Optional;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
@@ -52,7 +52,7 @@ public interface CompLockDao extends OpenDcsDao
      * @return
      * @throws OpenDcsDataException
      */
-    FailableResult<TsdbCompLock,LockBusyException> obtainLock(DataTransaction tx, CompAppInfo appInfo, int pid, String host) throws OpenDcsDataException;
+    Result<TsdbCompLock,LockBusyException> obtainLock(DataTransaction tx, CompAppInfo appInfo, int pid, String host) throws OpenDcsDataException;
 
     /**
      * Release the given lock.
@@ -71,7 +71,7 @@ public interface CompLockDao extends OpenDcsDao
      * updated from the database regardless of weather or not the heartbeat or status was updated.
      * @throws OpenDcsDataException
      */
-    FailableResult<TsdbCompLock,LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException;
+    Result<TsdbCompLock,LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException;
 
     /**
      * Retrieve all current app locks.
