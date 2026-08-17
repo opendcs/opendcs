@@ -37,12 +37,12 @@ class DataSourceTest
             "All messages and the end marker have not been returned: " +
                     String.join(",", results.stream()
                                             .map(r -> r.isSuccess()
-                                                    ? r.getSuccess().toString()
-                                                    : r.getFailure().getMessage())
+                                                    ? r.success().toString()
+                                                    : r.failure().getMessage())
                                             .toList()
                     )
         );
-        assertArrayEquals("A message".getBytes(), ((RawMessage)results.get(0).getSuccess()).data, "Correct data was not returned.");
+        assertArrayEquals("A message".getBytes(), ((RawMessage)results.get(0).success()).data, "Correct data was not returned.");
     }
 
 
@@ -52,7 +52,7 @@ class DataSourceTest
         TestDataSource testDS = new TestDataSource();
         DataSourceException result = testDS.stream()
                                            .filter(msg -> msg.isSuccess())
-                                           .map(msg -> msg.getSuccess())
+                                           .map(msg -> msg.success())
                                            .map(msg -> {
                                                 System.out.println("Decoded Message.");
                                                 return msg;

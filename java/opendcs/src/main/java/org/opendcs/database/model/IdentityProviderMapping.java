@@ -47,7 +47,7 @@ public final class IdentityProviderMapping
 
         public IdentityProviderMapping build(ThrowingFunction<DbKey, IdentityProvider, OpenDcsDataException> providerGetter) throws OpenDcsDataException
         {
-            return new IdentityProviderMapping(providerGetter.accept(provider), subject);
+            return new IdentityProviderMapping(providerGetter.apply(provider), subject);
         }
 
         public Builder withProviderId(DbKey providerId)

@@ -266,7 +266,7 @@ public class TsImporter
         {
             try
             {
-                TimeSeriesIdentifier tsId = makeTsIdFunc.accept(key);
+                TimeSeriesIdentifier tsId = makeTsIdFunc.apply(key);
                 return new CTimeSeries(tsId);
             }
             catch (DbIoException ex)

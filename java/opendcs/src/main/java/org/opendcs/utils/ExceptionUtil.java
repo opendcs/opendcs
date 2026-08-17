@@ -78,7 +78,7 @@ public final class ExceptionUtil
             {
                 try
                 {
-                    return supplier.accept(newKey);
+                    return supplier.apply(newKey);
                 }
                 catch (Exception ex) // NOSONAR
                 {

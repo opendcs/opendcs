@@ -70,7 +70,7 @@ public class DatabaseService
             {
                 try
                 {
-                    return createFunc.accept(provider);
+                    return createFunc.apply(provider);
                 }
                 catch (Exception ex)
                 {

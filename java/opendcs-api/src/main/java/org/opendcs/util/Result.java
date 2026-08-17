@@ -46,7 +46,7 @@ public final class Result<S, F>
         return failResult != null;
     }
 
-    public S getSuccess()
+    public S success()
     {
         if (isFailure())
         {
@@ -90,7 +90,7 @@ public final class Result<S, F>
         }
         else
         {
-            return func.accept(failResult);
+            return func.apply(failResult);
         }
     }
 
@@ -106,7 +106,7 @@ public final class Result<S, F>
         }
     }
 
-    public F getFailure()
+    public F failure()
     {
         if (!isFailure())
         {
@@ -119,7 +119,7 @@ public final class Result<S, F>
      * Simple callback for any failure results.
      * @param consumer
      */
-    public void handleError(Consumer<F> consumer)
+    public void onError(Consumer<F> consumer)
     {
         if (isFailure())
         {
@@ -132,12 +132,16 @@ public final class Result<S, F>
      *
      * @param <S>
      * @param <F>
-     * @param successResult
+     * @param successResult can't be null
      * @return
+     * @throws NullPointerException if successResult is null
      */
     public static <S, F> Result<S, F> success(S successResult)
     {
-        return new Result<>(successResult, null);
+        return new Result<>(
+            Objects.requireNonNull(successResult,
+                                   "Success Result can't be null. Use Optional if successful state can be empty"),
+            null);
     }
 
     /**
@@ -150,6 +154,9 @@ public final class Result<S, F>
      */
     public static <S, F> Result<S, F> failure(F failResult)
     {
-        return new Result<>(null, failResult);
+        return new Result<>(null, 
+                            Objects.requireNonNull(failResult,
+                            "Fail Result cannot be null."
+                            ));
     }
 }

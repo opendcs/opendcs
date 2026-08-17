@@ -77,7 +77,7 @@ class TimeSeriesDaoIT extends AppTestBase
                 // This will also fill in required metadata so that the retrieval operations are handled correctly.
                 Result<TimeSeriesIdentifier, TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
                 assertTrue(tsIdSavedResult.isSuccess(), "Time series was not correctly saved.");
-                final TimeSeriesIdentifier tsIdSaved = tsIdSavedResult.getSuccess();
+                final TimeSeriesIdentifier tsIdSaved = tsIdSavedResult.success();
                 final CTimeSeries result = tsDao.makeTimeSeries(tsIdSaved);
                 result.setUnitsAbbr(tsIn.getUnitsAbbr());
                 log.info("Created CTimeseries {}", result);
@@ -106,7 +106,7 @@ class TimeSeriesDaoIT extends AppTestBase
             final TimeSeriesIdentifier tsId = tsDb.makeTsId("Paria R at Lees Ferry.Flow.Inst.15Minutes.0.Rev-SPL-USGS");
             siteDao.writeSite(tsId.getSite());
             final DbKey tsIdKey = tsDao.createTimeSeries(tsId);
-            final TimeSeriesIdentifier tsIdOut = tsDao.findTimeSeriesIdentifier(tsIdKey).getSuccess();
+            final TimeSeriesIdentifier tsIdOut = tsDao.findTimeSeriesIdentifier(tsIdKey).success();
             assertEquals(tsId, tsIdOut, "saved timeseries identifier does not match retrieved result.");
         }
     }

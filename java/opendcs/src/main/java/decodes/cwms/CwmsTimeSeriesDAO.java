@@ -158,11 +158,11 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         Result<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
         if (ret.isSuccess())
         {
-            return ret.getSuccess();
+            return ret.success();
         }
         else
         {
-            return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
+            return ExceptionHelpers.throwDbIoNoSuchObject(ret.failure());
         }
 
     }
@@ -290,7 +290,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         {
             if (displayName != null)
             {
-                tmp.getSuccess().setDisplayName(displayName);
+                tmp.success().setDisplayName(displayName);
             }
         }
         return tmp;
@@ -1603,11 +1603,11 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         Result<TimeSeriesIdentifier,TsdbException> ts = findTimeSeriesIdentifier(uniqueString);
         if (ts.isSuccess())
         {
-            return ts.getSuccess();
+            return ts.success();
         }
         else
         {
-            return ExceptionHelpers.throwDbIoNoSuchObject(ts.getFailure());
+            return ExceptionHelpers.throwDbIoNoSuchObject(ts.failure());
         }
     }
 }

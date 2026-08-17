@@ -216,7 +216,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			if (tmp.isSuccess())
 			{
 				// Preserve the modelRunId if it was set in the uniqueString. Also the display name.
-				HdbTsId tsId = (HdbTsId)tmp.getSuccess();
+				HdbTsId tsId = (HdbTsId)tmp.success();
 				tsId.modelRunId = htsid.modelRunId;
 				if (displayName != null)
 				{
@@ -1427,11 +1427,11 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		Result<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(uniqueString);
 		if (ret.isSuccess())
 		{
-			return ret.getSuccess();
+			return ret.success();
 		}
 		else
 		{
-			return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
+			return ExceptionHelpers.throwDbIoNoSuchObject(ret.failure());
 		}
 	}
 
@@ -1441,11 +1441,11 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		Result<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
 		if (ret.isSuccess())
 		{
-			return ret.getSuccess();
+			return ret.success();
 		}
 		else
 		{
-			return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
+			return ExceptionHelpers.throwDbIoNoSuchObject(ret.failure());
 		}
 	}
 

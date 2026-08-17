@@ -209,7 +209,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				{
 					if (ret.isSuccess())
 					{
-						ret.getSuccess().setDisplayName(displayName);
+						ret.success().setDisplayName(displayName);
 					}
 				}
 				return ret;
@@ -231,11 +231,11 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		Result<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
 		if (ret.isSuccess())
 		{
-			return ret.getSuccess();
+			return ret.success();
 		}
 		else
 		{
-			return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
+			return ExceptionHelpers.throwDbIoNoSuchObject(ret.failure());
 		}
 	}
 
@@ -1590,9 +1590,9 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		final Result<CwmsTsId,TsdbException> existingResult = this.readTSID(tsid.getKey());
 		if (existingResult.isFailure())
 		{
-			ExceptionHelpers.throwDbIoNoSuchObject(existingResult.getFailure());
+			ExceptionHelpers.throwDbIoNoSuchObject(existingResult.failure());
 		}
-		final CwmsTsId existing = existingResult.getSuccess();
+		final CwmsTsId existing = existingResult.success();
 
 		// Compare each field of the passed tsid with the one in the db
 		// add a set clause to the update statement and increment 'n'.
@@ -1934,11 +1934,11 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		Result<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(uniqueString);
 		if (ret.isSuccess())
 		{
-			return ret.getSuccess();
+			return ret.success();
 		}
 		else
 		{
-			return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
+			return ExceptionHelpers.throwDbIoNoSuchObject(ret.failure());
 		}
 
 	}
@@ -1969,11 +1969,11 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		Result<CwmsTsId,TsdbException>  tsid = readTSID(key);
 		if (tsid.isSuccess())
 		{
-			return Result.success(tsid.getSuccess());
+			return Result.success(tsid.success());
 		}
 		else
 		{
-			return Result.failure(tsid.getFailure());
+			return Result.failure(tsid.failure());
 		}
 	}
 }

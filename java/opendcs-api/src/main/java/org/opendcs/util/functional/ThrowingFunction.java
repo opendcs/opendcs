@@ -6,5 +6,5 @@ package org.opendcs.util.functional;
 @FunctionalInterface
 public interface ThrowingFunction<T,R,E extends Exception>
 {
-    R accept(T value) throws E;
+    R apply(T value) throws E;
 }

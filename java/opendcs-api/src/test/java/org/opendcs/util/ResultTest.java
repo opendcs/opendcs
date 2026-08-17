@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -23,8 +24,8 @@ class ResultTest
         assertTrue(success.isSuccess());
         assertTrue(other.isFailure());
 
-        assertThrows(IllegalStateException.class, () -> success.getFailure());
-        assertThrows(IllegalStateException.class, () -> other.getSuccess());
+        assertThrows(IllegalStateException.class, () -> success.failure());
+        assertThrows(IllegalStateException.class, () -> other.success());
 
         assertEquals(5, success.orElseThrowing((e) ->
         {
@@ -58,15 +59,15 @@ class ResultTest
         final AtomicReference<Double> otherDouble = new AtomicReference<>(0.0);
 
         success.onSuccess(value -> successInt.set(value));
-        other.handleError(error -> otherDouble.set(error));
+        other.onError(error -> otherDouble.set(error));
 
-        assertEquals(success.getSuccess(), successInt.get());
-        assertEquals(other.getFailure(), otherDouble.get());
+        assertEquals(success.success(), successInt.get());
+        assertEquals(other.failure(), otherDouble.get());
 
         final AtomicInteger failInt = new AtomicInteger(-1);
         final AtomicReference<Double> notFailDouble = new AtomicReference<>(-10.0);
         other.onSuccess(value -> failInt.set(value));
-        success.handleError(error -> notFailDouble.set(error));
+        success.onError(error -> notFailDouble.set(error));
 
         assertEquals(-1, failInt.get());
         assertEquals(-10.0, notFailDouble.get());
@@ -87,9 +88,20 @@ class ResultTest
                         }));
 
         var result = assertDoesNotThrow(() -> success.orElseThrowing(e -> 50));
-        assertEquals(success.getSuccess(), result);
+        assertEquals(success.success(), result);
 
         var result2 = success.orElse(e -> 150);
-        assertEquals(success.getSuccess(), result2);
+        assertEquals(success.success(), result2);
+    }
+
+
+    @Test
+    void test_create_with_nulls()
+    {
+        assertThrows(NullPointerException.class, () -> Result.success(null));
+        assertThrows(NullPointerException.class, () -> Result.failure(null));
+
+        assertDoesNotThrow(() -> Result.success(1)).onError(e -> fail("Should not fail."));;
+        assertDoesNotThrow(() -> Result.failure(2)).onSuccess(s -> fail("Should not succeed."));
     }
 }

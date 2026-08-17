@@ -257,7 +257,7 @@ public class ImporterHelper
 					Result<TimeSeriesIdentifier, TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
 					if (!tsIdSavedResult.isSuccess())
 					{
-						TsdbException ex = tsIdSavedResult.getFailure();
+						TsdbException ex = tsIdSavedResult.failure();
 							log.error("Failed to save time series: {}", tsIn.getTimeSeriesIdentifier().getUniqueString(), ex);
 						throw ex;
 					}

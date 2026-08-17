@@ -20,7 +20,7 @@ public class Waiting
         do
         {
             now = System.currentTimeMillis();
-            ret = task.accept(now);
+            ret = task.apply(now);
             if(!ret)
             {
                 try
