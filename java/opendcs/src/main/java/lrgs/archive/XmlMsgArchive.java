@@ -23,10 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-
-import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -43,7 +39,6 @@ import lrgs.common.DcpMsgIndex;
 import lrgs.common.DcpAddress;
 import lrgs.common.LrgsErrorCode;
 import lrgs.common.LrgsStatusProvider;
-import lrgs.common.ArchiveException;
 import lrgs.common.ArchiveUnavailableException;
 import lrgs.common.SearchTimeoutException;
 

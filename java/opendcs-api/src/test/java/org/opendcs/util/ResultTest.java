@@ -24,10 +24,10 @@ class ResultTest
         assertTrue(success.isSuccess());
         assertTrue(other.isFailure());
 
-        assertThrows(IllegalStateException.class, () -> success.failure());
-        assertThrows(IllegalStateException.class, () -> other.success());
+        assertThrows(IllegalStateException.class, success::failure());
+        assertThrows(IllegalStateException.class, other::success());
 
-        assertEquals(5, success.orElseThrowing((e) ->
+        assertEquals(5, success.orElseThrowing(e ->
         {
             throw AssertionFailureBuilder.assertionFailure().message("should not have been called.").build();
         }));
@@ -58,16 +58,16 @@ class ResultTest
         final AtomicInteger successInt = new AtomicInteger(0);
         final AtomicReference<Double> otherDouble = new AtomicReference<>(0.0);
 
-        success.onSuccess(value -> successInt.set(value));
-        other.onError(error -> otherDouble.set(error));
+        success.onSuccess(successInt::set);
+        other.onError(otherDouble::set);
 
         assertEquals(success.success(), successInt.get());
         assertEquals(other.failure(), otherDouble.get());
 
         final AtomicInteger failInt = new AtomicInteger(-1);
         final AtomicReference<Double> notFailDouble = new AtomicReference<>(-10.0);
-        other.onSuccess(value -> failInt.set(value));
-        success.onError(error -> notFailDouble.set(error));
+        other.onSuccess(failInt::set);
+        success.onError(notFailDouble::set);
 
         assertEquals(-1, failInt.get());
         assertEquals(-10.0, notFailDouble.get());
@@ -101,7 +101,7 @@ class ResultTest
         assertThrows(NullPointerException.class, () -> Result.success(null));
         assertThrows(NullPointerException.class, () -> Result.failure(null));
 
-        assertDoesNotThrow(() -> Result.success(1)).onError(e -> fail("Should not fail."));;
+        assertDoesNotThrow(() -> Result.success(1)).onError(e -> fail("Should not fail."));
         assertDoesNotThrow(() -> Result.failure(2)).onSuccess(s -> fail("Should not succeed."));
     }
 }

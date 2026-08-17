@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import org.opendcs.decodes.api.DataMessage;
+import org.opendcs.util.Result;
 
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
@@ -51,8 +52,8 @@ class DataSourceTest
     {
         TestDataSource testDS = new TestDataSource();
         DataSourceException result = testDS.stream()
-                                           .filter(msg -> msg.isSuccess())
-                                           .map(msg -> msg.success())
+                                           .filter(Result::isSuccess)
+                                           .map(msg -> msg.success()) // NOSONAR - would be ambigous
                                            .map(msg -> {
                                                 System.out.println("Decoded Message.");
                                                 return msg;
