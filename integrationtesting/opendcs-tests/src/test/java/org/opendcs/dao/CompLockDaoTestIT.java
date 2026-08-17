@@ -54,7 +54,7 @@ class CompLockDaoTestIT extends AppTestBase
             var lockOneFail = lockDao.obtainLock(tx, appOne, 0, "alice");
             assertTrue(lockOneFail.isFailure());
             
-            Thread.sleep(000); // NOSONAR otherwise the dates will match.
+            Thread.sleep(1500); // NOSONAR otherwise the dates will match.
 
             var lockOneUpdate = lockDao.obtainLock(tx, appOne, 0, "bob");
             assertTrue(lockOneUpdate.isSuccess());
