@@ -113,7 +113,10 @@ public final class SessionResource
 		var roleMap = new HashMap<ApiOrganization, List<OpenDcsApiRoles>>();
 		user.roles.forEach((org, roles) ->
 		{
-			roleMap.put(OrganizationResource.map(org), roles.stream().map(role -> OpenDcsApiRoles.valueOf(role.name())).toList());
+			roleMap.put(OrganizationResource.map(org),
+						new ArrayList<OpenDcsApiRoles>(roles.stream()
+															.map(role -> OpenDcsApiRoles.valueOf(role.name()))
+															.toList()));
 		});
 		
 		roleMap.computeIfAbsent(OrganizationResource.map(Organization.NULL_ORG), org -> new ArrayList<>()).add(OpenDcsApiRoles.ODCS_API_REGISTERED);
