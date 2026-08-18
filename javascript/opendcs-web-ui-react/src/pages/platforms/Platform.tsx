@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Card,
   Col,
@@ -11,13 +12,14 @@ import {
 } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
-import type {
-  ApiConfigRef,
-  ApiConfigSensor,
-  ApiPlatform,
-  ApiPlatformConfig,
-  ApiSite,
-  ApiSiteRef,
+import {
+  ApiException,
+  type ApiConfigRef,
+  type ApiConfigSensor,
+  type ApiPlatform,
+  type ApiPlatformConfig,
+  type ApiSite,
+  type ApiSiteRef,
 } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
@@ -137,6 +139,14 @@ export interface PlatformProperties {
 const mapProps: (props: { [k: string]: string }) => Property[] = (props) =>
   Object.entries(props).map(([name, value]): Property => ({ name, value }));
 
+const saveErrorMessage = (err: unknown, fallback: string): string => {
+  if (err instanceof ApiException && err.body && typeof err.body === "object") {
+    const message = (err.body as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim().length > 0) return message;
+  }
+  return fallback;
+};
+
 export const Platform: React.FC<PlatformProperties> = ({
   details,
   actions = {},
@@ -169,6 +179,7 @@ export const Platform: React.FC<PlatformProperties> = ({
   );
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const fetchConfig = useFetchConfig();
 
   const propertyActions: CollectionActions<Property, string> = edit
@@ -183,9 +194,15 @@ export const Platform: React.FC<PlatformProperties> = ({
       }
     : {};
 
-  const savePlatform = useCallback(() => {
-    actions.save?.(localPlatform as ApiPlatform);
-  }, [actions, localPlatform]);
+  const savePlatform = useCallback(async () => {
+    setSaveError(null);
+    try {
+      await actions.save?.(localPlatform as ApiPlatform);
+    } catch (err) {
+      console.warn("Platform save failed", err);
+      setSaveError(saveErrorMessage(err, t("platforms:save_error")));
+    }
+  }, [actions, localPlatform, t]);
 
   const inputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -199,8 +216,9 @@ export const Platform: React.FC<PlatformProperties> = ({
 
   const handleSelectSite = useCallback((ref: ApiSiteRef) => {
     if (ref.siteId === undefined) return;
-    dispatch({ type: "save", payload: { siteId: ref.siteId } });
-    setSiteName(siteDisplayName(ref));
+    const displayName = siteDisplayName(ref);
+    dispatch({ type: "save", payload: { siteId: ref.siteId, name: displayName } });
+    setSiteName(displayName);
   }, []);
 
   const handleSelectConfig = useCallback(
@@ -227,7 +245,7 @@ export const Platform: React.FC<PlatformProperties> = ({
             <Col>
               <FormGroup as={Row} className="mb-3">
                 <Form.Label column sm={3} htmlFor="name">
-                  {t("platforms:site")}
+                  {t("platforms:name")}
                 </Form.Label>
                 <Col sm={9}>
                   <Form.Control
@@ -236,14 +254,14 @@ export const Platform: React.FC<PlatformProperties> = ({
                     name="name"
                     readOnly={true}
                     disabled={true}
-                    defaultValue={localPlatform.name}
+                    value={localPlatform.name ?? ""}
                     onChange={inputChange}
                   />
                 </Col>
               </FormGroup>
               <FormGroup as={Row} className="mb-3">
                 <Form.Label column sm={3} htmlFor="siteId">
-                  {t("platforms:public_name")}
+                  {t("platforms:site")}
                 </Form.Label>
                 <Col sm={9}>
                   {edit ? (
@@ -457,6 +475,16 @@ export const Platform: React.FC<PlatformProperties> = ({
               />
             </Col>
           </Row>
+          {saveError && (
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setSaveError(null)}
+              className="mt-3"
+            >
+              {saveError}
+            </Alert>
+          )}
           {edit && (
             <Row className="mt-3">
               <Col className="d-flex justify-content-end gap-2">
