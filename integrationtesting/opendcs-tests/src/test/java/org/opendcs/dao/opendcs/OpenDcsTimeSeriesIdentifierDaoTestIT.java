@@ -51,7 +51,7 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
             var tsIdOutResult = dao.findBy(tx, tsIdIn.getUniqueString());
 
             assertTrue(tsIdOutResult.isSuccess());
-            var tsIdOut = tsIdOutResult.getSuccess().orElseGet(() -> fail("time series not retrieved."));
+            var tsIdOut = tsIdOutResult.success().orElseGet(() -> fail("time series not retrieved."));
             assertNotNull(tsIdOut);
             assertNotNull(tsIdOut.getDataType());
             assertFalse(DbKey.isNull(tsIdOut.getSite().getId()));
