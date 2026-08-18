@@ -58,8 +58,12 @@ import org.opendcs.database.dai.LoadingAppDao;
 public final class AppResources extends OpenDcsResource
 {
 	private static final String NO_APP_FOUND = "No such app with ID: %s";
-	private static final WebAppException UNABLE_TO_GET_APP_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Loading Application DAO available.");
-private static final WebAppException UNABLE_TO_GET_COMPLOC_DAO= new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Comp Lock DAO available.");
+	private static final WebAppException UNABLE_TO_GET_APP_DAO =
+		new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+							"No Loading Application DAO available.");
+	private static final WebAppException UNABLE_TO_GET_COMPLOCK_DAO =
+		new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+				 			"No Comp Lock DAO available.");
 
 	@GET
 	@Path("apprefs")
@@ -448,7 +452,7 @@ private static final WebAppException UNABLE_TO_GET_COMPLOC_DAO= new WebAppExcept
 	public Response getAppStat() throws WebAppException
 	{
 		var db = createDb();
-		var dao = db.getDao(CompLockDao.class).orElseThrow(() -> UNABLE_TO_GET_COMPLOC_DAO); 
+		var dao = db.getDao(CompLockDao.class).orElseThrow(() -> UNABLE_TO_GET_COMPLOCK_DAO); 
 		try (var tx = db.newTransaction())
 		{
 			return Response.ok()

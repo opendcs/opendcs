@@ -26,14 +26,11 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.CompLockDao;
-import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.apps.CompLockMapper;
 import org.opendcs.util.Result;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
-import org.slf4j.Logger;
 import org.stringtemplate.v4.STGroup;
 
 import decodes.sql.DbKey;
@@ -44,7 +41,6 @@ import decodes.tsdb.TsdbCompLock;
 @ServiceProvider(service = CompLockDao.class)
 public final class CompLockDaoImpl implements CompLockDao
 {
-    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String SELECT = "select";
     private static final STGroup queries = new STGroup();
 
@@ -129,7 +125,6 @@ public final class CompLockDaoImpl implements CompLockDao
                                   .add("where", " where lk.loading_application_id = :id ")
                                   .render()))
         {
-            select.setSqlLogger(new DetailSqlLogger(log));
             return select.bind(GenericColumns.ID.column(), appId)
                          .map(lockMapper)
                          .findOne();
