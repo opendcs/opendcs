@@ -34,14 +34,20 @@ public class DdsSessionFilter implements ContainerRequestFilter
             // Shorter timeout than default. To converse resources drop sessions
             // quickly if not used. At least if not an authenticated user.
             var user = request.getUserPrincipal();
+        
             if (user == null || "guest".equalsIgnoreCase(user.getName()) || "anonymous".equalsIgnoreCase((user.getName())))
             {
                 session.setMaxInactiveInterval(300);
             }
+        }
+
+        var mar = (MessageArchiveRetriever)session.getAttribute(UseDdsSession.KEY);
+        if (mar == null) // Session may have already been setup by going to a different endpoint.
+        {
             var lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
             if (lrgs != null)
             {
-                var mar = getMar(lrgs);
+                mar = getMar(lrgs);
                 var ddsSession = new DdsSession(mar, 15, lrgs.msgArchive);
                 session.setAttribute(UseDdsSession.KEY, ddsSession); // NOSONAR
             }
