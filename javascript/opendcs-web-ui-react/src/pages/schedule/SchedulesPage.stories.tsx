@@ -481,6 +481,10 @@ export const DeleteScheduleRow: Story = {
       name: i18n.t("schedule:delete_for", { id: 10 }),
     });
     await act(async () => userEvent.click(deleteBtn));
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
     await waitFor(() => expect(canvas.queryAllByText("goes2")).toHaveLength(0));
   },
 };

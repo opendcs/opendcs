@@ -79,6 +79,7 @@ export const NetlistsTable: React.FC<NetlistsTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.netlistId ?? 0) > 0,
         aria: (row) => t("netlists:delete_for", { id: row.netlistId }),
         onClick: ({ row }) => {

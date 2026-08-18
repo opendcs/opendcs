@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { PropertiesTable, PropertiesTableProps, type Property } from "./Properties";
-import { expect, fn, waitFor } from "storybook/test";
+import { expect, fn, screen, waitFor } from "storybook/test";
 import { useCallback } from "storybook/internal/preview-api";
 import { act, useReducer } from "react";
 import { PropertiesReducer } from "./PropertiesReducer";
@@ -173,6 +173,11 @@ export const EmptyAddThenSaveThenRemove: Story = {
         name: i18n.t("properties:delete_prop", { name: "testprop" }),
       });
       await userEvent.click(remove);
+
+      const confirmBtn = await screen.findByRole("button", {
+        name: i18n.t("translation:delete"),
+      });
+      await userEvent.click(confirmBtn);
 
       await waitFor(async () => {
         expect(canvas.queryByText("testprop")).toBeNull();

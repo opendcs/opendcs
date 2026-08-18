@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
-import opendcs.util.functional.ThrowingFunction;
+import org.opendcs.util.functional.ThrowingFunction;
 
 public class Waiting
 {
@@ -20,7 +20,7 @@ public class Waiting
         do
         {
             now = System.currentTimeMillis();
-            ret = task.accept(now);
+            ret = task.apply(now);
             if(!ret)
             {
                 try

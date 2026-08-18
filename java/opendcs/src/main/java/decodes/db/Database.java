@@ -15,13 +15,11 @@
 */
 package decodes.db;
 
-import opendcs.util.functional.ThrowingRunnable;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-
+import org.opendcs.util.functional.ThrowingRunnable;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.logging.Timer;
 import org.slf4j.Logger;

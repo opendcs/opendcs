@@ -21,7 +21,6 @@ import opendcs.util.functional.DaoConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
-import opendcs.util.functional.ThrowingFunction;
 import opendcs.util.sql.ConnectionInTransaction;
 import opendcs.util.sql.WrappedConnection;
 
@@ -36,6 +35,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.opendcs.util.functional.ThrowingFunction;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlSettings;
 import org.slf4j.Logger;
@@ -622,7 +622,7 @@ public class DaoBase implements DaiBase
             int count = 0;
             for (ValueType v: values)
             {
-                bind(stmt, bindingFunction.accept(v));
+                bind(stmt, bindingFunction.apply(v));
                 stmt.addBatch();
                 if(++count % batchSize == 0)
                 {
@@ -676,7 +676,7 @@ public class DaoBase implements DaiBase
             {
                 if (rs.next())
                 {
-                    result.add(consumer.accept(rs));
+                    result.add(consumer.apply(rs));
                     if (rs.next())
                     {
                         throw new SQLException(String.format("Query '%s' returned more than one row",query));
@@ -712,7 +712,7 @@ public class DaoBase implements DaiBase
             {
                 if (rs.next())
                 {
-                    result.add(consumer.accept(rs));
+                    result.add(consumer.apply(rs));
                     return;
                 }
             }
@@ -791,7 +791,7 @@ public class DaoBase implements DaiBase
             {
                 while(rs.next())
                 {
-                    R tmp = consumer.accept(rs);
+                    R tmp = consumer.apply(rs);
                     if (tmp != null || ignoreNull == false)
                     {
                         result.add(tmp);

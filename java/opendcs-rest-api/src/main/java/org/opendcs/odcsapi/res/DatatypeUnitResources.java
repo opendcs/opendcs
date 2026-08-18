@@ -234,14 +234,17 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		throws WebAppException
 	{
 		final var db = createDb();
+		final var unitsDao = db.getDao(EngineeringUnitDao.class)
+							   .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
 		try (var tx = db.newTransaction())
 		{
-			final var unitsDao = db.getDao(EngineeringUnitDao.class)
-								   .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
-			EngineeringUnit unit = new EngineeringUnit(eu.getAbbr(), eu.getName(), eu.getFamily(), eu.getMeasures());
-			var unitOut = mapUnit(unitsDao.save(tx, unit));
-			return Response.status(Response.Status.CREATED)
-					.entity(unitOut).build();
+			return tx.wrapErrors(() ->
+			{
+				EngineeringUnit unit = new EngineeringUnit(eu.getAbbr(), eu.getName(), eu.getFamily(), eu.getMeasures());
+				var unitOut = mapUnit(unitsDao.save(tx, unit));
+				return Response.status(Response.Status.CREATED)
+						.entity(unitOut).build();
+			});
 		}
 		catch(OpenDcsDataException ex)
 		{
@@ -276,13 +279,15 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		}
 
 		final var db = createDb();
+		var unitsDao = db.getDao(EngineeringUnitDao.class)
+						 .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
 		try (var tx = db.newTransaction())
 		{
-			var unitsDao = db.getDao(EngineeringUnitDao.class)
-							 .orElseThrow(() -> UNABLE_TO_GET_EU_DAO);
-			unitsDao.delete(tx, abbr);
-
-			return Response.noContent().entity("EU with abbr " + abbr + " deleted").build();
+			return tx.wrapErrors(() ->
+			{
+				unitsDao.delete(tx, abbr);
+				return Response.noContent().entity("EU with abbr " + abbr + " deleted").build();
+			});
 		}
 		catch(OpenDcsDataException ex)
 		{
@@ -373,15 +378,18 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	public Response postEUConv(ApiUnitConverter euc) throws WebAppException
 	{
 		final var db = createDb();
+		var ucDao = db.getDao(UnitConverterDao.class)
+					  .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
 		try (var tx = db.newTransaction())
 		{
-			var ucDao = db.getDao(UnitConverterDao.class)
-						  .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
-			var ucDbIn = ucDbMap(euc);
-			var ucOut = ucDao.save(tx, ucDbIn);
-			return Response.created(null).entity(map(ucOut)).build();
+			return tx.wrapErrors(() ->
+			{
+				var ucDbIn = ucDbMap(euc);
+				var ucOut = ucDao.save(tx, ucDbIn);
+				return Response.created(null).entity(map(ucOut)).build();
+			});
 		}
-		catch(OpenDcsDataException | DatabaseException | DbException ex)
+		catch(OpenDcsDataException ex)
 		{
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to save unit converter", ex);
 		}
@@ -497,12 +505,15 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			throw new MissingParameterException("Missing required euconvid parameter");
 		}
 		final var db = createDb();
+		var ucDao = db.getDao(UnitConverterDao.class)
+						 .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
 		try (var tx = db.newTransaction())
 		{
-			var ucDao = db.getDao(UnitConverterDao.class)
-							 .orElseThrow(() -> UNABLE_TO_GET_UC_DAO);
-			ucDao.delete(tx, DbKey.createDbKey(id));
-			return Response.noContent().build();
+			return tx.wrapErrors(() ->
+			{
+				ucDao.delete(tx, DbKey.createDbKey(id));
+				return Response.noContent().build();
+			});
 		}
 		catch(OpenDcsDataException  ex)
 		{

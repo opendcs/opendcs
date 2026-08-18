@@ -47,10 +47,9 @@ import javax.management.openmbean.OpenDataException;
 
 import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.jmx.connections.JMXTypes;
+import org.opendcs.util.functional.ThrowingConsumer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-
-import opendcs.util.functional.ThrowingConsumer;
 
 /**
  * Used for pooled connection system. Allows code

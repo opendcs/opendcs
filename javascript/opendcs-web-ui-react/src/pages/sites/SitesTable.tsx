@@ -69,6 +69,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.siteId ?? 0) > 0,
         aria: (row) => t("sites:delete_for", { id: row.siteId }),
         onClick: ({ row }) => {

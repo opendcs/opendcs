@@ -21,7 +21,8 @@ import decodes.db.SiteName;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import opendcs.dai.TimeSeriesDAI;
-import org.opendcs.utils.FailableResult;
+
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -108,10 +109,10 @@ final public class WaterTempProfiles
                 strsite.setNameValue(resID + "-D" + formattedNumber + "m");
                 newtsid.setSite(strsite.site);
                 newtsid.setSiteName(strsite.getDisplayName());
-                FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newtsid.getUniqueString());
+                Result<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newtsid.getUniqueString());
                 if (check.isSuccess())
                 {
-                    CTimeSeries cts = timeSeriesDAO.makeTimeSeries(check.getSuccess());
+                    CTimeSeries cts = timeSeriesDAO.makeTimeSeries(check.success());
                     int n = timeSeriesDAO.fillTimeSeries(cts, since, until, true, true, true);
                     if (n == 0)
                     {
@@ -130,13 +131,13 @@ final public class WaterTempProfiles
                     }
                     currentDepth += increment;
                 }
-                else if (check.getFailure() instanceof NoSuchObjectException)
+                else if (check.failure() instanceof NoSuchObjectException)
                 {
                     loading = false;
                 }
                 else
                 {
-                    throw new DbIoException("failed to find time series from database with TSID: " + newtsid.getUniqueString(), check.getFailure());
+                    throw new DbIoException("failed to find time series from database with TSID: " + newtsid.getUniqueString(), check.failure());
                 }
             }
             catch (BadTimeSeriesException | NoSuchObjectException ex)
@@ -179,17 +180,17 @@ final public class WaterTempProfiles
                     newTSID.setSiteName(strsite.getDisplayName());
 
                     CTimeSeries CTProfile;
-                    FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newTSID.getUniqueString());
+                    Result<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newTSID.getUniqueString());
                     if (check.isSuccess())
                     {
-                        CTProfile = tseries.getTimeSeriesByTsidKey(check.getSuccess());
+                        CTProfile = tseries.getTimeSeriesByTsidKey(check.success());
                         if (CTProfile == null)
                         {
-                            CTProfile = timeSeriesDAO.makeTimeSeries(check.getSuccess());
+                            CTProfile = timeSeriesDAO.makeTimeSeries(check.success());
                             tseries.addTimeSeries(CTProfile);
                         }
                     }
-                    else if (check.getFailure() instanceof NoSuchObjectException)
+                    else if (check.failure() instanceof NoSuchObjectException)
                     {
                         timeSeriesDAO.createTimeSeries(newTSID);
                         CTProfile = timeSeriesDAO.makeTimeSeries(newTSID);
@@ -197,7 +198,7 @@ final public class WaterTempProfiles
                     }
                     else
                     {
-                        throw new DbIoException("Database failed when attempting to find TSID: " + newTSID.getUniqueString(), check.getFailure());
+                        throw new DbIoException("Database failed when attempting to find TSID: " + newTSID.getUniqueString(), check.failure());
                     }
 
                     TimedVariable newTV = new TimedVariable(new Variable(wtp[i]), CurrentTime);
