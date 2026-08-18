@@ -26,7 +26,7 @@ import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.operations.timeseries.TimeSeriesOperations;
-import org.opendcs.utils.Result;
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;

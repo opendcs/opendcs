@@ -9,7 +9,7 @@ import ilex.util.Pair;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 
 import decodes.db.DataType;
 import decodes.sql.DbKey;
@@ -36,15 +36,15 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
         var ret = findBy(tx, uniqueString);
         if (ret.isSuccess())
         {
-            return ret.getSuccess();
+            return ret.success();
         }
-        else if (ret.getFailure().getCause() instanceof BadTimeSeriesException btse)
+        else if (ret.failure().getCause() instanceof BadTimeSeriesException btse)
         {
             throw btse;
         }
         else
         {
-            throw ret.getFailure();
+            throw ret.failure();
         }
     }
 
@@ -76,15 +76,15 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
         var ret = findBy(tx, key);
         if (ret.isSuccess())
         {
-            return ret.getSuccess();
+            return ret.success();
         }
-        else if (ret.getFailure().getCause() instanceof BadTimeSeriesException btse)
+        else if (ret.failure().getCause() instanceof BadTimeSeriesException btse)
         {
             throw btse;
         }
         else
         {
-            throw ret.getFailure();
+            throw ret.failure();
         }
     }
 
@@ -98,7 +98,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param uniqueString
      * @return
      */
-	FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, String uniqueString);
+	Result<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, String uniqueString);
 
     /**
      * As findBy by uniqueString. Returns filled out TimeSeriesIdentifier object if found, or the error
@@ -107,7 +107,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param key
      * @return
      */
-	FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, DbKey key);
+	Result<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, DbKey key);
 
     /**
      * As findBy by uniqueString. Returns filled out TimeSeriesIdentifier object if found, or the error
@@ -116,7 +116,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param key
      * @return
      */
-	default FailableResult<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, TimeSeriesIdentifier tsId)
+	default Result<Optional<TimeSeriesIdentifier>,OpenDcsDataException> findBy(DataTransaction tx, TimeSeriesIdentifier tsId)
     {
         return findBy(tx, Objects.requireNonNull(tsId, TSID_NULL_ERROR)
                                  .getUniqueString());
