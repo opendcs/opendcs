@@ -1,5 +1,6 @@
 import { Button, Dropdown } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
+import { SignpostSplit } from "react-bootstrap-icons";
 import {
   SITE_NAME_TYPES,
   useSiteNameType,
@@ -12,7 +13,7 @@ interface ToggleProperties {
 
 const SiteNameTypeToggle: React.FC<ToggleProperties> = ({ label, ...args }) => (
   <Button {...args}>
-    <i className="bi bi-signpost-split me-1" aria-hidden="true" /> {label}
+    <SignpostSplit className="bi me-1" aria-hidden="true" /> {label}
   </Button>
 );
 
