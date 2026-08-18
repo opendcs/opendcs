@@ -145,7 +145,7 @@ public final class CompLockDaoImpl implements CompLockDao
         {
             // check for same application and host. With the introduction of the docker images
             // every instance generally would have the same PID, just a different hostname.
-            if (lock.getPID() == pid && lock.getHost().equals(host))
+            if (lock.getPID() == pid && lock.getHost().equalsIgnoreCase(host))
             {
                 return checkLock(tx, lock);
             }

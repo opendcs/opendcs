@@ -68,7 +68,7 @@ public interface CompLockDao extends OpenDcsDao
      * @param tx
      * @param lock
      * @return The updated Lock, or the reason the attempt at the lock failed. Returned lock is always
-     * updated from the database regardless of weather or not the heartbeat or status was updated.
+     * updated from the database regardless of whether or not the heartbeat or status was updated.
      * @throws OpenDcsDataException
      */
     Result<TsdbCompLock,LockBusyException> checkLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException;

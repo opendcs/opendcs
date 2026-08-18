@@ -59,6 +59,7 @@ public final class AppResources extends OpenDcsResource
 {
 	private static final String NO_APP_FOUND = "No such app with ID: %s";
 	private static final WebAppException UNABLE_TO_GET_APP_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Loading Application DAO available.");
+private static final WebAppException UNABLE_TO_GET_COMPLOC_DAO= new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Comp Lock DAO available.");
 
 	@GET
 	@Path("apprefs")
@@ -447,7 +448,7 @@ public final class AppResources extends OpenDcsResource
 	public Response getAppStat() throws WebAppException
 	{
 		var db = createDb();
-		var dao = db.getDao(CompLockDao.class).orElseThrow(); 
+		var dao = db.getDao(CompLockDao.class).orElseThrow(() -> UNABLE_TO_GET_COMPLOC_DAO); 
 		try (var tx = db.newTransaction())
 		{
 			return Response.ok()
@@ -476,7 +477,7 @@ public final class AppResources extends OpenDcsResource
 		ret.setPid((long) lock.getPID());
 		ret.setHeartbeat(lock.getHeartbeat());
 		ret.setStatus(lock.getStatus());
-		// Event port is not longer supported, don't propgate the data in new systems.
+		// Event port is not longer supported, don't propagate the data in new systems.
 		return ret;
 	}
 
