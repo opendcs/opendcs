@@ -26,7 +26,7 @@ import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.operations.timeseries.TimeSeriesOperations;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -119,7 +119,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         """;
 
     @Override
-    public FailableResult<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx,
+    public Result<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx,
             String uniqueString)
     {
         // extract the display name, if it was used.
@@ -139,7 +139,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                                    .define(WHERE_CLAUSE, " where unique_string = :unique_string ")
                                    .define(LIMIT_CLAUSE, ""))
             {
-                return FailableResult.success(
+                return Result.success(
                     query.bind("unique_string",  identifier.first)
                          .registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
                          .registerRowMapper(DataTypeMapper.withPrefix("dt"))
@@ -152,16 +152,16 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         }
         catch (OpenDcsDataException ex)
         {
-            return FailableResult.failure(ex);
+            return Result.failure(ex);
         }
     }
 
     @Override
-    public FailableResult<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, DbKey key)
+    public Result<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, DbKey key)
     {
         if (DbKey.isNull(key))
         {
-            return FailableResult.failure(new OpenDcsDataException("Cannot lookup by null DbKey value."));
+            return Result.failure(new OpenDcsDataException("Cannot lookup by null DbKey value."));
         }
         try
         {
@@ -177,7 +177,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                                    .define(WHERE_CLAUSE, " where id = :id ")
                                    .define(LIMIT_CLAUSE, ""))
             {
-                return FailableResult.success(
+                return Result.success(
                     query.bind(GenericColumns.ID.column(),  key)
                          .registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
                          .registerRowMapper(DataTypeMapper.withPrefix("dt"))
@@ -190,7 +190,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         }
         catch (OpenDcsDataException ex)
         {
-            return FailableResult.failure(ex);
+            return Result.failure(ex);
         }
     }
 
