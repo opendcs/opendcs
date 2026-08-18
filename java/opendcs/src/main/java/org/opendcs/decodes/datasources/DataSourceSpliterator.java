@@ -5,7 +5,7 @@ import java.util.Spliterators.AbstractSpliterator;
 import java.util.function.Consumer;
 
 import org.opendcs.decodes.api.DataMessage;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 
 import decodes.datasource.DataSourceEndException;
 import decodes.datasource.DataSourceException;
@@ -15,7 +15,7 @@ import decodes.datasource.DataSourceExec;
  * Default data source spliterator. Advances from one message to the next mapping errors or end of stream
  * as appropriate.
  */
-public class DataSourceSpliterator extends AbstractSpliterator<FailableResult<DataMessage, DataSourceException>>
+public class DataSourceSpliterator extends AbstractSpliterator<Result<DataMessage, DataSourceException>>
 {
 
     private final DataSourceExec dataSource;
@@ -28,31 +28,31 @@ public class DataSourceSpliterator extends AbstractSpliterator<FailableResult<Da
     }
 
     @Override
-    public boolean tryAdvance(Consumer<? super FailableResult<DataMessage, DataSourceException>> action)
+    public boolean tryAdvance(Consumer<? super Result<DataMessage, DataSourceException>> action)
     {
         boolean ret = true;
-        FailableResult<DataMessage, DataSourceException> msgRet;
+        Result<DataMessage, DataSourceException> msgRet;
         try
         {
             var msg = dataSource.getDataMessage();
             if (msg == null)
             {
                 ret = false;
-                msgRet = FailableResult.failure(new DataSourceEndException("End of Data Source."));
+                msgRet = Result.failure(new DataSourceEndException("End of Data Source."));
             }
             else
             {
-                msgRet = FailableResult.success(msg);
+                msgRet = Result.success(msg);
             }
         }
         catch (DataSourceEndException ex)
         {
             ret = false;
-            msgRet = FailableResult.failure(ex);
+            msgRet = Result.failure(ex);
         }
         catch (DataSourceException ex)
         {
-            msgRet = FailableResult.failure(ex);
+            msgRet = Result.failure(ex);
         }
 
         action.accept(msgRet);
