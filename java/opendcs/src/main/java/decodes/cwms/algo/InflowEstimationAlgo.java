@@ -242,14 +242,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		validateInputs();
 		validateOutput();
 		timeSeriesDAO = tsdb.makeTimeSeriesDAO();
-		try
-		{
-			conn = tsdb.getConnection();
-		}
-		catch(SQLException ex)
-		{
-			throw new DbCompException("Unable to acquire required connection.", ex);
-		}
+		conn = tsdb.getConnection();
 
 		ratingDao = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
 		loadRatingSets();
