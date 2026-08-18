@@ -1,5 +1,7 @@
 package opendcs.util.functional;
 
+import org.opendcs.util.functional.ThrowingConsumer;
+
 import opendcs.dao.DaoBase;
 
 /**

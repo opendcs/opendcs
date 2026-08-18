@@ -3,6 +3,8 @@ package opendcs.util.functional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.opendcs.util.functional.ThrowingConsumer;
+
 /**
  * User provided function that operates on a single valid result set.
  * 

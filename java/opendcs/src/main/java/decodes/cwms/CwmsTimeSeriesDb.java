@@ -32,7 +32,7 @@ import java.sql.Statement;
 import java.util.TimeZone;
 
 import org.opendcs.database.ExceptionHelpers;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -352,11 +352,11 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 			String uniqueString = tsidRet.getUniqueString();
 			log.trace("CwmsTimeSeriesDb.transformTsid origString='{}', new string='{}', parm={}", origString, uniqueString, parm);
 						
-			FailableResult<TimeSeriesIdentifier,TsdbException> tmpTsId = tsDAI.findTimeSeriesIdentifier(uniqueString);
+			Result<TimeSeriesIdentifier,TsdbException> tmpTsId = tsDAI.findTimeSeriesIdentifier(uniqueString);
 
 			if (tmpTsId.isFailure())
 			{
-				if (tmpTsId.getFailure() instanceof NoSuchObjectException)
+				if (tmpTsId.failure() instanceof NoSuchObjectException)
 				{
 					if (createTS)
 					{
@@ -371,13 +371,13 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 				}
 				else
 				{
-					ExceptionHelpers.throwDbIoNoSuchObject(tmpTsId.getFailure());
+					ExceptionHelpers.throwDbIoNoSuchObject(tmpTsId.failure());
 				}
 			}
 			else
 			{
 				log.trace("CwmsTimeSeriesDb.transformTsid time series '{}' exists OK.", uniqueString);
-				tsidRet = tmpTsId.getSuccess();
+				tsidRet = tmpTsId.success();
 			}
 		}
 		else
@@ -948,10 +948,10 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
     {
         try (TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO())
         {
-            FailableResult<TimeSeriesIdentifier,TsdbException> tsid = timeSeriesDAO.findTimeSeriesIdentifier(tsidStr, true);
+            Result<TimeSeriesIdentifier,TsdbException> tsid = timeSeriesDAO.findTimeSeriesIdentifier(tsidStr, true);
 			if (tsid.isSuccess())
 			{
-				TimeSeriesIdentifier tsId = tsid.getSuccess();
+				TimeSeriesIdentifier tsId = tsid.success();
 				// There is an odd situation that happens were a TimeSeries ID has been loaded, but never had the storage units attached.
 				// Several downstream components depend on the storage units being present and this ensures that the value is available.
 				// This is likely due to the more aggressive cache usages that CWMS is using to speed up various operations.
@@ -963,7 +963,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 			}
             else
 			{
-				return ExceptionHelpers.throwDbIoNoSuchObject(tsid.getFailure());
+				return ExceptionHelpers.throwDbIoNoSuchObject(tsid.failure());
 			}
         }
     }

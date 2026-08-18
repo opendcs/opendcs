@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.opendcs.util.functional.ThrowingSupplier;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -40,7 +41,6 @@ import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.compedit.AlgorithmInList;
 
 import opendcs.dai.AlgorithmDAI;
-import opendcs.util.functional.ThrowingSupplier;
 
 /**
  * Data Access Object for writing/reading Algorithm objects to/from a SQL database

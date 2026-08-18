@@ -32,13 +32,32 @@ public final class SimpleTransaction implements DataTransaction
     @Override
     public void commit() throws OpenDcsDataException
     {
-        try 
+        try
         {
             conn.commit();
         }
-        catch (SQLException ex) 
+        catch (SQLException ex)
         {
-            throw new OpenDcsDataException("Unable to commit transaction.", ex);
+            final var wex = new OpenDcsDataException("Unable to commit transaction.", ex);
+            rollbackSuppressing(wex);
+            throw wex;
+        }
+    }
+
+    /**
+     * Unlike Jdbi's transaction handler, plain JDBC does not roll back for us when a commit
+     * fails, so a failed commit has to trigger its own rollback here. Any rollback failure is
+     * suppressed onto {@code cause} rather than replacing it.
+     */
+    private void rollbackSuppressing(Exception cause)
+    {
+        try
+        {
+            rollback();
+        }
+        catch (OpenDcsDataException rollbackEx)
+        {
+            cause.addSuppressed(rollbackEx);
         }
     }
 
