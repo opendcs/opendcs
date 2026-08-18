@@ -116,7 +116,7 @@ public interface Configuration
 
     /**
      * Retrieve the appropriate default organization for this configuration.
-     * Default implementation returns {@link org.opendcs.data.Organization.NULL_ORG}
+     * Default implementation returns {@link org.opendcs.data.Organization#NULL_ORG}
      * @return
      */
     default Organization getDefaultOrganization()
