@@ -69,6 +69,7 @@ export const ConfigsTable: React.FC<ConfigsTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.configId ?? 0) > 0,
         aria: (row) => t("configs:delete_for", { id: row.configId }),
         onClick: ({ row }) => {

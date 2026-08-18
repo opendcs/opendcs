@@ -3,7 +3,7 @@ package org.opendcs.utils.logging;
 import java.time.Duration;
 import java.time.Instant;
 
-import opendcs.util.functional.ThrowingRunnable;
+import org.opendcs.util.functional.ThrowingRunnable;
 
 public class Timer 
 {

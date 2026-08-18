@@ -23,10 +23,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.Month;
 
 import ilex.util.CmdLine;
 import ilex.util.CmdLineProcessor;
-import org.jfree.data.time.Month;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -150,7 +150,7 @@ class RecordedTimeStampTest
 		RecordedTimeStamp rts = setup(clp);
 		clp.processInput();
 		ZonedDateTime zonedDateTime = rts.getCalendar().toZonedDateTime();
-		ZonedDateTime expected = ZonedDateTime.of(1991, Month.FEBRUARY, 5, 11, 59, 31, 0, ZoneId.of("America/Los_Angeles"));
+		ZonedDateTime expected = ZonedDateTime.of(1991, Month.FEBRUARY.getValue(), 5, 11, 59, 31, 0, ZoneId.of("America/Los_Angeles"));
 		assertEquals(expected, zonedDateTime);
 	}
 
@@ -178,7 +178,7 @@ class RecordedTimeStampTest
 		RecordedTimeStamp rts = setup(clp);
 		clp.processInput();
 		ZonedDateTime zonedDateTime = rts.getCalendar().toZonedDateTime();
-		ZonedDateTime expected = ZonedDateTime.of(1991, Month.MAY, 5, 11, 59, 31, 0, ZoneId.of("America/Los_Angeles"));
+		ZonedDateTime expected = ZonedDateTime.of(1991, Month.MAY.getValue(), 5, 11, 59, 31, 0, ZoneId.of("America/Los_Angeles"));
 		assertEquals(expected, zonedDateTime);
 	}
 
@@ -206,7 +206,7 @@ class RecordedTimeStampTest
 		RecordedTimeStamp rts = setup(clp);
 		clp.processInput();
 		ZonedDateTime zonedDateTime = rts.getCalendar().toZonedDateTime();
-		ZonedDateTime expected = ZonedDateTime.of(1991, Month.FEBRUARY, 5, 23, 59, 31, 0, ZoneId.of("America/Los_Angeles"));
+		ZonedDateTime expected = ZonedDateTime.of(1991, Month.FEBRUARY.getValue(), 5, 23, 59, 31, 0, ZoneId.of("America/Los_Angeles"));
 		assertEquals(expected, zonedDateTime);
 	}
 }

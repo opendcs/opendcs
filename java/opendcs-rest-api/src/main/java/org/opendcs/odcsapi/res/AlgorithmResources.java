@@ -55,6 +55,7 @@ import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiAlgorithmRef;
 import org.opendcs.odcsapi.beans.ApiAlgorithmScript;
 import org.opendcs.odcsapi.beans.ApiAvailableAlgorithm;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -214,7 +215,9 @@ public final class AlgorithmResources extends OpenDcsResource
 					@ApiResponse(responseCode = "201", description = "Successfully Created",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 									schema = @Schema(implementation = ApiAlgorithm.class))),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+					@ApiResponse(responseCode = "500", description = "Internal Server Error",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class)))
 			}
 	)
 	public Response postAlgorithm(ApiAlgorithm algo) throws DbIoException
@@ -314,12 +317,15 @@ public final class AlgorithmResources extends OpenDcsResource
 					@ApiResponse(responseCode = "201", description = "Successfully imported",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
 									array = @ArraySchema(schema = @Schema(implementation = ApiAlgorithm.class)))),
+					@ApiResponse(responseCode = "404", description = "One or more requested exec classes "
+							+ "could not be located in the catalog"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
-	public Response importAlgorithmsFromCatalog(List<String> execClassNames) throws DbIoException
+	public Response importAlgorithmsFromCatalog(List<String> execClassNames) throws DbIoException, WebAppException
 	{
 		Set<String> requested = new HashSet<>(execClassNames);
+		Set<String> unmatched = new HashSet<>(requested);
 		List<ApiAlgorithm> imported = new ArrayList<>();
 		try (AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
 		{
@@ -329,8 +335,18 @@ public final class AlgorithmResources extends OpenDcsResource
 				{
 					dai.writeAlgorithm(algo);
 					imported.add(map(algo));
+					unmatched.remove(algo.getExecClass());
 				}
 			}
+		}
+		// The catalog is re-scanned for this request rather than reused from the GET call, so it's
+		// possible for a requested exec class to no longer be found (e.g. it was already imported and
+		// removed from the "available" set, or the underlying file disappeared). Silently reporting
+		// success in that case hides the fact that nothing was written to the database, so surface it.
+		if (!unmatched.isEmpty())
+		{
+			throw new DatabaseItemNotFoundException(
+					"Unable to locate the following algorithm(s) in the catalog: " + String.join(", ", unmatched));
 		}
 		return Response.status(Response.Status.CREATED).entity(imported).build();
 	}

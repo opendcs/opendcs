@@ -17,7 +17,6 @@ package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,14 +27,12 @@ import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
-import decodes.db.PlatformList;
 import decodes.db.PlatformSensor;
 import decodes.db.PlatformStatus;
 import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
-import decodes.db.ValueNotFoundException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,6 +57,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
+
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.PlatformDao;
 import org.opendcs.odcsapi.beans.ApiPlatform;
 import org.opendcs.odcsapi.beans.ApiPlatformRef;
 import org.opendcs.odcsapi.beans.ApiPlatformSensor;
@@ -76,6 +76,7 @@ import static java.util.stream.Collectors.toList;
 @Path("/")
 public final class PlatformResources extends OpenDcsResource
 {
+	public static final WebAppException NO_PLATFORM_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Platform DAO available.");
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -109,75 +110,72 @@ public final class PlatformResources extends OpenDcsResource
 	public Response getPlatformRefs(@Parameter(description = "Transport medium type",
 			schema = @Schema(implementation = String.class, example = "goes"))
 	@QueryParam("tmtype") String tmtype)
-			throws DbException
+			throws WebAppException
 	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
-		{
+		var db = createDb();
+		var dao = db.getDao(PlatformDao.class).orElseThrow(() -> NO_PLATFORM_DAO);
 
-			PlatformList platformList = new PlatformList();
-			dbIo.readPlatformList(platformList, tmtype);
-			List<ApiPlatformRef> platSpecs = map(platformList);
-			return Response.ok().entity(platSpecs).build();
-		}
-		catch (DatabaseException ex)
+		try (var tx = db.newTransaction())
 		{
-			throw new DbException("Unable to retrieve platform list", ex);
+			return tx.wrapErrors(() ->
+				Response.ok()
+						.entity(
+							dao.getAll(tx, -1, -1, false, tmtype)
+							   .stream()
+							   .map(p -> mapRef(p))
+							   .toList()
+						)
+						.build()
+			);
 		}
-		finally
+		catch (OpenDcsDataException ex)
 		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable retrieve platforms", ex);
 		}
 	}
 
-	static List<ApiPlatformRef> map(PlatformList platformList)
+	static ApiPlatformRef mapRef(Platform plat) 
 	{
-		List<ApiPlatformRef> ret = new ArrayList<>();
-		Iterator<Platform> platform = platformList.iterator();
-		while (platform.hasNext())
+		ApiPlatformRef ref = new ApiPlatformRef();
+		ref.setName(plat.getDisplayName());
+		if (plat.getId() != null)
 		{
-			ApiPlatformRef ref = new ApiPlatformRef();
-			Platform plat = platform.next();
-			ref.setName(plat.getDisplayName());
-			if (plat.getId() != null)
-			{
-				ref.setPlatformId(plat.getId().getValue());
-			}
-			else
-			{
-				ref.setPlatformId(DbKey.NullKey.getValue());
-			}
-			ref.setAgency(plat.getAgency());
-			ref.setConfig(plat.getConfigName());
-			ref.setDescription(plat.getDescription());
-			if (plat.getConfig() != null && plat.getConfig().getId() != null)
-			{
-				ref.setConfigId(plat.getConfig().getId().getValue());
-			}
-			else
-			{
-				ref.setConfigId(DbKey.NullKey.getValue());
-			}
-			if (plat.getSite() != null)
-			{
-				ref.setSiteId(plat.getSite().getId().getValue());
-			}
-			else
-			{
-				ref.setSiteId(DbKey.NullKey.getValue());
-			}
-			Properties transportProps = new Properties();
-			transportProps.putAll(plat.getProperties());
-			for(Iterator<TransportMedium> it = plat.getTransportMedia(); it.hasNext(); )
-			{
-				final TransportMedium medium = it.next();
-				transportProps.setProperty(medium.getMediumType(), medium.getMediumId());
-			}
-			ref.setTransportMedia(transportProps);
-			ref.setDesignator(plat.getPlatformDesignator());
-			ret.add(ref);
+			ref.setPlatformId(plat.getId().getValue());
 		}
-		return ret;
+		else
+		{
+			ref.setPlatformId(DbKey.NullKey.getValue());
+		}
+		ref.setAgency(plat.getAgency());
+		ref.setConfig(plat.getConfigName());
+		ref.setDescription(plat.getDescription());
+		if (plat.getConfig() != null && plat.getConfig().getId() != null)
+		{
+			ref.setConfigId(plat.getConfig().getId().getValue());
+		}
+		else
+		{
+			ref.setConfigId(DbKey.NullKey.getValue());
+		}
+		if (plat.getSite() != null)
+		{
+			ref.setSiteId(plat.getSite().getId().getValue());
+		}
+		else
+		{
+			ref.setSiteId(DbKey.NullKey.getValue());
+		}
+		Properties transportProps = new Properties();
+		transportProps.putAll(plat.getProperties());
+		for (Iterator<TransportMedium> it = plat.getTransportMedia(); it.hasNext();)
+		{
+			final TransportMedium medium = it.next();
+			transportProps.setProperty(medium.getMediumType(), medium.getMediumId());
+		}
+		ref.setTransportMedia(transportProps);
+		ref.setDesignator(plat.getPlatformDesignator());
+	
+		return ref;
 	}
 
 	@GET
@@ -204,37 +202,38 @@ public final class PlatformResources extends OpenDcsResource
 					required = true,
 					schema = @Schema(implementation = Long.class, example = "5"))
 			@QueryParam("platformid") Long platformId)
-			throws WebAppException, DbException
+			throws WebAppException
 	{
 		if (platformId == null)
 		{
 			throw new MissingParameterException("Missing required platformid parameter.");
 		}
+		var db = createDb();
+		var dao = db.getDao(PlatformDao.class).orElseThrow(() -> NO_PLATFORM_DAO);
 
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		try (var tx = db.newTransaction())
 		{
-			Platform platform = new Platform();
-			platform.setId(DbKey.createDbKey(platformId));
-			dbIo.readPlatform(platform);
-			return Response.ok().entity(map(platform)).build();
+			return tx.wrapErrors(() ->
+				Response.ok()
+						.entity(
+							map(
+								dao.getById(tx, DbKey.createDbKey(platformId))
+								   .orElseThrow(
+									() -> new DatabaseItemNotFoundException("Platform with ID " + platformId + " not found.")
+								   )  
+							)
+						)
+						.build())
+				;
 		}
-		catch(ValueNotFoundException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DatabaseItemNotFoundException("Platform with ID " + platformId + " not found.", ex);
-		}
-		catch (DatabaseException ex)
-		{
-			if (ex.getCause() instanceof ValueNotFoundException)
+			if (ex.getCause() instanceof WebAppException ordx)
 			{
-				throw new DatabaseItemNotFoundException("Platform with ID " + platformId + " not found.", ex);
+				throw ordx;
 			}
-			throw new DbException("Unable to retrieve platform", ex);
-		}
-		finally
-		{
-			dbIo.close();
-		}
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to retrieve Platform", ex);
+		}		
 	}
 
 	static ApiPlatform map(Platform platform)
@@ -366,24 +365,33 @@ public final class PlatformResources extends OpenDcsResource
 			tags = {"REST - DECODES Platform Records"}
 	)
 	public Response postPlatform(ApiPlatform platform)
-			throws DbException
+			throws WebAppException
 	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		var db = createDb();
+		var dao = db.getDao(PlatformDao.class).orElseThrow(() -> NO_PLATFORM_DAO);
+
+		try (var tx = db.newTransaction())
 		{
 			Platform plat = map(platform);
-			dbIo.writePlatform(plat);
-			return Response.status(Response.Status.CREATED)
-					.entity(map(plat))
-					.build();
+			return tx.wrapErrors(() ->
+				Response.created(null)
+						.entity(
+							map(
+								dao.save(tx, plat)
+							)
+						)
+						.build())
+				;
 		}
 		catch (DatabaseException ex)
 		{
-			throw new DbException(String.format("Unable to store platform with name: %s", platform.getName()), ex);
+			throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
+									  String.format("Unable to store platform with name: %s", platform.getName()), 
+									  ex);
 		}
-		finally
+		catch (OpenDcsDataException ex)
 		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to save Platform", ex);
 		}
 	}
 
@@ -550,30 +558,29 @@ public final class PlatformResources extends OpenDcsResource
 	public Response deletePlatform(@Parameter(description = "Platform ID", required = true,
 			schema = @Schema(implementation = Long.class, example = "5"))
 		@QueryParam("platformid") Long platformId)
-			throws DbException, WebAppException
+			throws WebAppException
 	{
 		if (platformId == null)
 		{
 			throw new MissingParameterException("Missing required platformid parameter.");
 		}
 
-		DatabaseIO dbIo = getLegacyDatabase();
-		try
+		var db = createDb();
+		var dao = db.getDao(PlatformDao.class).orElseThrow(() -> NO_PLATFORM_DAO);
+
+		try (var tx = db.newTransaction())
 		{
-			Platform plat = new Platform();
-			plat.setId(DbKey.createDbKey(platformId));
-			dbIo.deletePlatform(plat);
-			return Response.noContent()
-					.entity("Platform with ID " + platformId + " deleted")
-					.build();
+			return tx.wrapErrors(() ->
+			{
+				dao.delete(tx, DbKey.createDbKey(platformId));
+				return Response.noContent()
+						.entity("Platform with ID " + platformId + " deleted")
+						.build();
+			});
 		}
-		catch (DatabaseException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException(String.format("Unable to delete platform with ID: %s", platformId), ex);
-		}
-		finally
-		{
-			dbIo.close();
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to delete Platform", ex);
 		}
 	}
 

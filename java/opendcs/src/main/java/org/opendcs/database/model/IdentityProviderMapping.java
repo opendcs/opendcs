@@ -16,9 +16,9 @@
 package org.opendcs.database.model;
 
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.util.functional.ThrowingFunction;
 
 import decodes.sql.DbKey;
-import opendcs.util.functional.ThrowingFunction;
 
 /**
  * association of this user to an identity provider
@@ -47,7 +47,7 @@ public final class IdentityProviderMapping
 
         public IdentityProviderMapping build(ThrowingFunction<DbKey, IdentityProvider, OpenDcsDataException> providerGetter) throws OpenDcsDataException
         {
-            return new IdentityProviderMapping(providerGetter.accept(provider), subject);
+            return new IdentityProviderMapping(providerGetter.apply(provider), subject);
         }
 
         public Builder withProviderId(DbKey providerId)

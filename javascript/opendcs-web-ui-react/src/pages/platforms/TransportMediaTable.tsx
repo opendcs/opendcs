@@ -74,6 +74,7 @@ export const TransportMediaTable: React.FC<TransportMediaTableProperties> = ({
               key: "delete",
               icon: "bi-trash",
               variant: "danger",
+              confirm: true,
               aria: (row) =>
                 t("platforms:delete_transport_for", { id: row.mediumId ?? "" }),
               onClick: ({ row }) => {

@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.opendcs.util.functional.ThrowingSupplier;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -40,7 +41,6 @@ import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.compedit.AlgorithmInList;
 
 import opendcs.dai.AlgorithmDAI;
-import opendcs.util.functional.ThrowingSupplier;
 
 /**
  * Data Access Object for writing/reading Algorithm objects to/from a SQL database
@@ -367,13 +367,13 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                 {
                     // Delete & re-add parameters
                     q = "DELETE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = ?";
-                    doModify(q, id);
+                    dao.doModify(q, id);
                 }
                 for(Iterator<DbAlgoParm> it = algo.getParms(); it.hasNext(); )
                 {
                     DbAlgoParm dap = it.next();
                     q = "INSERT INTO CP_ALGO_TS_PARM VALUES (?,?,?)";
-                    doModify(q, id, dap.getRoleName(), dap.getParmType());
+                    dao.doModify(q, id, dap.getRoleName(), dap.getParmType());
                 }
 
                 try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
@@ -450,7 +450,7 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                 dao.doModify(q, id);
 
                 q = "delete from CP_ALGORITHM where ALGORITHM_ID = ?";
-                doModify(q, id);
+                dao.doModify(q, id);
             });
         }
         catch(Exception ex)

@@ -485,6 +485,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
         try (DataTransaction tx = this.getTransaction())
         {
             var written = newDao.writeEnum(tx, dbenum);
+            tx.commit();
 			dbenum.forceSetId(written.getId());
             cache.put(written);
         }

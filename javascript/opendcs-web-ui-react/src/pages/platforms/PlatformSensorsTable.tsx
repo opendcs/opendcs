@@ -140,6 +140,7 @@ export const PlatformSensorsTable: React.FC<PlatformSensorsTableProperties> = ({
               key: "clear-override",
               icon: "bi-trash",
               variant: "danger",
+              confirm: true,
               show: (row) => row.platformSensor !== undefined,
               aria: (row) => t("platforms:delete_sensor_for", { id: row.sensorNumber }),
               onClick: ({ row }) => {

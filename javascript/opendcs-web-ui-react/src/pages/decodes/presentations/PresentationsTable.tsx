@@ -87,6 +87,7 @@ export const PresentationsTable: React.FC<PresentationsTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.groupId ?? 0) > 0,
         aria: (row) => t("presentations:delete_for", { id: row.groupId }),
         onClick: ({ row }) => {
