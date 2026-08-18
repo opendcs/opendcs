@@ -13,7 +13,6 @@ import jakarta.ws.rs.ext.Provider;
 import lrgs.apistatus.AttachedProcess;
 import lrgs.archive.XmlMsgArchive;
 import lrgs.common.DcpAddress;
-import lrgs.common.DcpNameMapper;
 import lrgs.ddsserver.MessageArchiveRetriever;
 import lrgs.lrgsmain.LrgsMain;
 
@@ -32,6 +31,13 @@ public class DdsSessionFilter implements ContainerRequestFilter
         if (session == null)
         {
             session = request.getSession();
+            // Shorter timeout than default. To converse resources drop sessions
+            // quickly if not used. At least if not an authenticated user.
+            var user = request.getUserPrincipal();
+            if (user == null || "guest".equalsIgnoreCase(user.getName()) || "anonymous".equalsIgnoreCase((user.getName())))
+            {
+                session.setMaxInactiveInterval(300);
+            }
             var lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
             if (lrgs != null)
             {
