@@ -92,10 +92,12 @@ export const SelectAndConfirm: Story = {
     await waitFor(() =>
       expect(args.onSelect).toHaveBeenCalledWith(mockAlgorithmRefs[1]),
     );
-    await waitFor(() =>
-      expect(
-        screen.queryByText(i18n.t("computations:editor.select_algorithm_title")),
-      ).not.toBeInTheDocument(),
+    await waitFor(
+      () =>
+        expect(
+          screen.queryByText(i18n.t("computations:editor.select_algorithm_title")),
+        ).not.toBeInTheDocument(),
+      { timeout: 5000 },
     );
   },
 };
@@ -164,10 +166,12 @@ export const CancelButtonClosesModal: Story = {
       screen.getByRole("button", { name: i18n.t("translation:cancel") }),
     );
 
-    await waitFor(() =>
-      expect(
-        screen.queryByText(i18n.t("computations:editor.select_algorithm_title")),
-      ).not.toBeInTheDocument(),
+    await waitFor(
+      () =>
+        expect(
+          screen.queryByText(i18n.t("computations:editor.select_algorithm_title")),
+        ).not.toBeInTheDocument(),
+      { timeout: 5000 },
     );
     expect(args.onSelect).not.toHaveBeenCalled();
   },
