@@ -1,0 +1,23 @@
+
+select(where, limit, office_columns) ::= <<
+with user_cte (id, preferences, email, created_at, updated_at) as (
+    select id, preferences, email, created_at, updated_at
+      from opendcs_user 
+      <if(where)> <where> <endif>
+      order by email asc 
+      <if(limit)> <limit> <endif>
+)
+select u.id u_id, u.preferences u_preferences, u.email u_email,
+    u.created_at u_created_at, u.updated_at u_updated_at,
+    ur.office_code r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
+    uip.identity_provider_id i_id, uip.subject i_subject,
+    idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config,
+    <office_columns>
+from user_cte u
+left join user_roles ur on ur.user_id = u.id
+left join opendcs_role r on r.id = ur.role_id
+left join user_identity_provider uip on uip.user_id = u.id
+left join identity_provider idp on idp.id = uip.identity_provider_id
+left join cwms_v_office ofc on ofc.office_code = ur.office_code
+order by u.email asc
+>>

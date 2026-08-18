@@ -4,12 +4,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.PreparedBatch;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
+import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.cwms.data.CwmsOffice;
 import org.opendcs.data.Organization;
@@ -32,6 +32,7 @@ import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
+import org.stringtemplate.v4.STGroup;
 
 import decodes.sql.DbKey;
 
@@ -56,38 +57,28 @@ public class CwmsUsersDaoImpl implements UsersDao
         }
     };
 
+    private static final String SELECT = "select";
+
     @InjectDao
     RolesDao rolesDao;
+
+
+    private final STGroup queries;
+
+    public CwmsUsersDaoImpl()
+    {
+        queries = StringTemplateSqlLocator.findStringTemplateGroup(CwmsUsersDaoImpl.class);
+    }
 
     @Override
     public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        final String userSelect = """
-            with user_cte (id, preferences, email, created_at, updated_at) as
-                (select id, preferences, email, created_at, updated_at
-                 from opendcs_user order by email asc
-            """ +
-            addLimitOffset(limit, offset) +
-            """
-                )
-            select u.id u_id, u.preferences u_preferences, u.email u_email,
-                u.created_at u_created_at, u.updated_at u_updated_at,
-                ur.office_code r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
-                uip.identity_provider_id i_id, uip.subject i_subject,
-                idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
-            """ + officeBuilderMapper.columnsForSelect() +
-            """
-            from user_cte u
-            left join user_roles ur on ur.user_id = u.id
-            left join opendcs_role r on r.id = ur.role_id
-            left join user_identity_provider uip on uip.user_id = u.id
-            left join identity_provider idp on idp.id = uip.identity_provider_id
-            left join cwms_v_office ofc on ofc.office_code = ur.office_code
-            order by u.email asc
-            """;
+        var selectTemplate = queries.getInstanceOf(SELECT);
+        selectTemplate.add("limit", addLimitOffset(limit, offset))
+                      .add("office_columns", officeBuilderMapper.columnsForSelect());
 
-        try (var q = handle.createQuery(userSelect))
+        try (var q = handle.createQuery(selectTemplate.render()))
         {
             if (limit != -1)
             {
@@ -179,27 +170,12 @@ public class CwmsUsersDaoImpl implements UsersDao
     public Optional<User> getUser(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
+        var selectTemplate = queries.getInstanceOf(SELECT);
+        selectTemplate.add("where", " where id = :id")
+                      .add("office_columns", officeBuilderMapper.columnsForSelect());
+        
 
-        try (var user = handle.createQuery(
-            """
-              select u.id u_id, u.preferences u_preferences, u.email u_email,
-                   u.created_at u_created_at, u.updated_at u_updated_at,
-                   ur.office_code r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
-                   uip.identity_provider_id i_id, uip.subject i_subject,
-                   idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config,
-            """ +
-            officeBuilderMapper.columnsForSelect() +
-            """
-
-              from opendcs_user u
-              left join user_roles ur on ur.user_id = u.id
-              left join opendcs_role r on r.id = ur.role_id
-              left join user_identity_provider uip on uip.user_id = u.id
-              left join identity_provider idp on idp.id = uip.identity_provider_id
-              left join cwms_v_office ofc on ofc.office_code = ur.office_code
-              where u.id = :id
-            """
-            ))
+        try (var user = handle.createQuery(selectTemplate.render()))
         {
              return user.bind(GenericColumns.ID.column(), id)
               .registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
