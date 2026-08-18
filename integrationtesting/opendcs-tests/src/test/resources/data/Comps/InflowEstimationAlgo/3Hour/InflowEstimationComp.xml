@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="InflowEstimationAlgo">
+    <Comment>
+      Reservoir Inflow calculation based on an algorithm developed by NWP,
+      Which utilizes storage change, releases, and additional outflows to calculate release
+      based on the output time series duration.
+    </Comment>
+    <ExecClass>decodes.cwms.algo.InflowEstimationAlgo</ExecClass>
+    <AlgoProperty name="stagePoolStorageRating"></AlgoProperty>
+    <AlgoProperty name="tailwaterToReleaseRating"></AlgoProperty>
+    <AlgoParm roleName="tailwaterStage">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="storageVolume">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="poolStage">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="releaseFlow">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="additionalOutflow1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="additionalOutflow2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="additionalOutflow3">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="additionalOutflow4">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="additionalOutflow5">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="additionalOutflow6">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="inflow">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="3HourInflowEstimationAlgo">
+    <Comment></Comment>
+    <Enabled>false</Enabled>
+    <AlgorithmName>InflowEstimationAlgo</AlgorithmName>
+    <LastModified>2025-08-15 15:15:19 PDT</LastModified>
+    <ValidStart>2024-01-03 00:15:00 UTC</ValidStart>
+    <ValidEnd>2024-01-05 00:00:00 UTC</ValidEnd>
+    <CompProperty name="additionalOutflow1_MISSING">IGNORE</CompProperty>
+    <CompProperty name="releaseFlow_MISSING">IGNORE</CompProperty>
+    <CompProperty name="storageVolume_MISSING">IGNORE</CompProperty>
+    <CompParm roleName="additionalOutflow1">
+      <SiteDataType>
+        <SiteName NameType="CWMS">BLU</SiteName>
+        <DataType Standard="CWMS" code="Flow-Evap"/>
+      </SiteDataType>
+      <Interval>0</Interval>
+      <TableSelector>Inst.0.MIXED-COMPUTED-REV</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="releaseFlow">
+      <SiteDataType>
+        <SiteName NameType="CWMS">BLU</SiteName>
+        <DataType Standard="CWMS" code="Flow-Out"/>
+      </SiteDataType>
+      <Interval>0</Interval>
+      <TableSelector>Inst.0.MIXED-COMPUTED-REV</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="storageVolume">
+      <SiteDataType>
+        <SiteName NameType="CWMS">BLU</SiteName>
+        <DataType Standard="cwms" code="Stor"/>
+      </SiteDataType>
+      <Interval>0</Interval>
+      <TableSelector>Inst.0.MIXED-COMPUTED-REV</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="inflow">
+      <SiteDataType>
+        <SiteName NameType="CWMS">BLU</SiteName>
+        <DataType Standard="CWMS" code="Flow-In"/>
+      </SiteDataType>
+      <Interval>15Minutes</Interval>
+      <TableSelector>Ave.3Hours.MIXED-COMPUTED-REV</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>
