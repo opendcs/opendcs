@@ -27,7 +27,6 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import opendcs.dai.LoadingAppDAI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -369,11 +368,11 @@ final class AppResourcesIT extends BaseApiIT
 				var lock = dao.obtainLock(tx, compAppInfo, pid, host);
 				if (lock.isSuccess())
 				{
-					return lock.getSuccess();
+					return lock.success();
 				}
 				else
 				{
-					throw lock.getFailure();
+					throw lock.failure();
 				}
 			}
 		}
