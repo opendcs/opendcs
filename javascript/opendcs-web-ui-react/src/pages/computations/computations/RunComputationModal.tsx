@@ -13,7 +13,12 @@ import {
   Table,
 } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { PlayFill, StopFill } from "react-bootstrap-icons";
+import {
+  BoxArrowInDownLeft,
+  BoxArrowUpRight,
+  PlayFill,
+  StopFill,
+} from "react-bootstrap-icons";
 import {
   HttpMethod,
   TimeSeriesMethodsApi,
@@ -180,6 +185,33 @@ const readSseStream = async (
   return hadError;
 };
 
+interface TraceLogProps {
+  logs: LogEntry[];
+  endRef: React.RefObject<HTMLDivElement | null>;
+  label: string;
+  maxHeight: string;
+}
+
+/** Scrolling trace of the run's server-sent log output. */
+const TraceLog: React.FC<TraceLogProps> = ({ logs, endRef, label, maxHeight }) => (
+  <div
+    className="border rounded p-2 bg-dark text-light font-monospace"
+    style={{ maxHeight, overflowY: "auto", fontSize: "0.8rem" }}
+    aria-label={label}
+    aria-live="polite"
+  >
+    {logs.map((entry) => (
+      <div
+        key={entry.id}
+        className={entry.header ? "text-warning fw-bold mt-1" : undefined}
+      >
+        {entry.text}
+      </div>
+    ))}
+    <div ref={endRef} />
+  </div>
+);
+
 interface ResultsSectionProps {
   runs: RunRun[];
   isGroup: boolean;
@@ -312,6 +344,10 @@ export const RunComputationModal: React.FC<Props> = ({
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [runs, setRuns] = useState<RunRun[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // When detached the trace renders in its own window instead of inside the
+  // run dialog, so a long trace no longer pushes the time range and results
+  // out of view.
+  const [logDetached, setLogDetached] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const isGroup = groupId !== undefined;
@@ -542,6 +578,7 @@ export const RunComputationModal: React.FC<Props> = ({
     setStartValue(defaultStart());
     setEndValue(defaultEnd());
     setExcludedKeys(new Set());
+    setLogDetached(false);
     onHide();
   }, [onHide]);
 
@@ -578,184 +615,244 @@ export const RunComputationModal: React.FC<Props> = ({
     (!isGroup || selectedKeys.size > 0);
 
   return (
-    <Modal show={show} onHide={handleHide} size={hasValues ? "xl" : "lg"}>
-      <Modal.Header closeButton>
-        <Modal.Title>
-          {t("computations:run.title", { name: computationName ?? computationId })}
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {/* Group input selection */}
-        {isGroup && (
-          <div className="mb-3">
-            <div className="d-flex align-items-center justify-content-between mb-1">
-              <Form.Label className="mb-0 fw-semibold">
-                {t("computations:run.group_select_label")}
-              </Form.Label>
+    <>
+      <Modal show={show} onHide={handleHide} size={hasValues ? "xl" : "lg"}>
+        <Modal.Header closeButton>
+          <Modal.Title className="h5 mb-0">
+            {t("computations:run.title")}
+            <div className="text-muted fw-normal" style={{ fontSize: "0.85rem" }}>
+              {computationName ?? computationId}
+            </div>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {/* Group input selection */}
+          {isGroup && (
+            <div className="mb-3">
+              <div className="d-flex align-items-center justify-content-between mb-1">
+                <Form.Label className="mb-0 fw-semibold">
+                  {t("computations:run.group_select_label")}
+                </Form.Label>
+                {!loadingGroup && groupTsIds.length > 0 && (
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="p-0"
+                      onClick={selectAll}
+                    >
+                      {t("computations:run.group_select_all")}
+                    </Button>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="p-0"
+                      onClick={selectNone}
+                    >
+                      {t("computations:run.group_select_none")}
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {loadingGroup && (
+                <div className="d-flex align-items-center gap-2 text-muted">
+                  <Spinner size="sm" animation="border" />
+                  <span>{t("computations:run.group_loading")}</span>
+                </div>
+              )}
+              {groupError && (
+                <Alert variant="warning">
+                  {t("computations:run.group_load_error")}: {groupError}
+                </Alert>
+              )}
+              {!loadingGroup && groupTsIds.length === 0 && !groupError && (
+                <p className="text-muted mb-0" style={{ fontSize: "0.875rem" }}>
+                  {t("computations:run.group_empty")}
+                </p>
+              )}
               {!loadingGroup && groupTsIds.length > 0 && (
-                <div className="d-flex gap-2">
-                  <Button variant="link" size="sm" className="p-0" onClick={selectAll}>
-                    {t("computations:run.group_select_all")}
-                  </Button>
-                  <Button variant="link" size="sm" className="p-0" onClick={selectNone}>
-                    {t("computations:run.group_select_none")}
-                  </Button>
+                <div
+                  className="border rounded p-2"
+                  style={{ maxHeight: "10rem", overflowY: "auto" }}
+                >
+                  {groupTsIds.map((ts) => {
+                    const key = ts.key ?? -1;
+                    return (
+                      <FormCheck
+                        key={key}
+                        id={`group-ts-${key}`}
+                        type="checkbox"
+                        label={ts.uniqueString ?? String(key)}
+                        checked={selectedKeys.has(key)}
+                        onChange={() => toggleKey(key)}
+                        disabled={running}
+                        className="font-monospace"
+                        style={{ fontSize: "0.85rem" }}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>
-            {loadingGroup && (
-              <div className="d-flex align-items-center gap-2 text-muted">
-                <Spinner size="sm" animation="border" />
-                <span>{t("computations:run.group_loading")}</span>
+          )}
+
+          <Row className="mb-3 g-3">
+            <Col sm={6}>
+              <FormGroup>
+                <Form.Label htmlFor="run-start">
+                  {t("computations:run.start")}
+                </Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  id="run-start"
+                  value={startValue}
+                  disabled={running}
+                  onChange={(e) => setStartValue(e.target.value)}
+                />
+              </FormGroup>
+            </Col>
+            <Col sm={6}>
+              <FormGroup>
+                <Form.Label htmlFor="run-end">{t("computations:run.end")}</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  id="run-end"
+                  value={endValue}
+                  disabled={running}
+                  onChange={(e) => setEndValue(e.target.value)}
+                />
+              </FormGroup>
+            </Col>
+          </Row>
+
+          {logs.length > 0 && (
+            <div className="mb-3">
+              <div className="d-flex align-items-center justify-content-between mb-1">
+                <span className="fw-semibold">{t("computations:run.log_label")}</span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="p-0"
+                  onClick={() => setLogDetached((prev) => !prev)}
+                >
+                  {logDetached ? (
+                    <>
+                      <BoxArrowInDownLeft /> {t("computations:run.log_dock")}
+                    </>
+                  ) : (
+                    <>
+                      <BoxArrowUpRight /> {t("computations:run.log_popout")}
+                    </>
+                  )}
+                </Button>
               </div>
-            )}
-            {groupError && (
-              <Alert variant="warning">
-                {t("computations:run.group_load_error")}: {groupError}
-              </Alert>
-            )}
-            {!loadingGroup && groupTsIds.length === 0 && !groupError && (
-              <p className="text-muted mb-0" style={{ fontSize: "0.875rem" }}>
-                {t("computations:run.group_empty")}
-              </p>
-            )}
-            {!loadingGroup && groupTsIds.length > 0 && (
-              <div
-                className="border rounded p-2"
-                style={{ maxHeight: "10rem", overflowY: "auto" }}
-              >
-                {groupTsIds.map((ts) => {
-                  const key = ts.key ?? -1;
-                  return (
-                    <FormCheck
-                      key={key}
-                      id={`group-ts-${key}`}
-                      type="checkbox"
-                      label={ts.uniqueString ?? String(key)}
-                      checked={selectedKeys.has(key)}
-                      onChange={() => toggleKey(key)}
-                      disabled={running}
-                      className="font-monospace"
-                      style={{ fontSize: "0.85rem" }}
-                    />
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+              {logDetached ? (
+                <p className="text-muted mb-0" style={{ fontSize: "0.875rem" }}>
+                  {t("computations:run.log_detached")}
+                </p>
+              ) : (
+                <TraceLog
+                  logs={logs}
+                  endRef={logsEndRef}
+                  label={t("computations:run.log_label")}
+                  maxHeight="10rem"
+                />
+              )}
+            </div>
+          )}
 
-        <Row className="mb-3 g-3">
-          <Col sm={6}>
-            <FormGroup>
-              <Form.Label htmlFor="run-start">{t("computations:run.start")}</Form.Label>
-              <Form.Control
-                type="datetime-local"
-                id="run-start"
-                value={startValue}
-                disabled={running}
-                onChange={(e) => setStartValue(e.target.value)}
-              />
-            </FormGroup>
-          </Col>
-          <Col sm={6}>
-            <FormGroup>
-              <Form.Label htmlFor="run-end">{t("computations:run.end")}</Form.Label>
-              <Form.Control
-                type="datetime-local"
-                id="run-end"
-                value={endValue}
-                disabled={running}
-                onChange={(e) => setEndValue(e.target.value)}
-              />
-            </FormGroup>
-          </Col>
-        </Row>
+          {status === "error" && errorMsg && (
+            <Alert
+              variant="danger"
+              style={{
+                maxHeight: "16rem",
+                overflowY: "auto",
+                overflowWrap: "anywhere",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {errorMsg}
+            </Alert>
+          )}
 
-        {logs.length > 0 && (
-          <div
-            className="border rounded p-2 mb-3 bg-dark text-light font-monospace"
-            style={{ maxHeight: "10rem", overflowY: "auto", fontSize: "0.8rem" }}
-            aria-label={t("computations:run.log_label")}
-            aria-live="polite"
-          >
-            {logs.map((entry) => (
-              <div
-                key={entry.id}
-                className={entry.header ? "text-warning fw-bold mt-1" : undefined}
-              >
-                {entry.text}
-              </div>
-            ))}
-            <div ref={logsEndRef} />
-          </div>
-        )}
+          {status === "fetching" && (
+            <div className="d-flex align-items-center gap-2 text-muted mb-3">
+              <Spinner size="sm" animation="border" />
+              <span>{t("computations:run.fetching_data")}</span>
+            </div>
+          )}
 
-        {status === "error" && errorMsg && (
-          <Alert
-            variant="danger"
-            style={{
-              maxHeight: "16rem",
-              overflowY: "auto",
-              overflowWrap: "anywhere",
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            {errorMsg}
-          </Alert>
-        )}
+          {hasAnyResults && (
+            <div className="mt-2">
+              <strong>{t("computations:run.results_title")}</strong>
+              <ResultsSection runs={runs} isGroup={isGroup} status={status} t={t} />
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          {running && (
+            <Spinner
+              size="sm"
+              animation="border"
+              className="me-2"
+              aria-label={
+                status === "fetching"
+                  ? t("computations:run.fetching_data")
+                  : t("computations:run.running")
+              }
+            />
+          )}
+          {!running && (
+            <Button variant="secondary" onClick={handleHide}>
+              {t("translation:cancel")}
+            </Button>
+          )}
+          {running ? (
+            <Button
+              variant="warning"
+              onClick={handleStop}
+              aria-label={t("computations:run.stop")}
+              disabled={status === "fetching"}
+            >
+              <StopFill /> {t("computations:run.stop")}
+            </Button>
+          ) : (
+            <Button
+              variant="success"
+              onClick={handleRun}
+              disabled={!canRun}
+              aria-label={t("computations:run.run")}
+            >
+              <PlayFill /> {t("computations:run.run")}
+            </Button>
+          )}
+        </Modal.Footer>
+      </Modal>
 
-        {status === "fetching" && (
-          <div className="d-flex align-items-center gap-2 text-muted mb-3">
-            <Spinner size="sm" animation="border" />
-            <span>{t("computations:run.fetching_data")}</span>
-          </div>
-        )}
-
-        {hasAnyResults && (
-          <div className="mt-2">
-            <strong>{t("computations:run.results_title")}</strong>
-            <ResultsSection runs={runs} isGroup={isGroup} status={status} t={t} />
-          </div>
-        )}
-      </Modal.Body>
-      <Modal.Footer>
-        {running && (
-          <Spinner
-            size="sm"
-            animation="border"
-            className="me-2"
-            aria-label={
-              status === "fetching"
-                ? t("computations:run.fetching_data")
-                : t("computations:run.running")
-            }
+      {/* Popped-out trace: a separate window so the run dialog stays usable. */}
+      <Modal
+        show={show && logDetached && logs.length > 0}
+        onHide={() => setLogDetached(false)}
+        className="run-trace-window"
+        dialogClassName="run-trace-window-dialog"
+        backdrop={false}
+        enforceFocus={false}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="h5 mb-0">
+            {t("computations:run.log_label")}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <TraceLog
+            logs={logs}
+            endRef={logsEndRef}
+            label={t("computations:run.log_label")}
+            maxHeight="60vh"
           />
-        )}
-        <Button variant="secondary" onClick={handleHide}>
-          {t("translation:cancel")}
-        </Button>
-        {running ? (
-          <Button
-            variant="warning"
-            onClick={handleStop}
-            aria-label={t("computations:run.stop")}
-            disabled={status === "fetching"}
-          >
-            <StopFill /> {t("computations:run.stop")}
-          </Button>
-        ) : (
-          <Button
-            variant="success"
-            onClick={handleRun}
-            disabled={!canRun}
-            aria-label={t("computations:run.run")}
-          >
-            <PlayFill /> {t("computations:run.run")}
-          </Button>
-        )}
-      </Modal.Footer>
-    </Modal>
+        </Modal.Body>
+      </Modal>
+    </>
   );
 };
 
