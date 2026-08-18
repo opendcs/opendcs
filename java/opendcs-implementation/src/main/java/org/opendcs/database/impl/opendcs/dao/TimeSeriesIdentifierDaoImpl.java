@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.annotations.api.InjectOperations;
 import org.opendcs.database.api.DataTransaction;
@@ -19,6 +20,7 @@ import org.opendcs.database.dai.IntervalDurationDao;
 import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.dai.TimeSeriesIdentifierDao;
+import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierMapper.Columns;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierReducer;
@@ -35,6 +37,7 @@ import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
 import org.slf4j.Logger;
+import org.stringtemplate.v4.STGroup;
 
 import decodes.cwms.CwmsTsId;
 import decodes.db.DataType;
@@ -60,6 +63,9 @@ import opendcs.opentsdb.StorageTableSpec;
 public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+    private static final String SELECT = "select";
+
     @InjectDao
     SiteDao siteDao;
 
@@ -78,74 +84,54 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     @InjectOperations
     TimeSeriesOperations timeSeriesOps;
 
-    @SuppressWarnings("java:S1213")
-    private static final String TIMESERIES_IDENTIFIER_QUERY = """
-        with time_series_identifier_limit(
-                id, unique_string, site_name, data_type_standard, data_type_code, interval, duration, ts_version, active_flag,
-                storage_units, storage_table, storage_type, modify_time, description, utc_offset, allow_dst_offset_variation, offset_error_action,
-                datatype_id, site_id, interval_id, duration_id
-            ) as (
-            select id, unique_string, site_name, data_type_standard, data_type_code, interval, duration, ts_version, active_flag,
-                storage_units, storage_table, storage_type, modify_time, description, utc_offset, allow_dst_offset_variation, offset_error_action,
-                datatype_id, site_id, interval_id, duration_id
-            from time_series_identifier
-            <where>
-            order by unique_string <collate> asc
-            <limit>
-        )
-        select
-            tsi.id tsi_id, tsi.ts_version tsi_version, tsi.site_name tsi_site_name, tsi.unique_string tsi_unique_string, tsi.interval tsi_interval, tsi.duration tsi_duration,
-            tsi.active_flag tsi_active_flag, tsi.storage_units tsi_storage_units, tsi.storage_table tsi_storage_table, tsi.storage_type tsi_storage_type,
-            tsi.modify_time tsi_modify_time, tsi.description tsi_description, tsi.utc_offset tsi_utc_offset, tsi.allow_dst_offset_variation tsi_allow_dst_offset_variation,
-            tsi.offset_error_action tsi_offset_error_action,
+    private final STGroup queries;
 
-            dt.id dt_id, dt.standard dt_standard, dt.code dt_code, dt.display_name dt_display_name,
+    private final Mappers mappers = new Mappers(
+                        OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"),
+                        DataTypeMapper.withPrefix("dt"),
+                        OpenDcsSiteMapper.withPrefix("s"),
+                        OpenDcsSiteNameMapper.withPrefix("sn"));
 
-            <site_columns>,
-            <site_name_columns>,
-            ic.interval_id ic_interval_id, ic.name ic_name, ic.cal_constant ic_cal_constant, ic.cal_multiplier ic_cal_multiplier,
-            dc.interval_id dc_interval_id, dc.name dc_name, dc.cal_constant dc_cal_constant, dc.cal_multiplier dc_cal_multiplier,
-
-            tsi.site_id tsi_site_id, tsi.interval_id tsi_interval_id, tsi.duration_id tsi_duration_id
-
-        from time_series_identifier_limit tsi
-        join datatype dt on dt.id = tsi.datatype_id
-        join site on site.id = tsi.site_id
-        join sitename sn on sn.siteid = tsi.site_id
-        join interval_code ic on ic.interval_id = tsi.interval_id
-        join interval_code dc on dc.interval_id = tsi.duration_id
-
-        order by tsi.unique_string <collate> asc
-        """;
+    public TimeSeriesIdentifierDaoImpl()
+    {
+        STGroup.verbose = true;
+        queries = StringTemplateSqlLocator.findStringTemplateGroup(TimeSeriesIdentifierDaoImpl.class);
+    }
 
     @Override
     public Result<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx,
             String uniqueString)
     {
-        // extract the display name, if it was used.
         final var identifier = extractDisplayName(uniqueString);
-
+        return findBy(tx, " where unique_string = :unique_string", "unique_string", identifier.first);
+    }
+    
+    public Result<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, String whereClause, String whereBind, Object bindVal)
+    {
         try
         {
             var handle = tx.connection(Handle.class)
                            .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
             var dbEngine = tx.getContext().getDatabaseEngine();
+            var selectTemplate = queries.getInstanceOf(SELECT);
 
+            var selectQuery = selectTemplate.add(LIMIT_CLAUSE, "")
+                                            .add(WHERE_CLAUSE, whereClause)
+                                            .add(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                                            .add(OpenDcsSiteDaoImpl.SITE_COLUMN_KEY, mappers.siteMapper.columnsForSelect())
+                                            .add(OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS_KEY, mappers.siteNameMapper.columnsForSelect())
+                                            ;
 
-            try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
-                                   .define(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                                   .define(OpenDcsSiteDaoImpl.SITE_COLUMN_KEY, OpenDcsSiteDaoImpl.SITE_COLUMNS)
-                                   .define(OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS_KEY, OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
-                                   .define(WHERE_CLAUSE, " where unique_string = :unique_string ")
-                                   .define(LIMIT_CLAUSE, ""))
+            try (var query = handle.createQuery(selectQuery.render()))
             {
+                query.setSqlLogger(new DetailSqlLogger(log));
                 return Result.success(
-                    query.bind("unique_string",  identifier.first)
-                         .registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
-                         .registerRowMapper(DataTypeMapper.withPrefix("dt"))
-                         .registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
-                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
-                         .reduceRows(new OpenDcsTimeSeriesIdentifierReducer("tsi"))
+                    query.bind(whereBind,  bindVal)
+                         .registerRowMapper(mappers.tsiMapper)
+                         .registerRowMapper(mappers.dtMapper)
+                         .registerRowMapper(mappers.siteMapper)
+                         .registerRowMapper(mappers.siteNameMapper)
+                         .reduceRows(new OpenDcsTimeSeriesIdentifierReducer(mappers))
                          .map(tsi -> tsi)
                          .findFirst());
             }
@@ -163,35 +149,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         {
             return Result.failure(new OpenDcsDataException("Cannot lookup by null DbKey value."));
         }
-        try
-        {
-            var handle = tx.connection(Handle.class)
-                           .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-            var dbEngine = tx.getContext().getDatabaseEngine();
-
-
-            try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
-                                   .define(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                                   .define(OpenDcsSiteDaoImpl.SITE_COLUMN_KEY, OpenDcsSiteDaoImpl.SITE_COLUMNS)
-                                   .define(OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS_KEY, OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
-                                   .define(WHERE_CLAUSE, " where id = :id ")
-                                   .define(LIMIT_CLAUSE, ""))
-            {
-                return Result.success(
-                    query.bind(GenericColumns.ID.column(),  key)
-                         .registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
-                         .registerRowMapper(DataTypeMapper.withPrefix("dt"))
-                         .registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
-                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
-                         .reduceRows(new OpenDcsTimeSeriesIdentifierReducer("tsi"))
-                         .map(tsi -> tsi)
-                         .findFirst());
-            }
-        }
-        catch (OpenDcsDataException ex)
-        {
-            return Result.failure(ex);
-        }
+        return findBy(tx, " where id = :id", "id", key);
     }
 
     @Override
@@ -487,14 +445,15 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         var handle = tx.connection(Handle.class)
                         .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var dbEngine = tx.getContext().getDatabaseEngine();
+        var selectTemplate = queries.getInstanceOf(SELECT);
+        var selectQuery = selectTemplate.add(LIMIT_CLAUSE, addLimitOffset(limit, offset))
+                                            .add(WHERE_CLAUSE, "")
+                                            .add(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                                            .add(OpenDcsSiteDaoImpl.SITE_COLUMN_KEY, OpenDcsSiteDaoImpl.SITE_COLUMNS)
+                                            .add(OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS_KEY, OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
+                                            ;
 
-
-        try (var query = handle.createQuery(TIMESERIES_IDENTIFIER_QUERY)
-                                .define(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                                .define("site_columns", OpenDcsSiteDaoImpl.SITE_COLUMNS)
-                                .define("site_name_columns", OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
-                                .define(WHERE_CLAUSE, "")
-                                .define(LIMIT_CLAUSE, addLimitOffset(limit, offset)))
+        try (var query = handle.createQuery(selectQuery.render()))
         {
             if (limit > -1)
             {
@@ -506,13 +465,13 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                 query.bind(SqlKeywords.OFFSET, offset);
             }
             return
-                query.registerRowMapper(OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"))
-                        .registerRowMapper(DataTypeMapper.withPrefix("dt"))
-                        .registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
-                        .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
-                        .reduceRows(new OpenDcsTimeSeriesIdentifierReducer("tsi"))
-                        .map(tsi -> tsi)
-                        .toList();
+                query.registerRowMapper(mappers.tsiMapper)
+                     .registerRowMapper(mappers.dtMapper)
+                     .registerRowMapper(mappers.siteMapper)
+                     .registerRowMapper(mappers.siteNameMapper)
+                     .reduceRows(new OpenDcsTimeSeriesIdentifierReducer(mappers))
+                     .map(tsi -> tsi)
+                     .toList();
         }
 
     }
@@ -543,5 +502,10 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         {
             return Optional.empty();
         }
+    }
+
+    public record Mappers(OpenDcsTimeSeriesIdentifierMapper tsiMapper, DataTypeMapper dtMapper,
+                          OpenDcsSiteMapper siteMapper, OpenDcsSiteNameMapper siteNameMapper)
+    {
     }
 }
