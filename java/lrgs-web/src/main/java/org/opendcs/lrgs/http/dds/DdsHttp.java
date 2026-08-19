@@ -101,8 +101,8 @@ public class DdsHttp
         var session = request.getSession(false);
         try
         {
-
-            var mar = (MessageArchiveRetriever)session.getAttribute(UseDdsSession.KEY);
+            var ddsSession = (DdsSession)session.getAttribute(UseDdsSession.KEY);
+            var mar = ddsSession.msgRetriever();
             final var sc = new SearchCriteria();
             sc.clear();
             sc.DcpNames.addAll(dcpNames);
@@ -111,7 +111,14 @@ public class DdsHttp
             sc.single = single;
             sc.setLrgsUntil(until);
             sc.setLrgsSince(since);
-            sc.spacecraft = spaceCraft.toChar();
+            if (spaceCraft != null)
+            {
+                sc.spacecraft = spaceCraft.toChar();
+            }
+            else
+            {
+                sc.spacecraft = SpaceCraft.ALL.toChar();
+            }
             mar.setSearchCriteria(sc);
             sources.forEach(
                 s -> lrgs.getInputs()

@@ -3,8 +3,6 @@ package org.opendcs.lrgs.http.dds;
 import java.io.IOException;
 
 import org.opendcs.lrgs.dds.DdsSession;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.slf4j.Logger;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,8 +22,6 @@ import lrgs.lrgsmain.LrgsMain;
 @UseDdsSession
 public class DdsSessionFilter implements ContainerRequestFilter
 {
-    private static final Logger log = OpenDcsLoggerFactory.getLogger();
-
     @Context
     ServletContext servletContext;
 
@@ -38,7 +34,6 @@ public class DdsSessionFilter implements ContainerRequestFilter
         var session = httpRequest.getSession(false);
         if (session == null)
         {
-            log.info("Setting up a new http session with short timeout.");
             session = httpRequest.getSession();
             // Shorter timeout than default. To converse resources drop sessions
             // quickly if not used. At least if not an authenticated user.
@@ -55,7 +50,6 @@ public class DdsSessionFilter implements ContainerRequestFilter
         var ddsSession = (DdsSession)session.getAttribute(UseDdsSession.KEY);
         if (ddsSession == null) // Session may have already been setup by going to a different endpoint.
         {
-            log.info("No existing DDS session, setting one up.");
             var lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
             if (lrgs != null)
             {
@@ -70,10 +64,6 @@ public class DdsSessionFilter implements ContainerRequestFilter
                     throw new IOException("Unable to initialize Message Archive Retrieval instance for this session.", ex);
                 }
             }
-        }
-        else
-        {
-            log.info("Using existing session: {}", session.getId());
         }
     }
     

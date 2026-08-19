@@ -1,6 +1,8 @@
 package org.opendcs.lrgs.dds;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
@@ -52,6 +54,7 @@ final class DdsHttpTest
                                                .findFirst()
                                                .orElseThrow();
         port = lrgsInput.getPort();
+        RestAssured.baseURI = "http://127.0.0.1:" + port;
 
         final String msgData = "Test String.";
         final DcpMsg msgIn = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER, msgData.getBytes(StandardCharsets.UTF_8),msgData.length(),0);
@@ -73,41 +76,56 @@ final class DdsHttpTest
     @Test
     void test_next(LrgsTestInstance lrgs) throws Exception
     {
-        RestAssured.baseURI = "http://127.0.0.1:" + port;
+        
         final AtomicReference<Cookies> session = new AtomicReference<>(null);
         assertResultWithinTimeFrame(value ->
         {
             var request =
                 given()
-                    .log().all() //ifValidationFails(LogDetail.ALL, true)
-                    ;
-            System.out.println("Cookies (stored)=" + session.get());
+                    .log().ifValidationFails(LogDetail.ALL, true);
+
             if (session.get() != null)
             {
                 request.cookies(session.get());
             }
-            System.out.println(request.toString());
+
             var ret = request
                 .when()
                     .redirects().follow(true)
                     .redirects().max(3)
                     .get("dds/data/next")
                 .then()
-                    .log().all() //ifValidationFails(LogDetail.ALL, true)
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                .using()
+                    .statusCode(is(oneOf(Response.Status.OK.getStatusCode(), Response.Status.NO_CONTENT.getStatusCode())))
                 .extract()
                 ;
             if (session.get() == null)
             {
                 session.set(ret.detailedCookies());
             }
-            System.out.println("response: " + ret.statusCode() + " " + ret.statusLine());
-            System.out.println(ret.asPrettyString());
-            System.out.println("Message count = " + lrgs.getArchive().getTotalMessageCount());
-            System.out.println("Cookies: " + ret.cookies());
             return ret.statusCode() == Response.Status.OK.getStatusCode();
         },
         3, TimeUnit.MINUTES,
         10, TimeUnit.SECONDS,
         "No Data returned within reasonable time frame");
+    }
+
+    @Test
+    void test_query(LrgsTestInstance lrgs)
+    {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam("dcpAddress", "[TEST]")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("dds/data/query")
+            
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(Response.Status.OK.getStatusCode()))
+        ;
     }
 }
