@@ -15,6 +15,7 @@
 
 package org.opendcs.odcsapi.res;
 
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -26,13 +27,19 @@ import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DbCompParm;
+import decodes.tsdb.DbComputation;
 import decodes.tsdb.IntervalCodes;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
+import opendcs.dai.ComputationDAI;
+import opendcs.dai.TimeSeriesDAI;
 import opendcs.opentsdb.Interval;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.opendcs.odcsapi.beans.ApiInterval;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
@@ -44,6 +51,10 @@ import org.opendcs.odcsapi.beans.ApiTsGroupRef;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.idMap;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.map;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.mapRef;
@@ -432,5 +443,40 @@ final class TimeSeriesResourcesTest
 		calConst = "MONTH";
 		constant = str2const(calConst);
 		assertEquals(Calendar.MONTH, constant);
+	}
+
+	@Test
+	void testTransformByFirstInputSkipsMembersThatDontMatch() throws Exception
+	{
+		TimeSeriesResources resources = Mockito.spy(new TimeSeriesResources());
+		TimeSeriesDb tsdb = Mockito.mock(TimeSeriesDb.class);
+		doReturn(tsdb).when(resources).getLegacyTimeseriesDB();
+
+		ComputationDAI compDai = Mockito.mock(ComputationDAI.class);
+		when(tsdb.makeComputationDAO()).thenReturn(compDai);
+
+		DbComputation comp = new DbComputation(DbKey.createDbKey(1L), "TestComp");
+		DbCompParm input = new DbCompParm("input", DbKey.createDbKey(2L), "hour", "", 0);
+		input.setAlgoParmType("i");
+		comp.addParm(input);
+		when(compDai.getComputationById(DbKey.createDbKey(1L))).thenReturn(comp);
+
+		TimeSeriesDAI tsDai = Mockito.mock(TimeSeriesDAI.class);
+
+		TimeSeriesIdentifier tsid = new CwmsTsId();
+		tsid.setUniqueString("Site.Flow.Inst.1Hour.0.raw");
+		when(tsdb.transformTsidByCompParm(eq(tsDai), eq(tsid), eq(input), eq(false), eq(false), any()))
+				.thenThrow(new BadTimeSeriesException("Member doesn't match parm template"));
+
+		Method transformByFirstInput = TimeSeriesResources.class.getDeclaredMethod(
+				"transformByFirstInput", List.class, Long.class, TimeSeriesDAI.class);
+		transformByFirstInput.setAccessible(true);
+
+		@SuppressWarnings("unchecked")
+		List<TimeSeriesIdentifier> result = (List<TimeSeriesIdentifier>)
+				transformByFirstInput.invoke(resources, List.of(tsid), 1L, tsDai);
+
+		assertNotNull(result);
+		assertTrue(result.isEmpty());
 	}
 }

@@ -18,6 +18,15 @@ i18n
   // init i18next
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
+    backend: {
+      // The locale files are plain static assets served out of the WAR, so a
+      // browser holding an older copy would keep rendering stale strings (or
+      // raw keys for entries added since) after a new build is deployed.
+      // "no-cache" still uses the cache, it just revalidates first.
+      requestOptions: {
+        cache: "no-cache",
+      },
+    },
     fallbackLng: ["en-US"],
     debug: false,
     showSupportNotice: false,

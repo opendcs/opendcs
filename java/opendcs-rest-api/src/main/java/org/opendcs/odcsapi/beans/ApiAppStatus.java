@@ -36,7 +36,8 @@ public final class ApiAppStatus
 	@Schema(description = "Last recorded heartbeat timestamp for the application.",
 			example = "2023-05-25T16:34:18.073Z[UTC]")
 	private Date heartbeat = null;
-	@Schema(description = "Port number used for event communication.", example = "8086")
+	@Schema(description = "Port number used for event communication. No longer used, field should either be null or not present.",
+			example = "8086")
 	private Integer eventPort = null;
 	@Schema(description = "Current status of the application. Default is 'Inactive'.", example = "Cmps: 0/0")
 	private String status = "Inactive";
