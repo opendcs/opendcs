@@ -16,7 +16,8 @@
 package org.opendcs.odcsapi.sec;
 
 import java.security.Principal;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Map.Entry;
 
 import jakarta.ws.rs.core.SecurityContext;
 
@@ -55,9 +56,9 @@ public final class OpenDcsSecurityContext implements SecurityContext
 							 .entrySet()
 							 .stream()
 							 .filter(s -> s.getKey().name().equals(org))
-							 .map(s -> s.getValue())
+							 .map(Entry::getValue)
 							 .findFirst()
-							 .orElseGet(() -> List.of())	;
+							 .orElseGet(() -> new ArrayList<>());
 		return roles.stream()
 					.anyMatch(e ->
 					{

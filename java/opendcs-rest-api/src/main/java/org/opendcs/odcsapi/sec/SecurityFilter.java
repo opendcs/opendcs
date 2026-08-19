@@ -15,6 +15,7 @@
 
 package org.opendcs.odcsapi.sec;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,8 +36,6 @@ import jakarta.ws.rs.ext.Provider;
 
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import org.slf4j.Logger;
-
-import decodes.sql.DbKey;
 
 import org.opendcs.data.Organization;
 import org.opendcs.database.model.UserBuilder;
@@ -85,7 +84,7 @@ public final class SecurityFilter implements ContainerRequestFilter
 		}
 		OpenDcsPrincipal principal = new OpenDcsPrincipal(new UserBuilder().withEmail("guest").build(),
 														  Collections.singletonMap(OrganizationResource.map(Organization.NULL_ORG),
-														  						   List.of(OpenDcsApiRoles.ODCS_API_GUEST)));
+														  						   new ArrayList<>(List.of(OpenDcsApiRoles.ODCS_API_GUEST))));
 		requestContext.setSecurityContext(new OpenDcsSecurityContext(principal,
 				httpServletRequest.isSecure(), ""));
 

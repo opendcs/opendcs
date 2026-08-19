@@ -45,11 +45,8 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 })
 public class UsersDaoImpl implements UsersDao
 {
-    @InjectDao
-    RolesDao rolesDao;
-
     /** Placeholder until implemented */
-    private static final RowMapper<Organization> orgMapper = new RowMapper<>()
+    private static final RowMapper<Organization> ORG_MAPPER = new RowMapper<>()
     {
         @Override
         public Organization map(ResultSet rs, StatementContext ctx) throws SQLException
@@ -57,6 +54,9 @@ public class UsersDaoImpl implements UsersDao
             return Organization.NULL_ORG;
         }   
     };
+
+    @InjectDao
+    RolesDao rolesDao;  
 
     @Override
     public User addUser(DataTransaction tx, User user) throws OpenDcsDataException
@@ -139,7 +139,7 @@ public class UsersDaoImpl implements UsersDao
               .registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
-              .registerRowMapper(Organization.class, orgMapper)
+              .registerRowMapper(Organization.class, ORG_MAPPER)
               .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
               .map(UserBuilder::build)
               .findFirst()
@@ -259,7 +259,7 @@ public class UsersDaoImpl implements UsersDao
             return q.registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
                 .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
                 .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
-                .registerRowMapper(Organization.class, orgMapper)
+                .registerRowMapper(Organization.class, ORG_MAPPER)
                 .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
                 .map(UserBuilder::build)
                 .toList();

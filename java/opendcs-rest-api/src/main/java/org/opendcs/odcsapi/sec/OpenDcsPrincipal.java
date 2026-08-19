@@ -17,8 +17,8 @@ package org.opendcs.odcsapi.sec;
 
 import java.io.Serializable;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import org.opendcs.database.model.User;
@@ -30,9 +30,9 @@ public final class OpenDcsPrincipal implements Principal, Serializable
 	private static final long serialVersionUID = -2116796045388257540L;
 	private final User user;
 
-	private final Map<ApiOrganization, List<OpenDcsApiRoles>> roles;
+	private final Map<ApiOrganization, ArrayList<OpenDcsApiRoles>> roles;
 
-	public OpenDcsPrincipal(User user, Map<ApiOrganization, List<OpenDcsApiRoles>> roles)
+	public OpenDcsPrincipal(User user, Map<ApiOrganization, ArrayList<OpenDcsApiRoles>> roles)
 	{
 		this.user = user;
 		this.roles = Collections.unmodifiableMap(roles);
@@ -49,7 +49,7 @@ public final class OpenDcsPrincipal implements Principal, Serializable
 		return this.user;
 	}
 
-	public Map<ApiOrganization, List<OpenDcsApiRoles>> getRoles()
+	public Map<ApiOrganization, ArrayList<OpenDcsApiRoles>> getRoles()
 	{
 		return roles;
 	}

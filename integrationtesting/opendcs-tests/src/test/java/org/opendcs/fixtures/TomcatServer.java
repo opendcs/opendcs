@@ -50,7 +50,6 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
-import org.opendcs.data.Organization;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
