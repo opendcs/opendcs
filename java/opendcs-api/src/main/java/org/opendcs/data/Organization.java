@@ -65,6 +65,5 @@ public interface Organization
         {
             return null;
         }
-
-    };
+    }
 }

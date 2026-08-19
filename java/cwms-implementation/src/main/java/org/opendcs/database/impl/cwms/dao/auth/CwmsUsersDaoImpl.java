@@ -143,7 +143,7 @@ public class CwmsUsersDaoImpl implements UsersDao
                             .bind(RoleMapper.ROLE_ID, roleId)
                             .add();
                 }
-            };
+            }
             roleBatch.execute();
         }
 

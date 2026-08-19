@@ -17,7 +17,6 @@ package org.opendcs.odcsapi.sec;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.opendcs.data.Organization;
@@ -110,14 +109,13 @@ public final class SessionResource
 
 	public static ResponseBuilder updateSessionWithUser(User user, HttpServletRequest httpRequest)
 	{
-		var roleMap = new HashMap<ApiOrganization, List<OpenDcsApiRoles>>();
+		var roleMap = new HashMap<ApiOrganization, ArrayList<OpenDcsApiRoles>>();
 		user.roles.forEach((org, roles) ->
-		{
 			roleMap.put(OrganizationResource.map(org),
 						new ArrayList<OpenDcsApiRoles>(roles.stream()
 															.map(role -> OpenDcsApiRoles.valueOf(role.name()))
-															.toList()));
-		});
+															.toList()))
+		);
 		
 		roleMap.computeIfAbsent(OrganizationResource.map(Organization.NULL_ORG), org -> new ArrayList<>()).add(OpenDcsApiRoles.ODCS_API_REGISTERED);
 		OpenDcsPrincipal principal = new OpenDcsPrincipal(user, roleMap);
