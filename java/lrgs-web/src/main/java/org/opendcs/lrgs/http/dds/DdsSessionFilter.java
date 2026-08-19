@@ -48,16 +48,16 @@ public class DdsSessionFilter implements ContainerRequestFilter
             }
         }
 
-        var mar = (MessageArchiveRetriever)session.getAttribute(UseDdsSession.KEY);
-        if (mar == null) // Session may have already been setup by going to a different endpoint.
+        var ddsSession = (DdsSession)session.getAttribute(UseDdsSession.KEY);
+        if (ddsSession == null) // Session may have already been setup by going to a different endpoint.
         {
             var lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
             if (lrgs != null)
             {
                 try
                 {
-                    mar = getMar(lrgs);
-                    var ddsSession = new DdsSession(mar, 15, lrgs.msgArchive);
+                    var mar = getMar(lrgs);
+                    ddsSession = new DdsSession(mar, 15, lrgs.msgArchive);
                     session.setAttribute(UseDdsSession.KEY, ddsSession); // NOSONAR
                 }
                 catch (SearchSyntaxException | ArchiveUnavailableException | IOException ex)
@@ -78,6 +78,7 @@ public class DdsSessionFilter implements ContainerRequestFilter
             AttachedProcess ap = new AttachedProcess(1, "http", "http", "anonymous", 0, 0, 0, "running", (short)0);
             mar = new MessageArchiveRetriever((XmlMsgArchive)archive, ap);
             mar.setDcpNameMapper(DcpAddress::new);
+            mar.setDcpMsgSource(mar);
             mar.init();
             return mar;
         }

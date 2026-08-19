@@ -34,7 +34,7 @@ public final class MessageRetrieval
         {
             final DcpMsgIndex dmi = new DcpMsgIndex();
             
-            int idx = mar.getNextPassingIndex(dmi, System.currentTimeMillis() + 500);
+            int idx = mar.getNextPassingIndex(dmi, System.currentTimeMillis() + 5000L);
             while(idx != -1 && messages.size() < maxSize)
             {
                 final DcpMsg msgOut = dmi.getDcpMsg();

@@ -1,8 +1,14 @@
 package org.opendcs.lrgs.dds;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.oneOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -15,7 +21,13 @@ import org.opendcs.lrgs.http.LrgsHttpInterface;
 
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.http.Cookies;
 import jakarta.ws.rs.core.Response;
+import lrgs.archive.XmlMsgArchive;
+import lrgs.common.DcpAddress;
+import lrgs.common.DcpMsg;
+import lrgs.common.DcpMsgFlag;
+import lrgs.lrgsmain.LrgsInputInterface;
 
 @ExtendWith(LrgsTestExtension.class)
 @LrgsConfig("""
@@ -40,23 +52,56 @@ final class DdsHttpTest
                                                .findFirst()
                                                .orElseThrow();
         port = lrgsInput.getPort();
-
     }
 
     @Test
-    void test_next(LrgsTestInstance lrgs)
+    void test_next(LrgsTestInstance lrgs) throws Exception
     {
         RestAssured.baseURI = "http://127.0.0.1:" + port;
-        given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("dds/data/next")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(oneOf(Response.Status.OK.getStatusCode(), Response.Status.NO_CONTENT.getStatusCode())))
-		;
+
+
+        final String msgData = "Test String.";
+        final DcpMsg msgIn = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER, msgData.getBytes(StandardCharsets.UTF_8),msgData.length(),0);
+        msgIn.setXmitTime(new Date());
+        final DcpAddress addrIn = new DcpAddress("TEST");
+        final LrgsInputInterface dataSource = lrgs.getLrgsInputs().get(0);
+        msgIn.setDcpAddress(addrIn);
+        lrgs.getArchive().archiveMsg(msgIn, dataSource);
+        ((XmlMsgArchive)lrgs.getArchive()).checkpoint();
+
+        var sp = lrgs.getArchive().getStatusProvider();
+        assertNotNull(sp);
+        assertTrue(sp.isUsable());
+
+        final AtomicReference<Cookies> session = new AtomicReference<>(null);
+        assertResultWithinTimeFrame(value ->
+        {
+            var request =
+                given()
+                    .log().ifValidationFails(LogDetail.ALL, true);
+            if (session.get() != null)
+            {
+                request.cookies(session.get());
+            }
+            var ret = request
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .get("dds/data/next")
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                .extract()
+                ;
+            if (session.get() != null)
+            {
+                session.set(ret.detailedCookies());
+            }
+            System.out.println("response: " + ret.statusCode() + " " + ret.statusLine() + ", session = " + ret.sessionId());
+            System.out.println(ret.asPrettyString());
+            return ret.statusCode() == Response.Status.OK.getStatusCode();
+        },
+        3, TimeUnit.MINUTES,
+        5, TimeUnit.SECONDS,
+        "No Data returned within reasonable time frame");
     }
 }
