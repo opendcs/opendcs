@@ -75,6 +75,8 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import static org.opendcs.odcsapi.util.DTOMappers.dataMap;
 import static org.opendcs.odcsapi.util.DTOMappers.mapTsId;
@@ -87,6 +89,8 @@ import static org.opendcs.odcsapi.util.DTOMappers.mapTsId;
 @Path("/")
 public final class TimeSeriesResources extends OpenDcsResource
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -1053,6 +1057,9 @@ public final class TimeSeriesResources extends OpenDcsResource
 			{
 				// Member doesn't match the parm's site/datatype template; skip it, same as the
 				// desktop's Run Computation dialog does.
+				log.atTrace()
+				   .setCause(ex)
+				   .log("Skipping time series '{}': doesn't match computation parm's site/datatype template.", tsid);
 			}
 		}
 		return new ArrayList<>(transformed);

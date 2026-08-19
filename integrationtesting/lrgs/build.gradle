@@ -25,6 +25,12 @@ dependencies {
 
 test {
     jvmArgs += "-Djava.security.manager=allow"
+
+    def tmpdir = "${project.layout.buildDirectory.get()}/runs/test/tmp"
+    doFirst {
+        project.mkdir(tmpdir)
+    }
+    jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
 }
 
 jacocoTestReport {
