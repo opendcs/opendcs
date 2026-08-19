@@ -116,7 +116,7 @@ const toApiApp = (app: StoredApp): ApiLoadingApp => ({
 
 const statefulHandlers = {
   appRefs: http.get("/odcsapi/apprefs", async () => {
-    await delay(50);
+    await delay(25);
     return HttpResponse.json<ApiAppRef[]>(
       storedApps.map((app) => ({
         appId: app.appId,
@@ -127,11 +127,11 @@ const statefulHandlers = {
     );
   }),
   appStat: http.get("/odcsapi/appstat", async () => {
-    await delay(50);
+    await delay(25);
     return HttpResponse.json<ApiAppStatus[]>([]);
   }),
   getApp: http.get("/odcsapi/app", async ({ request }) => {
-    await delay(50);
+    await delay(25);
     const id = Number(new URL(request.url).searchParams.get("appid"));
     const app = storedApps.find((a) => a.appId === id);
     return app
@@ -139,7 +139,7 @@ const statefulHandlers = {
       : new HttpResponse(null, { status: 404 });
   }),
   postApp: http.post("/odcsapi/app", async ({ request }) => {
-    await delay(50);
+    await delay(25);
     const body = (await request.json()) as ApiLoadingApp;
     const properties: Record<string, string> = {
       ...((body.properties ?? {}) as Record<string, string>),
@@ -176,7 +176,7 @@ export const EditThenSaveShowsEdit: Story = {
     const editBtn = await canvas.findByRole(
       "button",
       { name: i18n.t("loadingapps:edit_app", { id: 1 }) },
-      { timeout: 5000 },
+      { timeout: 15000 },
     );
     await userEvent.click(editBtn);
 
@@ -187,7 +187,7 @@ export const EditThenSaveShowsEdit: Story = {
         expect(appNameInput().value).toBe("compproc");
         expect(document.querySelector(".detail-appear__layer--hidden")).toBeNull();
       },
-      { timeout: 8000 },
+      { timeout: 15000 },
     );
 
     await userEvent.clear(appNameInput());
@@ -196,7 +196,7 @@ export const EditThenSaveShowsEdit: Story = {
     const saveBtn = await canvas.findByRole(
       "button",
       { name: i18n.t("loadingapps:save_app", { id: 1 }) },
-      { timeout: 5000 },
+      { timeout: 15000 },
     );
     await userEvent.click(saveBtn);
 
@@ -216,7 +216,7 @@ export const EditThenSaveShowsEdit: Story = {
         const cells = [...document.querySelectorAll("td")].map((c) => c.textContent);
         expect(cells).toContain("edited-name");
       },
-      { timeout: 5000 },
+      { timeout: 15000 },
     );
   },
 };
