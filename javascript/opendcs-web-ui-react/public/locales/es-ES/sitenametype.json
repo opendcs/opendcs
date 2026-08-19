@@ -1,0 +1,12 @@
+{
+  "dropdownLabel": "Abrir menú de nombre de sitio preferido",
+  "menuTitle": "Nombre de Sitio Preferido",
+  "activate": "Mostrar nombre de sitio como {{type}}",
+  "default": "Predeterminado",
+  "CWMS": "CWMS",
+  "NWSHB5": "NWSHB5",
+  "USGS": "USGS",
+  "USGS-DRGS": "USGS-DRGS",
+  "Local": "Local",
+  "nos": "NOS"
+}

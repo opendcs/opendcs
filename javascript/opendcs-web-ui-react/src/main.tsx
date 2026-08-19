@@ -7,6 +7,7 @@ import "datatables.net-buttons-bs5/css/buttons.bootstrap5.css";
 import "datatables.net-responsive-bs5";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { ThemeProvider } from "./contexts/app/ThemeProvider.tsx";
+import { SiteNameTypeProvider } from "./contexts/app/SiteNameTypeProvider.tsx";
 import { AuthProvider } from "./contexts/app/AuthProvider.tsx";
 import { ApiProvider } from "./contexts/app/ApiProvider.tsx";
 import { OrganizationsProvider } from "./contexts/app/OrganizationsProvider.tsx";
@@ -21,17 +22,19 @@ createRoot(document.getElementById("root")!).render(
     <Suspense fallback="loading">
       <BrowserRouter>
         <ThemeProvider>
-          <ApiProvider>
-            <AuthProvider>
-              <QueryProvider>
-                <OrganizationsProvider>
-                  <RefListProvider>
-                    <App />
-                  </RefListProvider>
-                </OrganizationsProvider>
-              </QueryProvider>
-            </AuthProvider>
-          </ApiProvider>
+          <SiteNameTypeProvider>
+            <ApiProvider>
+              <AuthProvider>
+                <QueryProvider>
+                  <OrganizationsProvider>
+                    <RefListProvider>
+                      <App />
+                    </RefListProvider>
+                  </OrganizationsProvider>
+                </QueryProvider>
+              </AuthProvider>
+            </ApiProvider>
+          </SiteNameTypeProvider>
         </ThemeProvider>
       </BrowserRouter>
     </Suspense>

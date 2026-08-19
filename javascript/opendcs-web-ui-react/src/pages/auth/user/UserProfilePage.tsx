@@ -34,7 +34,7 @@ export const UserProfilePage: React.FC = () => {
 
   return (
     <Card>
-      <Card.Title>{user.email}</Card.Title>
+      <Card.Title className="pt-3 ps-3">{user.email}</Card.Title>
       <Card.Body>
         <Stack gap={2}>
           <TimeInfo user={user} key="time" />
