@@ -170,6 +170,15 @@ final class PlatformResourcesTest
 		scripts2.add(script2);
 		config2.decodesScripts = scripts2;
 		plat2.setConfig(config2);
+		Site site2 = new Site();
+		site2.setId(DbKey.createDbKey(9987L));
+		SiteName cwmsName = new SiteName(site2, "CWMS");
+		cwmsName.setNameValue("ACIA");
+		site2.addName(cwmsName);
+		SiteName nwshb5Name = new SiteName(site2, "NWSHB5");
+		nwshb5Name.setNameValue("ABRN1");
+		site2.addName(nwshb5Name);
+		plat2.setSite(site2);
 		platformList.add(plat1);
 		platformList.add(plat2);
 
@@ -227,6 +236,11 @@ final class PlatformResourcesTest
 			assertNull(plat2.getSite());
 			assertEquals(DbKey.NullKey.getValue(), plat2Ref.getSiteId());
 		}
+		assertNotNull(plat1Ref.getSitenames());
+		assertTrue(plat1Ref.getSitenames().isEmpty());
+		assertEquals(2, plat2Ref.getSitenames().size());
+		assertEquals("ACIA", plat2Ref.getSitenames().get("CWMS"));
+		assertEquals("ABRN1", plat2Ref.getSitenames().get("NWSHB5"));
 	}
 
 	@Test

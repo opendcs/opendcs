@@ -15,6 +15,8 @@
 
 package org.opendcs.odcsapi.beans;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,7 +50,12 @@ public final class ApiPlatformRef
 
 	@Schema(description = "Designator for the platform.", example = "tailwater")
 	private String designator = null;
-	
+
+	@Schema(description = "Map containing the site's names where the key represents the name type "
+			+ "(e.g. CWMS, NWSHB5, USGS) and the value the actual name. Empty if the platform has no "
+			+ "associated site.")
+	private Map<String, String> sitenames = new HashMap<>();
+
 	public String getName()
 	{
 		return name;
@@ -139,5 +146,14 @@ public final class ApiPlatformRef
 		this.transportMedia = transportMedia;
 	}
 
+	public Map<String, String> getSitenames()
+	{
+		return sitenames;
+	}
+
+	public void setSitenames(Map<String, String> sitenames)
+	{
+		this.sitenames = sitenames;
+	}
 
 }
