@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import type { ApiAppRef, ApiAppStatus } from "opendcs-api";
 import { expect, waitFor } from "storybook/test";
 import { LoadingAppsPage } from "./LoadingAppsPage";
+import type { ApiLoadingApp } from "opendcs-api";
 
 // Mock data
 
@@ -83,5 +84,139 @@ export const WithUnavailableMonitor: Story = {
     expect(
       canvas.queryByText(i18n.t("loadingapps:status_running")),
     ).not.toBeInTheDocument();
+  },
+};
+
+interface StoredApp {
+  appId: number;
+  appName?: string;
+  comment?: string;
+  manualEditingApp?: boolean;
+  properties: Record<string, string>;
+}
+
+const storedApps: StoredApp[] = [
+  {
+    appId: 1,
+    appName: "compproc",
+    comment: "Main computation process",
+    manualEditingApp: false,
+    properties: { appType: "computationprocess" },
+  },
+];
+
+const toApiApp = (app: StoredApp): ApiLoadingApp => ({
+  appId: app.appId,
+  appName: app.appName,
+  comment: app.comment,
+  manualEditingApp: app.manualEditingApp,
+  appType: app.properties.appType ?? "",
+  properties: { ...app.properties },
+});
+
+const statefulHandlers = {
+  appRefs: http.get("/odcsapi/apprefs", async () => {
+    await delay(50);
+    return HttpResponse.json<ApiAppRef[]>(
+      storedApps.map((app) => ({
+        appId: app.appId,
+        appName: app.appName,
+        appType: app.properties.appType ?? "",
+        comment: app.comment,
+      })),
+    );
+  }),
+  appStat: http.get("/odcsapi/appstat", async () => {
+    await delay(50);
+    return HttpResponse.json<ApiAppStatus[]>([]);
+  }),
+  getApp: http.get("/odcsapi/app", async ({ request }) => {
+    await delay(50);
+    const id = Number(new URL(request.url).searchParams.get("appid"));
+    const app = storedApps.find((a) => a.appId === id);
+    return app
+      ? HttpResponse.json(toApiApp(app))
+      : new HttpResponse(null, { status: 404 });
+  }),
+  postApp: http.post("/odcsapi/app", async ({ request }) => {
+    await delay(50);
+    const body = (await request.json()) as ApiLoadingApp;
+    const properties: Record<string, string> = {
+      ...((body.properties ?? {}) as Record<string, string>),
+    };
+    // The editable appType field wins over the copy in properties.
+    if (body.appType) properties.appType = body.appType;
+    const idx = storedApps.findIndex((a) => a.appId === body.appId);
+    const saved: StoredApp = {
+      appId: body.appId!,
+      appName: body.appName,
+      comment: body.comment,
+      manualEditingApp: body.manualEditingApp,
+      properties,
+    };
+    if (idx >= 0) storedApps[idx] = saved;
+    return HttpResponse.json(toApiApp(saved), { status: 201 });
+  }),
+};
+
+// Reads the live node each time: the DataTables child row is rebuilt on
+// redraws, so a captured element can be detached by the next interaction.
+const appNameInput = (): HTMLInputElement => {
+  const el = document.querySelector("input[name='appName']");
+  if (!el) throw new Error("appName input not rendered yet");
+  return el as HTMLInputElement;
+};
+
+export const EditThenSaveShowsEdit: Story = {
+  parameters: { msw: { handlers: statefulHandlers } },
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    const editBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("loadingapps:edit_app", { id: 1 }) },
+      { timeout: 5000 },
+    );
+    await userEvent.click(editBtn);
+
+    // DetailFade keeps the real content `visibility: hidden` until its enter
+    // animation starts, and a hidden input cannot be focused or typed into.
+    await waitFor(
+      () => {
+        expect(appNameInput().value).toBe("compproc");
+        expect(document.querySelector(".detail-appear__layer--hidden")).toBeNull();
+      },
+      { timeout: 8000 },
+    );
+
+    await userEvent.clear(appNameInput());
+    await userEvent.type(appNameInput(), "edited-name");
+
+    const saveBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("loadingapps:save_app", { id: 1 }) },
+      { timeout: 5000 },
+    );
+    await userEvent.click(saveBtn);
+
+    // The server took the edit ...
+    await waitFor(() => expect(storedApps[0].appName).toBe("edited-name"), {
+      timeout: 5000,
+    });
+
+    // ... and it shows without a refresh, both in the reopened detail form and
+    // in the table row. The row is rendered purely from the refetched app refs,
+    // so it cannot be satisfied by typed text lingering in the old DOM node.
+    await waitFor(() => expect(appNameInput().value).toBe("edited-name"), {
+      timeout: 5000,
+    });
+    await waitFor(
+      () => {
+        const cells = [...document.querySelectorAll("td")].map((c) => c.textContent);
+        expect(cells).toContain("edited-name");
+      },
+      { timeout: 5000 },
+    );
   },
 };
