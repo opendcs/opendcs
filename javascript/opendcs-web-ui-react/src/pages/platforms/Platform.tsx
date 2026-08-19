@@ -12,14 +12,13 @@ import {
 } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
-import {
-  ApiException,
-  type ApiConfigRef,
-  type ApiConfigSensor,
-  type ApiPlatform,
-  type ApiPlatformConfig,
-  type ApiSite,
-  type ApiSiteRef,
+import type {
+  ApiConfigRef,
+  ApiConfigSensor,
+  ApiPlatform,
+  ApiPlatformConfig,
+  ApiSite,
+  ApiSiteRef,
 } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
@@ -32,6 +31,7 @@ import { ConfigSelectModal } from "./ConfigSelectModal";
 import { PlatformSensorsTable } from "./PlatformSensorsTable";
 import { TransportMediaTable } from "./TransportMediaTable";
 import { siteDisplayName } from "./siteDisplayName";
+import { saveErrorMessage } from "./saveErrorMessage";
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
@@ -138,14 +138,6 @@ export interface PlatformProperties {
 
 const mapProps: (props: { [k: string]: string }) => Property[] = (props) =>
   Object.entries(props).map(([name, value]): Property => ({ name, value }));
-
-const saveErrorMessage = (err: unknown, fallback: string): string => {
-  if (err instanceof ApiException && err.body && typeof err.body === "object") {
-    const message = (err.body as { message?: unknown }).message;
-    if (typeof message === "string" && message.trim().length > 0) return message;
-  }
-  return fallback;
-};
 
 export const Platform: React.FC<PlatformProperties> = ({
   details,
