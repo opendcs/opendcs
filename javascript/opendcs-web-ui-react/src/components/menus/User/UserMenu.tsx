@@ -4,6 +4,7 @@ import { PersonGear } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { AppVersion } from "../../AppVersion";
+import { SiteNameTypeMenu } from "../../";
 
 const UserToggle: React.FC = ({ ...args }) => {
   return (
@@ -28,6 +29,10 @@ export const UserMenu: React.FC<UserMenuProperties> = ({ logout }) => {
           {t("profile")}
         </Dropdown.Item>
         <Dropdown.Item>Admin</Dropdown.Item>
+        <Dropdown.Divider />
+        <Dropdown.ItemText>
+          <SiteNameTypeMenu />
+        </Dropdown.ItemText>
         <Dropdown.Divider />
         <Dropdown.Item onClick={logout}>{t("translation:logout")}</Dropdown.Item>
         <Dropdown.Divider />

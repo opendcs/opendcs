@@ -59,7 +59,9 @@ export function PasswordChange({
   return (
     canChange && (
       <Card>
-        <Card.Title className="d-flex">{t("password_change.title")}</Card.Title>
+        <Card.Title className="d-flex pt-3 ps-3">
+          {t("password_change.title")}
+        </Card.Title>
         <Card.Body>
           <Form
             noValidate
@@ -134,15 +136,16 @@ export function PasswordChange({
               </Form.Group>
             </Row>
             <Row>
-              <Button
-                type="submit"
-                disabled={!passwordsMatch}
-                className="ml-auto align-self-end"
-                variant="warning"
-                size="lg"
-              >
-                {t("password_change.update_password")}
-              </Button>
+              <Col xs="auto" className="ms-auto">
+                <Button
+                  type="submit"
+                  disabled={!passwordsMatch}
+                  variant="warning"
+                  size="lg"
+                >
+                  {t("password_change.update_password")}
+                </Button>
+              </Col>
             </Row>
           </Form>
         </Card.Body>
