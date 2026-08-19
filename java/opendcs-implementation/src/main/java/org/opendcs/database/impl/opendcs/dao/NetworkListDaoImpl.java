@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package org.opendcs.database.impl.opendcs.dao;
@@ -241,7 +241,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         {
             mediumSearch = " upper(transportmediumtype) = upper(:mediumType)";
         }
-        
+
         if (mediumSearch != null)
         {
             selectTemplate.add("medium_filter", mediumSearch);
@@ -300,7 +300,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         if (listEntryMapper != null)
         {
             select.add("entry_columns", listEntryMapper.columnsForSelect());
-            select.add("entry_join", listEntryMapper.joinStatement(LEFT_OUTER, 
+            select.add("entry_join", listEntryMapper.joinStatement(LEFT_OUTER,
                                                                          NetworkListEntryMapper.Columns.NETWORKLIST_ID,
                                                                          "nl",
                                                                          NetworkListMapper.Columns.ID.column()));

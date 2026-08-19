@@ -24,6 +24,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
+import java.util.stream.Collectors;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -185,7 +186,7 @@ public class DataSource extends IdDatabaseObject
 		{
 			DataSource gm1 = (DataSource)groupMembers.elementAt(i);
 			DataSource gm2 = (DataSource)ds.groupMembers.elementAt(i);
-			if (gm1 != gm2)
+			if (!gm1.equals(gm2))
 				return false;
 		}
 		//Fix the bug with the assigned -1 datasource ID
@@ -454,6 +455,26 @@ public class DataSource extends IdDatabaseObject
 	public String getDataSourceArgDisplay()
 	{
 		return dataSourceArgDisplay;
+	}
+
+	@Override
+	public String toString()
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("DataSource{name=").append(name)
+		  .append(", type=").append(this.dataSourceType)
+		;
+
+		if (this.isGroupType())
+		{
+			sb.append(", members=[")
+			  .append(this.groupMembers.stream().map(DataSource::toString).collect(Collectors.joining(",")))
+			  .append("]");
+		}
+
+		sb.append("}");
+
+		return sb.toString();
 	}
 
 }

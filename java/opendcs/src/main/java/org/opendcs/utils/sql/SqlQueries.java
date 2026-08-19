@@ -5,6 +5,7 @@ import org.opendcs.database.api.DatabaseEngine;
 public final class SqlQueries
 {
     public static final String LIMIT_CLAUSE = "limit";
+    public static final String OFFSET_CLAUSE = "offset";
     public static final String WHERE_CLAUSE = "where";
     public static final String COLLATE_CLAUSE = "collate";
     public static final String RECURSIVE_CTE_CLAUSE = "recursive_cte";

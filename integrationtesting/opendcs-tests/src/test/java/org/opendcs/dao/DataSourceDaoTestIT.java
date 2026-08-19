@@ -91,7 +91,6 @@ class DataSourceDaoTestIT extends AppTestBase
                 var dsTmpOut = dao.save(tx, dsTmp);
                 sources.add(dsTmpOut);
             }
-            System.out.println(sources.size());
 
             var dsListOut = dao.getDataSources(tx, -1, -1);
             assertFalse(dsListOut.isEmpty(), "Unable to retrieve any sources");
