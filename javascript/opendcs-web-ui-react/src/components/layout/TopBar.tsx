@@ -47,7 +47,7 @@ export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
           </Nav.Item>
           {orgList.length > 0 && user ? (
             <Nav.Item>
-              {api && <ChangeOrgMenu org={api.orgObj} orgs={orgList} />}
+              {api && <ChangeOrgMenu user={user} org={api.orgObj} orgs={orgList} />}
             </Nav.Item>
           ) : (
             ""
