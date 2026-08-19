@@ -31,7 +31,7 @@ import { ConfigSelectModal } from "./ConfigSelectModal";
 import { PlatformSensorsTable } from "./PlatformSensorsTable";
 import { TransportMediaTable } from "./TransportMediaTable";
 import { siteDisplayName } from "./siteDisplayName";
-import { saveErrorMessage } from "./saveErrorMessage";
+import { apiErrorMessage } from "../../util/ApiError";
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
@@ -192,7 +192,7 @@ export const Platform: React.FC<PlatformProperties> = ({
       await actions.save?.(localPlatform as ApiPlatform);
     } catch (err) {
       console.warn("Platform save failed", err);
-      setSaveError(saveErrorMessage(err, t("platforms:save_error")));
+      setSaveError(apiErrorMessage(err, t("platforms:save_error")));
     }
   }, [actions, localPlatform, t]);
 
