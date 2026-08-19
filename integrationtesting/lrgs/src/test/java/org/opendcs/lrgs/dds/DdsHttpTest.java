@@ -52,17 +52,13 @@ final class DdsHttpTest
                                                .findFirst()
                                                .orElseThrow();
         port = lrgsInput.getPort();
-    }
-
-    @Test
-    void test_next(LrgsTestInstance lrgs) throws Exception
-    {
-        RestAssured.baseURI = "http://127.0.0.1:" + port;
-
 
         final String msgData = "Test String.";
         final DcpMsg msgIn = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER, msgData.getBytes(StandardCharsets.UTF_8),msgData.length(),0);
-        msgIn.setXmitTime(new Date());
+        var msgTime = new Date();
+        msgIn.setXmitTime(msgTime);
+        msgIn.setDomsatTime(msgTime);
+        msgIn.setLocalReceiveTime(msgTime);
         final DcpAddress addrIn = new DcpAddress("TEST");
         final LrgsInputInterface dataSource = lrgs.getLrgsInputs().get(0);
         msgIn.setDcpAddress(addrIn);
@@ -72,36 +68,46 @@ final class DdsHttpTest
         var sp = lrgs.getArchive().getStatusProvider();
         assertNotNull(sp);
         assertTrue(sp.isUsable());
+    }
 
+    @Test
+    void test_next(LrgsTestInstance lrgs) throws Exception
+    {
+        RestAssured.baseURI = "http://127.0.0.1:" + port;
         final AtomicReference<Cookies> session = new AtomicReference<>(null);
         assertResultWithinTimeFrame(value ->
         {
             var request =
                 given()
-                    .log().ifValidationFails(LogDetail.ALL, true);
+                    .log().all() //ifValidationFails(LogDetail.ALL, true)
+                    ;
+            System.out.println("Cookies (stored)=" + session.get());
             if (session.get() != null)
             {
                 request.cookies(session.get());
             }
+            System.out.println(request.toString());
             var ret = request
                 .when()
                     .redirects().follow(true)
                     .redirects().max(3)
                     .get("dds/data/next")
                 .then()
-                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .log().all() //ifValidationFails(LogDetail.ALL, true)
                 .extract()
                 ;
-            if (session.get() != null)
+            if (session.get() == null)
             {
                 session.set(ret.detailedCookies());
             }
-            System.out.println("response: " + ret.statusCode() + " " + ret.statusLine() + ", session = " + ret.sessionId());
+            System.out.println("response: " + ret.statusCode() + " " + ret.statusLine());
             System.out.println(ret.asPrettyString());
+            System.out.println("Message count = " + lrgs.getArchive().getTotalMessageCount());
+            System.out.println("Cookies: " + ret.cookies());
             return ret.statusCode() == Response.Status.OK.getStatusCode();
         },
         3, TimeUnit.MINUTES,
-        5, TimeUnit.SECONDS,
+        10, TimeUnit.SECONDS,
         "No Data returned within reasonable time frame");
     }
 }
