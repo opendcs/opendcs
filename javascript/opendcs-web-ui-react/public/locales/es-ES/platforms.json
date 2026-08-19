@@ -26,6 +26,7 @@
   "edit_platform": "Editar plataforma con ID {{id}}",
   "delete_for": "Eliminar plataforma con ID {{id}}",
   "save_platform": "Guardar plataforma con ID {{id}}",
+  "save_error": "Error al guardar. Por favor verifique sus entradas e intente de nuevo.",
   "cancel_for": "Cancelar la edición de la plataforma con ID {{id}}",
   "select_site": "Seleccionar sitio",
   "select_site_filter": "Filtrar sitios",

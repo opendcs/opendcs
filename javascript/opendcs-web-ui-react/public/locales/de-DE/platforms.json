@@ -26,6 +26,7 @@
   "edit_platform": "Plattform mit ID {{id}} bearbeiten",
   "delete_for": "Plattform mit ID {{id}} löschen",
   "save_platform": "Plattform mit ID {{id}} speichern",
+  "save_error": "Speichern fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen.",
   "cancel_for": "Bearbeitung der Plattform mit ID {{id}} abbrechen",
   "select_site": "Standort auswählen",
   "select_site_filter": "Standorte filtern",
