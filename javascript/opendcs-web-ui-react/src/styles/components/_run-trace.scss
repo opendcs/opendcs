@@ -1,0 +1,21 @@
+// =============================================================================
+// Popped-out computation trace (Run Computations dialog)
+// =============================================================================
+// The trace can be detached from the run dialog so a long log no longer pushes
+// the time range and the results out of view. Pin the detached window to the
+// bottom-right corner - it stacks over the run dialog, so it has to sit beside
+// it, and clicks have to reach the dialog underneath.
+
+.run-trace-window {
+  pointer-events: none;
+}
+
+.run-trace-window-dialog {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  width: min(46rem, calc(100vw - 2rem));
+  max-width: none;
+  margin: 0;
+  pointer-events: auto;
+}
