@@ -2,6 +2,7 @@ package org.opendcs.lrgs.dds;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -116,7 +117,7 @@ final class DdsHttpTest
     {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam("dcpAddress", "[TEST]")
+            .queryParam("dcpAddress", "TEST")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -126,6 +127,30 @@ final class DdsHttpTest
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(Response.Status.OK.getStatusCode()))
+            .body("$.size()", not(is("0")))
+            .body("[0].id", is("TEST"))
+        ;
+    }
+
+    @Test
+    void test_sources(LrgsTestInstance lrgs)
+    {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("dds/sources")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(Response.Status.OK.getStatusCode()))
+            .body("$.size()", not(is(0)))
+            .body("[0]", is("HritFile"))
+            .body("[1]", is("DDS-Recv:Main"))
+            .body("[2]", is("DDS-Recv:Main(Secondary)"))
+            .body("[3]", is("DRGS-Recv:Main"))
+            .body("[4]", is("HTTP:web:0"))
         ;
     }
 }

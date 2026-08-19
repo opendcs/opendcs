@@ -45,6 +45,7 @@ public final class MessageRetrieval
                     
                     final org.opendcs.lrgs.http.dto.DcpMsg msg = 
                         new org.opendcs.lrgs.http.dto.DcpMsg(
+                            msgOut.getDcpAddress().toString(),
                             new DataSource(msgOut.getSource(), type),
                             ZonedDateTime.ofInstant(msgOut.getLocalReceiveTime().toInstant(), ZoneId.of("UTC")),
                             Base64.getEncoder().encodeToString(msgOut.getData())

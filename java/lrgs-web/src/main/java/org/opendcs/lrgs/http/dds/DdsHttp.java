@@ -3,7 +3,7 @@ package org.opendcs.lrgs.http.dds;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +32,6 @@ import lrgs.common.SearchCriteria;
 import lrgs.common.SearchSyntaxException;
 import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
-import lrgs.ddsserver.MessageArchiveRetriever;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
 
@@ -46,9 +45,10 @@ public class DdsHttp
     private static final String MESSAGE_RETRIEVE_FAILED = "\"Failed to get messages\"";
     private static final String INACTIVE = "\"Inactive\"";
 
-    private static final Function<List<org.opendcs.lrgs.http.dto.DcpMsg>, Response> handleArchiveError = 
-        messages -> messages.isEmpty() ? Response.noContent().header("Retry-After", "10").build()
-                                         : Response.ok().entity(messages).build(); 
+    private static final BiFunction<List<org.opendcs.lrgs.http.dto.DcpMsg>, Exception, Response> handleArchiveError =
+        (messages, ex) -> messages.isEmpty() ?
+                          Response.noContent().header("reason", ex.getMessage()).header("Retry-After", "10").build() :
+                          Response.ok().entity(messages).build();
 
     @Context
     ServletContext servletContext;
@@ -57,7 +57,7 @@ public class DdsHttp
     @Path("/data/next")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getNext(@Context HttpServletRequest request)
-    { 
+    {
         LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
         HttpSession session = request.getSession();
         DdsSession ddsSession = (DdsSession)session.getAttribute(UseDdsSession.KEY);
@@ -69,9 +69,9 @@ public class DdsHttp
                 var result = MessageRetrieval.getMessages(mar, lrgs, 1000);
                 return switch (result.ex())
                 {
-                    case UntilReachedException ur -> handleArchiveError.apply(result.messages());
-                    case SearchTimeoutException st -> handleArchiveError.apply(result.messages());
-                    case EndOfArchiveException ea ->  handleArchiveError.apply(result.messages());
+                    case UntilReachedException ur -> handleArchiveError.apply(result.messages(), result.ex());
+                    case SearchTimeoutException st -> handleArchiveError.apply(result.messages(), result.ex());
+                    case EndOfArchiveException ea ->  handleArchiveError.apply(result.messages(), result.ex());
                     case null -> Response.ok().entity(result.messages()).build();
                     default -> Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
                                 .entity(MESSAGE_RETRIEVE_FAILED)
@@ -99,6 +99,7 @@ public class DdsHttp
     {
         LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
         var session = request.getSession(false);
+        log.info("Addresses {}", dcpAddresses.getFirst());
         try
         {
             var ddsSession = (DdsSession)session.getAttribute(UseDdsSession.KEY);
@@ -115,11 +116,8 @@ public class DdsHttp
             {
                 sc.spacecraft = spaceCraft.toChar();
             }
-            else
-            {
-                sc.spacecraft = SpaceCraft.ALL.toChar();
-            }
             mar.setSearchCriteria(sc);
+            mar.init();
             sources.forEach(
                 s -> lrgs.getInputs()
                          .stream()
@@ -129,8 +127,24 @@ public class DdsHttp
             );
 
             var result = MessageRetrieval.getMessages(mar, lrgs, Integer.MAX_VALUE);
-
-            return Response.ok().entity(result.messages()).build();
+            if (result.ex() != null)
+            {
+                // Just do it again. This is bit rediculous but for some reason the message archive retriever
+                // won't return any data on the initial request. Appears to be something to do with timing; however,
+                // this initial change is not the place to fix it.
+                result = MessageRetrieval.getMessages(mar, lrgs, Integer.MAX_VALUE);
+            }
+            return switch (result.ex())
+            {
+                case UntilReachedException ur -> handleArchiveError.apply(result.messages(), result.ex());
+                case SearchTimeoutException st -> handleArchiveError.apply(result.messages(), result.ex());
+                case EndOfArchiveException ea ->  handleArchiveError.apply(result.messages(), result.ex());
+                case null -> Response.ok().entity(result.messages()).build();
+                default -> Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
+                            .entity(MESSAGE_RETRIEVE_FAILED)
+                            .build();
+            };
+            //return Response.ok().entity(result.messages()).build();
         }
         catch (IOException | SearchSyntaxException | ArchiveUnavailableException ex)
         {
