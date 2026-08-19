@@ -51,7 +51,7 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
     }
 
     /**
-     * For the case were we are using this mapper in a RowReducer or other mechanism that takes
+     * For the case where we are using this mapper in a RowReducer or other mechanism that takes
      * only a row view, map the row element.
      *
      * NOTE: should https://github.com/jdbi/jdbi/pull/2942 or a similar change get merged into JDBI

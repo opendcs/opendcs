@@ -40,7 +40,7 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
 
     private final RoutingSpecMappers mappers;
     private final LinkedHashMap<Long, NetworkList> networkLists = new LinkedHashMap<>();
-    private final LinkedHashMap<DbKey, DataSource> datasSources = new LinkedHashMap<>();
+    private final LinkedHashMap<DbKey, DataSource> dataSources = new LinkedHashMap<>();
 
     public RoutingSpecReducer(RoutingSpecMappers mappers)
     {
@@ -82,14 +82,14 @@ public final class RoutingSpecReducer implements LinkedHashMapRowReducer<Long, R
     {
         if (mappers.dataSourceAccumulator() != null)
         {
-            mappers.dataSourceAccumulator().accumulate(datasSources, rowView);
+            mappers.dataSourceAccumulator().accumulate(dataSources, rowView);
             var dsId = rowView.getColumn(
                 mappers.dataSourceAccumulator()
                         .primaryMapper
                         .column(DataSourceMapper.Columns.ID), DbKey.class);
             if (spec.dataSource == null && dsId != null)
             {
-                spec.dataSource = datasSources.get(dsId);
+                spec.dataSource = dataSources.get(dsId);
             }
         }
     }

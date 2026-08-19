@@ -258,7 +258,7 @@ public class RoutingSpec extends IdDatabaseObject
 	{
 		return Objects.hash(this.name,
 							this.networkListNames,
-							this.dataSource,
+							this.dataSource.getName(),
 							this.networkLists,
 							this.outputFormat,
 							this.consumerType,
