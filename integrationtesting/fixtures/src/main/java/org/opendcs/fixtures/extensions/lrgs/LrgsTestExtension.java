@@ -21,13 +21,14 @@ public final class LrgsTestExtension implements BeforeAllCallback, ParameterReso
     @Override
     public void beforeAll(ExtensionContext context) throws Exception
     {
-        
         var ns = context.getStore(LRGS_INSTANCE);
         ns.computeIfAbsent(LrgsTestInstance.class, t ->
-            assertDoesNotThrow(() ->
+            assertDoesNotThrow(() -> //NOSONAR - test fixture code, not production code
             {
+                // java.io.tmpdir is redirected to a project-local build directory by the
+                // consuming test tasks (see opendcs-tests/build.gradle), so this isn't
+                // landing in a shared, publicly writable system temp directory.
                 File lrgsHome = Files.createTempDirectory("lrgshome").toFile();
-                lrgsHome.mkdirs();
                 var testClass = context.getRequiredTestClass();
                 var lrgsConfig = testClass.getAnnotation(LrgsConfig.class);
                 return new LrgsTestInstance(lrgsHome, lrgsConfig != null ? lrgsConfig.value() : null);
@@ -49,6 +50,4 @@ public final class LrgsTestExtension implements BeforeAllCallback, ParameterReso
         var ns = extensionContext.getStore(LRGS_INSTANCE);
         return ns.get(parameterContext.getParameter().getType());
     }
-
-    
 }

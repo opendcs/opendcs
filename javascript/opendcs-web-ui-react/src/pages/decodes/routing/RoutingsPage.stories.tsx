@@ -276,13 +276,16 @@ export const EditMode: Story = {
       name: i18n.t("routing:edit_routing", { id: 8 }),
     });
     await act(async () => userEvent.click(editBtn));
-    await waitFor(() => {
-      expect(
-        canvas.getByRole("button", {
-          name: i18n.t("routing:save_routing", { id: 8 }),
-        }),
-      ).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("routing:save_routing", { id: 8 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
     const nameInput = canvas.getByLabelText(i18n.t("routing:name")) as HTMLInputElement;
     expect(nameInput.readOnly).toBe(false);
   },
@@ -298,9 +301,13 @@ export const EditAndCancel: Story = {
       name: i18n.t("routing:edit_routing", { id: 8 }),
     });
     await act(async () => userEvent.click(editBtn));
-    const cancelBtn = await canvas.findByRole("button", {
-      name: i18n.t("routing:cancel_for", { id: 8 }),
-    });
+    // See the comment in EditMode above — the Suspense + DetailFade sequence
+    // can exceed the default 1 s timeout on slower CI machines.
+    const cancelBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("routing:cancel_for", { id: 8 }) },
+      { timeout: 5000 },
+    );
     await act(async () => userEvent.click(cancelBtn));
     await waitFor(() => {
       expect(

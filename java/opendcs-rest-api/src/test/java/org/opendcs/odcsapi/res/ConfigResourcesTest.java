@@ -32,6 +32,7 @@ import org.opendcs.odcsapi.beans.ApiConfigSensor;
 import org.opendcs.odcsapi.beans.ApiPlatformConfig;
 import org.opendcs.odcsapi.beans.ApiScriptFormatStatement;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
+import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.slf4j.Logger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
@@ -185,6 +186,26 @@ final class ConfigResourcesTest
 			}
 			assertEquals(apiConfig.getConfigSensors().get(0).getProperties(), sensorConfig.getProperties());
 		}
+	}
+
+	@Test
+	void testApiPlatformConfigMapDuplicateSensorNumberThrows()
+	{
+		ApiPlatformConfig apiConfig = new ApiPlatformConfig();
+		apiConfig.setName("Test config");
+
+		ApiConfigSensor sensor1 = new ApiConfigSensor();
+		sensor1.setSensorNumber(12);
+		sensor1.setDataTypes(new HashMap<>());
+		sensor1.setProperties(new Properties());
+		ApiConfigSensor sensor2 = new ApiConfigSensor();
+		sensor2.setSensorNumber(12);
+		sensor2.setDataTypes(new HashMap<>());
+		sensor2.setProperties(new Properties());
+		apiConfig.setConfigSensors(List.of(sensor1, sensor2));
+
+		WebAppException ex = assertThrows(WebAppException.class, () -> map(apiConfig, dataTypeDao, null));
+		assertEquals(400, ex.getStatus());
 	}
 
 	@Test
