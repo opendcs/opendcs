@@ -16,7 +16,6 @@
 package org.opendcs.lrgs.http;
 
 import java.io.IOException;
-import java.io.Writer;
 
 import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
 import org.eclipse.jetty.server.Request;
@@ -40,6 +39,7 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     private static final String TYPE = "HTTP";
 
     private org.eclipse.jetty.server.Server server = null;
+    private ServerConnector connector = null;
     private ServletContextHandler ctx = null;
     private int slot;
     private int port = 7000;
@@ -96,7 +96,7 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
         ctx.setAttribute("lrgs", this.lrgs);
         ctx.setAttribute("archive", this.archive);
         
-        ServerConnector connector = new ServerConnector(server);
+        connector = new ServerConnector(server);
         connector.setPort(this.port);
         server.addConnector(connector);
     }
@@ -210,5 +210,14 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
         {
             ctx.setAttribute("lrgs", this.lrgs);
         }
+    }
+
+    /**
+     * Retrieve the actual port.
+     * @return
+     */
+    public int getPort()
+    {
+        return this.connector.getLocalPort();
     }
 }

@@ -23,19 +23,24 @@ public class DdsSessionFilter implements ContainerRequestFilter
     @Context
     ServletContext servletContext;
 
+    @Context
+    private HttpServletRequest httpRequest;
+
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException
     {
-        var request = (HttpServletRequest)requestContext.getRequest();
-        var session = request.getSession(false);
+        
+        var session = httpRequest.getSession(false);
         if (session == null)
         {
-            session = request.getSession();
+            session = httpRequest.getSession();
             // Shorter timeout than default. To converse resources drop sessions
             // quickly if not used. At least if not an authenticated user.
-            var user = request.getUserPrincipal();
+            var user = httpRequest.getUserPrincipal();
         
-            if (user == null || "guest".equalsIgnoreCase(user.getName()) || "anonymous".equalsIgnoreCase((user.getName())))
+            if (user == null ||
+                "guest".equalsIgnoreCase(user.getName()) ||
+                "anonymous".equalsIgnoreCase((user.getName())))
             {
                 session.setMaxInactiveInterval(300);
             }

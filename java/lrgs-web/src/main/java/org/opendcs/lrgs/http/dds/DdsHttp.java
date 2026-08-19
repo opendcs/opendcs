@@ -1,5 +1,6 @@
 package org.opendcs.lrgs.http.dds;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -17,15 +18,18 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.opendcs.data.goes.SpaceCraft;
+import org.opendcs.lrgs.dds.DdsSession;
 import org.opendcs.lrgs.messages.MessageRetrieval;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.MDC.MDCCloseable;
 
+import lrgs.common.ArchiveUnavailableException;
 import lrgs.common.DcpAddress;
 import lrgs.common.EndOfArchiveException;
 import lrgs.common.SearchCriteria;
+import lrgs.common.SearchSyntaxException;
 import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
 import lrgs.ddsserver.MessageArchiveRetriever;
@@ -56,9 +60,10 @@ public class DdsHttp
     { 
         LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
         HttpSession session = request.getSession();
+        DdsSession ddsSession = (DdsSession)session.getAttribute(UseDdsSession.KEY);
         try (MDCCloseable diagId = MDC.putCloseable("trace-id", UUID.randomUUID().toString()))
         {
-            var mar = (MessageArchiveRetriever)session.getAttribute(UseDdsSession.KEY);
+            var mar = ddsSession.msgRetriever();
             if (mar != null)
             {
                 var result = MessageRetrieval.getMessages(mar, lrgs, 1000);
@@ -120,12 +125,12 @@ public class DdsHttp
 
             return Response.ok().entity(result.messages()).build();
         }
-        catch (Exception ex)
+        catch (IOException | SearchSyntaxException | ArchiveUnavailableException ex)
         {
-            log.error("can't get messages= archive retriever", ex);
-                return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                            .entity(MESSAGE_RETRIEVE_FAILED)
-                            .build();
+            log.error("can't get messages.", ex);
+            return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
+                        .entity(MESSAGE_RETRIEVE_FAILED)
+                        .build();
         }
     }
 

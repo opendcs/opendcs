@@ -16,12 +16,15 @@ dependencies {
     testImplementation(libs.bundles.junit)
     testRuntimeOnly (libs.bundles.junit.platform)
     testImplementation(libs.ch.qos.logback)
+    testRuntimeOnly(libs.io.opentelemetry.instrumentation.logback.mdc)
+    testRuntimeOnly(libs.io.opentelemetry.instrumentation.logback.mdc)
     testImplementation(project(":opendcs-logback-event-provider"))
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)
     testImplementation(libs.io.github.hakky54)
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.io.netty)
+    testImplementation(libs.rest.assured)
 }
 
 test {
@@ -32,6 +35,8 @@ test {
         project.mkdir(tmpdir)
     }
     jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/src/test/test-config/logback.xml"
+    jvmArgs += "-DAPP_NAME=lrgs-tests"
 }
 
 jacocoTestReport {

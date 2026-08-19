@@ -11,7 +11,7 @@ import org.opendcs.lrgs.http.dto.DataSource;
 import lrgs.common.ArchiveException;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgIndex;
-import lrgs.ddsserver.MessageArchiveRetriever;
+import lrgs.common.DcpMsgRetriever;
 import lrgs.lrgsmain.LrgsMain;
 
 public final class MessageRetrieval
@@ -27,7 +27,7 @@ public final class MessageRetrieval
      * @param lrgs
      * @return
      */
-    public static RetrieveResult getMessages(MessageArchiveRetriever mar, LrgsMain lrgs, int maxSize)
+    public static RetrieveResult getMessages(DcpMsgRetriever mar, LrgsMain lrgs, int maxSize)
     {
         final List<org.opendcs.lrgs.http.dto.DcpMsg> messages = new ArrayList<>();
         try
