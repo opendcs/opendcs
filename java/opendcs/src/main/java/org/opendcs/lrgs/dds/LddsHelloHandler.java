@@ -16,6 +16,8 @@
 package org.opendcs.lrgs.dds;
 
 import java.io.File;
+import java.io.IOException;
+
 import org.opendcs.lrgs.dds.dds14.DdsProtocol14Handler;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -23,10 +25,13 @@ import org.slf4j.Logger;
 import ilex.util.EnvExpander;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
+import io.netty.util.ReferenceCountUtil;
 import lrgs.apistatus.AttachedProcess;
 import lrgs.archive.XmlMsgArchive;
+import lrgs.common.ArchiveException;
+import lrgs.common.DcpMsgRetriever;
 import lrgs.common.LrgsErrorCode;
 import lrgs.common.NetlistDcpNameMapper;
 import lrgs.ddsserver.MessageArchiveRetriever;
@@ -34,6 +39,7 @@ import lrgs.ldds.CmdHello;
 import lrgs.ldds.LddsMessage;
 import lrgs.ldds.ServerError;
 import lrgs.lrgsmain.LrgsConfig;
+import lrgs.lrgsmain.LrgsMain;
 
 /**
  *
@@ -43,7 +49,7 @@ import lrgs.lrgsmain.LrgsConfig;
  * process the message appropriately and setup the desired DdsServer version.
  *
  */
-public class LddsHelloHandler extends ChannelInboundHandlerAdapter
+public class LddsHelloHandler extends SimpleChannelInboundHandler<CmdHello>
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
@@ -64,15 +70,16 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
      * pipeline appropriately with the required data instances and additional/changed pipeline handlers.
      */
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
+    public void channelRead0(ChannelHandlerContext ctx, CmdHello hello) throws Exception
     {
         var user = ctx.channel().attr(DDS_USER).get();
-        if (msg instanceof CmdHello && user != null)
+        if (user != null)
         {
-            var res = new LddsMessage(LddsMessage.IdGoodbye, "hello already called.");
+            var res = new LddsMessage(LddsMessage.IdGoodbye, 
+                              "hello already called. Resetting Session. Connect again.");
             ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
         }
-        else if (msg instanceof CmdHello hello)
+        else
         {
             if (hello.getDdsVersion() != 14)
             {
@@ -83,24 +90,28 @@ public class LddsHelloHandler extends ChannelInboundHandlerAdapter
             ctx.channel().attr(DDS_USER).set(user);
 
             var lrgs = ctx.channel().attr(NettyDdsServer.LRGS_INSTANCE).get();
-            var ap = new AttachedProcess();
-            ap.user = user.getName();
-            var retriever = new MessageArchiveRetriever((XmlMsgArchive)lrgs.msgArchive, ap);
-            retriever.attachSource();
-            retriever.setDcpMsgSource(retriever);
-            retriever.setDcpNameMapper(new NetlistDcpNameMapper(
-                new File(EnvExpander.expand(LrgsConfig.instance().ddsNetlistDir)),
-            null));
-            retriever.init();
+            var retriever = setupRetriever(user, lrgs);
             var session = new DdsSession(retriever, hello.getDdsVersion(), lrgs.msgArchive);
             ctx.channel().attr(DDS_SESSION).set(session);
 
-            ctx.pipeline().addLast("dds14handler", new DdsProtocol14Handler());
+            ctx.pipeline().replace(DdsNoOpHandler.NAME, DdsProtocol14Handler.NAME, new DdsProtocol14Handler());
             ctx.writeAndFlush(res);
         }
-        else
-        {
-            super.channelRead(ctx, msg);
-        }
+        ReferenceCountUtil.release(hello);
     }
+
+    private DcpMsgRetriever setupRetriever(DdsUserPrincipal user, LrgsMain lrgs) throws IOException, ArchiveException
+    {
+        var ap = new AttachedProcess();
+        ap.user = user.getName();
+        var retriever = new MessageArchiveRetriever((XmlMsgArchive)lrgs.msgArchive, ap);
+        retriever.attachSource();
+        retriever.setDcpMsgSource(retriever);
+        retriever.setDcpNameMapper(new NetlistDcpNameMapper(
+            new File(EnvExpander.expand(LrgsConfig.instance().ddsNetlistDir)),
+        null));
+        retriever.init();
+        return retriever;
+    }
+
 }

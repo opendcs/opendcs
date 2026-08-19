@@ -13,11 +13,10 @@
 * License for the specific language governing permissions and limitations
 * under the License.
 */
-package org.opendcs.lrgs.dds.dds14;
+package org.opendcs.lrgs.dds.commands;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.rmi.ServerError;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -45,9 +44,11 @@ import lrgs.ldds.ExtBlockXmlParser;
 import lrgs.ldds.LddsMessage;
 
 /**
- * At the moment consider this a place holder. Intention is to move the
- * LddsCommand logic out of the commands themselves. This intentionally dupplicates {@link lrgs.ldds.CmdGetMsgBlockExt}
+ * This intentionally duplicates {@link lrgs.ldds.CmdGetMsgBlockExt}
  * in order to start isolating the "session" components that would be required.
+ *
+ * Goal is to get the actual retrieve/build message logic into a central handler that is shared by
+ * both the new and original DdsServer implementations.
  *
  * After a few more command implementations and rearrangments of the Netty Channel Pipeline we should
  * have a better sense of what should be where.
@@ -67,7 +68,7 @@ public final class GetMsgBlockEx
     }
 
     @SuppressWarnings({"java:S3776", "java:S138"}) // to be dealt with in future cleanup.
-    public static LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws IOException
+    public static LddsMessage process(CmdGetMsgBlockExt cmd, DdsSession session) throws IOException, ArchiveException
     {
         log.info("Getting message {}", session);
         var msgRetriever = session.msgRetriever();
@@ -210,17 +211,6 @@ public final class GetMsgBlockEx
 
             xos.endElement(ExtBlockXmlParser.MsgBlockElem);
             gzos.finish();
-        }
-        catch (ArchiveException ex)
-        {
-            String rs = "?" + ex.getErrorCode() + ",0," + ex.getMessage();
-            if (!(ex instanceof UntilReachedException))
-            {
-                log.atTrace()
-                   .setCause(ex)
-                   .log("ArchiveException on Response='{}'", rs);
-            }
-            return new LddsMessage(cmd.getCommandCode(), rs);
         }
         log.info("returning data.");
         // end of while loop...

@@ -21,13 +21,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.opentelemetry.api.trace.Span;
-import lrgs.common.ArchiveException;
-import lrgs.common.LrgsErrorCode;
-import lrgs.ldds.CmdGetMsgBlockExt;
-import lrgs.ldds.CmdGoodbye;
-import lrgs.ldds.LddsCommand;
 import lrgs.ldds.LddsMessage;
-import lrgs.ldds.ServerError;
 
 /**
  * Handles clients using DdsProtocol 14.
@@ -38,44 +32,33 @@ import lrgs.ldds.ServerError;
  */
 public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
 {
+    public static final String NAME = "dds14Handler";
+
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception
+    {
+        ctx.channel()
+           .pipeline()
+           .addAfter(NAME, "msgblockext", new GetMessageBlockExHandler())
+           .addAfter(NAME, "goodbyte", new GoodByeHandler())
+           // add the rest of the appropriate handlers
+        ;
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
     {
         var user = ctx.channel().attr(LddsHelloHandler.DDS_USER).get();
-        var session = ctx.channel().attr(LddsHelloHandler.DDS_SESSION).get();
         try (var span = Span.current().setAttribute("ddsUser", user.getName()).makeCurrent())
         {
-            if (msg instanceof CmdGetMsgBlockExt cmd)
-            {
-                var res = GetMsgBlockEx.process(cmd, session);
-                ctx.writeAndFlush(res);
-            }
-            else if (msg instanceof CmdGoodbye)
-            {
-                var res = new LddsMessage(LddsMessage.IdGoodbye, "");
-                ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
-            }
-            else if (msg instanceof LddsCommand cmd)
-            {
-                throw new ServerError("Invalid command sent " + cmd.getCommandCode(),
-                                    LrgsErrorCode.DPARSEERROR, 0);
-            }
-            else
-            {
-                super.channelRead(ctx, msg);
-            }
+            ctx.fireChannelRead(msg);
         }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
     {
-        var res = new LddsMessage(LddsMessage.IdDcpBlockExt, cause.getMessage());
-        var future = ctx.writeAndFlush(res);
-        if (!(cause instanceof ArchiveException aex) || aex.getHangup())
-        {
-            future.addListener(ChannelFutureListener.CLOSE);
-        }
+        var res = new LddsMessage(LddsMessage.IdGoodbye, cause.getMessage());
+        ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
     }
 }
