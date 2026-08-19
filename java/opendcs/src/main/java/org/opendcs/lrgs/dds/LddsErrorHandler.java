@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.ReferenceCountUtil;
 
 /**
  * Catch all error handler the terminates the connection after logging the error.
@@ -28,6 +29,14 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 public class LddsErrorHandler extends ChannelInboundHandlerAdapter
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
+    {
+        log.atError().log("message not processed type was {}, pipeline was {}", msg.getClass().getName(), ctx.channel().pipeline().names());
+        ReferenceCountUtil.release(msg);
+    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
