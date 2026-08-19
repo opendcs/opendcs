@@ -256,19 +256,20 @@ public class RoutingSpec extends IdDatabaseObject
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(this.name,
+		var dsName = this.dataSource != null ? this.dataSource.getName() : null;
+		return Objects.hash(this.name != null ? this.name.toLowerCase() : null,
 							this.networkListNames,
-							this.dataSource.getName(),
+							dsName != null ? dsName.toLowerCase() : null,
 							this.networkLists,
-							this.outputFormat,
+							this.outputFormat, // don't lower case, could be used in a lookup
 							this.consumerType,
-							this.consumerArg,
+							this.consumerArg, // don't lower case, items wihtin could be case sensitive
 							this.enableEquations,
 							this.isProduction,
-							this.outputTimeZoneAbbr,
-							this.presentationGroupName,
-							this.sinceTime,
-							this.untilTime,
+							this.outputTimeZoneAbbr != null ? this.outputTimeZoneAbbr : null,
+							this.presentationGroupName != null ? this.presentationGroupName.toLowerCase() : null, 
+							this.sinceTime.toLowerCase(),
+							this.untilTime.toLowerCase(),
 							this.usePerformanceMeasurements,
 							this.properties);
 	}
