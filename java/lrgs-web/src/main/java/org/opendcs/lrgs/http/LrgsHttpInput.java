@@ -147,7 +147,8 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
     }
 
     @Override
-    public boolean hasSequenceNums() {
+    public boolean hasSequenceNums()
+    {
         return false;
     }
 
@@ -170,7 +171,8 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
     }
 
     @Override
-    public boolean getsAPRMessages() {
+    public boolean getsAPRMessages()
+    {
         return false;
     }
 
@@ -189,7 +191,7 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
     @Override
     public void setConfigParam(String name, String value)
     {
-        if(name.equalsIgnoreCase("port"))
+        if("port".equalsIgnoreCase(name))
         {
             this.port = Integer.valueOf(value);
         }
