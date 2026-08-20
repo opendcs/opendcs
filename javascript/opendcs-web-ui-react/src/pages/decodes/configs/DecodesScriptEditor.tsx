@@ -35,17 +35,24 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
   const { t } = useTranslation(["decodes"]);
   const [localScript, dispatch] = useReducer(
     decodesScriptReducer,
-    script || {
-      // setup some sane defaults
-      dataOrder: ApiConfigScriptDataOrderEnum.U,
-      headerType: "other",
-      formatStatements: [{ sequenceNum: 1 }],
-      scriptSensors: sensors.map((cs) => {
-        return {
-          sensorNumber: cs.sensorNumber,
-          unitConverter: { algorithm: "none", fromAbbr: "raw", toAbbr: "raw" },
-        } as ApiConfigScriptSensor;
-      }),
+    script,
+    (incoming?: Partial<ApiConfigScript>): ApiConfigScript => {
+      const merged: ApiConfigScript = {
+        // setup some sane defaults
+        dataOrder: ApiConfigScriptDataOrderEnum.U,
+        headerType: "other",
+        scriptSensors: sensors.map((cs) => {
+          return {
+            sensorNumber: cs.sensorNumber,
+            unitConverter: { algorithm: "none", fromAbbr: "raw", toAbbr: "raw" },
+          } as ApiConfigScriptSensor;
+        }),
+        ...incoming,
+      };
+      if (!merged.formatStatements?.length) {
+        merged.formatStatements = [{ sequenceNum: 1 }];
+      }
+      return merged;
     },
   );
 
@@ -91,7 +98,7 @@ export const DecodesScriptEditor: React.FC<DecodesScriptEditorProperties> = ({
             </Card.Header>
             <Card.Body>
               <ClassicEditor
-                formatStatements={localScript.formatStatements!} // The default local script always includes an initial first row
+                formatStatements={localScript.formatStatements}
                 edit={edit}
                 onFormatStatementChange={statementChange}
               />
