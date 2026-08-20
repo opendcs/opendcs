@@ -1,6 +1,7 @@
 import { FormSelect } from "react-bootstrap";
 import { REFLIST_SITE_NAME_TYPE, useRefList } from "../../contexts/data/RefListContext";
 import { useTranslation } from "react-i18next";
+import { RefListPlaceholderSelect } from "../../components/controls/RefListPlaceholderSelect";
 import type { SiteNameType } from "./SiteNameList";
 
 export interface SiteNameTypeSelectProperties {
@@ -14,10 +15,23 @@ export const SiteNameTypeSelect: React.FC<SiteNameTypeSelectProperties> = ({
   onChange,
   existing = [],
 }) => {
-  const { refList, ready } = useRefList();
+  const { refList, ready, failed } = useRefList();
   const { t, i18n } = useTranslation(["sites", "translation"]);
   const siteNameTypes = refList(REFLIST_SITE_NAME_TYPE);
-  return ready ? (
+
+  // Keep the dropdown in place, disabled, rather than collapsing it to text.
+  if (!ready) {
+    return (
+      <RefListPlaceholderSelect
+        name="siteNameType"
+        ariaLabel={t("sites:site_names.select")}
+        value={defaultValue}
+        failed={failed}
+      />
+    );
+  }
+
+  return (
     <FormSelect
       key={i18n.language}
       name="siteNameType"
@@ -37,8 +51,6 @@ export const SiteNameTypeSelect: React.FC<SiteNameTypeSelectProperties> = ({
             })
         : null}
     </FormSelect>
-  ) : (
-    <p>{t("translation:loading_reference_lists")}</p>
   );
 };
 
