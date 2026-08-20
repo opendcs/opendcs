@@ -11,8 +11,8 @@ interface ProviderProps {
 // + refetch-on-org-switch come from TanStack — the prior implementation kept
 // an empty `[]` dep array and never refetched when the user switched orgs.
 export const RefListProvider = ({ children }: ProviderProps) => {
-  const { data, isSuccess } = useRefListsQuery();
+  const { data, isSuccess, isError } = useRefListsQuery();
   const refList = useCallback((name: string) => data?.[name] ?? {}, [data]);
-  const value: RefListContextType = { refList, ready: isSuccess };
+  const value: RefListContextType = { refList, ready: isSuccess, failed: isError };
   return <RefListContext value={value}>{children}</RefListContext>;
 };
