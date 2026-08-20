@@ -23,7 +23,8 @@ hljs.registerLanguage("decodes", decodes);
 DataTable.use(DT);
 
 export interface ClassicFormatStatememntEditorProperties {
-  formatStatements: ApiScriptFormatStatement[];
+  /** Optional because callers build scripts incrementally; DataTables throws on undefined. */
+  formatStatements?: ApiScriptFormatStatement[];
   onFormatStatementChange?: (statements: ApiScriptFormatStatement[]) => void;
   edit?: boolean;
 }
@@ -37,7 +38,7 @@ const statementSorter = (a: ApiScriptFormatStatement, b: ApiScriptFormatStatemen
  */
 const ClassicFormatStatementEditor: React.FC<
   ClassicFormatStatememntEditorProperties
-> = ({ formatStatements, edit = false, onFormatStatementChange }) => {
+> = ({ formatStatements = [], edit = false, onFormatStatementChange }) => {
   const { toDom } = useContextWrapper();
   const { t, i18n } = useTranslation(["decodes"]);
   const table = useRef<DataTableRef>(null);
