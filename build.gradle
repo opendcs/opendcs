@@ -4,14 +4,14 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:7.3.0.8198"
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:7.4.0.8496"
     }
 }
 
 plugins {
     id 'eclipse'
     id 'jacoco'
-    id 'com.github.ben-manes.versions' version '0.57.0'
+    id 'com.github.ben-manes.versions' version '0.61.0'
 }
 
 
