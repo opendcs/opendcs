@@ -28,23 +28,28 @@ import org.opendcs.database.impl.cwms.jdbi.mapper.CwmsOfficeMapper;
 import org.opendcs.database.impl.cwms.jdbi.mapper.office.CwmsOfficeReducer;
 import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
 import org.stringtemplate.v4.ST;
 
 @ServiceProvider(service = OrganizationDao.class, path ="dao/CWMS-Oracle")
-public final class CwmsOrganizationDao implements OrganizationDao
+public final class CwmsOrganizationDaoImpl implements OrganizationDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String SELECT = """
+            with primary_office(office_code, office_id, office_type, eroc, long_name, report_to_office_code ) as (
+                select office_code, office_id, office_type, eroc, long_name, report_to_office_code
+                  from cwms_v_office
+                 order by office_id <collate> asc
+                 <if(limit)><limit><endif>
+            )
             select <primary>, <reports_to>
-              from cwms_v_office p
+              from primary_office p
              left outer join cwms_v_office rt on rt.office_code = p.report_to_office_code
                                              and rt.office_code != p.office_code
-             order by p.office_id <collate> asc
-            <if(limit_clause)><limit_clause><endif>
-
+             order by p.office_id <collate> asc, rt.office_id <collate> asc
         """;
 
     private CwmsOfficeMapper officeMapper = CwmsOfficeMapper.withPrefix("p");
@@ -60,20 +65,17 @@ public final class CwmsOrganizationDao implements OrganizationDao
         var dbEngine = ctx.getDatabaseEngine();
         template.add("primary", officeMapper.columnsForSelect())
                 .add("reports_to", reportsToMapper.columnsForSelect())
-                .add(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine));
+                .add(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                .add(SqlKeywords.LIMIT, SqlQueries.addLimitOffset(limit, offset));
         try(var query = handle.createQuery(template.render()))
         {
-
-
-            if (limit > 0)
+            if (limit >= 0)
             {
-                query.define("limit_clause", " OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY");
                 query.bind("limit", limit);
-                query.bind("offset", offset);
             }
-            else
+            if (offset >= 0)
             {
-                query.define("limit_clause", "");
+                query.bind("offset", offset);
             }
             query.setSqlLogger(new DetailSqlLogger(log));
             return query.registerRowMapper(officeMapper)
@@ -82,6 +84,12 @@ public final class CwmsOrganizationDao implements OrganizationDao
                         .stream()
                         .map(CwmsOfficeBuilder::build)
                         .map(o -> (Organization)o)
+                        // due to the recursive nature of of the CWMS Office table, offices may be inserted into the 
+                        // linked HashMap out of order when retrieved.
+                        .sorted((a,b) -> a.getName().compareTo(b.getName()))
+                        // then we remove the ones that are at the end of the list
+                        // the reportsTo values will still be active references
+                        //.limit(limit >= 0 ? limit : Integer.MAX_VALUE)
                         .toList();
         }
     }
