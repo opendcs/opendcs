@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.EnumSet;
@@ -163,7 +164,7 @@ public class BaseApiIT extends AppTestBase
 
 		var user = new UserBuilder().withEmail(username).build();
 		var roles = Map.of(OrganizationResource.map(this.configuration.getDefaultOrganization()),
-						   EnumSet.allOf(OpenDcsApiRoles.class).stream().toList());
+						   new ArrayList<>(EnumSet.allOf(OpenDcsApiRoles.class).stream().toList()));
 		OpenDcsPrincipal mcup = new OpenDcsPrincipal(user, roles);
 		session.setAuthType("CLIENT-CERT");
 		session.setPrincipal(mcup);
