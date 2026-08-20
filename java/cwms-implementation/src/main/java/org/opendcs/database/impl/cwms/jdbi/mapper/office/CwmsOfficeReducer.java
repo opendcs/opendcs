@@ -19,6 +19,7 @@ import static org.opendcs.utils.ExceptionUtil.wrappedComputeIfAbsent;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jdbi.v3.core.result.ResultSetAccumulator;
@@ -34,6 +35,9 @@ public class CwmsOfficeReducer implements ResultSetAccumulator<Map<DbKey,CwmsOff
 
     private final CwmsOfficeMapper primaryOfficeMapper;
     private final CwmsOfficeMapper reportToOfficeMapper;
+
+    /** Keep the report to offices separate */
+    private final LinkedHashMap<DbKey, CwmsOfficeBuilder> reportToOffices = new LinkedHashMap<>();
 
     public CwmsOfficeReducer(CwmsOfficeMapper primaryMapper, CwmsOfficeMapper reportToMapper)
     {
@@ -54,8 +58,16 @@ public class CwmsOfficeReducer implements ResultSetAccumulator<Map<DbKey,CwmsOff
         var reportToId = keyMapper.map(rs, primaryOfficeMapper.column(CwmsOfficeMapper.Columns.REPORTS_TO_OFFICE_CODE), ctx);
         if (reportToId != null)
         {
-            var reportToOffice = wrappedComputeIfAbsent(previous, reportToId, reportToOfcId -> reportToOfficeMapper.map(rs, ctx), SQLException.class);
-            office.withReportsTo(reportToOffice);
+            var inPrevious = previous.get(reportToId);
+            if (inPrevious != null)
+            {
+                office.withReportsTo(inPrevious);
+            }
+            else
+            {
+                var reportToOffice = wrappedComputeIfAbsent(reportToOffices, reportToId, reportToOfcId -> reportToOfficeMapper.map(rs, ctx), SQLException.class);
+                office.withReportsTo(reportToOffice);
+            }
         }
 
         return previous;    
