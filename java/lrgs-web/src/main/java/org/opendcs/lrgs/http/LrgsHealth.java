@@ -29,6 +29,10 @@ import org.slf4j.Logger;
 
 import lrgs.lrgsmain.LrgsMain;
 
+/**
+ * Provide basic health status of this LRGS.
+ * LrgsHealth
+ */
 @Path("/health")
 public class LrgsHealth
 {
