@@ -225,10 +225,15 @@ public final class AppResources extends OpenDcsResource
 		ret.setLastModified(app.getLastModified());
 		ret.setProperties(app.getProperties());
 		ret.setManualEditApp(app.isManualEditingApp());
-		String appType = app.getProperties().getProperty("appType");
-		if (appType == null && app.getAppType() != null)
+		// The app type is stored as the "appType" property, and mapLoading()
+		// echoes it back both as the appType field and inside the properties
+		// map. The field is the one the editor exposes, so it has to win here:
+		// keying off the properties copy meant the stale value round-tripped by
+		// the client silently discarded the user's edit.
+		String appType = app.getAppType();
+		if (appType != null && !appType.isEmpty())
 		{
-			ret.setProperty("appType", app.getAppType());
+			ret.setProperty("appType", appType);
 		}
 		return ret;
 	}
