@@ -20,7 +20,7 @@ import org.opendcs.fixtures.extensions.lrgs.LrgsConfig;
 import org.opendcs.fixtures.extensions.lrgs.LrgsTestExtension;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 import org.opendcs.lrgs.dao.MsgArchive;
-import org.opendcs.lrgs.http.LrgsHttpInterface;
+import org.opendcs.lrgs.http.LrgsHttpInput;
 
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
@@ -35,7 +35,7 @@ import lrgs.lrgsmain.LrgsInputInterface;
 @ExtendWith(LrgsTestExtension.class)
 @LrgsConfig("""
     notimeout=true
-    LrgsInput.web.class=org.opendcs.lrgs.http.LrgsHttpInterface
+    LrgsInput.web.class=org.opendcs.lrgs.http.LrgsHttpInput
     LrgsInput.web.enabled=true
     LrgsInput.web.port=0
     """)
@@ -47,7 +47,7 @@ final class DdsHttpTest
     @BeforeAll
     static void setup(LrgsTestInstance lrgs)
     {
-        var lrgsInput = (LrgsHttpInterface)lrgs.getLrgsInputs()
+        var lrgsInput = (LrgsHttpInput)lrgs.getLrgsInputs()
                                                .stream()
                                                .filter(i -> i != null)
                                                .peek(i -> System.out.println(i.getInputName()))

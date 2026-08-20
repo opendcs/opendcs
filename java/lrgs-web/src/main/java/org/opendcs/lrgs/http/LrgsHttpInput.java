@@ -1,0 +1,226 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
+package org.opendcs.lrgs.http;
+
+import java.io.IOException;
+
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.ErrorHandler;
+import org.eclipse.jetty.util.Callback;
+import org.glassfish.jersey.servlet.ServletContainer;
+import org.opendcs.lrgs.dao.MsgArchive;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+import lrgs.lrgsmain.LoadableLrgsInputInterface;
+import lrgs.lrgsmain.LrgsInputException;
+import lrgs.lrgsmain.LrgsInputInterface;
+import lrgs.lrgsmain.LrgsMain;
+
+/**
+ * Actually more of an "output." Provides an HTTP interface to an LRGS
+ * to view status and no provide a DDS feed over HTTP
+ * LrgsHttpInput
+ */
+public class LrgsHttpInput implements LoadableLrgsInputInterface
+{
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    private static final String TYPE = "HTTP";
+
+    private org.eclipse.jetty.server.Server server = null;
+    private ServerConnector connector = null;
+    private ServletContextHandler ctx = null;
+    private int slot;
+    private int port = 7000;
+    private String interfaceName;
+    private MsgArchive archive;
+    private LrgsMain lrgs;
+
+    @Override
+    public int getType()
+    {
+        return 2000;
+    }
+
+    @Override
+    public void setSlot(int slot)
+    {
+        this.slot = slot;
+    }
+
+    @Override
+    public int getSlot()
+    {
+        return slot;
+    }
+
+    @Override
+    public String getInputName()
+    {
+        return TYPE+":"+interfaceName+":"+port;
+    }
+
+    @Override
+    public void initLrgsInput() throws LrgsInputException
+    {
+        server = new org.eclipse.jetty.server.Server();
+		ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		ctx.setContextPath("/");
+		server.setHandler(ctx);
+        var serHol = ctx.addServlet(ServletContainer.class, "/*");
+		serHol.setInitOrder(1);
+        server.setErrorHandler(new ErrorHandler()
+        {
+            @Override
+            protected void generateResponse(Request request, Response response, int code, String message, Throwable cause, Callback callback) throws IOException
+            {
+                log.atError().setCause(cause).log("Unexpected error {}, code = {}", message, code);
+                callback.succeeded();
+            }
+        });
+        serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        serHol.setInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true");
+        ctx.setAttribute("lrgs", this.lrgs);
+        ctx.setAttribute("archive", this.archive);
+
+        connector = new ServerConnector(server);
+        connector.setPort(this.port);
+        server.addConnector(connector);
+    }
+
+    @Override
+    public void shutdownLrgsInput()
+    {
+        try
+        {
+            server.stop();
+        }
+        catch (Exception ex)
+        {
+            log.atError()
+               .setCause(ex)
+               .log("Unable to stop Jetty Server");
+        }
+    }
+
+    @Override
+    public void enableLrgsInput(boolean enabled)
+    {
+        try
+        {
+            server.start();
+        }
+        catch (Exception ex)
+        {
+            log.atError()
+               .setCause(ex)
+               .log("Unable to stop Jetty Server");
+        }
+    }
+
+    @Override
+    public boolean hasBER()
+    {
+        return false;
+    }
+
+    @Override
+    public String getBER()
+    {
+        throw new UnsupportedOperationException("Unimplemented method 'getBER'");
+    }
+
+    @Override
+    public boolean hasSequenceNums() {
+        return false;
+    }
+
+    @Override
+    public int getStatusCode()
+    {
+        return LrgsInputInterface.DL_ACTIVE;
+    }
+
+    @Override
+    public String getStatus()
+    {
+        return "Active";
+    }
+
+    @Override
+    public int getDataSourceId()
+    {
+        return 2000;
+    }
+
+    @Override
+    public boolean getsAPRMessages() {
+        return false;
+    }
+
+    @Override
+    public String getGroup()
+    {
+        return null;
+    }
+
+    @Override
+    public void setInterfaceName(String name)
+    {
+        this.interfaceName = name;
+    }
+
+    @Override
+    public void setConfigParam(String name, String value)
+    {
+        if(name.equalsIgnoreCase("port"))
+        {
+            this.port = Integer.valueOf(value);
+        }
+    }
+
+    @Override
+    public void setMsgArchive(MsgArchive archive)
+    {
+        this.archive = archive;
+        if (ctx != null)
+        {
+            ctx.setAttribute("archive", this.archive);
+        }
+    }
+
+    @Override
+    public void setLrgsMain(LrgsMain lrgsMain)
+    {
+        this.lrgs = lrgsMain;
+        if (ctx != null)
+        {
+            ctx.setAttribute("lrgs", this.lrgs);
+        }
+    }
+
+    /**
+     * Retrieve the actual port.
+     * @return
+     */
+    public int getPort()
+    {
+        return this.connector.getLocalPort();
+    }
+}

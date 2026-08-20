@@ -35,6 +35,12 @@ import lrgs.common.UntilReachedException;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
 
+/**
+ * Handle basic DDS-over-HTTP requirements.
+ * Specification is available here https://github.com/opendcs/dcs_standards/blob/main/source/dds-http.yaml
+ *
+ * DdsHttp
+ */
 @Path("/dds")
 @UseDdsSession
 public class DdsHttp

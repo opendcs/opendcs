@@ -22,7 +22,11 @@ public class LrgsStatus
     @Context
     ServletContext servletContext;
 
-    
+    /**
+     * Renders the existing lrgsstatus.html data out to to the requestor.
+     * Generates report on request.
+     * @return
+     */
     @GET
     @Produces(MediaType.TEXT_HTML)
     public Response getStatus()

@@ -1,7 +1,6 @@
 package org.opendcs.lrgs.dds;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.opendcs.lrgs.dao.MsgArchive;
 
@@ -23,7 +22,7 @@ import lrgs.common.DcpMsgRetriever;
  * @param sequenceMessageBuf buffer of by sequence number messages
  */
 public record DdsSession(DcpMsgRetriever msgRetriever, int ddsVersion, MsgArchive archive,
-                         Integer seqNumMsgBufIdx, List<DcpMsg> sequenceMessageBuf)
+                         Integer seqNumMsgBufIdx, ArrayList<DcpMsg> sequenceMessageBuf)
 {
     public DdsSession(DcpMsgRetriever msgRetriever, int ddsVersion, MsgArchive archive)
     {

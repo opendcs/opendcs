@@ -18,6 +18,19 @@ import lrgs.common.SearchSyntaxException;
 import lrgs.ddsserver.MessageArchiveRetriever;
 import lrgs.lrgsmain.LrgsMain;
 
+/**
+ * Ensures, for endpoints that require it, that a DdsSession with an initialzed
+ * {@link lrgs.common.DcpMsgRetriever} instance is available when accessing data.
+ *
+ * Basic logic is a follows:
+ * if user has an existing session, the session timeout is whatever it is.
+ * if the user does not have an existing session, the timeout is set to 5 minutes.
+ *
+ * The logic behind the short time out is so that anonymous session don't continue to suck up
+ * resources unless they are continuously being used.
+ *
+ * DdsSessionFilter
+ */
 @Provider
 @UseDdsSession
 public class DdsSessionFilter implements ContainerRequestFilter
@@ -38,7 +51,8 @@ public class DdsSessionFilter implements ContainerRequestFilter
             // Shorter timeout than default. To converse resources drop sessions
             // quickly if not used. At least if not an authenticated user.
             var user = httpRequest.getUserPrincipal();
-        
+            // guest and anonymous are based on existing names used by OpenDCS
+            // to allow for better integration into the rest api in future work.
             if (user == null ||
                 "guest".equalsIgnoreCase(user.getName()) ||
                 "anonymous".equalsIgnoreCase((user.getName())))
@@ -57,7 +71,7 @@ public class DdsSessionFilter implements ContainerRequestFilter
                 {
                     var mar = getMar(lrgs);
                     ddsSession = new DdsSession(mar, 15, lrgs.msgArchive);
-                    session.setAttribute(UseDdsSession.KEY, ddsSession); // NOSONAR
+                    session.setAttribute(UseDdsSession.KEY, ddsSession);
                 }
                 catch (SearchSyntaxException | ArchiveUnavailableException | IOException ex)
                 {
@@ -66,7 +80,7 @@ public class DdsSessionFilter implements ContainerRequestFilter
             }
         }
     }
-    
+
 
     public MessageArchiveRetriever getMar(LrgsMain lrgs) throws SearchSyntaxException, ArchiveUnavailableException, IOException
     {
