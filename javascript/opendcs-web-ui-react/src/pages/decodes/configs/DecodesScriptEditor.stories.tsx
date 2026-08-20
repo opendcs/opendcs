@@ -114,6 +114,39 @@ export const WithScriptInEdit: Story = {
   render: WithDecodedMessage,
 };
 
+/**
+ * The scripts table's "add" hands the editor a stub built from just a name, so
+ * every field the editor needs is missing. That used to leave formatStatements
+ * undefined and DataTables threw "Cannot read properties of undefined" on mount,
+ * taking the whole editor down.
+ */
+export const FromNameOnlyStub: Story = {
+  args: {
+    ...Default.args,
+    script: { name: "script_1" },
+  },
+  play: async ({ mount, parameters, canvasElement }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    // Renders at all (it used to throw during the mount effect) and starts with
+    // one statement row, since new rows can only be added from an existing row.
+    await expect(
+      await canvas.findByRole("textbox", {
+        name: i18n.t("decodes:script_editor.format_statements.label_input", {
+          sequence: 1,
+        }),
+      }),
+    ).toBeInTheDocument();
+
+    // The defaults still apply to the fields the stub didn't carry. Queried by
+    // id rather than accessible name so the assertion doesn't ride on a
+    // translation string.
+    const headerType = canvasElement.querySelector<HTMLSelectElement>("#headerType");
+    await expect(headerType).toHaveValue("other");
+  },
+};
+
 export const CreateFromEmpty: Story = {
   args: {
     ...Default.args,
