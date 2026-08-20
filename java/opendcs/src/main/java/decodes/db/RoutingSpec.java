@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.db;
@@ -18,7 +18,9 @@ import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import java.util.Date;
 import java.util.Vector;
+
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -64,7 +66,7 @@ public class RoutingSpec extends IdDatabaseObject
 	  e.g. file, pipe, directory.
 	*/
 	public String consumerType;
-	
+
 	/** Argument to consumer. E.g. if file, this will be the file name. */
 	public String consumerArg;
 
@@ -145,8 +147,8 @@ public class RoutingSpec extends IdDatabaseObject
 	}
 
 
-	/** 
-	  Makes a unique string suitable for use as a filename. 
+	/**
+	  Makes a unique string suitable for use as a filename.
 	  @return String suitable for use as a file name
 	*/
 	public String makeFileName()
@@ -172,7 +174,7 @@ public class RoutingSpec extends IdDatabaseObject
 		copy(ret, this);
 		return ret;
 	}
-	
+
 	public static void copy(RoutingSpec copyTo, RoutingSpec copyFrom)
 	{
 		try { copyTo.setId(copyFrom.getId()); }
@@ -198,6 +200,7 @@ public class RoutingSpec extends IdDatabaseObject
 	  Returns true if this routing spec equals the passed one.
 	  Note: SQL ID is not checked for equality.
 	*/
+	@Override
 	public boolean equals(Object ob)
 	{
 		if (!(ob instanceof RoutingSpec))
@@ -209,11 +212,11 @@ public class RoutingSpec extends IdDatabaseObject
 		 || rs.enableEquations != enableEquations
 		 || rs.usePerformanceMeasurements != usePerformanceMeasurements
 		 || !TextUtil.strEqualIgnoreCase(rs.outputFormat, outputFormat)
-		 || !TextUtil.strEqualIgnoreCase(rs.outputTimeZoneAbbr, 
+		 || !TextUtil.strEqualIgnoreCase(rs.outputTimeZoneAbbr,
 				outputTimeZoneAbbr))
 			return false;
 
-		if (!TextUtil.strEqualIgnoreCase(rs.presentationGroupName, 
+		if (!TextUtil.strEqualIgnoreCase(rs.presentationGroupName,
 				presentationGroupName)
 		 || !TextUtil.strEqualIgnoreCase(rs.sinceTime, sinceTime)
 		 || !TextUtil.strEqualIgnoreCase(rs.untilTime, untilTime)
@@ -247,8 +250,32 @@ public class RoutingSpec extends IdDatabaseObject
 		return true;
 	}
 
-	/** 
-	  Adds a network list name to this routing spec. 
+	/**
+	 * As equals, doesn't include the id.
+	 */
+	@Override
+	public int hashCode()
+	{
+		var dsName = this.dataSource != null ? this.dataSource.getName() : null;
+		return Objects.hash(this.name != null ? this.name.toLowerCase() : null,
+							this.networkListNames,
+							dsName != null ? dsName.toLowerCase() : null,
+							this.networkLists,
+							this.outputFormat, // don't lower case, could be used in a lookup
+							this.consumerType,
+							this.consumerArg, // don't lower case, items wihtin could be case sensitive
+							this.enableEquations,
+							this.isProduction,
+							this.outputTimeZoneAbbr != null ? this.outputTimeZoneAbbr : null,
+							this.presentationGroupName != null ? this.presentationGroupName.toLowerCase() : null, 
+							this.sinceTime.toLowerCase(),
+							this.untilTime.toLowerCase(),
+							this.usePerformanceMeasurements,
+							this.properties);
+	}
+
+	/**
+	  Adds a network list name to this routing spec.
 	  @param listname the list name to add.
 	*/
 	public void addNetworkListName(String listname)
@@ -294,7 +321,7 @@ public class RoutingSpec extends IdDatabaseObject
 				throw new IncompleteDatabaseException(
 				"Invalid time zone abbreviation '" + outputTimeZoneAbbr + "'");
 		}
-		
+
 		properties.setProperty("RoutingSpecName", name);
 
 		_isPrepared = true;
@@ -381,5 +408,10 @@ public class RoutingSpec extends IdDatabaseObject
 	public void setName(String name)
 	{
 		this.name = name;
+	}
+
+	public void forceSetPrepared()
+	{
+		this._isPrepared = true;
 	}
 }

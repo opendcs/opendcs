@@ -2,16 +2,17 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.statement.Query;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataSourceDao;
 import org.opendcs.database.model.mappers.datasource.DataSourceAccumulator;
+import org.opendcs.database.model.mappers.datasource.DataSourceMapper;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
@@ -45,6 +46,9 @@ public class DataSourceDaoImpl implements DataSourceDao
                               dsm_sequencenum asc
             """;
 
+    private final DataSourceMapper sourceMapper = DataSourceMapper.withPrefix("ds");
+    private final DataSourceMapper memberMapper = DataSourceMapper.withPrefix("dsm");
+
     @Override
     public Optional<DataSource> getDataSource(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
@@ -54,13 +58,12 @@ public class DataSourceDaoImpl implements DataSourceDao
         var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
+            registerMappers(query, sourceMapper, memberMapper);
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                         .define(SqlQueries.WHERE_CLAUSE, "where id = :id")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
                         .bind(GenericColumns.ID.column(), id)
-                        .reduceResultSet(new LinkedHashMap<>(), DataSourceAccumulator.DATA_SOURCE_ACCUMULATOR)
-                        .values()
-                        .stream()
+                        .reduceRows(new DataSourceAccumulator(sourceMapper, memberMapper))
                         .findFirst();
         }
     }
@@ -74,13 +77,12 @@ public class DataSourceDaoImpl implements DataSourceDao
         var dbEngine = ctx.getDatabaseEngine();
         try (var query = handle.createQuery(SELECT_QUERY))
         {
+            registerMappers(query, sourceMapper, memberMapper);
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                         .define(SqlQueries.WHERE_CLAUSE, "where name = :name")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
                         .bind(GenericColumns.NAME.column(), name)
-                        .reduceResultSet(new LinkedHashMap<>(), DataSourceAccumulator.DATA_SOURCE_ACCUMULATOR)
-                        .values()
-                        .stream()
+                        .reduceRows(new DataSourceAccumulator(sourceMapper, memberMapper))
                         .findFirst();
         }
     }
@@ -183,6 +185,7 @@ public class DataSourceDaoImpl implements DataSourceDao
             query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                  .define(SqlQueries.WHERE_CLAUSE, "")
                  .define(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset));
+            registerMappers(query, sourceMapper, memberMapper);
             if (limit >= 0)
             {
                 query.bind(SqlKeywords.LIMIT, limit);
@@ -192,11 +195,13 @@ public class DataSourceDaoImpl implements DataSourceDao
                 query.bind(SqlKeywords.OFFSET, offset);
             }
 
-            return query.reduceResultSet(new LinkedHashMap<>(), DataSourceAccumulator.DATA_SOURCE_ACCUMULATOR)
-                        .values()
-                        .stream()
+            return query.reduceRows(new DataSourceAccumulator(sourceMapper, memberMapper))
                         .toList();
         }
     }
 
+    private static Query registerMappers(Query query, DataSourceMapper sourceMapper, DataSourceMapper memberMapper)
+    {
+        return query.registerRowMapper(new DataSourceAccumulator.DataSourceMapperFactory(sourceMapper, memberMapper));
+    }
 }
