@@ -129,4 +129,25 @@ final class AppResourcesTest
 		assertEquals(compAppInfo.getManualEditApp(), app.isManualEditingApp());
 		assertEquals(compAppInfo.getProperties(), app.getProperties());
 	}
+
+	@Test
+	void testAppTypeEditSurvivesRoundTrip()
+	{
+		// Mirrors the Web UI edit flow: GET /app returns the stored appType both
+		// as its own field and inside properties; the user edits only the
+		// "App Type" field and POSTs the whole object back.
+		CompAppInfo stored = new CompAppInfo();
+		stored.setAppName("compproc");
+		stored.setAppId(DbKey.createDbKey(1L));
+		Properties properties = new Properties();
+		properties.setProperty("appType", "computationprocess");
+		stored.setProperties(properties);
+
+		ApiLoadingApp fromServer = mapLoading(stored);
+		fromServer.setAppType("utility");
+
+		CompAppInfo toSave = map(fromServer);
+
+		assertEquals("utility", toSave.getAppType());
+	}
 }
