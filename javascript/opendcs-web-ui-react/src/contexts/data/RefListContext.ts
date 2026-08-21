@@ -4,6 +4,11 @@ import type { ApiRefList } from "../../../../../java/api-clients/api-client-type
 export interface RefListContextType {
   refList: (k: string) => ApiRefList;
   ready: boolean;
+  /**
+   * The lists were requested and the request failed. `ready` alone can't tell a
+   * consumer whether to keep showing "loading" or admit the data isn't coming.
+   */
+  failed: boolean;
 }
 
 export const defaultValue: RefListContextType = {
@@ -11,6 +16,7 @@ export const defaultValue: RefListContextType = {
     return {};
   },
   ready: true,
+  failed: false,
 };
 
 export const RefListContext = createContext<RefListContextType | undefined>(undefined);

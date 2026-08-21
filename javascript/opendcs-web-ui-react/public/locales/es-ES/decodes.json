@@ -21,5 +21,8 @@
       "raw_data_input": "Entrada de texto de datos de muestra"
     }
   },
-  "decode": "Decodificar"
+  "decode": "Decodificar",
+  "config": {
+    "transport_medium_select": "Selector de tipo de encabezado"
+  }
 }
