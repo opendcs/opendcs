@@ -370,23 +370,19 @@ public final class ComputationResources extends OpenDcsResource
 			Date startDate = Date.from(startTime);
 			Date endDate = Date.from(endTime);
 
+			final SseChannel channel = new SseChannel(sse, eventSink, compStatus, taskID);
+
 			List<TimeSeriesIdentifier> outputList = new ArrayList<>();
 			for(DbComputation resolvedComp : resolvedComps)
 			{
-				outputList.addAll(processOutputTsIds(resolvedComp, tsDai, siteDai, computationId, taskID, sse, eventSink));
+				outputList.addAll(processOutputTsIds(resolvedComp, tsDai, siteDai, computationId, channel));
 			}
 
 			final var contextMap = MDC.getCopyOfContextMap();
 			log.trace("Starting computation");
 			CompletableFuture.runAsync(() ->
 			{
-				OutboundSseEvent event = sse.newEventBuilder()
-						.name(compStatus)
-						.id(taskID)
-						.mediaType(MediaType.TEXT_PLAIN_TYPE)
-						.data(String.format("Running computation with ID: %s", computationId))
-						.build();
-				eventSink.send(event);
+				channel.sendText(String.format("Running computation with ID: %s", computationId));
 
 				try
 				{
@@ -394,7 +390,7 @@ public final class ComputationResources extends OpenDcsResource
 					{
 						MDC.setContextMap(contextMap);
 					}
-					executeAndPublishResult(computationId, resolvedComps, startDate, endDate, sse, eventSink, compStatus, taskID);
+					executeAndPublishResult(computationId, resolvedComps, startDate, endDate, channel);
 				}
 				catch (RuntimeException ex)
 				{
@@ -404,7 +400,7 @@ public final class ComputationResources extends OpenDcsResource
 				{
 					try
 					{
-						processOutput(outputList, taskID, sse, eventSink, startTime, endTime);
+						processOutput(outputList, channel, startTime, endTime);
 					}
 					catch (RuntimeException ex)
 					{
@@ -482,7 +478,7 @@ public final class ComputationResources extends OpenDcsResource
 	}
 
 	private List<TimeSeriesIdentifier> processOutputTsIds(DbComputation comp, TimeSeriesDAI tsDai, SiteDAI siteDai,
-				Long computationId, String taskID, Sse sse, SseEventSink eventSink) throws DbIoException
+				Long computationId, SseChannel channel) throws DbIoException
 	{
 		List<TimeSeriesIdentifier> outputList = new ArrayList<>();
 		DbKey dataTypeId = null;
@@ -544,13 +540,10 @@ public final class ComputationResources extends OpenDcsResource
 				catch(NoSuchObjectException ex)
 				{
 					log.error(String.format("Unable to retrieve site name for site ID: %s", parm.getSiteId()), ex);
-					OutboundSseEvent event = sse.newEventBuilder()
-							.name("ERROR")
-							.id(taskID)
+					channel.send(channel.newEvent("ERROR")
 							.mediaType(MediaType.TEXT_PLAIN_TYPE)
 							.data(String.format("No site found with ID: %s for computation with ID: %s", parm.getSiteId().getValue(), computationId))
-							.build();
-					eventSink.send(event);
+							.build());
 				}
 				finally
 				{
@@ -562,80 +555,85 @@ public final class ComputationResources extends OpenDcsResource
 	}
 
 	private void executeAndPublishResult(Long computationId, List<DbComputation> comps, Date startDate, Date endDate,
-			Sse sse, SseEventSink eventSink, String compStatus, String taskID)
+			SseChannel channel)
 	{
 		try (ComputationExecution execution = new ComputationExecution(createDb(), executors.getComputationExecutor()))
 		{
-			SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
+			SseProgressListener listener = new SseProgressListener(channel);
 			ComputationExecution.CompResults results = execution.execute(comps, new DataCollection(), startDate, endDate, listener);
 
-			OutboundSseEvent event = sse.newEventBuilder()
-					.name(compStatus)
-					.id(taskID)
-					.mediaType(MediaType.TEXT_PLAIN_TYPE)
-					.data(String.format("Computation executed with %d errors", results.numErrors()))
-					.build();
-			eventSink.send(event);
+			channel.sendText(String.format("Computation executed with %d errors", results.numErrors()));
 		}
 		catch (RuntimeException ex)
 		{
 			log.error("Error during computation execution for computation ID: {}", computationId, ex);
-			OutboundSseEvent errEvent = sse.newEventBuilder()
-					.name(compStatus)
-					.id(taskID)
-					.mediaType(MediaType.TEXT_PLAIN_TYPE)
-					.data(String.format("Computation failed: %s", ex.getMessage()))
-					.build();
-			eventSink.send(errEvent);
+			channel.sendText(String.format("Computation failed: %s", ex.getMessage()));
 		}
 	}
 
-	private void processOutput(List<TimeSeriesIdentifier> outputList, String taskID, Sse sse,
-			SseEventSink eventSink, Instant startDate, Instant endDate)
+	private void processOutput(List<TimeSeriesIdentifier> outputList, SseChannel channel,
+			Instant startDate, Instant endDate)
 	{
-		OutboundSseEvent event;
 		List<ApiTimeSeriesIdentifier> ids = APIStreamMapper.mapList(outputList, ApiTimeSeriesIdentifier.class);
 		ApiCompResults results = new ApiCompResults();
 		results.setEndTime(endDate.toString());
 		results.setStartTime(startDate.toString());
 		results.setTsIds(ids);
 
-		event = sse.newEventBuilder()
-				.name("Results")
-				.id(taskID)
+		channel.send(channel.newEvent("Results")
 				.mediaType(MediaType.APPLICATION_JSON_TYPE)
 				.data(ApiCompResults.class, results)
-				.build();
-		eventSink.send(event);
+				.build());
+	}
+
+	/**
+	 * The Sse factory, the sink and the name/id stamped on every event of a single computation run.
+	 * These four values are always passed together; bundling them keeps the run helpers well under
+	 * the parameter limit and removes the repeated event-builder boilerplate.
+	 */
+	private record SseChannel(Sse sse, SseEventSink eventSink, String eventName, String taskId)
+	{
+		/** Publishes {@code data} as a plain text event named after this channel. */
+		void sendText(String data)
+		{
+			send(newEvent(eventName)
+					.mediaType(MediaType.TEXT_PLAIN_TYPE)
+					.data(data)
+					.build());
+		}
+
+		/** Starts an event that needs a different name, media type or reconnect delay. */
+		OutboundSseEvent.Builder newEvent(String name)
+		{
+			return sse.newEventBuilder()
+					.name(name)
+					.id(taskId);
+		}
+
+		void send(OutboundSseEvent event)
+		{
+			eventSink.send(event);
+		}
 	}
 
 	private static final class SseProgressListener extends ProgressListener
 	{
-		private final SseEventSink eventSink;
-		private final Sse sse;
-		private final String name;
-		private final String taskId;
+		private final SseChannel channel;
 
-		public SseProgressListener(SseEventSink eventSink, Sse sse, String name, String taskId)
+		public SseProgressListener(SseChannel channel)
 		{
-			this.eventSink = eventSink;
-			this.sse = sse;
-			this.name = name;
-			this.taskId = taskId;
+			this.channel = channel;
 		}
 
 		@Override
 		public void onProgress(String message, Level logLevel, Throwable cause)
 		{
 			logEvent(message, logLevel, cause);
-			OutboundSseEvent event = sse.newEventBuilder()
-					.name(name)
-					.id(taskId)
+			channel.send(channel.newEvent(channel.eventName())
 					.reconnectDelay(3000L)
 					.data(message)
 					.mediaType(MediaType.TEXT_PLAIN_TYPE)
-					.build();
-			eventSink.send(event);
+					.build());
 		}
 	}
 }

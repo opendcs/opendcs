@@ -18,12 +18,12 @@ package org.opendcs.odcsapi.sec.user;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.opendcs.odcsapi.beans.ApiPasswordChange;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 final class UserResourcesTest
@@ -32,7 +32,7 @@ final class UserResourcesTest
 	void testUpdatePasswordThrowsWhenNoSessionEstablished()
 	{
 		UserResources resources = new UserResources();
-		HttpServletRequest httpRequest = Mockito.mock(HttpServletRequest.class);
+		HttpServletRequest httpRequest = mock(HttpServletRequest.class);
 		when(httpRequest.getSession(false)).thenReturn(null);
 		resources.httpRequest = httpRequest;
 

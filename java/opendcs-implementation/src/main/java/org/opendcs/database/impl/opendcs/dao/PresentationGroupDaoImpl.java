@@ -167,7 +167,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         var numericDate = ctx.getSettings(DatabaseQuerySettings.class)
-                             .map(settings -> settings.numericDate())
+                             .map(DatabaseQuerySettings::numericDate)
                              .orElse(true);
         final String mergeSql = """
                 merge into presentationgroup pg
