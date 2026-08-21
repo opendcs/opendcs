@@ -39,7 +39,6 @@ import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.opentsdb.Interval;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.opendcs.odcsapi.beans.ApiInterval;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
@@ -54,6 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.idMap;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.map;
@@ -448,11 +449,11 @@ final class TimeSeriesResourcesTest
 	@Test
 	void testTransformByFirstInputSkipsMembersThatDontMatch() throws Exception
 	{
-		TimeSeriesResources resources = Mockito.spy(new TimeSeriesResources());
-		TimeSeriesDb tsdb = Mockito.mock(TimeSeriesDb.class);
+		TimeSeriesResources resources = spy(new TimeSeriesResources());
+		TimeSeriesDb tsdb = mock(TimeSeriesDb.class);
 		doReturn(tsdb).when(resources).getLegacyTimeseriesDB();
 
-		ComputationDAI compDai = Mockito.mock(ComputationDAI.class);
+		ComputationDAI compDai = mock(ComputationDAI.class);
 		when(tsdb.makeComputationDAO()).thenReturn(compDai);
 
 		DbComputation comp = new DbComputation(DbKey.createDbKey(1L), "TestComp");
@@ -461,7 +462,7 @@ final class TimeSeriesResourcesTest
 		comp.addParm(input);
 		when(compDai.getComputationById(DbKey.createDbKey(1L))).thenReturn(comp);
 
-		TimeSeriesDAI tsDai = Mockito.mock(TimeSeriesDAI.class);
+		TimeSeriesDAI tsDai = mock(TimeSeriesDAI.class);
 
 		TimeSeriesIdentifier tsid = new CwmsTsId();
 		tsid.setUniqueString("Site.Flow.Inst.1Hour.0.raw");
