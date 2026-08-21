@@ -50,6 +50,7 @@ public class CwmsOfficeMapper extends PrefixRowMapper<CwmsOfficeBuilder, CwmsOff
             .withLongName(rs.getString(column(Columns.LONG_NAME)))
             .withEroc(rs.getString(column(Columns.EROC)))
             .withType(rs.getString(column(Columns.TYPE)))
+            .withReportsToId(keyMapper.map(rs, column(Columns.REPORTS_TO_OFFICE_CODE), ctx))
             ;
     }
 

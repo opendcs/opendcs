@@ -25,6 +25,7 @@ public final class CwmsOfficeBuilder
     private String type;
     private String longName;
     private CwmsOfficeBuilder reportsTo;
+    private DbKey reportsToId;
 
 
     public CwmsOfficeBuilder withId(DbKey id)
@@ -63,10 +64,16 @@ public final class CwmsOfficeBuilder
         return this;
     }
 
+    public CwmsOfficeBuilder withReportsToId(DbKey reportsToId)
+    {
+        this.reportsToId = reportsToId;
+        return this;
+    }
+
     public CwmsOffice build()
     {
         
-        return new CwmsOffice(id, name,
+        return new CwmsOffice(id, name, reportsToId,
                              (reportsTo != null && reportsTo != this) ? reportsTo.build() : null, longName, eroc, type);
     }
 }
