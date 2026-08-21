@@ -37,4 +37,11 @@ public @interface PropertySpec
     String value() default "";
     String propertySpecType() default "";
     String description() default "";
+    
+    /**
+     * Marks this property as required. 
+     * Creates an individual requirement for this property.
+     * @return true if this property is required
+     */
+    boolean required() default false;
 }
