@@ -370,7 +370,7 @@ public final class ComputationResources extends OpenDcsResource
 			Date startDate = Date.from(startTime);
 			Date endDate = Date.from(endTime);
 
-			final SseChannel channel = new SseChannel(sse, eventSink, compStatus, taskID);
+			final var channel = new SseChannel(sse, eventSink, compStatus, taskID);
 
 			List<TimeSeriesIdentifier> outputList = new ArrayList<>();
 			for(DbComputation resolvedComp : resolvedComps)
