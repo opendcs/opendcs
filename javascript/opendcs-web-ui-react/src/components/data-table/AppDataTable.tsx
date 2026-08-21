@@ -19,11 +19,13 @@ import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
 import { unmountToDom, useContextWrapper } from "../../util/ContextWrapper";
 import { useTableProcessing } from "./useTableProcessing";
+import { TableCaption, type CaptionButton } from "./TableCaption";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
-// Buttons plugin — required because the wrapper uses `layout.top1Start` to
-// render `+` / extra header buttons via DataTables' Buttons feature.
+// Buttons plugin — the wrapper renders its own header buttons in the table
+// caption, but consumers can still ask for DataTables Buttons through the
+// `dataTableOptions.layout` escape hatch.
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(dtButtons);
 
@@ -113,10 +115,12 @@ export interface DetailActions<TSave> {
 }
 
 export interface HeaderButton {
-  /** Button label text (or icon character like `"+"`). */
+  /** Button label text. */
   text: string;
   /** Accessible label for screen readers. */
   ariaLabel: string;
+  /** Optional Bootstrap icon class shown before the text, e.g. `"bi-plus-lg"`. */
+  icon?: string;
   onClick: () => void;
 }
 
@@ -127,8 +131,11 @@ export interface AddNewConfig<T> {
    * server-side positive ids.
    */
   template: (nextId: number) => T;
+  /** Accessible label, e.g. `"Add Platform"`. */
   ariaLabel: string;
-  /** Defaults to `"+"`. */
+  /** Visible button label. Defaults to the translated `"Add"`. */
+  label?: string;
+  /** Bootstrap icon class. Defaults to `"bi-plus-lg"`. */
   icon?: string;
 }
 
@@ -419,6 +426,8 @@ function withoutId<T>(items: T[], id: string, idOf: (r: T) => string): T[] {
 // =============================================================================
 
 const BASE_TABLE_CLASS = "table table-hover table-striped w-100 border";
+// Icon shown on every "add a row" button in a table caption.
+const ADD_ICON = "bi-plus-lg";
 // Applied only when row-click expand is enabled — signals clickability.
 const CLICKABLE_ROW_CLASS = "tablerow-cursor";
 
@@ -813,6 +822,84 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     return cols;
   }, [columns, hasActionsCol, hasInlineEdit, idOf]);
 
+  // --- Caption toolbar ------------------------------------------------------
+  // The add / extra buttons live in the table's <caption> rather than a
+  // DataTables toolbar row, so they sit directly against the table they act
+  // on instead of floating above the length + search controls (issue #2009).
+  const handleAddNew = useCallback(() => {
+    if (!addNew) return;
+    // Navigate to first page sorted ascending so the new row is visible.
+    const dt = table.current?.dt();
+    if (dt) {
+      const currentPage = dt.page();
+      const currentOrder = dt.order();
+      const needsNav =
+        currentPage !== 0 ||
+        currentOrder.length === 0 ||
+        currentOrder[0][0] !== 0 ||
+        currentOrder[0][1] !== "asc";
+      if (needsNav) {
+        dt.order([0, "asc"]).page("first").draw(false);
+      }
+    }
+    setLocalItems((prev) => {
+      const newItem = addNew.template(nextNumericId(prev));
+      const newId = String(getId(newItem));
+      setRowState((prevRS) => ({ ...prevRS, [newId]: "new" }));
+      return [...prev, newItem];
+    });
+    // nextNumericId is a module-level helper, not a value from this render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addNew, getId]);
+
+  const handleInlineAdd = useCallback(() => {
+    const newTemplate = inlineEdit?.newTemplate;
+    if (!newTemplate) return;
+    const newItem = newTemplate();
+    const synthId = `__appdt_new_${++newRowCounterRef.current}`;
+    if (typeof newItem === "object" && newItem !== null) {
+      newRowIdsRef.current.set(newItem as object, synthId);
+    }
+    setLocalItems((prev) => [...prev, newItem]);
+    setRowState((prevRS) => ({ ...prevRS, [synthId]: "new" }));
+  }, [inlineEdit]);
+
+  const hasCaptionButtons = Boolean(
+    addNew || inlineEdit?.newTemplate || extraHeaderButtons?.length,
+  );
+
+  const captionButtons: CaptionButton[] = [
+    ...(addNew
+      ? [
+          {
+            key: "add-new",
+            text: addNew.label ?? t("add"),
+            ariaLabel: addNew.ariaLabel,
+            icon: addNew.icon ?? ADD_ICON,
+            onClick: handleAddNew,
+          },
+        ]
+      : []),
+    ...(inlineEdit?.newTemplate
+      ? [
+          {
+            key: "inline-add",
+            text: t("add"),
+            ariaLabel: inlineEdit.labels?.add ?? t("add"),
+            icon: ADD_ICON,
+            onClick: handleInlineAdd,
+          },
+        ]
+      : []),
+    ...(extraHeaderButtons?.map((btn, idx) => ({
+      key: `extra-${idx}`,
+      text: btn.text,
+      ariaLabel: btn.ariaLabel,
+      icon: btn.icon,
+      onClick: btn.onClick,
+    })) ?? []),
+  ];
+
   // --- DataTable options ----------------------------------------------------
   const options: DataTableProps["options"] = {
     paging: true,
@@ -855,77 +942,6 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           );
         }
       });
-    },
-    layout: {
-      ...dataTableOptions?.layout,
-      top1Start: [
-        ...(addNew
-          ? [
-              {
-                buttons: [
-                  {
-                    text: addNew.icon ?? "+",
-                    action: () => {
-                      // Navigate to first page sorted ascending so the new row is visible.
-                      const dt = table.current?.dt();
-                      if (dt) {
-                        const currentPage = dt.page();
-                        const currentOrder = dt.order();
-                        const needsNav =
-                          currentPage !== 0 ||
-                          currentOrder.length === 0 ||
-                          currentOrder[0][0] !== 0 ||
-                          currentOrder[0][1] !== "asc";
-                        if (needsNav) {
-                          dt.order([0, "asc"]).page("first").draw(false);
-                        }
-                      }
-                      setLocalItems((prev) => {
-                        const newItem = addNew.template(nextNumericId(prev));
-                        const newId = String(getId(newItem));
-                        setRowState((prevRS) => ({ ...prevRS, [newId]: "new" }));
-                        return [...prev, newItem];
-                      });
-                    },
-                    attr: { "aria-label": addNew.ariaLabel },
-                  },
-                ],
-              },
-            ]
-          : []),
-        ...(inlineEdit?.newTemplate
-          ? [
-              {
-                buttons: [
-                  {
-                    text: "+",
-                    action: () => {
-                      const newItem = inlineEdit.newTemplate!();
-                      const synthId = `__appdt_new_${++newRowCounterRef.current}`;
-                      if (typeof newItem === "object" && newItem !== null) {
-                        newRowIdsRef.current.set(newItem as object, synthId);
-                      }
-                      setLocalItems((prev) => [...prev, newItem]);
-                      setRowState((prevRS) => ({ ...prevRS, [synthId]: "new" }));
-                    },
-                    attr: {
-                      "aria-label": inlineEdit.labels?.add ?? "Add",
-                    },
-                  },
-                ],
-              },
-            ]
-          : []),
-        ...(extraHeaderButtons?.map((btn) => ({
-          buttons: [
-            {
-              text: btn.text,
-              action: () => btn.onClick(),
-              attr: { "aria-label": btn.ariaLabel },
-            },
-          ],
-        })) ?? []),
-      ],
     },
   };
 
@@ -1036,7 +1052,10 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   }, [data]);
 
   return (
-    <div style={{ opacity: isInitialized ? undefined : 0 }}>
+    // `dt-panel` outlines the table together with its own toolbar / paging
+    // controls, so pages with several tables make it obvious which controls
+    // belong to which table.
+    <div className="dt-panel" style={{ opacity: isInitialized ? undefined : 0 }}>
       {saveError && (
         <Alert variant="danger" dismissible onClose={() => setSaveError(null)}>
           {saveError}
@@ -1054,7 +1073,9 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           (hasDetail ? `${BASE_TABLE_CLASS} ${CLICKABLE_ROW_CLASS}` : BASE_TABLE_CLASS)
         }
       >
-        {caption && <caption className="caption-title-center">{caption}</caption>}
+        {(caption || hasCaptionButtons) && (
+          <TableCaption title={caption} buttons={captionButtons} />
+        )}
         <thead>
           <tr>
             {columns.map((c, i) => (
