@@ -69,8 +69,8 @@ public class CwmsRolesDaoImpl implements RolesDao
                     values (:name, :description)   
                     """))
         {
-            final var id = addRole.bind(GenericColumns.NAME.column(), role.name)
-                                  .bind(GenericColumns.DESCRIPTION.column(), role.description)
+            final var id = addRole.bind(GenericColumns.NAME.column(), role.name())
+                                  .bind(GenericColumns.DESCRIPTION.column(), role.description())
                                   .executeAndReturnGeneratedKeys("id")
                                   .mapTo(DbKey.class)
                                   .one();
@@ -98,8 +98,8 @@ public class CwmsRolesDaoImpl implements RolesDao
         try (var update = handle.createUpdate(
             "update opendcs_role set name =:name, description = :description where id=:id"))
         {
-            update.bind(GenericColumns.NAME.column(), role.name)
-                  .bind(GenericColumns.DESCRIPTION.column(), role.description)
+            update.bind(GenericColumns.NAME.column(), role.name())
+                  .bind(GenericColumns.DESCRIPTION.column(), role.description())
                   .bind(GenericColumns.ID.column(), id)
                   .execute();
             return getRole(tx, id).orElseThrow(

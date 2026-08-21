@@ -1,16 +1,23 @@
 package org.opendcs.database.impl.cwms.dao.auth;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.PreparedBatch;
+import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
+import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.annotations.api.InjectDao;
+import org.opendcs.cwms.data.CwmsOffice;
+import org.opendcs.data.Organization;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.RolesDao;
 import org.opendcs.database.dai.UsersDao;
+import org.opendcs.database.impl.cwms.jdbi.mapper.CwmsOfficeMapper;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.IdentityProviderMapping;
@@ -25,6 +32,7 @@ import org.opendcs.database.model.mappers.user.UserBuilderReducer;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
+import org.stringtemplate.v4.STGroup;
 
 import decodes.sql.DbKey;
 
@@ -33,35 +41,44 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 @ServiceProvider(service = UsersDao.class, path ="dao/CWMS-Oracle")
 public class CwmsUsersDaoImpl implements UsersDao
 {
+    private static final CwmsOfficeMapper officeBuilderMapper = CwmsOfficeMapper.withPrefix("ofc");
+    /**
+     * At this time we don't care about the reports to office in User roles, so we
+     * wrap the builderMapper to immediately build the office instead of introducing
+     * reducer logic.
+     */
+    private static final RowMapper<CwmsOffice> officeMapper = new RowMapper<>()
+    {
+
+        @Override
+        public CwmsOffice map(ResultSet rs, StatementContext ctx) throws SQLException
+        {
+            return officeBuilderMapper.map(rs, ctx).build();
+        }
+    };
+
+    private static final String SELECT = "select";
+
     @InjectDao
     RolesDao rolesDao;
-    
+
+
+    private final STGroup queries;
+
+    public CwmsUsersDaoImpl()
+    {
+        queries = StringTemplateSqlLocator.findStringTemplateGroup(CwmsUsersDaoImpl.class);
+    }
+
     @Override
     public List<User> getUsers(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        final String userSelect = """
-            with user_cte (id, preferences, email, created_at, updated_at) as
-                (select id, preferences, email, created_at, updated_at
-                 from opendcs_user order by email asc
-            """ +
-            addLimitOffset(limit, offset) +
-            """
-                )
-            select u.id u_id, u.preferences u_preferences, u.email u_email,
-                u.created_at u_created_at, u.updated_at u_updated_at,
-                r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
-                uip.identity_provider_id i_id, uip.subject i_subject,
-                idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
-            from user_cte u
-            left join user_roles ur on ur.user_id = u.id
-            left join opendcs_role r on r.id = ur.role_id
-            left join user_identity_provider uip on uip.user_id = u.id
-            left join identity_provider idp on idp.id = uip.identity_provider_id
-            order by u.email asc
-            """;
+        var selectTemplate = queries.getInstanceOf(SELECT);
+        selectTemplate.add("limit", addLimitOffset(limit, offset))
+                      .add("office_columns", officeBuilderMapper.columnsForSelect());
 
-        try (var q = handle.createQuery(userSelect))
+        try (var q = handle.createQuery(selectTemplate.render()))
         {
             if (limit != -1)
             {
@@ -76,6 +93,7 @@ public class CwmsUsersDaoImpl implements UsersDao
             return q.registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
                 .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
                 .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
+                .registerRowMapper(Organization.class, officeMapper)
                 .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
                 .map(UserBuilder::build)
                 .toList();
@@ -92,7 +110,7 @@ public class CwmsUsersDaoImpl implements UsersDao
         try (var addUser = handle.createUpdate(
                     """
                         insert into opendcs_user(email, preferences)
-                        values (:email, :preferences)               
+                        values (:email, :preferences)
                     """
             ))
         {
@@ -104,26 +122,32 @@ public class CwmsUsersDaoImpl implements UsersDao
         }
 
         try (PreparedBatch roleBatch = handle.prepareBatch(
-                    "insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
+                    "insert into user_roles(office_code, user_id, role_id) values (:office_code, :user_id, :role_id)"))
         {
-            for (Role role: user.roles)
+            for (var entry: user.roles.entrySet())
             {
-                var roleId = role.id;
-                if (DbKey.isNull(role.id))
+                var org = entry.getKey();
+                var roles = entry.getValue();
+                for (var role: roles)
                 {
-                    roleId = rolesDao.getRoleByName(tx, role.name)
-                                     .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name +
-                                                                                 "' that doesn't exist."))
-                                     .id;
+                    var roleId = role.id();
+                    if (DbKey.isNull(role.id()))
+                    {
+                        roleId = rolesDao.getRoleByName(tx, role.name())
+                                        .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name() +
+                                                                                    "' that doesn't exist."))
+                                        .id();
+                    }
+                    roleBatch.bindByType("office_code", org.getId(), DbKey.class)
+                            .bind(UserBuilderMapper.USER_ID, id)
+                            .bind(RoleMapper.ROLE_ID, roleId)
+                            .add();
                 }
-                roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, roleId)
-                        .add();
             }
             roleBatch.execute();
         }
 
-        try (PreparedBatch idpBatch = 
+        try (PreparedBatch idpBatch =
                 handle.prepareBatch(
                     "insert into user_identity_provider (user_id, identity_provider_id, subject) " +
                                                 "values (:user_id, :identity_provider_id, :subject)"))
@@ -139,34 +163,25 @@ public class CwmsUsersDaoImpl implements UsersDao
         }
 
         return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Created User could not be retrieved."));
-    
+
     }
 
     @Override
     public Optional<User> getUser(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
+        var selectTemplate = queries.getInstanceOf(SELECT);
+        selectTemplate.add("where", " where id = :id")
+                      .add("office_columns", officeBuilderMapper.columnsForSelect());
+        
 
-        try (var user = handle.createQuery(
-            """
-              select u.id u_id, u.preferences u_preferences, u.email u_email,
-                   u.created_at u_created_at, u.updated_at u_updated_at,
-                   r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
-                   uip.identity_provider_id i_id, uip.subject i_subject,
-                   idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
-              from opendcs_user u
-              left join user_roles ur on ur.user_id = u.id
-              left join opendcs_role r on r.id = ur.role_id
-              left join user_identity_provider uip on uip.user_id = u.id
-              left join identity_provider idp on idp.id = uip.identity_provider_id
-              where u.id = :id
-            """
-            ))
+        try (var user = handle.createQuery(selectTemplate.render()))
         {
              return user.bind(GenericColumns.ID.column(), id)
               .registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
+              .registerRowMapper(Organization.class, officeMapper)
               .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
               .map(UserBuilder::build)
               .findFirst()
@@ -180,7 +195,7 @@ public class CwmsUsersDaoImpl implements UsersDao
     public User updateUser(DataTransaction tx, DbKey id, User user) throws OpenDcsDataException
     {
         Handle handle = getHandle(tx);
-        
+
         try (var userUpdate =handle.createUpdate(
             "update opendcs_user set email = :email, preferences = :preferences " +
             "where id = :id"))
@@ -195,13 +210,19 @@ public class CwmsUsersDaoImpl implements UsersDao
             deleteRoles.bind(GenericColumns.ID.column(), id).execute();
         }
         try (PreparedBatch roleBatch = handle.prepareBatch(
-            "insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
+            "insert into user_roles(office_code, user_id, role_id) values (:office_code, :user_id, :role_id)"))
         {
-            for (var role: user.roles)
+            for (var entry: user.roles.entrySet())
             {
-                roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, role.id)
-                        .add();
+                var org = entry.getKey();
+                var roles = entry.getValue();
+                for (var role: roles)
+                {
+                    roleBatch.bind("office_code", org.getId())
+                            .bind(UserBuilderMapper.USER_ID, id)
+                            .bind(RoleMapper.ROLE_ID, role.id())
+                            .add();
+                }
             }
             roleBatch.execute();
         }
@@ -212,7 +233,7 @@ public class CwmsUsersDaoImpl implements UsersDao
             deleteProviders.bind(GenericColumns.ID.column(), id).execute();
         }
 
-        try (PreparedBatch idpBatch = 
+        try (PreparedBatch idpBatch =
                 handle.prepareBatch("insert into user_identity_provider (user_id, identity_provider_id, subject) " +
                                                                 "values (:user_id, :identity_provider_id, :subject)"))
         {
