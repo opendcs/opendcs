@@ -21,5 +21,8 @@
       "raw_data_input": "Texteingabe für Beispieldaten"
     }
   },
-  "decode": "Dekodieren"
+  "decode": "Dekodieren",
+  "config": {
+    "transport_medium_select": "Header-Typ-Auswahl"
+  }
 }
