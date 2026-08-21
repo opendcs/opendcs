@@ -33,7 +33,7 @@ public final class LrgsTestExtension implements BeforeAllCallback, ParameterReso
                 // consuming test tasks (see opendcs-tests/build.gradle), so this isn't
                 // landing in a shared, publicly writable system temp directory. The
                 // directory is also created owner-only where the platform supports it.
-                File lrgsHome = createPrivateTempDirectory().toFile();
+                File lrgsHome = createPrivateTempDirectory("lrgshome").toFile();
                 var testClass = context.getRequiredTestClass();
                 var lrgsConfig = testClass.getAnnotation(LrgsConfig.class);
                 return new LrgsTestInstance(lrgsHome, lrgsConfig != null ? lrgsConfig.value() : null);
@@ -42,22 +42,25 @@ public final class LrgsTestExtension implements BeforeAllCallback, ParameterReso
     }
 
     /**
-     * Creates the scratch directory handed to the LRGS instance under test.
+     * Creates a scratch directory for a test fixture, keeping the caller's prefix so the
+     * directory stays easy to identify alongside other test directories.
      *
      * <p>On POSIX file systems the directory is created owner-only (rwx------) as part of the
      * create call, so it is never briefly readable or writable by other users on the machine even
      * if the configured temp root happens to be a shared directory.</p>
+     *
+     * @param prefix directory name prefix, e.g. {@code lrgshome}
      */
-    private static Path createPrivateTempDirectory() throws IOException
+    private static Path createPrivateTempDirectory(String prefix) throws IOException
     {
         if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix"))
         {
-            return Files.createTempDirectory("lrgshome", //NOSONAR - created owner-only, see javadoc above
+            return Files.createTempDirectory(prefix, //NOSONAR - created owner-only, see javadoc above
                 PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
         }
         // Windows and friends: no POSIX view, and Files.createTempDirectory already restricts
         // the directory to the current user via the default ACL.
-        return Files.createTempDirectory("lrgshome"); //NOSONAR - test fixture, tmpdir is redirected into the build dir
+        return Files.createTempDirectory(prefix); //NOSONAR - test fixture, tmpdir is redirected into the build dir
     }
 
     @Override
