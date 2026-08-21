@@ -173,6 +173,7 @@ com-password4j-password4j = { module = "com.password4j:password4j", version.ref 
 # Netbeans Lookup
 org-netbeans-lookup = { module = "org.netbeans.api:org-openide-util-lookup", version.ref = "org-netbeans" }
 hec-lookup-compat = { module ="mil.army.usace.hec:lookup-compat", version.ref = "hec-lookup-compat" }
+org-xerial-sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref="sqlite" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }

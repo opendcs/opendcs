@@ -60,6 +60,7 @@ dependencies {
     testImplementation(libs.ch.qos.logback)
     testImplementation(libs.com.faster.xml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
+    testRuntimeOnly(files(rootProject.file("log4jdbc4-1.2.jar")))
     testImplementation(libs.rest.assured)
     testImplementation(libs.json.jackson)
     testImplementation(libs.mockito.core)
@@ -103,7 +104,7 @@ def genConfig = tasks.register('generateConfig', Copy) {
 }
 
 
-def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
+def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-SQLite,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
 
 test {
     useJUnitPlatform()
@@ -151,7 +152,8 @@ testEngines.each { engine ->
                     + project(":cwms-implementation").jar.outputs.files
                     + project(":opendcs").configurations.runtimeClasspath
                     + configurations.extra
-                    ).asPath
+                    + configurations.testRuntimeClasspath).asPath
+
         inputs.property "opendcs.test.engine", engine
 
         systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
@@ -166,6 +168,8 @@ testEngines.each { engine ->
         jvmArgs += "-Dopendcs.restapi.warfile=${restWar}"
         jvmArgs += "-Dopendcs.gui.warfile=${guiWar}"
 
+        jvmArgs += "-XX:MaxJavaStackTraceDepth=1073741823"
+       
         jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
         jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
         jvmArgs += "-Dopendcs.test.classpath=${classPath}"

@@ -590,4 +590,136 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 
     }
 
+	@Override
+	public Collection<DbEnum> getEnums(DataTransaction tx) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'getEnums'");
+	}
+
+	@Override
+	public Optional<DbEnum> getEnum(DataTransaction tx, String enumName) throws OpenDcsDataException
+	{
+		synchronized(cache)
+		{
+			DbEnum ret = cache.getByUniqueName(enumName);
+			if (ret != null)
+			{
+				return Optional.of(ret);
+			}
+			
+			int dbVer = db.getDecodesDatabaseVersion();
+			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
+			q = q + " where lower(name) = lower(?)";// + sqlString(enumName.toLowerCase());
+			Connection conn = tx.connection(Connection.class)
+						        .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
+			try (DaoHelper helper = new DaoHelper(this.db, "helper-enum", conn))
+			{
+				ret = helper.getSingleResult(q, rs -> rs2Enum(rs, dbVer), enumName);
+				if (ret == null)
+				{
+					warning("No such enum '" + enumName + "'");
+					return Optional.empty();
+				}
+				else
+				{
+					readValues(helper, ret);
+					cache.put(ret);
+					return Optional.of(ret);
+				}		
+			}
+			catch (DbIoException | SQLException ex)
+			{
+				throw new OpenDcsDataException("Error retrieving Enum values",ex);
+			}
+		}
+	}
+
+	@Override
+	public Optional<DbEnum> getEnum(DataTransaction tx, DbKey id) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'getEnum'");
+	}
+
+	@Override
+	public DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException
+	{
+		// should this be part of DataTransaction?
+		int dbVer = db.getDecodesDatabaseVersion();
+		String q = "";
+		ArrayList<Object> args = new ArrayList<>();
+		if (dbEnum.idIsSet())
+		{			
+			args.add(dbEnum.getUniqueName());
+			q = "update enum set name = ?";// + sqlString(dbenum.getUniqueName());
+			if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
+			{
+				q = q + ", defaultvalue = ?";// + sqlString(dbenum.getDefault());
+				args.add(dbEnum.getDefault());
+				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_10)
+					q = q + ", description = ?";// + sqlString(dbenum.getDescription());
+					args.add(dbEnum.getDescription());
+			}
+			q = q + " where id = ?" /*+ dbenum.getId()*/;
+			args.add(dbEnum.getId().getValue());
+		}
+		else // New enum, allocate a key and insert
+		{
+			DbKey id;
+			try
+			{
+				id = getKey("Enum");
+			}
+			catch (DbIoException ex)
+			{
+				throw new OpenDcsDataException("Unable to generate new key for dbEnum", ex);
+			}
+			dbEnum.forceSetId(id);
+			q = "insert into enum";
+			if (dbVer < DecodesDatabaseVersion.DECODES_DB_6)
+			{
+				q = q + "(id, name) values (?,?)"; 
+					//+ id + ", " + sqlString(dbenum.getUniqueName()) + ")";
+				args.add(id.getValue());
+				args.add(dbEnum.getUniqueName());
+			}
+			else if (dbVer < DecodesDatabaseVersion.DECODES_DB_10)
+			{
+				q = q + "(id, name, defaultValue) values (?,?,?)";
+				args.add(id.getValue());
+				args.add(dbEnum.getUniqueName());
+				args.add(dbEnum.getDefault());
+			}
+			else
+			{
+				q = q + "(id, name, defaultValue, description) values (?,?,?,?)";
+				args.add(id.getValue());
+				args.add(dbEnum.getUniqueName());
+				args.add(dbEnum.getDefault());
+				args.add(dbEnum.getDescription());
+			}
+			cache.put(dbEnum);
+		}
+		
+		Connection conn = tx.connection(Connection.class)
+							.orElseThrow(() -> new OpenDcsDataException("Unable to get JDBC connection to perform DbEnum Save."));		
+		try (DaoHelper helper = new DaoHelper(this.db, q, conn))
+		{
+			helper.doModify(q,args.toArray());
+
+			// Delete all enum values. They'll be re-added below.
+			q = "DELETE FROM EnumValue WHERE enumId = ?";
+			helper.doModify(q, dbEnum.getId().getValue());
+			
+			for (Iterator<EnumValue> it = dbEnum.iterator(); it.hasNext(); )
+			{
+				writeEnumValue(helper, it.next());
+			}
+			return dbEnum;
+		}
+		catch(DbIoException | SQLException ex)
+		{
+			throw new OpenDcsDataException("enum modify/delete failed for " + dbEnum.toString(), ex);
+		}
+	}
+
 }

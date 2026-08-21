@@ -46,6 +46,7 @@ configurations.all {
     exclude group: "javax.xml.bind", module: "jaxb-api"
     exclude group: "javax.transaction", module: "jta"
     exclude group: "javax.xml.stream", module: "stax-api"
+    implementation("com.zaxxer:HikariCP:4.0.3")
 }
 
 // Force archive names to match publishing name.
