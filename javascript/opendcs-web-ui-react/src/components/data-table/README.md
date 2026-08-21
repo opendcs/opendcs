@@ -289,10 +289,10 @@ When **save** is clicked the wrapper:
 4. On success: transitions the row back to `"show"` (and removes from local
    items if it was a new row).
 
-### 4. `+` button for new rows
+### 4. Add button for new rows
 
-When `inlineEdit.newTemplate` is provided, the wrapper puts a `+` button in
-the table's toolbar. Clicking it calls `newTemplate()` to build a fresh row,
+When `inlineEdit.newTemplate` is provided, the wrapper puts an "Add" button in
+the caption toolbar. Clicking it calls `newTemplate()` to build a fresh row,
 stores it locally in `"new"` mode, and assigns it a synthetic id via an
 internal `WeakMap` so it never collides with real ids — **your `getId`
 doesn't need to handle this case**.
@@ -303,14 +303,15 @@ doesn't need to handle this case**.
 
 ### `addNew` (for non-inline-edit tables)
 
-Adds a `+` button that creates a local row and tracks it via `rowState`.
+Adds an "Add" button that creates a local row and tracks it via `rowState`.
 Used by `renderDetail` flows where the detail itself provides the form
 (e.g. `AlgorithmsTable`). Mutually exclusive with `inlineEdit.newTemplate`.
 
 ```tsx
 addNew={{
   template: (nextId) => ({ algorithmId: nextId, /* … */ }),
-  ariaLabel: t("add_algorithm"),
+  ariaLabel: t("add_algorithm"),   // accessible name; also the tooltip-worthy detail
+  label: t("add_algorithm_short"), // optional; defaults to the translated "Add"
 }}
 ```
 
@@ -319,13 +320,29 @@ local numeric id, so it's unique against server-side positive ids.
 
 ### `extraHeaderButtons`
 
-Arbitrary buttons in the table toolbar (e.g. "Check for new", "Import…"):
+Arbitrary buttons in the caption toolbar (e.g. "Check for new", "Import…"):
 
 ```tsx
 extraHeaderButtons={[
-  { text: t("check_new"), ariaLabel: t("check_new"), onClick: () => setOpen(true) },
+  {
+    text: t("check_new"),
+    ariaLabel: t("check_new"),
+    icon: "bi-plus-lg", // optional Bootstrap icon shown before the text
+    onClick: () => setOpen(true),
+  },
 ]}
 ```
+
+### Where the header buttons live
+
+`addNew`, `inlineEdit.newTemplate` and `extraHeaderButtons` all render into
+the table's `<caption>` — one row with the `caption` title centered and the
+buttons right-aligned above the Actions column — so an "Add" control always
+sits against the table it adds a row to. The whole
+table, including DataTables' own length/search/paging controls, is wrapped in
+a `.dt-panel` outline so pages with several tables make it obvious which
+controls belong to which table (issue #2009). Use `TableCaption` directly if
+you have a hand-rolled `<DataTable>` that needs the same treatment.
 
 ### `loading`
 
@@ -415,10 +432,9 @@ Both component files are <150 lines — the wrapper absorbs the rest.
   `WeakMap` with synthetic ids. Don't mutate new-row objects by reference
   after save — the WeakMap entry is cleaned up on commit, but replacing the
   object identity would orphan its mode state.
-- **`dataTableOptions.layout`.** The wrapper builds `top1Start` for the
-  `+` button and `extraHeaderButtons`. If you need `topStart` or `top2End`,
-  supply them via `dataTableOptions.layout`; the wrapper merges but doesn't
-  deep-merge `top1Start`, so don't set that key in your override.
+- **`dataTableOptions.layout`.** The wrapper no longer claims any layout
+  region — header buttons live in the caption — so `dataTableOptions.layout`
+  passes straight through to DataTables.
 
 ---
 
@@ -427,4 +443,5 @@ Both component files are <150 lines — the wrapper absorbs the rest.
 | Export               | Use                                                                                                                                               |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DetailFade`         | Component that wraps a detail with a skeleton→content fade. Used inside the Algorithm detail card; not needed at the table level.                 |
+| `TableCaption`       | The caption row (title + toolbar buttons) as a standalone component, for raw `<DataTable>`s that aren't using the wrapper.                        |
 | `useTableProcessing` | Low-level hook the wrapper uses internally. Exported for any custom DataTable that needs to drive the `processing` overlay from a `loading` flag. |

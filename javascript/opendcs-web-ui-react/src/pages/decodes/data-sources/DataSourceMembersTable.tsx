@@ -111,8 +111,9 @@ export const DataSourceMembersTable: React.FC<DataSourceMembersTableProperties> 
     if (!edit) return [];
     return [
       {
-        text: "+",
+        text: t("datasources:add_members"),
         ariaLabel: t("datasources:add_members"),
+        icon: "bi-plus-lg",
         onClick: () => setShowAddModal(true),
       },
     ];

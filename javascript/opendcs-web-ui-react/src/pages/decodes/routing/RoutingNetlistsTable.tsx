@@ -92,8 +92,9 @@ export const RoutingNetlistsTable: React.FC<RoutingNetlistsTableProperties> = ({
     if (!edit) return [];
     return [
       {
-        text: "+",
+        text: t("routing:add_netlists"),
         ariaLabel: t("routing:add_netlists"),
+        icon: "bi-plus-lg",
         onClick: () => setShowAddModal(true),
       },
     ];
