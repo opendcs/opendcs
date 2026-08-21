@@ -16,13 +16,20 @@
 
 package org.opendcs.cwms.data;
 
+import java.util.Objects;
+
 import org.opendcs.data.Organization;
 import org.opendcs.database.DatabaseKey;
 
 import decodes.sql.DbKey;
 
-public record CwmsOffice(DbKey id, String name, CwmsOffice reportsTo, String longName, String eroc, String type) implements Organization
+public record CwmsOffice(DbKey id, String name, DbKey reportsToId, CwmsOffice reportsTo, String longName, String eroc, String type) implements Organization
 {
+
+    public CwmsOffice(DbKey id, String name, CwmsOffice reportsTo, String longName, String eroc, String type)
+    {
+        this(id, name, reportsTo != null ? reportsTo.id : null, reportsTo, longName, eroc, type);
+    }
 
     @Override
     public DatabaseKey getId()
@@ -35,7 +42,6 @@ public record CwmsOffice(DbKey id, String name, CwmsOffice reportsTo, String lon
     {
         return this.name;
     }
-    
 
     @Override
     public String getDisplayName()
@@ -47,5 +53,46 @@ public record CwmsOffice(DbKey id, String name, CwmsOffice reportsTo, String lon
     public CwmsOffice getReportsToOffice()
     {
         return this != this.reportsTo ? this.reportsTo : null;
+    }
+
+    // For hashCode and equals we only care if the first level of reporting office matches.
+    // thus we use the stored reportsToId field and ignore the reportsTo instance for
+    // these elements.
+
+    private boolean basicsEqual(CwmsOffice office)
+    {
+
+        return office != null &&
+               this.eroc.equals(office.eroc) &&
+               this.id.equals(office.id) &&
+               this.type.equals(office.type) &&
+               this.name.equals(office.name) &&
+               this.longName.equals(office.longName) &&
+               Objects.equals(reportsToId, office.reportsToId);
+    }
+
+    @Override
+    public boolean equals(Object rhs)
+    {
+        if (this == rhs)
+        {
+            return true;
+        }
+        else if (rhs instanceof CwmsOffice office)
+        {
+            return basicsEqual(office);
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode()
+    {
+        // we'll always have the reportsToId value, if any, but may not have the actual instance
+        // so only hash on the id.
+        return Objects.hash(this.id, this.name, this.type, this.longName, this.reportsToId);
     }
 }
