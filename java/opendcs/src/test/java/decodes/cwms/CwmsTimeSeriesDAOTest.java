@@ -69,13 +69,14 @@ final class CwmsTimeSeriesDAOTest
 	}
 
 	/**
-	 * {@link DecodesSettings} is a process wide singleton, so anything a test flips has to be put
-	 * back or it leaks into whatever runs next in the same JVM.
+	 * {@link DecodesSettings} is a process wide singleton and the tsid cache is static, so anything
+	 * a test flips or seeds has to be put back or it leaks into whatever runs next in the same JVM.
 	 */
 	@AfterEach
-	void restoreRetryFailedComputations()
+	void restoreSharedState()
 	{
 		DecodesSettings.instance().retryFailedComputations = false;
+		CwmsTimeSeriesDAO.cache.clear();
 	}
 
 	@Test
@@ -137,15 +138,6 @@ final class CwmsTimeSeriesDAOTest
 			assertEquals(2, countOccurrences(sql, '?'), "expected two bind parameters");
 			assertTrue(sql.endsWith(" ORDER BY a.site_datatype_id, a.start_date_time"));
 		}
-	}
-
-	/**
-	 * The tsid cache is static, so a test that seeds it has to leave it empty for the next one.
-	 */
-	@AfterEach
-	void clearTsidCache()
-	{
-		CwmsTimeSeriesDAO.cache.clear();
 	}
 
 	@Test

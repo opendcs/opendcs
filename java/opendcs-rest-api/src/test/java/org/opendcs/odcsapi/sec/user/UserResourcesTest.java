@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -207,7 +208,7 @@ final class UserResourcesTest
 
 	private static void doThrowAuthException(BuiltInIdentityProvider idp) throws OpenDcsAuthException
 	{
-		org.mockito.Mockito.doThrow(new OpenDcsAuthException("write failed"))
+		doThrow(new OpenDcsAuthException("write failed"))
 				.when(idp).updateUserCredentials(any(), any(), any(), any());
 	}
 }
