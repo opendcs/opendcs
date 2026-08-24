@@ -16,10 +16,12 @@
 package org.opendcs.odcsapi.sec.user;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiPasswordChange;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
+import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,5 +43,24 @@ final class UserResourcesTest
 		WebAppException ex = assertThrows(WebAppException.class, () -> resources.updatePassword(passwordChange));
 
 		assertEquals(Response.Status.FORBIDDEN.getStatusCode(), ex.getStatus());
+	}
+
+	@Test
+	void testUpdatePasswordThrowsWhenSessionHasNoPrincipal()
+	{
+		UserResources resources = new UserResources();
+		HttpSession session = mock(HttpSession.class);
+		when(session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE)).thenReturn(null);
+		HttpServletRequest httpRequest = mock(HttpServletRequest.class);
+		when(httpRequest.getSession(false)).thenReturn(session);
+		resources.httpRequest = httpRequest;
+
+		ApiPasswordChange passwordChange = new ApiPasswordChange("old-password", "new-password");
+
+		WebAppException ex = assertThrows(WebAppException.class, () -> resources.updatePassword(passwordChange));
+
+		// A live session with no principal attribute means the session was never authenticated,
+		// which is a 401 rather than the 403 an authenticated-but-unauthorized caller gets.
+		assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), ex.getStatus());
 	}
 }

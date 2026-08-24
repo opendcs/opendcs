@@ -1353,7 +1353,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
      * application id is always bind parameter 1; the debounce seconds, when enabled, are bind
      * parameter 2.
      */
-    private String buildTaskListQuery(int maxTake, int tasklistDebounceSeconds)
+    String buildTaskListQuery(int maxTake, int tasklistDebounceSeconds)
     {
         String failTimeClause =
                     DecodesSettings.instance().retryFailedComputations
