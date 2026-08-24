@@ -29,6 +29,7 @@ import decodes.db.DatabaseException;
 import decodes.db.ScheduleEntryStatus;
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
+import io.opentelemetry.api.trace.Span;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import jakarta.ws.rs.core.MediaType;
@@ -53,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 final class RoutingResourcesIT extends BaseApiIT
 {
@@ -277,101 +279,125 @@ final class RoutingResourcesIT extends BaseApiIT
 	@AfterEach
 	void tearDown() throws Exception
 	{
-		// Delete the dacq event
-		deleteEventsForPlatform(DbKey.createDbKey(platformId));
-
-		// Delete the schedule entry status
-		deleteScheduleEntryStatus(DbKey.createDbKey(scheduleEntryStatusId));
-
-		if (routingId != null)
+		try (var span = Span.current()
+							.setAttribute("Operations", "Tear Down")
+							.makeCurrent())
 		{
-			// Delete the routing
+			// Delete the dacq event
+			deleteEventsForPlatform(DbKey.createDbKey(platformId));
+
+			// Delete the schedule entry status
+			deleteScheduleEntryStatus(DbKey.createDbKey(scheduleEntryStatusId));
+
+			if (scheduleId != null)
+			{
+				// Delete the schedule
+				given()
+					.log().ifValidationFails(LogDetail.ALL, true)
+					.spec(authSpec)
+					.accept(MediaType.APPLICATION_JSON)
+					.queryParam("scheduleid", scheduleId)
+				.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.delete("schedule")
+				.then()
+					.log().ifValidationFails(LogDetail.ALL, true)
+				.assertThat()
+					.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+				;
+			}
+
+			if (routingId != null)
+			{
+				// Delete the routing
+				given()
+					.log().ifValidationFails(LogDetail.ALL, true)
+					.spec(authSpec)
+					.accept(MediaType.APPLICATION_JSON)
+					.queryParam("routingid", routingId)
+				.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.delete("routing")
+				.then()
+					.log().ifValidationFails(LogDetail.ALL, true)
+				.assertThat()
+					.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+				;
+				// now attempt to retrieve it.
+				given()
+					.log().ifValidationFails(LogDetail.ALL, true)
+					.spec(authSpec)
+					.accept(MediaType.APPLICATION_JSON)
+					.queryParam("routingid", routingId)
+				.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.get("routing")
+				.then()
+					.log().ifValidationFails(LogDetail.ALL, true)
+				.assertThat()
+					.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
+				;
+			}
+			else
+			{
+				fail("Routing ID should not be null at this point.");
+			}
+
+			// Delete the data source
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
 				.spec(authSpec)
 				.accept(MediaType.APPLICATION_JSON)
-				.queryParam("routingid", routingId)
+				.queryParam("datasourceid", dataSourceId)
 			.when()
 				.redirects().follow(true)
 				.redirects().max(3)
-				.delete("routing")
+				.delete("datasource")
 			.then()
 				.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
 				.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 			;
-		}
 
-		if (scheduleId != null)
-		{
-			// Delete the schedule
+			// Delete the application
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
 				.spec(authSpec)
 				.accept(MediaType.APPLICATION_JSON)
-				.queryParam("scheduleid", scheduleId)
+				.queryParam("appid", appId)
 			.when()
 				.redirects().follow(true)
 				.redirects().max(3)
-				.delete("schedule")
+				.delete("app")
 			.then()
 				.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
 				.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
 			;
+
+			tearDownPlatform(platformId);
+
+			// Delete the config
+			given()
+				.log().ifValidationFails(LogDetail.ALL, true)
+				.spec(authSpec)
+				.accept(MediaType.APPLICATION_JSON)
+				.queryParam("configid", configId)
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.delete("config")
+			.then()
+				.log().ifValidationFails(LogDetail.ALL, true)
+			.assertThat()
+				.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+			;
+
+			tearDownSite(siteId);
 		}
-
-		// Delete the data source
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.spec(authSpec)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("datasourceid", dataSourceId)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("datasource")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
-		;
-
-		// Delete the application
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.spec(authSpec)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("appid", appId)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("app")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
-		;
-
-		tearDownPlatform(platformId);
-
-		// Delete the config
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.spec(authSpec)
-			.accept(MediaType.APPLICATION_JSON)
-			.queryParam("configid", configId)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("config")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
-		;
-
-		tearDownSite(siteId);
 	}
 
 
@@ -403,7 +429,7 @@ final class RoutingResourcesIT extends BaseApiIT
 			if (actualMap.get("name").equals(expected.getString("name")))
 			{
 				assertEquals(expected.getString("name"), actualMap.get("name"));
-				assertEquals(expected.getString("dataSourceName"), actualMap.get("dataSourceName"));
+				assertEquals(expected.getString("dataSourceName"), actualMap.get("dataSourceName"), () -> response.response().asPrettyString());
 				found = true;
 			}
 		}

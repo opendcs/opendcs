@@ -90,7 +90,7 @@ public final class RoutingResources extends OpenDcsResource
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
-    private static final WebAppException NO_ROUTING_SPEC_DAO = 
+    private static final WebAppException NO_ROUTING_SPEC_DAO =
         new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                             "No Routing Spec DAO is available.");
 
@@ -120,7 +120,7 @@ public final class RoutingResources extends OpenDcsResource
                                 tx.wrapErrors(() ->
                                         dao.getAll(tx, -1, -1, false)
                                            .stream()
-                                           .map(rs -> mapRef(rs))
+                                           .map(RoutingResources::mapRef)
                                            .toList()
                                 )
                             )
@@ -201,7 +201,7 @@ public final class RoutingResources extends OpenDcsResource
                            )
                            .build();
         }
-        
+
         catch (OpenDcsDataException ex)
         {
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
@@ -375,86 +375,77 @@ public final class RoutingResources extends OpenDcsResource
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
-    public Response postRouting(ApiRouting routing)
-            throws DbException
+    public Response postRouting(ApiRouting routing) throws WebAppException
     {
-        DatabaseIO dbIo = getLegacyDatabase();
-        try
+        var db = createDb();
+        var dao = db.getDao(RoutingSpecDao.class).orElseThrow(() -> NO_ROUTING_SPEC_DAO);
+        RoutingSpec spec = map(routing);
+        try (var tx = db.newTransaction())
         {
-            RoutingSpec spec = map(routing);
-            dbIo.writeRoutingSpec(spec);
-            return Response.status(Response.Status.CREATED).entity(map(spec)).build();
+            return Response.status(Response.Status.CREATED)
+                           .entity(map(tx.wrapErrors(() -> dao.save(tx, spec))))
+                           .build();
         }
-        catch(DatabaseException ex)
+        catch (OpenDcsDataException ex)
         {
-            throw new DbException("Unable to store routing spec", ex);
-        }
-        finally
-        {
-            dbIo.close();
+            throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                                      "Unable to save routing spec.",
+                                      ex);
         }
     }
 
-    static RoutingSpec map(ApiRouting routing) throws DbException
+    static RoutingSpec map(ApiRouting routing)
     {
-        try
+        RoutingSpec spec = new RoutingSpec();
+        if(routing.getRoutingId() != null)
         {
-            RoutingSpec spec = new RoutingSpec();
-            if(routing.getRoutingId() != null)
+            spec.forceSetId(DbKey.createDbKey(routing.getRoutingId()));
+        }
+        else
+        {
+            spec.forceSetId(DbKey.NullKey);
+        }
+        spec.setName(routing.getName());
+        spec.usePerformanceMeasurements = false;
+        spec.lastModifyTime = new Date();
+        if(routing.getOutputTZ() != null)
+        {
+            spec.outputTimeZoneAbbr = routing.getOutputTZ();
+            spec.outputTimeZone = TimeZone.getTimeZone(ZoneId.of(routing.getOutputTZ()));
+        }
+        routing.getNetlistNames().forEach(spec::addNetworkListName);
+        spec.outputFormat = routing.getOutputFormat();
+        spec.enableEquations = routing.isEnableEquations();
+        spec.presentationGroupName = routing.getPresGroupName();
+        spec.isProduction = routing.isProduction();
+        spec.consumerArg = routing.getDestinationArg();
+        spec.consumerType = routing.getDestinationType();
+        if(routing.getSince() != null)
+        {
+            spec.sinceTime = routing.getSince();
+        }
+        if(routing.getUntil() != null)
+        {
+            spec.untilTime = routing.getUntil();
+        }
+
+        spec.setProperties(mapRoutingSpecProperties(routing));
+        if(routing.getDataSourceId() != null)
+        {
+            DataSource dataSource = new DataSource();
+            if(routing.getDataSourceId() != null)
             {
-                spec.setId(DbKey.createDbKey(routing.getRoutingId()));
+                dataSource.forceSetId(DbKey.createDbKey(routing.getDataSourceId()));
             }
             else
             {
-                spec.setId(DbKey.NullKey);
+                dataSource.forceSetId(DbKey.NullKey);
             }
-            spec.setName(routing.getName());
-            spec.usePerformanceMeasurements = false;
-            spec.lastModifyTime = new Date();
-            if(routing.getOutputTZ() != null)
-            {
-                spec.outputTimeZoneAbbr = routing.getOutputTZ();
-                spec.outputTimeZone = TimeZone.getTimeZone(ZoneId.of(routing.getOutputTZ()));
-            }
-            routing.getNetlistNames().forEach(spec::addNetworkListName);
-            spec.outputFormat = routing.getOutputFormat();
-            spec.enableEquations = routing.isEnableEquations();
-            spec.presentationGroupName = routing.getPresGroupName();
-            spec.isProduction = routing.isProduction();
-            spec.consumerArg = routing.getDestinationArg();
-            spec.consumerType = routing.getDestinationType();
-            if(routing.getSince() != null)
-            {
-                spec.sinceTime = routing.getSince();
-            }
-            if(routing.getUntil() != null)
-            {
-                spec.untilTime = routing.getUntil();
-            }
-
-            spec.setProperties(mapRoutingSpecProperties(routing));
-            if(routing.getDataSourceId() != null)
-            {
-                DataSource dataSource = new DataSource();
-                if(routing.getDataSourceId() != null)
-                {
-                    dataSource.setId(DbKey.createDbKey(routing.getDataSourceId()));
-                }
-                else
-                {
-                    dataSource.setId(DbKey.NullKey);
-                }
-                dataSource.setName(routing.getDataSourceName());
-                spec.dataSource = dataSource;
-            }
-            spec.networkListNames = new Vector<>(routing.getNetlistNames());
-            return spec;
+            dataSource.setName(routing.getDataSourceName());
+            spec.dataSource = dataSource;
         }
-        catch(DatabaseException ex)
-        {
-            throw new DbException("Unable to map routing spec", ex);
-        }
-
+        spec.networkListNames = new Vector<>(routing.getNetlistNames());
+        return spec;
     }
 
     private static Properties mapRoutingSpecProperties(ApiRouting routing)
@@ -552,30 +543,27 @@ public final class RoutingResources extends OpenDcsResource
     )
     public Response deleteRouting(@Parameter(description = "Routing Spec ID", required = true, example = "20",
             schema = @Schema(implementation = Long.class))
-    @QueryParam("routingid") Long routingId)
-            throws WebAppException, DbException
+    @QueryParam("routingid") Long routingId) throws WebAppException
     {
         if(routingId == null)
         {
             throw new MissingParameterException("Missing required routingid parameter.");
         }
 
-        DatabaseIO dbIo = getLegacyDatabase();
-        try
+        var db = createDb();
+        var dao = db.getDao(RoutingSpecDao.class).orElseThrow(() -> NO_ROUTING_SPEC_DAO);
+
+        try (var tx = db.newTransaction())
         {
-            RoutingSpec spec = new RoutingSpec();
-            spec.setId(DbKey.createDbKey(routingId));
-            dbIo.deleteRoutingSpec(spec);
+            tx.wrapErrors(() -> dao.delete(tx, DbKey.createDbKey(routingId)));
             return Response.noContent()
                     .entity(String.format("RoutingSpec with ID: %d deleted", routingId)).build();
         }
-        catch(DatabaseException ex)
+        catch (OpenDcsDataException ex)
         {
-            throw new DbException("Unable to delete routing spec", ex);
-        }
-        finally
-        {
-            dbIo.close();
+            throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                                      "Unable to delete routing spec.",
+                                      ex);
         }
     }
 
