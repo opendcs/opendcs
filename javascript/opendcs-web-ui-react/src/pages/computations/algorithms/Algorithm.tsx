@@ -1,4 +1,4 @@
-import { Alert, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
+import { Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type { ApiAlgorithm, ApiPropSpec } from "opendcs-api";
@@ -11,14 +11,15 @@ import type {
 import { AlgorithmReducer } from "./AlgorithmReducer";
 import { AlgorithmParamsTable, type AlgoParm } from "./AlgorithmParamsTable";
 import { DetailFade } from "../../../components/data-table";
-import { apiErrorMessage } from "../../../util/ApiError";
 import {
   CancelButton,
   EditFormActions,
   INPUT_H,
   LABEL_H,
   SaveButton,
+  SaveErrorAlert,
 } from "../../../components/forms";
+import { useSaveError } from "../../../hooks/useSaveError";
 
 export type UiAlgorithm = Partial<ApiAlgorithm>;
 
@@ -235,7 +236,10 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
   else resolvedParms = initialParms;
   const [localAlgorithm, dispatch] = useReducer(AlgorithmReducer, providedAlgorithm);
   const [localParms, setLocalParms] = useState<AlgoParm[]>(resolvedParms);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("algorithms:editor.save_error"),
+    "Algorithm save failed",
+  );
 
   const props = useMemo(() => {
     const saved = localAlgorithm.props || {};
@@ -268,16 +272,9 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
     : {};
 
   const saveAlgorithm = useCallback(
-    async (algo: UiAlgorithm) => {
-      setSaveError(null);
-      try {
-        await actions.save?.({ ...algo, parms: localParms } as ApiAlgorithm);
-      } catch (err) {
-        console.warn("Algorithm save failed", err);
-        setSaveError(apiErrorMessage(err, t("algorithms:editor.save_error")));
-      }
-    },
-    [actions, localParms, t],
+    (algo: UiAlgorithm) =>
+      attemptSave(() => actions.save?.({ ...algo, parms: localParms } as ApiAlgorithm)),
+    [attemptSave, actions, localParms],
   );
 
   const inputChange = useCallback(
@@ -352,16 +349,7 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
               />
             </Col>
           </Row>
-          {saveError && (
-            <Alert
-              variant="danger"
-              dismissible
-              onClose={() => setSaveError(null)}
-              className="mt-3"
-            >
-              {saveError}
-            </Alert>
-          )}
+          <SaveErrorAlert error={saveError} onClose={clearSaveError} />
           {edit && (
             <EditFormActions>
               <CancelButton

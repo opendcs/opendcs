@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Card,
   Col,
@@ -31,7 +30,8 @@ import { ConfigSelectModal } from "./ConfigSelectModal";
 import { PlatformSensorsTable } from "./PlatformSensorsTable";
 import { TransportMediaTable } from "./TransportMediaTable";
 import { siteDisplayName } from "./siteDisplayName";
-import { apiErrorMessage } from "../../util/ApiError";
+import { SaveErrorAlert } from "../../components/forms";
+import { useSaveError } from "../../hooks/useSaveError";
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
@@ -171,7 +171,10 @@ export const Platform: React.FC<PlatformProperties> = ({
   );
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("platforms:save_error"),
+    "Platform save failed",
+  );
   const fetchConfig = useFetchConfig();
 
   const propertyActions: CollectionActions<Property, string> = edit
@@ -186,15 +189,10 @@ export const Platform: React.FC<PlatformProperties> = ({
       }
     : {};
 
-  const savePlatform = useCallback(async () => {
-    setSaveError(null);
-    try {
-      await actions.save?.(localPlatform as ApiPlatform);
-    } catch (err) {
-      console.warn("Platform save failed", err);
-      setSaveError(apiErrorMessage(err, t("platforms:save_error")));
-    }
-  }, [actions, localPlatform, t]);
+  const savePlatform = useCallback(
+    () => attemptSave(() => actions.save?.(localPlatform as ApiPlatform)),
+    [attemptSave, actions, localPlatform],
+  );
 
   const inputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -467,16 +465,7 @@ export const Platform: React.FC<PlatformProperties> = ({
               />
             </Col>
           </Row>
-          {saveError && (
-            <Alert
-              variant="danger"
-              dismissible
-              onClose={() => setSaveError(null)}
-              className="mt-3"
-            >
-              {saveError}
-            </Alert>
-          )}
+          <SaveErrorAlert error={saveError} onClose={clearSaveError} />
           {edit && (
             <Row className="mt-3">
               <Col className="d-flex justify-content-end gap-2">
