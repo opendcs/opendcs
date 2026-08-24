@@ -570,7 +570,7 @@ public final class ComputationResources extends OpenDcsResource
 		}
 	}
 
-	private void processOutput(List<TimeSeriesIdentifier> outputList, SseChannel channel,
+	void processOutput(List<TimeSeriesIdentifier> outputList, SseChannel channel,
 			Instant startDate, Instant endDate)
 	{
 		List<ApiTimeSeriesIdentifier> ids = APIStreamMapper.mapList(outputList, ApiTimeSeriesIdentifier.class);
@@ -585,7 +585,7 @@ public final class ComputationResources extends OpenDcsResource
 				.build());
 	}
 
-	private static final class SseProgressListener extends ProgressListener
+	static final class SseProgressListener extends ProgressListener
 	{
 		private final SseChannel channel;
 

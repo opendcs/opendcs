@@ -53,7 +53,17 @@ public final class LrgsTestExtension implements BeforeAllCallback, ParameterReso
      */
     private static Path createPrivateTempDirectory(String prefix) throws IOException
     {
-        if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix"))
+        return createPrivateTempDirectory(prefix, FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+    }
+
+    /**
+     * @param posix whether the target file system exposes the POSIX attribute view; split out from
+     *        {@link #createPrivateTempDirectory(String)} so both paths can be exercised on any
+     *        platform.
+     */
+    static Path createPrivateTempDirectory(String prefix, boolean posix) throws IOException
+    {
+        if (posix)
         {
             return Files.createTempDirectory(prefix, //NOSONAR - created owner-only, see javadoc above
                 PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
