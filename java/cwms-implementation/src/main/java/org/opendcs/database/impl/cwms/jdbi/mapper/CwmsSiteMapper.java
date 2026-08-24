@@ -88,7 +88,7 @@ public class CwmsSiteMapper extends OpenDcsSiteMapper
         }
     }
 
-    public static CwmsSiteMapper forPrefix(String prefix)
+    public static CwmsSiteMapper withPrefix(String prefix)
     {
         return new CwmsSiteMapper(prefix);
     }

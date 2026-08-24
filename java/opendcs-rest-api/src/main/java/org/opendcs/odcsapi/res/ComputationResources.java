@@ -62,7 +62,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 import opendcs.dai.CompDependsDAI;
@@ -584,36 +583,6 @@ public final class ComputationResources extends OpenDcsResource
 				.mediaType(MediaType.APPLICATION_JSON_TYPE)
 				.data(ApiCompResults.class, results)
 				.build());
-	}
-
-	/**
-	 * The Sse factory, the sink and the name/id stamped on every event of a single computation run.
-	 * These four values are always passed together; bundling them keeps the run helpers well under
-	 * the parameter limit and removes the repeated event-builder boilerplate.
-	 */
-	private record SseChannel(Sse sse, SseEventSink eventSink, String eventName, String taskId)
-	{
-		/** Publishes {@code data} as a plain text event named after this channel. */
-		void sendText(String data)
-		{
-			send(newEvent(eventName)
-					.mediaType(MediaType.TEXT_PLAIN_TYPE)
-					.data(data)
-					.build());
-		}
-
-		/** Starts an event that needs a different name, media type or reconnect delay. */
-		OutboundSseEvent.Builder newEvent(String name)
-		{
-			return sse.newEventBuilder()
-					.name(name)
-					.id(taskId);
-		}
-
-		void send(OutboundSseEvent event)
-		{
-			eventSink.send(event);
-		}
 	}
 
 	private static final class SseProgressListener extends ProgressListener
