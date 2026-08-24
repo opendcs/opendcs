@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Card,
   Col,
@@ -35,7 +34,8 @@ import {
   editorValueToStartFields,
   editorValueToEndFields,
 } from "./computationTime";
-import { apiErrorMessage } from "../../../util/ApiError";
+import { SaveErrorAlert } from "../../../components/forms";
+import { useSaveError } from "../../../hooks/useSaveError";
 
 export type UiComputation = Partial<ApiComputation>;
 
@@ -213,7 +213,10 @@ export const Computation: React.FC<ComputationProperties> = ({
   );
   const [showAlgorithmModal, setShowAlgorithmModal] = useState(false);
   const [nameError, setNameError] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("computations:editor.save_error"),
+    "Computation save failed",
+  );
 
   const handleAlgorithmSelected = useCallback(
     async (ref: ApiAlgorithmRef) => {
@@ -273,18 +276,14 @@ export const Computation: React.FC<ComputationProperties> = ({
         return;
       }
       setNameError(false);
-      setSaveError(null);
-      try {
-        await actions.save?.({
+      await attemptSave(() =>
+        actions.save?.({
           ...(comp as ApiComputation),
           parmList: localParms.map(prepareParmForSave),
-        });
-      } catch (err) {
-        console.warn("Computation save failed", err);
-        setSaveError(apiErrorMessage(err, t("computations:editor.save_error")));
-      }
+        }),
+      );
     },
-    [actions, localParms, t],
+    [attemptSave, actions, localParms],
   );
 
   const inputChange = useCallback(
@@ -583,16 +582,7 @@ export const Computation: React.FC<ComputationProperties> = ({
             />
           </Col>
         </Row>
-        {saveError && (
-          <Alert
-            variant="danger"
-            dismissible
-            onClose={() => setSaveError(null)}
-            className="mt-3"
-          >
-            {saveError}
-          </Alert>
-        )}
+        <SaveErrorAlert error={saveError} onClose={clearSaveError} />
         {edit && (
           <Row className="mt-3">
             <Col className="d-flex justify-content-end gap-2">

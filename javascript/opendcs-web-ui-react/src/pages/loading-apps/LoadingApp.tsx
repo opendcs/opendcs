@@ -1,6 +1,6 @@
-import { Alert, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
+import { Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../components/properties";
-import { use, useCallback, useMemo, useReducer, useState } from "react";
+import { use, useCallback, useMemo, useReducer } from "react";
 import type { ApiLoadingApp } from "opendcs-api";
 import { useTranslation } from "react-i18next";
 import type { CancelAction, CollectionActions, SaveAction } from "../../util/Actions";
@@ -12,8 +12,9 @@ import {
   INPUT_H,
   LABEL_H,
   SaveButton,
+  SaveErrorAlert,
 } from "../../components/forms";
-import { apiErrorMessage } from "../../util/ApiError";
+import { useSaveError } from "../../hooks/useSaveError";
 
 const APP_FIELDS = ["appName", "appType", "comment"] as const;
 
@@ -95,7 +96,10 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
   const { t } = useTranslation(["loadingapps", "translation"]);
   const providedApp = app instanceof Promise ? use(app) : app;
   const [localApp, dispatch] = useReducer(LoadingAppReducer, providedApp);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("loadingapps:save_error"),
+    "Loading app save failed",
+  );
 
   const props = useMemo<Property[]>(
     () =>
@@ -120,15 +124,10 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
       }
     : {};
 
-  const saveApp = useCallback(async () => {
-    setSaveError(null);
-    try {
-      await actions.save?.(localApp as ApiLoadingApp);
-    } catch (err) {
-      console.warn("Loading app save failed", err);
-      setSaveError(apiErrorMessage(err, t("loadingapps:save_error")));
-    }
-  }, [actions, localApp, t]);
+  const saveApp = useCallback(
+    () => attemptSave(() => actions.save?.(localApp as ApiLoadingApp)),
+    [attemptSave, actions, localApp],
+  );
 
   const inputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -234,16 +233,7 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
             </Col>
           </Row>
 
-          {saveError && (
-            <Alert
-              variant="danger"
-              dismissible
-              onClose={() => setSaveError(null)}
-              className="mt-3"
-            >
-              {saveError}
-            </Alert>
-          )}
+          <SaveErrorAlert error={saveError} onClose={clearSaveError} />
 
           {edit && (
             <EditFormActions>

@@ -4,7 +4,7 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
-import { Alert, Button, Modal } from "react-bootstrap";
+import { Button, Modal } from "react-bootstrap";
 import {
   Suspense,
   useCallback,
@@ -20,6 +20,8 @@ import { dtLangs } from "../../lang";
 import { unmountToDom, useContextWrapper } from "../../util/ContextWrapper";
 import { useTableProcessing } from "./useTableProcessing";
 import { TableCaption, type CaptionButton } from "./TableCaption";
+import { SaveErrorAlert } from "../forms";
+import { useSaveError } from "../../hooks/useSaveError";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -468,7 +470,10 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   const [localItems, setLocalItems] = useState<T[]>([]);
   // Set when a row's onSave rejects, so the failure is visible instead of
   // silently discarded. Cleared on the next save attempt.
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("save_failed"),
+    "Failed to save row",
+  );
   // rowState is keyed by stringified row id so both consumer ids (TId) and
   // wrapper-generated synthetic ids (for inline-edit new rows) coexist.
   const [rowState, setRowState] = useState<Record<string, RowMode>>({});
@@ -749,19 +754,18 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           // Await the consumer's save (if it's a Promise) before transitioning
           // so the follow-up `renderDetail` fetch reads committed data.
           // `await` works on thenables and passes through non-promises unchanged.
-          setSaveError(null);
-          try {
+          if (isNewLocal) {
+            // Let a new local row's failure propagate so the renderDetail
+            // component can display it and the row stays in edit mode
+            // (preserving user input); the transitions below are skipped.
+            clearSaveError();
             await onSave?.(updated);
-          } catch (err) {
-            console.error("Failed to save row", err);
-            // For new local items, re-throw so the renderDetail component can
-            // display the error and the row stays in edit mode (preserving user
-            // input). For existing server rows, closing is safe — they remain
-            // in the data list with their last-saved values.
-            if (isNewLocal) throw err;
-            setSaveError(t("save_failed"));
+            pendingNavRef.current = true;
+          } else {
+            // Existing server rows: report the failure in the banner and close
+            // anyway — they keep their last-saved values in the data list.
+            await attemptSave(() => onSave?.(updated));
           }
-          if (isNewLocal) pendingNavRef.current = true;
           setLocalItems((prev) => withoutId(prev, id, idOf));
           setModeByIdStr(id, "show");
         },
@@ -778,7 +782,16 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         </Suspense>,
       );
     },
-    [idOf, onSave, setModeByIdStr, toDom, renderDetail, renderSkeleton, t],
+    [
+      idOf,
+      onSave,
+      setModeByIdStr,
+      toDom,
+      renderDetail,
+      renderSkeleton,
+      attemptSave,
+      clearSaveError,
+    ],
   );
 
   // Stable ref so the drawCallback closure always sees the latest renderer.
@@ -1056,11 +1069,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     // controls, so pages with several tables make it obvious which controls
     // belong to which table.
     <div className="dt-panel" style={{ opacity: isInitialized ? undefined : 0 }}>
-      {saveError && (
-        <Alert variant="danger" dismissible onClose={() => setSaveError(null)}>
-          {saveError}
-        </Alert>
-      )}
+      <SaveErrorAlert error={saveError} onClose={clearSaveError} className="" />
       <DataTable
         key={tableKey}
         id={tableId}
