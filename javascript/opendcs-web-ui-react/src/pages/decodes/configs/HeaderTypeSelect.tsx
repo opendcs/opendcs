@@ -5,6 +5,7 @@ import {
 } from "../../../contexts/data/RefListContext";
 import { FormSelect } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
+import { RefListPlaceholderSelect } from "../../../components/controls/RefListPlaceholderSelect";
 
 interface HeaderSelectProperties {
   id?: string;
@@ -26,12 +27,27 @@ export const DecodesHeaderTypeSelect: React.FC<HeaderSelectProperties> = ({
   onChange,
   edit = true,
 }) => {
-  const { t } = useTranslation();
-  const { refList, ready } = useRefList();
+  const { t } = useTranslation(["decodes", "translation"]);
+  const { refList, ready, failed } = useRefList();
 
   const headerTypes = refList(REFLIST_DECODES_TRANSPORT_MEDIUM_TYPE);
+  const label = t("decodes:config.transport_medium_select");
 
-  return ready ? (
+  // No list yet: hold the dropdown's place disabled rather than replacing it
+  // with a status line, which pushed the control out of the row entirely.
+  if (!ready) {
+    return (
+      <RefListPlaceholderSelect
+        id={id}
+        name="decodesHeaderType"
+        ariaLabel={label}
+        value={defaultValue}
+        failed={failed}
+      />
+    );
+  }
+
+  return (
     <FormSelect
       defaultValue={defaultValue}
       name="decodesHeaderType"
@@ -40,7 +56,7 @@ export const DecodesHeaderTypeSelect: React.FC<HeaderSelectProperties> = ({
       }}
       disabled={!edit}
       id={id}
-      aria-label={t("decodes:config.transport_medium_select")}
+      aria-label={label}
     >
       {headerTypes.items &&
         Object.values(headerTypes.items).map((ht) => {
@@ -51,7 +67,5 @@ export const DecodesHeaderTypeSelect: React.FC<HeaderSelectProperties> = ({
           );
         })}
     </FormSelect>
-  ) : (
-    <p>{t("loading_reference_lists")}</p>
   );
 };
