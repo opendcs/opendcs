@@ -40,7 +40,7 @@ public final class ScheduleEntryMapper extends PrefixRowMapper<ScheduleEntry, Sc
     @Override
     public ScheduleEntry map(ResultSet rs, StatementContext ctx) throws SQLException
     {
-         ColumnMapper<DbKey> keyMapper = ctx.findColumnMapperFor(DbKey.class)
+        ColumnMapper<DbKey> keyMapper = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
         ColumnMapper<Date> dateMapper = ctx.findColumnMapperFor(Date.class)
                                 .orElseThrow(() -> new SQLException(SqlErrorMessages.TIME_MAPPER_NOT_FOUND));

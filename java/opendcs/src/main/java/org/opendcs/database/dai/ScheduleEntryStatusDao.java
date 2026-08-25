@@ -15,6 +15,7 @@
 */
 package org.opendcs.database.dai;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,17 +23,18 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 
-import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
 import decodes.sql.DbKey;
 
 public interface ScheduleEntryStatusDao extends OpenDcsDao
 {
-    List<ScheduleEntryStatus> getStatusFor(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException;
+    List<ScheduleEntryStatus> getStatusFor(DataTransaction tx, DbKey scheduleEntryId, int limit, int offset) throws OpenDcsDataException;
 
     ScheduleEntryStatus updateStatus(DataTransaction tx, ScheduleEntryStatus status) throws OpenDcsDataException;
 
-    void deleteStatusEntries(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException;
+    void deleteStatusEntriesBefore(DataTransaction tx, DbKey appId, ZonedDateTime cutoff) throws OpenDcsDataException;
 
-    Optional<ScheduleEntry> getLastStatusFor(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException;
+    void deleteStatusEntriesFor(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException;
+
+    Optional<ScheduleEntryStatus> getLastStatusFor(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException;
 }
