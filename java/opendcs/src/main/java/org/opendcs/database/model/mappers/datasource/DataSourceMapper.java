@@ -43,30 +43,6 @@ public final class DataSourceMapper extends PrefixRowMapper<DataSource,DataSourc
         return ds;
     }
 
-    @Override
-    public DataSource mapView(RowView view)
-    {
-        try
-        {
-            final var id = view.getColumn(column(Columns.ID), DbKey.class);
-            if (id == null)
-            {
-                return null;
-            }
-            final String name = view.getColumn(column(Columns.NAME), String.class);
-            final String dataSourceType = view.getColumn(column(Columns.SOURCE_TYPE), String.class);
-            final String dataSourceArg = view.getColumn(column(Columns.SOURCE_ARGS), String.class);
-            final var ds = new DataSource(name, dataSourceType);
-            ds.forceSetId(id);
-            ds.setDataSourceArg(dataSourceArg);
-            return ds;
-        }
-        catch (SQLException ex)
-        {
-            throw new UnableToExecuteStatementException("unable to retrieve column value.", ex, null);
-        }
-    }
-
     public enum Columns implements TableColumnDefinition
     {
         ID(GenericColumns.ID),
