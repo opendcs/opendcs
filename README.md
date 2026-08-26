@@ -259,3 +259,20 @@ If you are on a platform with Docker, or establish the appropriate database conf
 ```
 
 The default user name and password are `test_user` and `test_password`
+
+
+# Financial Information
+
+For additional details, including dollar amounts, see: https://opencollective.com/opendcs
+
+## Per supporter Level
+
+[![Backer](https://opencollective.com/opendcs/tiers/backers/badge.svg?label=backer&color=brightgreen)](https://opencollective.com/opendcs/tiers/backers/badge.svg?label=backer&color=brightgreen)
+[![Backer+](https://opencollective.com/opendcs/tiers/backer/badge.svg?label=Backer%2B&color=brightgreen)](https://opencollective.com/opendcs/tiers/backer/badge.svg?label=Backer%2B&color=brightgreen)
+[![Sponsors](https://opencollective.com/opendcs/tiers/sponsors/badge.svg?label=sponsor&color=brightgreen)](https://opencollective.com/opendcs/tiers/sponsors/badge.svg?label=sponsor&color=brightgreen)
+
+## Total
+
+[![Total Contributions](https://opencollective.com/opendcs/tiers/badge.svg)](https://opencollective.com/opendcs/tiers/badge.svg)
+
+[![Contributors](https://opencollective.com/opendcs/tiers/backer.svg?avatarHeight=36&button=false)](https://opencollective.com/opendcs/tiers/backer.svg?avatarHeight=36&button=false)
