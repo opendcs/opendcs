@@ -202,6 +202,7 @@ public class DataSourceDaoImpl implements DataSourceDao
 
     private static Query registerMappers(Query query, DataSourceMapper sourceMapper, DataSourceMapper memberMapper)
     {
-        return query.registerRowMapper(new DataSourceAccumulator.DataSourceMapperFactory(sourceMapper, memberMapper));
+        return query.registerRowMapper(DataSource.class, sourceMapper)
+                    .registerRowMapper(DataSource.class, memberMapper);
     }
 }
