@@ -45,47 +45,20 @@ public final class DataSourceAccumulator implements LinkedHashMapRowReducer<DbKe
         {
             final var primaryDs = previous.computeIfAbsent(
                 rowView.getColumn(primaryMapper.column(DataSourceMapper.Columns.ID), DbKey.class),
-                newKey -> primaryMapper.mapView(rowView)
+                newKey -> rowView.getRow(DataSource.class, primaryMapper.getPrefix())
             );
 
             var sequence = rowView.getColumn(memberMapper.column(DataSourceMapper.Columns.SEQUENCE_NUMBER),
                                              Integer.class);
             if (sequence != null)
             {
-                var member = memberMapper.mapView(rowView);
+                var member = rowView.getRow(DataSource.class, memberMapper.getPrefix());
                 primaryDs.addGroupMember(sequence, member);
             }
         }
         catch (SQLException ex)
         {
             throw new UnableToExecuteStatementException("Unable to map ID column to prefix", ex, null);
-        }
-    }
-
-    public static class DataSourceMapperFactory implements RowMapperFactory
-    {
-        private final DataSourceMapper primaryMapper;
-        private final DataSourceMapper memberMapper;
-
-        public DataSourceMapperFactory(DataSourceMapper primaryMapper, DataSourceMapper memberMapper)
-        {
-            this.primaryMapper = primaryMapper;
-            this.memberMapper = memberMapper;
-        }
-
-        @Override
-        public Optional<RowMapper<?>> build(Type type, ConfigRegistry config)
-        {
-            Optional<RowMapper<?>> ret = Optional.empty();
-            if (type == PRIMARY_SOURCE)
-            {
-                ret = Optional.of(primaryMapper);
-            }
-            else if (type == MEMBER_SOURCE)
-            {
-                ret = Optional.of(memberMapper);
-            }
-            return ret;
         }
     }
 }
