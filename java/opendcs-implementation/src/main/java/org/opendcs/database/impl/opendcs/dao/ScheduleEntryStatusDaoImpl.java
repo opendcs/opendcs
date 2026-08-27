@@ -1,5 +1,6 @@
 package org.opendcs.database.impl.opendcs.dao;
 
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
 import java.time.ZonedDateTime;
@@ -18,6 +19,7 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.schedule.ScheduleEn
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.schedule.ScheduleEntryStatusMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
 import org.slf4j.Logger;
 import org.stringtemplate.v4.STGroup;
@@ -33,6 +35,8 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
 
     private static final String SELECT = "select";
     private static final String MERGE = "merge";
+    private static final String DELETE = "delete";
+    private static final String UNSET_PLATFORM_STATUS = "unsetPlatformStatus";
 
     private final ScheduleEntryStatusMapper statusMapper = ScheduleEntryStatusMapper.withPrefix("ses");
 
@@ -47,9 +51,9 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
     public Optional<ScheduleEntryStatus> getLastStatusFor(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException
     {
         return get(tx, """
-                ses.schedule_entry_id = :schedule_entry_id 
+                ses.schedule_entry_id = :schedule_entry_id
             and ses.last_modified =
-                (select max(last_modified) 
+                (select max(last_modified)
                    from schedule_entry_status
                   where schedule_entry_id = :schedule_entry_id
                 )
@@ -75,16 +79,6 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
         try (var select = handle.createQuery(selectTemplate.render()))
         {
             select.bind(whereBindKey, whereBind);
-            // if (additionalBinds.length % 2 != 0)
-            // {
-            //     throw new OpenDcsDataException(
-            //         "Length of Additional arguments not divisible by 2. Arguments must be bind, value pairs");
-            // }
-            // for (int i = 0; i < additionalBinds.length; i = i + 2)
-            // {
-            //     select.bindByType((String)additionalBinds[i], additionalBinds[i+1], additionalBinds[i+1].getClass());
-            // }
-
             return select.registerRowMapper(statusMapper)
                          .mapTo(ScheduleEntryStatus.class)
                          .findFirst();
@@ -128,7 +122,7 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
                  .bind(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID.column(), status.getScheduleEntryId())
                  .bindByType(ScheduleEntryStatusMapper.Columns.RUN_START_TIME.column(), status.getRunStart(), Date.class)
                  .bindByType(ScheduleEntryStatusMapper.Columns.LAST_MESSAGE_TIME.column(), status.getLastMessageTime(), Date.class)
-                 .bindByType(ScheduleEntryStatusMapper.Columns.RUN_COMPLETE_TIME.column(), status.getRunStop(), Date.class)                
+                 .bindByType(ScheduleEntryStatusMapper.Columns.RUN_COMPLETE_TIME.column(), status.getRunStop(), Date.class)
                  .bindByType(ScheduleEntryMapper.Columns.LAST_MODIFIED.column(), new Date(), Date.class)
                  .bind(ScheduleEntryStatusMapper.Columns.HOSTNAME.column(), status.getHostname())
                  .bind(ScheduleEntryStatusMapper.Columns.RUN_STATUS.column(), status.getRunStatus())
@@ -151,24 +145,105 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
     }
 
     @Override
-    public void deleteStatusEntriesBefore(DataTransaction tx, DbKey appId, ZonedDateTime cutoff) throws OpenDcsDataException 
+    public void deleteStatusEntriesBefore(DataTransaction tx, DbKey appId, ZonedDateTime cutoff) throws OpenDcsDataException
     {
-        throw new UnsupportedOperationException("Unimplemented method 'deleteStatusEntriesBefore'");
+        String where = """
+            last_schedule_entry_status_id in
+            (select
+                schedule_entry_status_id
+            from schedule_entry_status
+            where loading_application_id = :appId and run_start_time < :cutoff
+            )
+                """;
+        var cutoffDate = new Date(cutoff.toInstant().toEpochMilli());
+        deleteQuery(tx, UNSET_PLATFORM_STATUS, where, "appId", appId, "cutoff", cutoffDate);
+        deleteQuery(tx, DELETE, where, "appId", appId, "cutoff", cutoffDate);
+    }
+
+    /**
+     * Handle dealing with the two different delete where clause without excessive duplication.
+     * @param tx
+     * @param template
+     * @param where
+     * @param bindSet
+     * @throws OpenDcsDataException
+     */
+    private void deleteQuery(DataTransaction tx, String template, String where, Object... bindSet) throws OpenDcsDataException
+    {
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+
+        var queryTemplate = queries.getInstanceOf(template);
+        if (queryTemplate == null)
+        {
+            throw new OpenDcsDataException("No Instance of Select query is available.");
+        }
+        if (bindSet.length % 2 != 0)
+        {
+            throw new OpenDcsDataException(
+                "Length of bind arguments not divisible by 2. Arguments must be bind, value pairs");
+        }
+        queryTemplate.add("where", where);
+
+        try (var query = handle.createUpdate(queryTemplate.render()))
+        {
+            for (int i = 0; i < bindSet.length; i = i + 2)
+            {
+                query.bindByType((String)bindSet[i], bindSet[i+1], bindSet[i+1].getClass());
+            }
+            query.execute();
+        }
     }
 
     @Override
     public void deleteStatusEntriesFor(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException
     {
-    
-        throw new UnsupportedOperationException("Unimplemented method 'deleteStatusEntriesFor'");
+         String where = """
+            last_schedule_entry_status_id in
+            (select
+                schedule_entry_status_id
+            from schedule_entry_status
+            where schedule_entry_id = :schedule_entry_id
+            )
+                """;
+        deleteQuery(tx, UNSET_PLATFORM_STATUS, where, ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID, scheduleEntryId);
+        deleteQuery(tx, DELETE, where, ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID, scheduleEntryId);
     }
 
     @Override
     public List<ScheduleEntryStatus> getStatusFor(DataTransaction tx, DbKey scheduleEntryId, int limit, int offset)
-        throws OpenDcsDataException 
+        throws OpenDcsDataException
     {
-    
-        throw new UnsupportedOperationException("Unimplemented method 'getStatusFor'");
+
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+
+        var selectTemplate = queries.getInstanceOf(SELECT);
+        if (selectTemplate == null)
+        {
+            throw new OpenDcsDataException("No Instance of Select query is available.");
+        }
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
+        selectTemplate.add(SqlQueries.WHERE_CLAUSE, " schedule_entry_id = :schedule_entry_id")
+                      .add(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
+                      .add("columns", statusMapper.columnsForSelect())
+                      .add(SqlQueries.COLLATE_CLAUSE, collateClauseFor(dbEngine));
+        try (var select = handle.createQuery(selectTemplate.render()))
+        {
+            if (limit >= 0)
+            {
+                select.bind(SqlKeywords.LIMIT, limit);
+            }
+            if (offset >= 0)
+            {
+                select.bind(SqlKeywords.OFFSET, offset);
+            }
+
+            return select.bind(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID.column(), scheduleEntryId)
+                         .registerRowMapper(statusMapper)
+                         .mapTo(ScheduleEntryStatus.class)
+                         .list();
+        }
     }
-    
 }

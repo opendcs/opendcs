@@ -44,7 +44,7 @@ delete(where) ::= <<
     delete from schedule_entry_status where <where>
 >>
     
-deletePlatformStatus() ::= <<
-    delete from platform_status
-     where last_schedule_entry_status_id = :schedule_entry_status_id
+unsetPlatformStatus(where) ::= <<
+    update form_status set last_scheduled_entry_status_id = null
+     where <where>
 >>
