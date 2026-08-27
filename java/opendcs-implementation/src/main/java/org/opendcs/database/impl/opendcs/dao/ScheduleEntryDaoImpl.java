@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package org.opendcs.database.impl.opendcs.dao;
@@ -97,7 +97,6 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
                       .add(SqlQueries.COLLATE_CLAUSE, collateClauseFor(dbEngine));
         try (var select = handle.createQuery(selectTemplate.render()))
         {
-            select.setSqlLogger(new DetailSqlLogger(log));
             select.bind(whereBindKey, whereBind);
             if (additionalBinds.length % 2 != 0)
             {
@@ -126,8 +125,8 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
 
         return getBy(tx, """
                 where schedule_entry_id =
-                    (select 
-                        distinct schedule_entry_id 
+                    (select
+                        distinct schedule_entry_id
                        from schedule_entry_status
                       where schedule_entry_status_id = :statusId
                     )
@@ -166,7 +165,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         else if (routingBind != null && !((String)routingBind).isBlank())
         {
             mergeTemplate.add("routingspec", """
-                    (select distinct id 
+                    (select distinct id
                        from routingspec
                       where upper(name) = upper(input.routingspecValue)
                     )
@@ -193,12 +192,14 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         }
         else
         {
-            mergeTemplate.add(LOADINGAPP_KEY, "null");
+
+            mergeTemplate.add(LOADINGAPP_KEY, "input.loadingappValue");
         }
 
 
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
+            merge.setSqlLogger(new DetailSqlLogger(log));
             DbKey id = entry.getId();
             var existing = getByName(tx, entry.getName());
             if (existing.isPresent())
@@ -211,10 +212,18 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
                     id, entry.getId());
             }
             final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("schedule_entry", handle.getConnection());
+            if (loadingAppBind instanceof String || !DbKey.isNull((DbKey)loadingAppBind))
+            {
+                merge.bind("loadingappValue", loadingAppBind);
+            }
+            else
+            {
+                merge.bind("loadingappValue", DbKey.NullKey);
+            }
+
             merge.bind(ScheduleEntryMapper.Columns.ID.column(), bindKey)
                  .bind(ScheduleEntryMapper.Columns.NAME.column(), entry.getName())
                  .bind("routingspecValue", routingBind)
-                 .bind("loadingappValue", loadingAppBind)
                  .bind(ScheduleEntryMapper.Columns.TIME_ZONE.column(), entry.getTimezone())
                  .bind(ScheduleEntryMapper.Columns.RUN_INTERVAL.column(), entry.getRunInterval())
                  .bind(ScheduleEntryMapper.Columns.ENABLED.column(), entry.isEnabled())
