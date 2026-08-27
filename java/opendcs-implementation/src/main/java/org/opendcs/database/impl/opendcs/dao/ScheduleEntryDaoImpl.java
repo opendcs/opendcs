@@ -30,7 +30,6 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.ScheduleEntryDao;
-import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.schedule.ScheduleEntryMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -199,7 +198,6 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
 
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
-            merge.setSqlLogger(new DetailSqlLogger(log));
             DbKey id = entry.getId();
             var existing = getByName(tx, entry.getName());
             if (existing.isPresent())

@@ -1,7 +1,21 @@
+/*
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
-import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -15,12 +29,14 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.ScheduleEntryStatusDao;
+import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.schedule.ScheduleEntryMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.schedule.ScheduleEntryStatusMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
+import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
 import org.stringtemplate.v4.STGroup;
 
@@ -29,6 +45,7 @@ import decodes.db.ScheduleEntryStatus;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
+@ServiceProvider(service = ScheduleEntryStatusDao.class)
 public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -44,14 +61,15 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
 
     public ScheduleEntryStatusDaoImpl()
     {
-        queries = StringTemplateSqlLocator.findStringTemplateGroup(ScheduleEntryDaoImpl.class);
+        STGroup.verbose = true;
+        queries = StringTemplateSqlLocator.findStringTemplateGroup(ScheduleEntryStatusDaoImpl.class);
     }
 
     @Override
     public Optional<ScheduleEntryStatus> getLastStatusFor(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException
     {
         return get(tx, """
-                ses.schedule_entry_id = :schedule_entry_id
+                where ses.schedule_entry_id = :schedule_entry_id
             and ses.last_modified =
                 (select max(last_modified)
                    from schedule_entry_status
@@ -71,13 +89,12 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
         {
             throw new OpenDcsDataException("No Instance of Select query is available.");
         }
-        var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabaseEngine();
         selectTemplate.add("where", whereClause)
-                      .add("columns", statusMapper.columnsForSelect())
-                      .add(SqlQueries.COLLATE_CLAUSE, collateClauseFor(dbEngine));
+                      .add("prefix", statusMapper.getPrefix())
+                      .add("columns", statusMapper.columnsForSelect(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_NAME));
         try (var select = handle.createQuery(selectTemplate.render()))
         {
+            select.setSqlLogger(new DetailSqlLogger(log));
             select.bind(whereBindKey, whereBind);
             return select.registerRowMapper(statusMapper)
                          .mapTo(ScheduleEntryStatus.class)
@@ -87,7 +104,7 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
 
     private Optional<ScheduleEntryStatus> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        return get(tx, " schedule_entry_status_id = :schedule_entry_status_id",
+        return get(tx, "where schedule_entry_status_id = :schedule_entry_status_id",
                    "schedule_entry_status_id", id);
     }
 
@@ -106,6 +123,7 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
 
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
+            merge.setSqlLogger(new DetailSqlLogger(log));
             DbKey id = status.getId();
             var existing = getById(tx, id);
             if (existing.isPresent())
@@ -223,12 +241,10 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
         {
             throw new OpenDcsDataException("No Instance of Select query is available.");
         }
-        var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabaseEngine();
-        selectTemplate.add(SqlQueries.WHERE_CLAUSE, " schedule_entry_id = :schedule_entry_id")
+        selectTemplate.add(SqlQueries.WHERE_CLAUSE, "where schedule_entry_id = :schedule_entry_id")
                       .add(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
-                      .add("columns", statusMapper.columnsForSelect())
-                      .add(SqlQueries.COLLATE_CLAUSE, collateClauseFor(dbEngine));
+                      .add("prefix", statusMapper.getPrefix())
+                      .add("columns", statusMapper.columnsForSelect(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_NAME));
         try (var select = handle.createQuery(selectTemplate.render()))
         {
             if (limit >= 0)

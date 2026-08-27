@@ -47,6 +47,7 @@ public class ScheduleEntryStatusMapper extends PrefixRowMapper<ScheduleEntryStat
         status.setNumPlatforms(rs.getInt(column(Columns.NUM_PLATFORMS)));
         status.setLastSource(rs.getString(column(Columns.LAST_SOURCE)));
         status.setLastConsumer(rs.getString(column(Columns.LAST_CONSUMER)));
+        status.setScheduleEntryName(rs.getString(column(Columns.SCHEDULE_ENTRY_NAME)));
 
         return status;
     }
@@ -55,11 +56,12 @@ public class ScheduleEntryStatusMapper extends PrefixRowMapper<ScheduleEntryStat
     {
         return new ScheduleEntryStatusMapper(prefix);
     }
-    
+
     public enum Columns implements TableColumnDefinition
     {
         ID("schedule_entry_status_id"),
         SCHEDULE_ENTRY_ID("schedule_entry_id"),
+        SCHEDULE_ENTRY_NAME("schedule_entry_name"),
         RUN_START_TIME("run_start_time"),
         LAST_MESSAGE_TIME("last_message_time"),
         RUN_COMPLETE_TIME("run_complete_time"),
