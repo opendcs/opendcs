@@ -15,8 +15,13 @@
 */
 package org.opendcs.dao;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 import org.junit.jupiter.api.Test;
@@ -68,7 +73,8 @@ class ScheduleEntryStatusDaoTestIT extends AppTestBase
 
             var status = new ScheduleEntryStatus(DbKey.NullKey); // constructor ID is for the status, not the schedule entry
             status.setHostname("the tests");
-            status.setRunStart(new Date());
+            status.setRunStart(new Date(26, 1, 1, 0, 0, 0));
+            status.setLastMessageTime(new Date(26, 1, 1, 0, 0, 0));
             status.setRunStatus("starting");
             status.setNumMessages(10);
             status.setNumDecodesErrors(0);
@@ -77,6 +83,51 @@ class ScheduleEntryStatusDaoTestIT extends AppTestBase
             var statusOut = statusDao.updateStatus(tx, status);
             assertFalse(DbKey.isNull(statusOut.getId()));
 
+
+            statusOut.setLastMessageTime(new Date(26, 1, 1, 2, 0, 0));
+            statusOut.setRunStop(new Date(26, 1, 1, 2, 0, 0));
+            statusOut.setRunStatus("done");
+
+            var statusOut2 = statusDao.updateStatus(tx, statusOut);
+
+            assertEquals("done", statusOut2.getRunStatus());
+
+            var lastStatus = statusDao.getLastStatusFor(tx, seOut.getId());
+            assertEquals(statusOut2, lastStatus.orElseGet(() -> fail("Status Entry was not retrieved.")));
+
+            var status2 = new ScheduleEntryStatus(DbKey.NullKey);
+            status2.setHostname("the tests");
+            status2.setRunStart(new Date(26, 1, 1, 3, 0, 0));
+            status2.setLastMessageTime(new Date(26, 1, 3, 0, 0, 0));
+            status2.setRunStatus("starting");
+            status2.setNumMessages(20);
+            status2.setNumDecodesErrors(0);
+            status2.setScheduleEntryId(seOut.getId());
+            var status2Out = statusDao.updateStatus(tx, status2);
+            assertFalse(DbKey.isNull(status2Out.getId()));
+
+            var statuses = statusDao.getStatusFor(tx, seOut.getId(), -1, -1);
+
+            var first = statusDao.getStatusFor(tx, seOut.getId(), 1, 0);
+            var last = statusDao.getStatusFor(tx, seOut.getId(), 1, 1);
+
+            assertEquals(2, statuses.size());
+            assertEquals(statuses.getFirst(), first.getFirst());
+            assertEquals(statuses.getLast(), last.getLast());
+
+            var byStatusId = entryDao.getByStatusId(tx, statusOut2.getId()).orElseGet(() -> fail("could not get status id"));
+            assertEquals(seOut, byStatusId);
+
+            statusDao.deleteStatusEntriesFor(tx, seOut.getId());
+            assertTrue(statusDao.getStatusFor(tx, seOut.getId(), -1, -1).isEmpty());
+
+            statusDao.updateStatus(tx, status2);
+
+            assertFalse(statusDao.getStatusFor(tx, seOut.getId(), -1, -1).isEmpty());
+
+            statusDao.deleteStatusEntriesBefore(tx, seOut.getLoadingAppId(), ZonedDateTime.now(ZoneId.of("UTC")));
+            assertTrue(statusDao.getStatusFor(tx, seOut.getId(), -1, -1).isEmpty());
         }
+
     }
 }

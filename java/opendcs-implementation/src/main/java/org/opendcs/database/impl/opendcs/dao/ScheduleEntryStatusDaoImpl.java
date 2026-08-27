@@ -71,9 +71,9 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
         return get(tx, """
                 where ses.schedule_entry_id = :schedule_entry_id
             and ses.last_modified =
-                (select max(last_modified)
-                   from schedule_entry_status
-                  where schedule_entry_id = :schedule_entry_id
+                (select max(a.last_modified)
+                   from schedule_entry_status a
+                  where a.schedule_entry_id = :schedule_entry_id
                 )
                 """, "schedule_entry_id", scheduleEntryId);
     }
@@ -165,17 +165,21 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
     @Override
     public void deleteStatusEntriesBefore(DataTransaction tx, DbKey appId, ZonedDateTime cutoff) throws OpenDcsDataException
     {
-        String where = """
-            last_schedule_entry_status_id in
-            (select
-                schedule_entry_status_id
-            from schedule_entry_status
-            where loading_application_id = :appId and run_start_time < :cutoff
+         String where = """
+            %s in
+            (select a.schedule_entry_status_id
+               from schedule_entry_status a
+              where a.schedule_entry_id in (
+                select schedule_entry_id
+                 from schedule_entry b
+                 where b.loading_application_id = :appId
+                )
+                and run_start_time < :cutoff
             )
                 """;
         var cutoffDate = new Date(cutoff.toInstant().toEpochMilli());
-        deleteQuery(tx, UNSET_PLATFORM_STATUS, where, "appId", appId, "cutoff", cutoffDate);
-        deleteQuery(tx, DELETE, where, "appId", appId, "cutoff", cutoffDate);
+        deleteQuery(tx, UNSET_PLATFORM_STATUS, String.format(where, "last_schedule_entry_status_id"), "appId", appId, "cutoff", cutoffDate);
+        deleteQuery(tx, DELETE, String.format(where, "schedule_entry_status_id"), "appId", appId, "cutoff", cutoffDate);
     }
 
     /**
@@ -217,15 +221,15 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
     public void deleteStatusEntriesFor(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException
     {
          String where = """
-            last_schedule_entry_status_id in
+            %s in
             (select
                 schedule_entry_status_id
-            from schedule_entry_status
-            where schedule_entry_id = :schedule_entry_id
+            from schedule_entry_status a
+            where a.schedule_entry_id = :schedule_entry_id
             )
                 """;
-        deleteQuery(tx, UNSET_PLATFORM_STATUS, where, ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID, scheduleEntryId);
-        deleteQuery(tx, DELETE, where, ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID, scheduleEntryId);
+        deleteQuery(tx, UNSET_PLATFORM_STATUS, String.format(where, "last_schedule_entry_status_id"), ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID.column(), scheduleEntryId);
+        deleteQuery(tx, DELETE, String.format(where, "schedule_entry_status_id"), ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID.column(), scheduleEntryId);
     }
 
     @Override
@@ -241,7 +245,7 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
         {
             throw new OpenDcsDataException("No Instance of Select query is available.");
         }
-        selectTemplate.add(SqlQueries.WHERE_CLAUSE, "where schedule_entry_id = :schedule_entry_id")
+        selectTemplate.add(SqlQueries.WHERE_CLAUSE, "where ses.schedule_entry_id = :schedule_entry_id")
                       .add(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
                       .add("prefix", statusMapper.getPrefix())
                       .add("columns", statusMapper.columnsForSelect(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_NAME));
