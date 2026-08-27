@@ -247,7 +247,7 @@ class UserManagementDaoTestIT extends AppTestBase
         var orgDao  = db.getDao(OrganizationDao.class)
                         .orElseThrow(() -> new UnsupportedOperationException("org dao not supported."));
         var idpDao = db.getDao(IdentityProviderDao.class)
-                       .orElseThrow(() -> new UnsupportedOperationException("org dao not supported."));
+                       .orElseThrow(() -> new UnsupportedOperationException("IdentityProviderDao dao not supported."));
 
         try (DataTransaction tx = db.newTransaction())
         {
