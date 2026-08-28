@@ -31,6 +31,7 @@ import org.opendcs.database.dai.ScheduleEntryStatusDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
@@ -49,6 +50,7 @@ import decodes.sql.DbKey;
         "SimpleDecodesTest/site-OKVI4.xml",
         "SimpleDecodesTest/OKVI4-decodes.xml"
 })
+@EnableIfTsDb
 class ScheduleEntryStatusDaoTestIT extends AppTestBase
 {
     @ConfiguredField
