@@ -13,6 +13,7 @@ import org.opendcs.database.dai.PlatformStatusDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.PlatformStatus;
 import decodes.db.Site;
@@ -25,6 +26,7 @@ import decodes.db.Site;
         "SimpleDecodesTest/site-OKVI4.xml",
         "SimpleDecodesTest/OKVI4-decodes.xml"
 })
+@EnableIfTsDb
 class PlatformStatusDaoTestIT extends AppTestBase
 {
     @ConfiguredField
@@ -38,9 +40,10 @@ class PlatformStatusDaoTestIT extends AppTestBase
 
         try (var tx = db.newTransaction())
         {
-            var site = new Site();
-            site.addName("CWMS", "OKVI4");
-            var platform = platformDao.findPlatformFor(tx, site).orElseThrow();
+            // TODO: change back to site and actually implement the PlatformDao by site
+            // logic.
+            var platform = platformDao.getByMediumId(tx, "goes-self-timed", "CE344292")
+                                      .orElseGet(() -> fail("Could not retrieve Platform."));
 
 
             var status = new PlatformStatus(platform.getId());
