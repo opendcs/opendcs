@@ -2,12 +2,14 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.PlatformStatusDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformMapper;
@@ -69,13 +71,50 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
     @Override
     public PlatformStatus updatePlatformStatus(DataTransaction tx, PlatformStatus platformStatus) throws OpenDcsDataException
     {
-        return null;
+        if (DbKey.isNull(platformStatus.getPlatformId()))
+        {
+            throw new OpenDcsDataException("Provided Platform status does not have a valid platform Id set");
+        }
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
+        var mergeTemplate = queries.getInstanceOf(MERGE)
+                                   .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+        
+        try (var merge = handle.createUpdate(mergeTemplate.render()))
+        {
+            merge.bind(PlatformStatusMapper.Columns.PLATFORM_ID.column(), platformStatus.getPlatformId())
+                 .bind(PlatformStatusMapper.Columns.LAST_SCHEDULE_ENTRY_STATUS_ID.column(),
+                       platformStatus.getLastScheduleEntryStatusId())
+                 .bind(PlatformStatusMapper.Columns.LAST_FAILURE_CODES.column(), platformStatus.getLastFailureCodes())
+                 .bind(PlatformStatusMapper.Columns.ANNOTATION.column(), platformStatus.getAnnotation())
+                 .bindByType(PlatformStatusMapper.Columns.LAST_CONTACT_TIME.column(),
+                             platformStatus.getLastContactTime(),
+                             Date.class)
+                 .bindByType(PlatformStatusMapper.Columns.LAST_ERROR_TIME.column(),
+                             platformStatus.getLastErrorTime(),
+                             Date.class)
+                 .bindByType(PlatformStatusMapper.Columns.LAST_MESSAGE_TIME.column(),
+                             platformStatus.getLastMessageTime(),
+                             Date.class)
+                 .execute();
+  
+            return getByPlatformId(tx, platformStatus.getPlatformId())
+                    .orElseThrow(() -> new OpenDcsDataException(("Unable to retrieve platform status we just created.")));
+        }
     }
 
     @Override
     public void deletePlatformStatus(DataTransaction tx, DbKey platformId) throws OpenDcsDataException
     {
-        
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var deleteTemplate = queries.getInstanceOf(DELETE);
+        try (var delete = handle.createUpdate(deleteTemplate.render()))
+        {
+            delete.bind(PlatformStatusMapper.Columns.PLATFORM_ID.column(), platformId).execute();
+        }
     }
 
     @Override
