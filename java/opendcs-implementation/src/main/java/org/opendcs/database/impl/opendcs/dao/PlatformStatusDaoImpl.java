@@ -12,11 +12,12 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.PlatformStatusDao;
-import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformMapper;
-import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformReducer;
+import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformStatusMapper;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
+import org.slf4j.Logger;
 import org.stringtemplate.v4.STGroup;
 
 import decodes.db.PlatformStatus;
@@ -25,6 +26,8 @@ import decodes.sql.DbKey;
 @ServiceProvider(service = PlatformStatusDao.class)
 public class PlatformStatusDaoImpl implements PlatformStatusDao
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
     private static final String SELECT = "select";
     private static final String DELETE = "delete";
     private static final String MERGE = "merge";
@@ -47,9 +50,6 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
         }
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        var ctx = tx.getContext();
-        var dbEngine = ctx.getDatabaseEngine();
-
         var selectTemplate = queries.getInstanceOf(SELECT);
 
         if (selectTemplate == null)
@@ -57,6 +57,7 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
             throw new OpenDcsDataException("Could not find template");
         }
         selectTemplate.add(WHERE_CLAUSE, "ps.platform_id =:platform_id")
+                      .add("columns", statusMapper.columnsForSelect(PlatformStatusMapper.Columns.LAST_ROUTING_SPEC_NAME))
                       .add("prefix", "ps"); // TODO: update once schedule entry is merged in.
         try (var select = handle.createQuery(selectTemplate.render()))
         {
@@ -84,6 +85,7 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
         
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
+            merge.setSqlLogger(new DetailSqlLogger(log));
             merge.bind(PlatformStatusMapper.Columns.PLATFORM_ID.column(), platformStatus.getPlatformId())
                  .bind(PlatformStatusMapper.Columns.LAST_SCHEDULE_ENTRY_STATUS_ID.column(),
                        platformStatus.getLastScheduleEntryStatusId())

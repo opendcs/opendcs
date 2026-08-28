@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 
-import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.mappers.PrefixRowMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
