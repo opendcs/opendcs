@@ -8,10 +8,9 @@ invisible online;
 
 -- now drop the old primary key and put the new one in place
 declare
-    index_name varchar2(256);
     constraint_name varchar2(256);
 begin
-    select index_name, constraint_name into index_name, constraint_name
+    select constraint_name into constraint_name
       from dba_constraints
      where constraint_type = 'P'
        and lower(table_name) = 'user_roles'
