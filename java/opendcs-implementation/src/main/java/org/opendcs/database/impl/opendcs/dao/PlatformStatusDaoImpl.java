@@ -1,6 +1,8 @@
 package org.opendcs.database.impl.opendcs.dao;
 
+import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 
 import java.util.Date;
 import java.util.List;
@@ -16,6 +18,7 @@ import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformStatusMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
 import org.stringtemplate.v4.STGroup;
@@ -129,6 +132,43 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
     public List<PlatformStatus> getPlatformStatusForNetList(DataTransaction tx, DbKey netlistId, int limit, int offset)
             throws OpenDcsDataException 
     {
-        return List.of();
+        if (DbKey.isNull(netlistId))
+        {
+            return List.of();
+        }
+        var handle = tx.connection(Handle.class)
+                       .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var selectTemplate = queries.getInstanceOf(SELECT);
+
+        if (selectTemplate == null)
+        {
+            throw new OpenDcsDataException("Could not find template");
+        }
+        selectTemplate.add(WHERE_CLAUSE, """
+                        ps.platform_id in (
+                            select tm.platformid from
+                                networklistentry nle
+                            left outer join transportmedium tm on tm.mediumid = nle.transportid
+                            where nle.networklistid = :netlistid)       
+                        """)
+                      .add(LIMIT_CLAUSE, addLimitOffset(limit, offset))
+                      .add("columns", statusMapper.columnsForSelect(PlatformStatusMapper.Columns.LAST_ROUTING_SPEC_NAME))
+                      .add("prefix", "ps"); // TODO: update once schedule entry is merged in.
+        try (var select = handle.createQuery(selectTemplate.render()))
+        {
+            if (limit >= 0)
+            {
+                select.bind(SqlKeywords.LIMIT, limit);
+            }
+            if (offset >= 0)
+            {
+                select.bind(SqlKeywords.OFFSET, offset);
+            }
+
+            return select.bind("netlistid", netlistId)
+                         .registerRowMapper(statusMapper)
+                         .mapTo(PlatformStatus.class)
+                         .list();
+        }
     }
 }
