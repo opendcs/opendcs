@@ -76,7 +76,8 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         return getBy(tx, " where schedule_entry_id = :id ", "id", id);
     }
 
-    private Optional<ScheduleEntry> getBy(DataTransaction tx, String whereClause, String whereBindKey, Object whereBind, Object... additionalBinds) throws OpenDcsDataException
+    private Optional<ScheduleEntry> getBy(DataTransaction tx, String whereClause, String whereBindKey,
+                                          Object whereBind, Object... additionalBinds) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -113,9 +114,9 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         }
     }
 
-    // TODO: not tested yet, no updated schedule entry DAO
     @Override
-    public Optional<ScheduleEntry> getByStatusId(DataTransaction tx, DbKey statusId) throws OpenDcsDataException
+    public Optional<ScheduleEntry> getByStatusId(DataTransaction tx, DbKey statusId)
+        throws OpenDcsDataException
     {
         if (DbKey.isNull(statusId))
         {
@@ -144,6 +145,9 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
     }
 
     @Override
+    @SuppressWarnings("java:S138") // mostly whitespace, should be able to improve if we can find a good way 
+                                   // to deal with better automating the binding (beyond just making
+                                   // our datatypes fit the Jdbi design... though that's definitely an option.)
     public ScheduleEntry save(DataTransaction tx, ScheduleEntry entry) throws OpenDcsDataException
     {
         Objects.requireNonNull(entry, "A valid ScheduleEntry instance must be provided.");
@@ -225,7 +229,9 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
                  .bind(ScheduleEntryMapper.Columns.TIME_ZONE.column(), entry.getTimezone())
                  .bind(ScheduleEntryMapper.Columns.RUN_INTERVAL.column(), entry.getRunInterval())
                  .bind(ScheduleEntryMapper.Columns.ENABLED.column(), entry.isEnabled())
-                 .bindByType(ScheduleEntryMapper.Columns.START_TIME.column(), entry.getStartTime(), Date.class)
+                 .bindByType(ScheduleEntryMapper.Columns.START_TIME.column(),
+                             entry.getStartTime(),
+                             Date.class)
                  .bindByType(ScheduleEntryMapper.Columns.LAST_MODIFIED.column(), new Date(), Date.class)
                  .execute();
 
@@ -254,7 +260,8 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
 
 
     @Override
-    public Optional<ScheduleEntry> ifStatusUpdatedSince(DataTransaction tx, DbKey id, ZonedDateTime previous) throws OpenDcsDataException
+    public Optional<ScheduleEntry> ifStatusUpdatedSince(DataTransaction tx, DbKey id, ZonedDateTime previous)
+        throws OpenDcsDataException
     {
         var date = new Date(previous.toInstant().toEpochMilli());
         return getBy(tx, """

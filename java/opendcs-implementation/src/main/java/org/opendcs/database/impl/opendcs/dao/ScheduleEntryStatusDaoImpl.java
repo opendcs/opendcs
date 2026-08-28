@@ -29,7 +29,6 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.ScheduleEntryStatusDao;
-import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.schedule.ScheduleEntryMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.schedule.ScheduleEntryStatusMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -61,12 +60,12 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
 
     public ScheduleEntryStatusDaoImpl()
     {
-        STGroup.verbose = true;
         queries = StringTemplateSqlLocator.findStringTemplateGroup(ScheduleEntryStatusDaoImpl.class);
     }
 
     @Override
-    public Optional<ScheduleEntryStatus> getLastStatusFor(DataTransaction tx, DbKey scheduleEntryId) throws OpenDcsDataException
+    public Optional<ScheduleEntryStatus> getLastStatusFor(DataTransaction tx, DbKey scheduleEntryId)
+        throws OpenDcsDataException
     {
         return get(tx, """
                 where ses.schedule_entry_id = :schedule_entry_id
@@ -78,8 +77,8 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
                 """, "schedule_entry_id", scheduleEntryId);
     }
 
-    private Optional<ScheduleEntryStatus> get(DataTransaction tx, String whereClause, String whereBindKey, Object whereBind)
-        throws OpenDcsDataException
+    private Optional<ScheduleEntryStatus> get(DataTransaction tx, String whereClause,
+                                              String whereBindKey, Object whereBind) throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -91,10 +90,10 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
         }
         selectTemplate.add("where", whereClause)
                       .add("prefix", statusMapper.getPrefix())
-                      .add("columns", statusMapper.columnsForSelect(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_NAME));
+                      .add("columns",
+                           statusMapper.columnsForSelect(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_NAME));
         try (var select = handle.createQuery(selectTemplate.render()))
         {
-            select.setSqlLogger(new DetailSqlLogger(log));
             select.bind(whereBindKey, whereBind);
             return select.registerRowMapper(statusMapper)
                          .mapTo(ScheduleEntryStatus.class)
@@ -105,7 +104,7 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
     private Optional<ScheduleEntryStatus> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         return get(tx, "where schedule_entry_status_id = :schedule_entry_status_id",
-                   "schedule_entry_status_id", id);
+                   ScheduleEntryStatusMapper.Columns.ID.column(), id);
     }
 
     @Override
@@ -123,7 +122,6 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
 
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
-            merge.setSqlLogger(new DetailSqlLogger(log));
             DbKey id = status.getId();
             var existing = getById(tx, id);
             if (existing.isPresent())
@@ -135,12 +133,19 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
                     """,
                     id, status.getId());
             }
-            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("schedule_entry_status", handle.getConnection());
+            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("schedule_entry_status",
+                                                                       handle.getConnection());
             merge.bind(ScheduleEntryStatusMapper.Columns.ID.column(), bindKey)
                  .bind(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID.column(), status.getScheduleEntryId())
-                 .bindByType(ScheduleEntryStatusMapper.Columns.RUN_START_TIME.column(), status.getRunStart(), Date.class)
-                 .bindByType(ScheduleEntryStatusMapper.Columns.LAST_MESSAGE_TIME.column(), status.getLastMessageTime(), Date.class)
-                 .bindByType(ScheduleEntryStatusMapper.Columns.RUN_COMPLETE_TIME.column(), status.getRunStop(), Date.class)
+                 .bindByType(ScheduleEntryStatusMapper.Columns.RUN_START_TIME.column(),
+                             status.getRunStart(),
+                             Date.class)
+                 .bindByType(ScheduleEntryStatusMapper.Columns.LAST_MESSAGE_TIME.column(),
+                             status.getLastMessageTime(),
+                             Date.class)
+                 .bindByType(ScheduleEntryStatusMapper.Columns.RUN_COMPLETE_TIME.column(),
+                             status.getRunStop(),
+                             Date.class)
                  .bindByType(ScheduleEntryMapper.Columns.LAST_MODIFIED.column(), new Date(), Date.class)
                  .bind(ScheduleEntryStatusMapper.Columns.HOSTNAME.column(), status.getHostname())
                  .bind(ScheduleEntryStatusMapper.Columns.RUN_STATUS.column(), status.getRunStatus())
@@ -153,7 +158,8 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
 
             return getById(tx, bindKey)
                     .orElseThrow(
-                        () -> new OpenDcsDataException("Unable to retrieve scheduled entry status that was just saved."));
+                        () -> new OpenDcsDataException(
+                                    "Unable to retrieve scheduled entry status that was just saved."));
 
         }
         catch (DatabaseException ex)
@@ -163,7 +169,8 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
     }
 
     @Override
-    public void deleteStatusEntriesBefore(DataTransaction tx, DbKey appId, ZonedDateTime cutoff) throws OpenDcsDataException
+    public void deleteStatusEntriesBefore(DataTransaction tx, DbKey appId, ZonedDateTime cutoff)
+        throws OpenDcsDataException
     {
          String where = """
             %s in
@@ -178,8 +185,10 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
             )
                 """;
         var cutoffDate = new Date(cutoff.toInstant().toEpochMilli());
-        deleteQuery(tx, UNSET_PLATFORM_STATUS, String.format(where, "last_schedule_entry_status_id"), "appId", appId, "cutoff", cutoffDate);
-        deleteQuery(tx, DELETE, String.format(where, "schedule_entry_status_id"), "appId", appId, "cutoff", cutoffDate);
+        deleteQuery(tx, UNSET_PLATFORM_STATUS, String.format(where, "last_schedule_entry_status_id"),
+                    "appId", appId, "cutoff", cutoffDate);
+        deleteQuery(tx, DELETE, String.format(where, ScheduleEntryStatusMapper.Columns.ID.column()),
+                    "appId", appId, "cutoff", cutoffDate);
     }
 
     /**
@@ -190,7 +199,8 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
      * @param bindSet
      * @throws OpenDcsDataException
      */
-    private void deleteQuery(DataTransaction tx, String template, String where, Object... bindSet) throws OpenDcsDataException
+    private void deleteQuery(DataTransaction tx, String template, String where, Object... bindSet)
+        throws OpenDcsDataException
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
@@ -228,8 +238,10 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
             where a.schedule_entry_id = :schedule_entry_id
             )
                 """;
-        deleteQuery(tx, UNSET_PLATFORM_STATUS, String.format(where, "last_schedule_entry_status_id"), ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID.column(), scheduleEntryId);
-        deleteQuery(tx, DELETE, String.format(where, "schedule_entry_status_id"), ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID.column(), scheduleEntryId);
+        deleteQuery(tx, UNSET_PLATFORM_STATUS, String.format(where, "last_schedule_entry_status_id"),
+                    ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID.column(), scheduleEntryId);
+        deleteQuery(tx, DELETE, String.format(where, "schedule_entry_status_id"),
+                    ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_ID.column(), scheduleEntryId);
     }
 
     @Override
@@ -248,7 +260,8 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
         selectTemplate.add(SqlQueries.WHERE_CLAUSE, "where ses.schedule_entry_id = :schedule_entry_id")
                       .add(SqlQueries.LIMIT_CLAUSE, addLimitOffset(limit, offset))
                       .add("prefix", statusMapper.getPrefix())
-                      .add("columns", statusMapper.columnsForSelect(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_NAME));
+                      .add("columns",
+                           statusMapper.columnsForSelect(ScheduleEntryStatusMapper.Columns.SCHEDULE_ENTRY_NAME));
         try (var select = handle.createQuery(selectTemplate.render()))
         {
             if (limit >= 0)
