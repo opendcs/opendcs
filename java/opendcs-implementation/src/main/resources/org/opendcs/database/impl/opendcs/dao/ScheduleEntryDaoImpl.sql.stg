@@ -14,19 +14,21 @@ select(where, limit, columns, collate) ::= <<
 
 merge(dual, routingspec, loadingapp) ::= <<
     merge into schedule_entry se
-    using (select :schedule_entry_id schedule_entry_id, :name name, :loadingappValue loadingappValue,
-            :routingspecValue routingspecValue, :start_time start_time, :timezone timezone, :run_interval run_interval,
+    -- keep any lookups in the using block, Oracle doesn't allow external references within the update or using below.
+    using (select :schedule_entry_id schedule_entry_id, :name name,
+            <loadingapp> loadingAppId,
+            <routingspec> routingSpecId, :start_time start_time, :timezone timezone, :run_interval run_interval,
             :enabled enabled, :last_modified last_modified    
             <dual>) input
     on (se.schedule_entry_id = input.schedule_entry_id)
     when matched then
-        update set name = input.name, loading_application_id = <loadingapp>, routingspec_id = <routingspec>,
+        update set name = input.name, loading_application_id = input.loadingAppId, routingspec_id = input.routingSpecId,
             start_time = input.start_time, timezone = input.timezone, run_interval = input.run_interval,
             enabled = input.enabled, last_modified = input.last_modified
     when not matched then
         insert(schedule_entry_id, name, loading_application_id, routingspec_id, start_time, timezone,
                run_interval, enabled, last_modified)
-        values(input.schedule_entry_id, input.name, <loadingapp>, <routingspec>, input.start_time, input.timezone,
+        values(input.schedule_entry_id, input.name, input.loadingAppId, input.routingSpecId, input.start_time, input.timezone,
                input.run_interval, input.enabled, input.last_modified)
 >>
 

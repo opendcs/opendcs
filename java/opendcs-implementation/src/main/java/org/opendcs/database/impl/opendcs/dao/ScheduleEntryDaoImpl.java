@@ -162,7 +162,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         Object routingBind = entry.getRoutingSpecName();
         if (!DbKey.isNull(entry.getRoutingSpecId()))
         {
-            mergeTemplate.add("routingspec", "input.routingspecValue");
+            mergeTemplate.add("routingspec", ":routingspecValue");
             routingBind = entry.getRoutingSpecId();
         }
         else if (routingBind != null && !((String)routingBind).isBlank())
@@ -170,7 +170,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
             mergeTemplate.add("routingspec", """
                     (select distinct id
                        from routingspec
-                      where upper(name) = upper(input.routingspecValue)
+                      where upper(name) = upper(:routingspecValue)
                     )
                 """);
         }
@@ -183,20 +183,20 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         if (!DbKey.isNull(entry.getLoadingAppId()))
         {
             loadingAppBind = entry.getLoadingAppId();
-            mergeTemplate.add(LOADINGAPP_KEY, "input.loadingappValue");
+            mergeTemplate.add(LOADINGAPP_KEY, ":loadingappValue");
         }
         else if (loadingAppBind != null && !((String)loadingAppBind).isBlank())
         {
             mergeTemplate.add(LOADINGAPP_KEY, """
                     (select distinct loading_application_id
                        from hdb_loading_application app
-                       where upper(app.loading_application_name) = upper(input.loadingappValue) )
+                       where upper(app.loading_application_name) = upper(:loadingappValue) )
                     """);
         }
         else
         {
 
-            mergeTemplate.add(LOADINGAPP_KEY, "input.loadingappValue");
+            mergeTemplate.add(LOADINGAPP_KEY, ":loadingappValue");
         }
 
 
