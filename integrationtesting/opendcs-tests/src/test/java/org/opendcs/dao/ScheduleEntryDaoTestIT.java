@@ -67,7 +67,7 @@ class ScheduleEntryDaoTestIT extends AppTestBase
             se.setEnabled(false);
             se.setLoadingAppName("RoutingScheduler");
             se.setRoutingSpecName("OKVI4-input");
-            se.setStartTime(new Date());
+            se.setStartTime(new Date(126, 7, 28, 9, 0, 0));
             se.setRunInterval("1h");
 
             var seOut = dao.save(tx, se);
@@ -109,7 +109,7 @@ class ScheduleEntryDaoTestIT extends AppTestBase
 
             id = seOut3.getId();
             var lm = seOut.getLastModified();
-            var epoch = lm.getTime() - 500000;
+            var epoch = lm.getTime() - 500_000;
             var checkDate = ZonedDateTime.ofInstant(Instant.ofEpochMilli(epoch),ZoneId.of("UTC"));
             dao.ifStatusUpdatedSince(tx, id, checkDate)
                .orElseGet(() -> fail("New ScheduleEntry instance was not returned."));
