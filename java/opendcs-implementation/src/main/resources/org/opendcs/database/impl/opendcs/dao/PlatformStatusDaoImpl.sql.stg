@@ -1,15 +1,11 @@
 
 select(limit, where, columns, prefix) ::= <<
-    select <columns>
+    select <columns>, rs.name <prefix>_routing_spec_name
     from platform_status <prefix>
-    left outer join 
-    -- primarily for CWMS, however eventually the others may need this as well
-    -- though we will just apply the "org" to all tables and may want to just do the same thing
-    -- for CWMS when the time comes.
-    where <prefix>.platform_id in 
-        (select distinct p.id
-           from platform p, transport_medium tm 
-          where p.id = tm.platformid)
+    
+    left outer join routing_spec rs on rs.id =
+        (select distinct ses.routingspec_id from schedule_entry_status ses
+            where ses.schedule_entry_status_id = <prefix>.last_schedule_entry_status_id)
     <if(where)> and <where> <endif>
     order by <prefix>.platform_id asc, <prefix>.last_contact_time asc
     <if(limit)> <limit> <endif>
