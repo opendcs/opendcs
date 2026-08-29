@@ -1,5 +1,7 @@
 import Badge from "react-bootstrap/Badge";
-import type { DcpStatus } from "../types";
+import type { DcpSummary } from "opendcs-dds-api";
+
+type DcpStatus = DcpSummary["status"];
 
 type StatusBadgeProps = {
   status: DcpStatus;

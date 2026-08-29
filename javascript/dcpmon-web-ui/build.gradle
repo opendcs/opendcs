@@ -1,0 +1,59 @@
+buildscript {
+    dependencies {
+        constraints {
+            classpath("com.fasterxml.jackson.core:jackson-core:${libs.versions.jackson.asProvider().get()}")
+        }
+    }
+}
+
+plugins {
+    id 'base'
+    id 'opendcs.deps-conventions'
+    id 'opendcs.version-conventions'
+    id 'com.github.node-gradle.node' version '7.1.0'
+}
+
+configurations {
+    ddsApi
+}
+
+dependencies {
+    ddsApi(project(path: ':dds-api-client-typescript', configuration: 'lib'))
+}
+
+npmInstall {
+    dependsOn configurations.ddsApi
+    // The local generated package is outside this project and is rebuilt by
+    // the dependency above. Avoid snapshotting the entire node_modules tree.
+    doNotTrackState('Uses a generated local file dependency')
+}
+
+def lintUi = tasks.register('lintUi', NpxTask) {
+    group = 'verification'
+    dependsOn npmInstall
+    command = 'npm'
+    args = ['run', 'lint']
+}
+
+def testUi = tasks.register('testUi', NpxTask) {
+    group = 'verification'
+    dependsOn npmInstall
+    command = 'npm'
+    args = ['run', 'test', '--', '--run']
+}
+
+def buildUi = tasks.register('buildUi', NpxTask) {
+    dependsOn npmInstall
+    command = 'npm'
+    args = ['run', 'build']
+    outputs.dir(layout.projectDirectory.dir('dist'))
+}
+
+check.dependsOn lintUi
+check.dependsOn testUi
+build.dependsOn buildUi
+
+node {
+    version = '24.13.1'
+    download = true
+}

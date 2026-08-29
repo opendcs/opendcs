@@ -1,4 +1,5 @@
-import { http, HttpResponse } from "msw";
+import { StatusGroupSummaryToJSON } from "opendcs-dds-api";
+import { HttpResponse, http } from "msw";
 import { DCPMON_API_BASE_URL } from "../../constants";
 import { goesMessages } from "../data/goesMessages";
 import { statusGroupSummary } from "../data/statusGroupSummary";
@@ -6,17 +7,19 @@ import { statusGroupSummary } from "../data/statusGroupSummary";
 export const dcpmonHandlers = [
   http.get(`${DCPMON_API_BASE_URL}/data/summary`, ({ request }) => {
     const url = new URL(request.url);
-    const group = url.searchParams.get("group");
+    const group = url.searchParams.get("data-group");
 
     if (!group) {
-      return HttpResponse.text("Missing 'group' query parameter", { status: 400 });
+      return HttpResponse.text("Missing 'data-group' query parameter", {
+        status: 400,
+      });
     }
 
     if (group.toLowerCase() !== "swt") {
       return HttpResponse.text(`Group (${group}) Not Implemented`, { status: 404 });
     }
 
-    return HttpResponse.json(statusGroupSummary);
+    return HttpResponse.json(StatusGroupSummaryToJSON(statusGroupSummary));
   }),
 
   http.get(`${DCPMON_API_BASE_URL}/data/query`, ({ request }) => {

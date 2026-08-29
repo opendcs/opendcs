@@ -1,7 +1,7 @@
 import Card from "react-bootstrap/Card";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
-import type { StatusGroupSummary } from "../types";
+import type { StatusGroupSummary } from "opendcs-dds-api";
 
 type SummaryCardsProps = {
   summary: StatusGroupSummary;
@@ -9,10 +9,10 @@ type SummaryCardsProps = {
 
 export function SummaryCards({ summary }: SummaryCardsProps) {
   const cards = [
-    ["Complete", summary.summary.completeCount, "text-bg-success"],
-    ["Partial", summary.summary.partialCount, "text-bg-warning"],
-    ["Parity", summary.summary.parityCount, "text-bg-info"],
-    ["Missing", summary.summary.missingCount, "text-bg-danger"],
+    ["Complete", summary.counts?.complete ?? 0, "text-bg-success"],
+    ["Partial", summary.counts?.partial ?? 0, "text-bg-warning"],
+    ["Parity", summary.counts?.parity ?? 0, "text-bg-info"],
+    ["Missing", summary.counts?.missing ?? 0, "text-bg-danger"],
   ] as const;
 
   return (

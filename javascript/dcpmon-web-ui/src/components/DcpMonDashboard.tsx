@@ -26,13 +26,19 @@ export function DcpMonDashboard() {
     return <Alert variant="danger">Unable to load DCPMon status summary.</Alert>;
   }
 
+  const dcpSummaries = Object.entries(summary.data.dcpSummaries ?? {});
+  const lowBatteryAddresses = dcpSummaries
+    .filter(([, dcpSummary]) => dcpSummary.lowBattery)
+    .map(([dcpAddress]) => dcpAddress);
+  const durationHours = summary.data.durationHours ?? 0;
+
   return (
     <Stack gap={4}>
       <Row className="align-items-end g-3">
         <Col>
           <h1 className="h3 mb-1">DCPMon</h1>
           <div className="text-secondary">
-            Group {summary.data.group} for the last {summary.data.durationHours} hours
+            Group {DEFAULT_GROUP.toUpperCase()} for the last {durationHours} hours
           </div>
         </Col>
         <Col md={3}>
@@ -47,9 +53,9 @@ export function DcpMonDashboard() {
 
       <SummaryCards summary={summary.data} />
 
-      {summary.data.lowBatteryAddresses.length > 0 && (
+      {lowBatteryAddresses.length > 0 && (
         <Alert variant="warning" className="mb-0">
-          Low battery: {summary.data.lowBatteryAddresses.join(", ")}
+          Low battery: {lowBatteryAddresses.join(", ")}
         </Alert>
       )}
 
@@ -60,11 +66,12 @@ export function DcpMonDashboard() {
           </Card.Title>
         </Card.Header>
         <Card.Body>
-          {summary.data.locations.map((location) => (
+          {dcpSummaries.map(([dcpAddress, dcpSummary]) => (
             <DcpLocationAccordion
-              key={location.dcpAddress}
-              location={location}
-              totalHours={summary.data.durationHours}
+              key={dcpAddress}
+              dcpAddress={dcpAddress}
+              summary={dcpSummary}
+              totalHours={durationHours}
             />
           ))}
         </Card.Body>

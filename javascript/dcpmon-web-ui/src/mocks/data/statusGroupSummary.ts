@@ -1,41 +1,44 @@
-import type { StatusGroupSummary } from "../../types";
+import type { StatusGroupSummary } from "opendcs-dds-api";
 
 export const statusGroupSummary: StatusGroupSummary = {
-  timestamp: "2025-06-25T11:33:33-05:00",
-  group: "SWT",
+  timestamp: new Date("2025-06-25T11:33:33-05:00"),
   durationHours: 24,
-  summary: {
-    completeCount: 515,
-    partialCount: 15,
-    parityCount: 14,
-    missingCount: 5,
-    reservoirCount: 0,
+  counts: {
+    complete: 515,
+    partial: 15,
+    parity: 14,
+    missing: 5,
   },
-  lowBatteryAddresses: ["CE1F40D4"],
-  locations: [
-    {
-      locationCode: "NIMB",
-      stationId: "NMBA4",
-      dcpAddress: "CE1F40D4",
+  dcpSummaries: {
+    CE1F40D4: {
+      identifiers: [
+        { type: "Local", id: "NIMB" },
+        { type: "SHEF", id: "NMBA4" },
+      ],
       status: "complete",
-      messagesTotal: 23,
+      messageTotal: 23,
       parityCount: 48,
+      lowBattery: true,
     },
-    {
-      locationCode: "BMOB",
-      stationId: "BMRA4",
-      dcpAddress: "CE1F2532",
+    CE1F2532: {
+      identifiers: [
+        { type: "Local", id: "BMOB" },
+        { type: "SHEF", id: "BMRA4" },
+      ],
       status: "complete",
-      messagesTotal: 24,
+      messageTotal: 24,
       parityCount: 0,
+      lowBattery: false,
     },
-    {
-      locationCode: "TEST",
-      stationId: "TSTA4",
-      dcpAddress: "CE000001",
+    CE000001: {
+      identifiers: [
+        { type: "Local", id: "TEST" },
+        { type: "SHEF", id: "TSTA4" },
+      ],
       status: "partial",
-      messagesTotal: 16,
+      messageTotal: 16,
       parityCount: 2,
+      lowBattery: false,
     },
-  ],
+  },
 };
