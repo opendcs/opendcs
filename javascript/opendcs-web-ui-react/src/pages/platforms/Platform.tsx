@@ -30,6 +30,8 @@ import { ConfigSelectModal } from "./ConfigSelectModal";
 import { PlatformSensorsTable } from "./PlatformSensorsTable";
 import { TransportMediaTable } from "./TransportMediaTable";
 import { siteDisplayName } from "./siteDisplayName";
+import { SaveErrorAlert } from "../../components/forms";
+import { useSaveError } from "../../hooks/useSaveError";
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
@@ -169,6 +171,10 @@ export const Platform: React.FC<PlatformProperties> = ({
   );
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("platforms:save_error"),
+    "Platform save failed",
+  );
   const fetchConfig = useFetchConfig();
 
   const propertyActions: CollectionActions<Property, string> = edit
@@ -183,9 +189,10 @@ export const Platform: React.FC<PlatformProperties> = ({
       }
     : {};
 
-  const savePlatform = useCallback(() => {
-    actions.save?.(localPlatform as ApiPlatform);
-  }, [actions, localPlatform]);
+  const savePlatform = useCallback(
+    () => attemptSave(() => actions.save?.(localPlatform as ApiPlatform)),
+    [attemptSave, actions, localPlatform],
+  );
 
   const inputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -199,8 +206,9 @@ export const Platform: React.FC<PlatformProperties> = ({
 
   const handleSelectSite = useCallback((ref: ApiSiteRef) => {
     if (ref.siteId === undefined) return;
-    dispatch({ type: "save", payload: { siteId: ref.siteId } });
-    setSiteName(siteDisplayName(ref));
+    const displayName = siteDisplayName(ref);
+    dispatch({ type: "save", payload: { siteId: ref.siteId, name: displayName } });
+    setSiteName(displayName);
   }, []);
 
   const handleSelectConfig = useCallback(
@@ -227,7 +235,7 @@ export const Platform: React.FC<PlatformProperties> = ({
             <Col>
               <FormGroup as={Row} className="mb-3">
                 <Form.Label column sm={3} htmlFor="name">
-                  {t("platforms:site")}
+                  {t("platforms:name")}
                 </Form.Label>
                 <Col sm={9}>
                   <Form.Control
@@ -236,14 +244,14 @@ export const Platform: React.FC<PlatformProperties> = ({
                     name="name"
                     readOnly={true}
                     disabled={true}
-                    defaultValue={localPlatform.name}
+                    value={localPlatform.name ?? ""}
                     onChange={inputChange}
                   />
                 </Col>
               </FormGroup>
               <FormGroup as={Row} className="mb-3">
                 <Form.Label column sm={3} htmlFor="siteId">
-                  {t("platforms:public_name")}
+                  {t("platforms:site")}
                 </Form.Label>
                 <Col sm={9}>
                   {edit ? (
@@ -457,6 +465,7 @@ export const Platform: React.FC<PlatformProperties> = ({
               />
             </Col>
           </Row>
+          <SaveErrorAlert error={saveError} onClose={clearSaveError} />
           {edit && (
             <Row className="mt-3">
               <Col className="d-flex justify-content-end gap-2">

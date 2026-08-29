@@ -13,9 +13,11 @@
     "execClass": "Exec Class",
     "description": "Description",
     "edit_for": "Edit algorithm {{id}}",
+    "copy_for": "Copy algorithm {{id}}",
     "delete_for": "Delete algorithm {{id}}",
     "cancel_for": "Cancel editing algorithm {{id}}",
-    "save_for": "Save algorithm {{id}}"
+    "save_for": "Save algorithm {{id}}",
+    "save_error": "Save failed. Please check your entries and try again."
   },
   "check_new": {
     "button": "Check for New",

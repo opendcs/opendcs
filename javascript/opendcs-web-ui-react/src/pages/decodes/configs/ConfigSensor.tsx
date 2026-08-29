@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useReducer } from "react";
+import { useCallback, useMemo, useReducer, useState } from "react";
 import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { Save, X } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
@@ -31,6 +31,8 @@ export type UiConfigSensor = Partial<ApiConfigSensor>;
 export interface ConfigSensorProperties {
   sensor: UiConfigSensor;
   edit?: boolean;
+  /** Sensor numbers already in use by sibling sensors in this config (excluding this one). */
+  otherSensorNumbers?: number[];
   actions?: SaveAction<ApiConfigSensor> & CancelAction<number>;
 }
 
@@ -147,10 +149,12 @@ const mapDataTypes = (dt: { [k: string]: string } | undefined): Property[] =>
 export const ConfigSensor: React.FC<ConfigSensorProperties> = ({
   sensor,
   edit = false,
+  otherSensorNumbers = [],
   actions = {},
 }) => {
   const [t] = useTranslation(["configs", "translation"]);
   const [local, dispatch] = useReducer(sensorReducer, sensor);
+  const [sensorNumberError, setSensorNumberError] = useState(false);
 
   const props = useMemo(() => mapProps(local.properties), [local.properties]);
   const dataTypes = useMemo(() => mapDataTypes(local.dataTypes), [local.dataTypes]);
@@ -185,6 +189,7 @@ export const ConfigSensor: React.FC<ConfigSensorProperties> = ({
 
   const numberChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
+    if (name === "sensorNumber") setSensorNumberError(false);
     dispatch({ type: "save", payload: { [name]: toNumberOrUndefined(value) } });
   }, []);
 
@@ -194,8 +199,15 @@ export const ConfigSensor: React.FC<ConfigSensorProperties> = ({
   }, []);
 
   const saveSensor = useCallback(() => {
+    if (
+      local.sensorNumber !== undefined &&
+      otherSensorNumbers.includes(local.sensorNumber)
+    ) {
+      setSensorNumberError(true);
+      return;
+    }
     actions.save?.(local as ApiConfigSensor);
-  }, [actions, local]);
+  }, [actions, local, otherSensorNumbers]);
 
   const cancel = useCallback(() => {
     if (sensor.sensorNumber !== undefined) actions.cancel?.(sensor.sensorNumber);
@@ -221,9 +233,13 @@ export const ConfigSensor: React.FC<ConfigSensorProperties> = ({
                     id="sensorNumber"
                     name="sensorNumber"
                     readOnly={!edit}
+                    isInvalid={sensorNumberError}
                     defaultValue={local.sensorNumber ?? ""}
                     onChange={numberChange}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {t("configs:duplicate_sensor_number")}
+                  </Form.Control.Feedback>
                 </Col>
               </FormGroup>
               <FormGroup as={Row} className="mb-3">

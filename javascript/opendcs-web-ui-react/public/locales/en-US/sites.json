@@ -17,6 +17,7 @@
   "description": "Description",
   "add_site": "Add new Site",
   "enter_region": "Region",
+  "region_tooltip": "For CWMS users, this field maps to County",
   "enter_country": "Provide Country",
   "use_decimal_format": "Provide value in Decimal format",
   "nearestCity": "Nearest City",

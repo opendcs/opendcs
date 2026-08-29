@@ -143,6 +143,8 @@ public class SimpleDataSource implements DataSource, ConnectionPoolMXBean
         requests.getAndIncrement();
         log.trace("connections requests/freed {}/{}", requests.get(),freed.get());
         connections.add(wc);
+        // existing usages expect autocommit, Jdbi DatabaseWrapper will override when required.
+        wc.setAutoCommit(true);
         return wc;
     }
 
@@ -163,6 +165,7 @@ public class SimpleDataSource implements DataSource, ConnectionPoolMXBean
         requests.getAndIncrement();
         log.trace("connections requeste/freed {}/{}", requests.get(),freed.get());
         connections.add(wc);
+        wc.setAutoCommit(true);
         return wc;
     }
 

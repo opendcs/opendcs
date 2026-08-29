@@ -30,6 +30,8 @@ import java.util.ResourceBundle;
 import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.gui.TopFrame;
+import decodes.util.DecodesSettings;
+import ilex.util.LoadResourceBundle;
 
 /**
 Dialog for selecting one or more platforms.
@@ -38,8 +40,16 @@ Used by both Db Editor for import/export and for network list building.
 public class PlatformSelectDialog extends JDialog
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
-	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
-	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
+	static ResourceBundle genericLabels = 
+		LoadResourceBundle.getLabelDescriptions(
+                "decodes/resources/generic",
+				DecodesSettings.instance().language
+			);
+	static ResourceBundle dbeditLabels =  
+		LoadResourceBundle.getLabelDescriptions(
+                "decodes/resources/dbedit",
+				DecodesSettings.instance().language
+			);
 
     private JPanel panel1 = new JPanel();
     private JPanel jPanel1 = new JPanel();

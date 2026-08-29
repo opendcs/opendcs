@@ -14,4 +14,9 @@ public class OpenDcsDataRuntimeException extends RuntimeException
     {
         super(msg, cause);
     }
+
+    public OpenDcsDataRuntimeException(Throwable cause)
+    {
+        super(cause);
+    }
 }

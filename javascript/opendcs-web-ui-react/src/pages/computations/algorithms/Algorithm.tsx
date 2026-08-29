@@ -1,4 +1,4 @@
-import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
+import { Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { use, useCallback, useMemo, useReducer, useState } from "react";
 import type { ApiAlgorithm, ApiPropSpec } from "opendcs-api";
@@ -9,14 +9,25 @@ import type {
   SaveAction,
 } from "../../../util/Actions";
 import { AlgorithmReducer } from "./AlgorithmReducer";
-import { Save, X } from "react-bootstrap-icons";
 import { AlgorithmParamsTable, type AlgoParm } from "./AlgorithmParamsTable";
 import { DetailFade } from "../../../components/data-table";
+import {
+  CancelButton,
+  EditFormActions,
+  INPUT_H,
+  LABEL_H,
+  SaveButton,
+  SaveErrorAlert,
+} from "../../../components/forms";
+import { useSaveError } from "../../../hooks/useSaveError";
 
 export type UiAlgorithm = Partial<ApiAlgorithm>;
 
-const INPUT_H = { height: "2.25rem" };
-const LABEL_H = { height: "1rem" };
+const algorithmCardClassName = (edit: boolean, className?: string) =>
+  ["algorithm-card", edit ? "algorithm-card--edit" : null, className]
+    .filter(Boolean)
+    .join(" ");
+
 const SEARCH_H = { height: "1.875rem" };
 const INFO_H = { height: "0.8rem" };
 
@@ -93,11 +104,7 @@ export const AlgorithmSkeleton: React.FC<{ edit?: boolean; className?: string }>
   edit = false,
   className,
 }) => (
-  <Card
-    className={["algorithm-card", edit ? "algorithm-card--edit" : null, className]
-      .filter(Boolean)
-      .join(" ")}
-  >
+  <Card className={algorithmCardClassName(edit, className)}>
     <Card.Body>
       <Row>
         {/* Top band — Name/ExecClass (left) | Description (right) */}
@@ -149,25 +156,55 @@ export const AlgorithmSkeleton: React.FC<{ edit?: boolean; className?: string }>
 
       {/* Edit-mode footer */}
       {edit && (
-        <Row className="mt-3">
-          <Col className="d-flex justify-content-end gap-2">
-            <Placeholder animation="glow">
-              <Placeholder
-                className="rounded"
-                style={{ ...INPUT_H, width: "5.5rem" }}
-              />
-            </Placeholder>
-            <Placeholder animation="glow">
-              <Placeholder
-                className="rounded"
-                style={{ ...INPUT_H, width: "4.5rem" }}
-              />
-            </Placeholder>
-          </Col>
-        </Row>
+        <EditFormActions>
+          <Placeholder animation="glow">
+            <Placeholder className="rounded" style={{ ...INPUT_H, width: "5.5rem" }} />
+          </Placeholder>
+          <Placeholder animation="glow">
+            <Placeholder className="rounded" style={{ ...INPUT_H, width: "4.5rem" }} />
+          </Placeholder>
+        </EditFormActions>
       )}
     </Card.Body>
   </Card>
+);
+
+const AlgorithmField: React.FC<{
+  id: string;
+  label: string;
+  name: string;
+  defaultValue?: string;
+  edit: boolean;
+  onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  textarea?: boolean;
+}> = ({ id, label, name, defaultValue, edit, onChange, textarea = false }) => (
+  <FormGroup as={Row} className="mb-3">
+    <Form.Label column lg={3} htmlFor={id}>
+      {label}
+    </Form.Label>
+    <Col lg={9}>
+      {textarea ? (
+        <Form.Control
+          as="textarea"
+          rows={3}
+          id={id}
+          name={name}
+          readOnly={!edit}
+          defaultValue={defaultValue}
+          onChange={onChange}
+        />
+      ) : (
+        <Form.Control
+          type="text"
+          id={id}
+          name={name}
+          readOnly={!edit}
+          defaultValue={defaultValue}
+          onChange={onChange}
+        />
+      )}
+    </Col>
+  </FormGroup>
 );
 
 export interface AlgorithmProperties {
@@ -199,6 +236,10 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
   else resolvedParms = initialParms;
   const [localAlgorithm, dispatch] = useReducer(AlgorithmReducer, providedAlgorithm);
   const [localParms, setLocalParms] = useState<AlgoParm[]>(resolvedParms);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("algorithms:editor.save_error"),
+    "Algorithm save failed",
+  );
 
   const props = useMemo(() => {
     const saved = localAlgorithm.props || {};
@@ -231,10 +272,9 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
     : {};
 
   const saveAlgorithm = useCallback(
-    (algo: UiAlgorithm) => {
-      actions.save!({ ...algo, parms: localParms });
-    },
-    [actions, localParms],
+    (algo: UiAlgorithm) =>
+      attemptSave(() => actions.save?.({ ...algo, parms: localParms } as ApiAlgorithm)),
+    [attemptSave, actions, localParms],
   );
 
   const inputChange = useCallback(
@@ -247,65 +287,40 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
 
   return (
     <DetailFade skeleton={<AlgorithmSkeleton edit={edit} />}>
-      <Card
-        className={["algorithm-card", edit ? "algorithm-card--edit" : null]
-          .filter(Boolean)
-          .join(" ")}
-      >
+      <Card className={algorithmCardClassName(edit)}>
         <Card.Body>
           <Row>
             {/* Left column — Name, ExecClass, Parameters table */}
             <Row>
               <Col>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column lg={3} htmlFor="algoName">
-                    {t("algorithms:editor.name")}
-                  </Form.Label>
-                  <Col lg={9}>
-                    <Form.Control
-                      type="text"
-                      id="algoName"
-                      name="name"
-                      readOnly={!edit}
-                      defaultValue={localAlgorithm.name}
-                      onChange={inputChange}
-                    />
-                  </Col>
-                </FormGroup>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column lg={3} htmlFor="execClass">
-                    {t("algorithms:editor.execClass")}
-                  </Form.Label>
-                  <Col lg={9}>
-                    <Form.Control
-                      type="text"
-                      id="execClass"
-                      name="execClass"
-                      readOnly={!edit}
-                      defaultValue={localAlgorithm.execClass}
-                      onChange={inputChange}
-                    />
-                  </Col>
-                </FormGroup>
+                <AlgorithmField
+                  id="algoName"
+                  label={t("algorithms:editor.name")}
+                  name="name"
+                  defaultValue={localAlgorithm.name}
+                  edit={edit}
+                  onChange={inputChange}
+                />
+                <AlgorithmField
+                  id="execClass"
+                  label={t("algorithms:editor.execClass")}
+                  name="execClass"
+                  defaultValue={localAlgorithm.execClass}
+                  edit={edit}
+                  onChange={inputChange}
+                />
               </Col>
               {/* Right column — Description, Properties table */}
               <Col>
-                <FormGroup as={Row} className="mb-3">
-                  <Form.Label column lg={3} htmlFor="algoDescription">
-                    {t("algorithms:editor.description")}
-                  </Form.Label>
-                  <Col lg={9}>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      id="algoDescription"
-                      name="description"
-                      readOnly={!edit}
-                      defaultValue={localAlgorithm.description}
-                      onChange={inputChange}
-                    />
-                  </Col>
-                </FormGroup>
+                <AlgorithmField
+                  id="algoDescription"
+                  label={t("algorithms:editor.description")}
+                  name="description"
+                  defaultValue={localAlgorithm.description}
+                  edit={edit}
+                  onChange={inputChange}
+                  textarea
+                />
               </Col>
             </Row>
             <Col>
@@ -334,31 +349,26 @@ export const Algorithm: React.FC<AlgorithmProperties> = ({
               />
             </Col>
           </Row>
+          <SaveErrorAlert error={saveError} onClose={clearSaveError} />
           {edit && (
-            <Row className="mt-3">
-              <Col className="d-flex justify-content-end gap-2">
-                <Button
-                  onClick={() => {
-                    actions.cancel?.(providedAlgorithm.algorithmId!);
-                  }}
-                  variant="secondary"
-                  aria-label={t("algorithms:editor.cancel_for", {
-                    id: providedAlgorithm.algorithmId,
-                  })}
-                >
-                  <X /> {t("translation:cancel")}
-                </Button>
-                <Button
-                  onClick={() => saveAlgorithm(localAlgorithm)}
-                  variant="primary"
-                  aria-label={t("algorithms:editor.save_for", {
-                    id: localAlgorithm.algorithmId,
-                  })}
-                >
-                  <Save /> {t("translation:save")}
-                </Button>
-              </Col>
-            </Row>
+            <EditFormActions>
+              <CancelButton
+                onClick={() => {
+                  actions.cancel?.(providedAlgorithm.algorithmId!);
+                }}
+                aria-label={t("algorithms:editor.cancel_for", {
+                  id: providedAlgorithm.algorithmId,
+                })}
+              />
+              <SaveButton
+                onClick={async () => {
+                  await saveAlgorithm(localAlgorithm);
+                }}
+                aria-label={t("algorithms:editor.save_for", {
+                  id: localAlgorithm.algorithmId,
+                })}
+              />
+            </EditFormActions>
           )}
         </Card.Body>
       </Card>

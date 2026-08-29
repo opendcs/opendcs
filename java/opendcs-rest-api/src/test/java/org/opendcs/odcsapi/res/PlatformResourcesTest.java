@@ -14,7 +14,6 @@ import decodes.db.DecodesScript;
 import decodes.db.EquipmentModel;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
-import decodes.db.PlatformList;
 import decodes.db.PlatformSensor;
 import decodes.db.PlatformStatus;
 import decodes.db.RoutingSpec;
@@ -46,6 +45,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.PlatformResources.map;
+import static org.opendcs.odcsapi.res.PlatformResources.mapRef;
 import static org.opendcs.odcsapi.res.PlatformResources.statusListMap;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,7 +62,7 @@ final class PlatformResourcesTest
 	{
 		DbKey platId1 = DbKey.createDbKey(556774L);
 		DbKey platId2 = DbKey.createDbKey(557774L);
-		PlatformList platformList = new PlatformList();
+		ArrayList<Platform> platformList = new ArrayList<>();
 		Platform plat1 = new Platform();
 		plat1.setAgency("USGS");
 		plat1.setDescription("Platform 1");
@@ -170,10 +170,19 @@ final class PlatformResourcesTest
 		scripts2.add(script2);
 		config2.decodesScripts = scripts2;
 		plat2.setConfig(config2);
+		Site site2 = new Site();
+		site2.setId(DbKey.createDbKey(9987L));
+		SiteName cwmsName = new SiteName(site2, "CWMS");
+		cwmsName.setNameValue("ACIA");
+		site2.addName(cwmsName);
+		SiteName nwshb5Name = new SiteName(site2, "NWSHB5");
+		nwshb5Name.setNameValue("ABRN1");
+		site2.addName(nwshb5Name);
+		plat2.setSite(site2);
 		platformList.add(plat1);
 		platformList.add(plat2);
 
-		List<ApiPlatformRef> platRefs = map(platformList);
+		List<ApiPlatformRef> platRefs = platformList.stream().map(p -> mapRef(p)).toList();
 
 		assertNotNull(platRefs);
 		assertFalse(platRefs.isEmpty());
@@ -227,6 +236,11 @@ final class PlatformResourcesTest
 			assertNull(plat2.getSite());
 			assertEquals(DbKey.NullKey.getValue(), plat2Ref.getSiteId());
 		}
+		assertNotNull(plat1Ref.getSitenames());
+		assertTrue(plat1Ref.getSitenames().isEmpty());
+		assertEquals(2, plat2Ref.getSitenames().size());
+		assertEquals("ACIA", plat2Ref.getSitenames().get("CWMS"));
+		assertEquals("ABRN1", plat2Ref.getSitenames().get("NWSHB5"));
 	}
 
 	@Test

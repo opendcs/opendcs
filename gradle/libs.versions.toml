@@ -1,14 +1,13 @@
 [versions]
 #General/Shared Versions
 oracle = { strictly = "23.26.1.0.0" }
-postgres = "42.7.11"
+postgres = "42.7.13"
 commons-logging = "1.3.6"
 commons-net = "3.13.0"
 dom4j = { strictly = "2.1.4" }
 ganymed-ssh = "build210"
 apache-poi="5.5.1"
 jcalendar="1.4"
-jfree="1.0.13"
 jython="2.7.4"
 jep="2.4.5"
 dropwizard="4.2.38"
@@ -18,7 +17,7 @@ aspectj="1.8.10"
 json="20251224"
 slf4j-api= { strictly = "2.0.17" }
 logback = "1.5.32" 
-jetty = "12.1.8"
+jetty = "12.1.11"
 jersey = "4.0.2"
 servlet-api = "6.1.0"
 jakarta-jakartaee-api = "11.0.0"
@@ -29,13 +28,14 @@ monolith = { strictly = "7.0.5" }
 cwms-ratings = "1.1.0"
 nucleus = "4.10.0"
 flogger = "0.7.4"  # used by hec-monolith
-usgs-waterdata-api = "0.3.3"
-jdbi = "3.53.0"
+usgs-waterdata-api = "0.3.6"
+jdbi = "3.54.0"
 flywaydb = "11.20.1"
 sun-mailapi="2.0.2"
 ayza = "10.0.0"
 auto-service = "1.1.1"
 password4j = "1.8.4"
+netty = "4.2.16.Final"
 
 opentelemetry = "1.63.0"
 opentelemetry-java = "2.29.0"
@@ -46,13 +46,13 @@ org-netbeans = "RELEASE280"
 hec-lookup-compat = "4.0.0"
 
 # API deps
-swagger = "2.2.42"
+swagger = "2.2.52"
 swagger-ui = "5.18.3"
-swagger-parser = "2.1.25"
+swagger-parser = "2.1.45"
 rs-api = "4.0.0"
-jackson = "2.21.3"
-jackson-annotations = "2.21"
-selenium = "4.45.0"
+jackson = "2.22.1"
+jackson-annotations = "2.22"
+selenium = "4.47.0"
 nimbus = "10.7"
 jwt = "4.4.0"
 jaxb = "4.0.0"
@@ -60,7 +60,7 @@ jaxb = "4.0.0"
 swagger-codegen = "3.0.61"
 jakarta-annotation-api = "3.0.0"
 jsr305 = "3.0.2"
-openapitools-databind-nullable = "0.2.1"
+openapitools-databind-nullable = "0.2.10"
 
 #test deps
 junit = "6.0.2"
@@ -71,9 +71,9 @@ derby = "10.17.1.0"
 webcompere = "2.1.8"
 greenmail = "2.1.8"
 mockito = "5.21.0"
-byte-buddy = "1.15.3"
+byte-buddy = "1.18.11"
 rest-assured = "6.0.0"
-tomcat = "11.0.22"
+tomcat = "11.0.24"
 microprofile-health = "4.0.1"
 
 # integration test deps
@@ -86,7 +86,7 @@ gherkin-kiwi = "1.0.0-M12"
 
 [libraries]
 gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }
-oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
+oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc11", version.ref = "oracle" }
 oracle-ucp = { module = "com.oracle.database.jdbc:ucp", version.ref = "oracle" }
 postgresql = { module ="org.postgresql:postgresql", version.ref = "postgres"}
 commons-logging = { module = "commons-logging:commons-logging", version.ref = "commons-logging" }
@@ -95,8 +95,6 @@ dom4j = { module = "org.dom4j:dom4j", version.ref="dom4j" }
 ganymed-ssh = { module = "ch.ethz.ganymed:ganymed-ssh2", version.ref="ganymed-ssh" }
 apache-poi = { module = "org.apache.poi:poi", version.ref="apache-poi" }
 jcalendar = { module = "com.toedter:jcalendar", version.ref="jcalendar" }
-jfree-jcommon = { module = "jfree:jcommon", version.ref = "jfree" }
-jfree-jfreechart = { module = "jfree:jfreechart", version.ref = "jfree" }
 jython-standalone = { module = "org.python:jython-standalone", version.ref ="jython" }
 scijava-jep = { module = "io.github.nathanfunk:jep", version.ref="jep" }
 dropwizard-metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref="dropwizard" }
@@ -114,6 +112,8 @@ org-eclipse-jetty-server = { module = "org.eclipse.jetty:jetty-server", version.
 org-eclipse-jetty-servlets = { module = "org.eclipse.jetty.ee11:jetty-ee11-servlets", version.ref="jetty" }
 org-eclipse-jetty-webapp = { module = "org.eclipse.jetty.ee11:jetty-ee11-webapp", version.ref="jetty" }
 # end jetty (lrgs-web)
+
+io-netty = { module = "io.netty:netty-all", version.ref = "netty" }
 
 io-opentelemetry-instrumentation-logback-mdc = { module = "io.opentelemetry.instrumentation:opentelemetry-logback-mdc-1.0", version.ref = "opentelemetry-java-logging" }
 io-opentelemetry-api = { module="io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
@@ -137,6 +137,7 @@ swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations-jakarta
 
 swagger-codegen = { module = "io.swagger.codegen.v3:swagger-codegen-cli", version.ref = "swagger-codegen" }
 com-google-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
+com-faster-xml-jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
 com-faster-xml-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 com-faster-xml-jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson-annotations" }
 com-faster-xml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }

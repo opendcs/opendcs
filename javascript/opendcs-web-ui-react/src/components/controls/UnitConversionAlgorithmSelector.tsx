@@ -4,6 +4,7 @@ import {
   REFLIST_UNIT_CONVERSION_ALGORITHM,
   useRefList,
 } from "../../contexts/data/RefListContext";
+import { RefListPlaceholderSelect } from "./RefListPlaceholderSelect";
 
 export interface UnitConversionAlgorithmSelectorProperties extends FormSelectProps {
   current?: string;
@@ -13,10 +14,11 @@ export interface UnitConversionAlgorithmSelectorProperties extends FormSelectPro
 const UnitConversionAlgorithmSelect: React.FC<
   UnitConversionAlgorithmSelectorProperties
 > = ({ current, onChange, disabled, ...props }) => {
-  const { refList, ready } = useRefList();
+  const { refList, ready, failed } = useRefList();
 
+  // Keep the dropdown in place, disabled, rather than collapsing it to text.
   if (!ready) {
-    return <div>Loading...</div>;
+    return <RefListPlaceholderSelect value={current} failed={failed} />;
   }
   const algorithms = refList(REFLIST_UNIT_CONVERSION_ALGORITHM);
 

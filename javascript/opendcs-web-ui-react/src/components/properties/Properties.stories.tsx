@@ -1,9 +1,8 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { PropertiesTable, PropertiesTableProps, type Property } from "./Properties";
-import { expect, fn, waitFor, within } from "storybook/test";
-import { useCallback, useState } from "storybook/internal/preview-api";
-import { act } from "@testing-library/react";
-import { useReducer } from "react";
+import { expect, fn, screen, waitFor } from "storybook/test";
+import { useCallback } from "storybook/internal/preview-api";
+import { act, useReducer } from "react";
 import { PropertiesReducer } from "./PropertiesReducer";
 
 const WithActions: Decorator<PropertiesTableProps> = (Story, context) => {
@@ -136,7 +135,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
     ...StartEmpty.args,
   },
   decorators: [WithActions],
-  play: async ({ canvasElement, step, mount, parameters, userEvent }) => {
+  play: async ({ step, mount, parameters, userEvent }) => {
     const canvas = await mount();
     const { i18n } = parameters;
 
@@ -174,6 +173,11 @@ export const EmptyAddThenSaveThenRemove: Story = {
         name: i18n.t("properties:delete_prop", { name: "testprop" }),
       });
       await userEvent.click(remove);
+
+      const confirmBtn = await screen.findByRole("button", {
+        name: i18n.t("translation:delete"),
+      });
+      await userEvent.click(confirmBtn);
 
       await waitFor(async () => {
         expect(canvas.queryByText("testprop")).toBeNull();

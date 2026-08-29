@@ -2,7 +2,6 @@ package org.opendcs.database.impl.cwms.dao.auth;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.PreparedBatch;
@@ -79,7 +78,7 @@ public class CwmsUsersDaoImpl implements UsersDao
                 .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
                 .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
                 .map(UserBuilder::build)
-                .collect(Collectors.toList());
+                .toList();
         }
     }
 

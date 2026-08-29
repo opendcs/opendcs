@@ -137,6 +137,7 @@ export const RoutingPlatformsTable: React.FC<RoutingPlatformsTableProperties> = 
         key: "remove",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         aria: (row) =>
           t("routing:remove_platform", { name: row.ref?.name ?? row.value }),
         onClick: ({ row }) => {

@@ -3,12 +3,11 @@ package opendcs.util.functional;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import decodes.tsdb.DbIoException;
+import org.opendcs.util.functional.ThrowingConsumer;
 
 @FunctionalInterface
 public interface ConnectionConsumer extends ThrowingConsumer<Connection,SQLException>
 {
     @Override
     public abstract void accept(Connection conn) throws SQLException;
-    
 }

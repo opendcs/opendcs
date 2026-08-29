@@ -17,21 +17,13 @@ package decodes.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import lrgs.common.DcpMsgFlag;
-import decodes.gui.TopFrame;
-import decodes.launcher.AlarmEditLauncherAction;
-import decodes.launcher.EventMonLauncherAction;
-import decodes.launcher.LauncherAction;
-import decodes.tsdb.groupedit.TsDbGrpEditor;
 import ilex.util.EnvExpander;
 
 /**
@@ -75,24 +67,16 @@ public class ResourceFactory
 		return "";
 	}
 
-	public JDialog getAboutDialog(JFrame parent, String appAbbr, String appName)
-	{
-		return new decodes.gui.AboutBox(parent, appAbbr, appName);
-	}
+	// public JDialog getAboutDialog(JFrame parent, String appAbbr, String appName)
+	// {
+	// 	return new decodes.gui.AboutBox(parent, appAbbr, appName);
+	// }
 
 	public String startTag()
 	{
 		return DecodesVersion.startupTag();
 	}
 
-	public TopFrame getTsdbEditorFrame(String myArgs[])
-		throws Exception
-	{
-		TsDbGrpEditor tsGrpEditor = new TsDbGrpEditor();
-		tsGrpEditor.setExitOnClose(false);
-		tsGrpEditor.execute(myArgs);
-		return tsGrpEditor.getFrame();
-	}
 
 	public String getIconPath()
 	{
@@ -108,17 +92,5 @@ public class ResourceFactory
 		throws decodes.db.DatabaseException
 	{
 		DcpMsgFlag.setFlagRev(0x4b);
-	}
-
-	public ArrayList<LauncherAction> getDacqLauncherActions()
-	{
-		log.info("getDacqLauncherActions");
-		ArrayList<LauncherAction> ret = new ArrayList<LauncherAction>();
-		if (DecodesSettings.instance().showEventMonitor)
-			ret.add(new EventMonLauncherAction());
-		if (DecodesSettings.instance().showAlarmEditor)
-			ret.add(new AlarmEditLauncherAction());
-
-		return ret;
 	}
 }

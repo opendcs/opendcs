@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.exceptions.RequiredSiteNameMissingException;
 import org.opendcs.database.impl.opendcs.dao.OpenDcsSiteDaoImpl;
@@ -341,7 +341,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             deleteLoc.bind(GenericColumns.ID.column(), id).invoke();
             // as we don't have a foreign key we need to manually check everything within opendcs
         }
-        catch (UnableToExecuteStatementException ex)
+        catch (OpenDcsDataRuntimeException ex)
         {
             if (ex.getCause() instanceof SQLException sqlEx && sqlEx.getErrorCode() == 1403 /* ora-01403 no data found  */)
             {

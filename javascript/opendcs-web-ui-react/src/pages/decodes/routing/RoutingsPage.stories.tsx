@@ -276,13 +276,16 @@ export const EditMode: Story = {
       name: i18n.t("routing:edit_routing", { id: 8 }),
     });
     await act(async () => userEvent.click(editBtn));
-    await waitFor(() => {
-      expect(
-        canvas.getByRole("button", {
-          name: i18n.t("routing:save_routing", { id: 8 }),
-        }),
-      ).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("routing:save_routing", { id: 8 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
     const nameInput = canvas.getByLabelText(i18n.t("routing:name")) as HTMLInputElement;
     expect(nameInput.readOnly).toBe(false);
   },
@@ -298,9 +301,13 @@ export const EditAndCancel: Story = {
       name: i18n.t("routing:edit_routing", { id: 8 }),
     });
     await act(async () => userEvent.click(editBtn));
-    const cancelBtn = await canvas.findByRole("button", {
-      name: i18n.t("routing:cancel_for", { id: 8 }),
-    });
+    // See the comment in EditMode above — the Suspense + DetailFade sequence
+    // can exceed the default 1 s timeout on slower CI machines.
+    const cancelBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("routing:cancel_for", { id: 8 }) },
+      { timeout: 5000 },
+    );
     await act(async () => userEvent.click(cancelBtn));
     await waitFor(() => {
       expect(
@@ -395,6 +402,51 @@ export const AddNewRoutingRow: Story = {
   },
 };
 
+// Changing the data source dropdown emits the full ref (name + id), and that
+// id travels through to the saved payload — not just the name.
+export const ChangeDataSourceSelection: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postRouting: http.post("/odcsapi/routing", async ({ request }) => {
+          const body = (await request.json()) as ApiRouting;
+          expect(body.dataSourceName).toEqual("lrgs-main");
+          expect(body.dataSourceId).toEqual(13);
+          return HttpResponse.json<ApiRouting>(body);
+        }),
+      },
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("routing:edit_routing", { id: 8 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByRole("button", {
+            name: i18n.t("routing:save_routing", { id: 8 }),
+          }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
+    const dataSource = canvas.getByRole("combobox", {
+      name: i18n.t("routing:data_source"),
+    }) as HTMLSelectElement;
+    await act(async () => userEvent.selectOptions(dataSource, "lrgs-main"));
+    expect(dataSource.value).toEqual("lrgs-main");
+    const saveBtn = canvas.getByRole("button", {
+      name: i18n.t("routing:save_routing", { id: 8 }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+  },
+};
+
 // Deleting a routing fires the DELETE and the row drops out after the refetch.
 export const DeleteRoutingRow: Story = {
   parameters: {
@@ -425,6 +477,10 @@ export const DeleteRoutingRow: Story = {
       name: i18n.t("routing:delete_for", { id: 9 }),
     });
     await act(async () => userEvent.click(deleteBtn));
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
     await waitFor(() =>
       expect(canvas.queryByText("GOES-Hourly")).not.toBeInTheDocument(),
     );
@@ -550,6 +606,10 @@ export const RemovePlatformRow: Story = {
       return btn;
     });
     await act(async () => userEvent.click(removeBtn));
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
     await waitFor(() => expect(canvas.queryByText("Alpha")).not.toBeInTheDocument());
   },
 };

@@ -123,6 +123,27 @@ gradlew runApp -Popendcs.app=rs -Popendcs.profile="%appdata%\.opendcs\xml.profil
 
 # General Development
 
+## GitHub Codespaces and development containers
+
+The repository includes a development container that can be opened directly in
+[GitHub Codespaces](https://codespaces.new/opendcs/opendcs) or with the VS Code
+Dev Containers extension. It provides Java 21, Node.js 22, Python 3.8, Docker,
+the browser dependencies used by the web tests, and a lightweight desktop for
+running the Swing applications.
+
+The first container creation installs the web dependencies and Playwright's
+Chromium and Firefox browsers. After it finishes, verify the environment with:
+
+```sh
+./gradlew assemble testClasses
+```
+
+Docker runs inside the development container, so the PostgreSQL integration
+tests and the services in `docker-compose.yaml` work without additional host
+setup. Open the forwarded `OpenDCS desktop` port to interact with Swing
+applications; the REST API, web UI, Storybook, Keycloak, pgAdmin, PostgreSQL,
+and Java debugger ports are also labeled in the Ports panel.
+
 To verify everything can work on your system run the following:
 
 ```
@@ -238,3 +259,20 @@ If you are on a platform with Docker, or establish the appropriate database conf
 ```
 
 The default user name and password are `test_user` and `test_password`
+
+
+# Financial Information
+
+For additional details, including dollar amounts, see: https://opencollective.com/opendcs
+
+## Per supporter Level
+
+[![Backer](https://opencollective.com/opendcs/tiers/backers/badge.svg?label=backer&color=brightgreen)](https://opencollective.com/opendcs/tiers/backers/badge.svg?label=backer&color=brightgreen)
+[![Backer+](https://opencollective.com/opendcs/tiers/backer/badge.svg?label=Backer%2B&color=brightgreen)](https://opencollective.com/opendcs/tiers/backer/badge.svg?label=Backer%2B&color=brightgreen)
+[![Sponsors](https://opencollective.com/opendcs/tiers/sponsors/badge.svg?label=sponsor&color=brightgreen)](https://opencollective.com/opendcs/tiers/sponsors/badge.svg?label=sponsor&color=brightgreen)
+
+## Total
+
+[![Total Contributions](https://opencollective.com/opendcs/tiers/badge.svg)](https://opencollective.com/opendcs/tiers/badge.svg)
+
+[![Contributors](https://opencollective.com/opendcs/tiers/backer.svg?avatarHeight=36&button=false)](https://opencollective.com/opendcs/tiers/backer.svg?avatarHeight=36&button=false)

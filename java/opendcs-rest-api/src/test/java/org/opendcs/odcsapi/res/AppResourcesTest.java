@@ -4,18 +4,18 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
 
-import decodes.sql.DbKey;
-import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.TsdbCompLock;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiAppRef;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.opendcs.odcsapi.res.AppResources.map;
 import static org.opendcs.odcsapi.res.AppResources.mapLoading;
+
+import decodes.sql.DbKey;
+import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.TsdbCompLock;
 
 final class AppResourcesTest
 {
@@ -70,7 +70,21 @@ final class AppResourcesTest
 	}
 
 	@Test
-	void testStatusMap() throws Exception
+	void testCompAppMapNewAppNoAppType()
+	{
+		// Creating a new process without setting the
+		// "App Type" field must not NPE when syncing appType into properties.
+		ApiLoadingApp app = new ApiLoadingApp();
+		app.setAppName("New application");
+
+		CompAppInfo compAppInfo = map(app);
+
+		assertNotNull(compAppInfo);
+		assertEquals(app.getAppName(), compAppInfo.getAppName());
+	}
+
+	@Test
+	void testStatusMap()
 	{
 		DbKey appId = DbKey.createDbKey(151615L);
 		int pid = 12345;
@@ -80,7 +94,7 @@ final class AppResourcesTest
 		TsdbCompLock compLock = new TsdbCompLock(appId, pid, host, heartbeat, status);
 		compLock.setAppName("Computation Application");
 
-		ApiAppStatus appStatus = map(null, compLock);
+		ApiAppStatus appStatus = map(compLock);
 
 		assertNotNull(appStatus);
 		assertEquals(compLock.getAppId().getValue(), appStatus.getAppId());
@@ -114,5 +128,26 @@ final class AppResourcesTest
 		assertEquals(compAppInfo.getAppType(), app.getAppType());
 		assertEquals(compAppInfo.getManualEditApp(), app.isManualEditingApp());
 		assertEquals(compAppInfo.getProperties(), app.getProperties());
+	}
+
+	@Test
+	void testAppTypeEditSurvivesRoundTrip()
+	{
+		// Mirrors the Web UI edit flow: GET /app returns the stored appType both
+		// as its own field and inside properties; the user edits only the
+		// "App Type" field and POSTs the whole object back.
+		CompAppInfo stored = new CompAppInfo();
+		stored.setAppName("compproc");
+		stored.setAppId(DbKey.createDbKey(1L));
+		Properties properties = new Properties();
+		properties.setProperty("appType", "computationprocess");
+		stored.setProperties(properties);
+
+		ApiLoadingApp fromServer = mapLoading(stored);
+		fromServer.setAppType("utility");
+
+		CompAppInfo toSave = map(fromServer);
+
+		assertEquals("utility", toSave.getAppType());
 	}
 }

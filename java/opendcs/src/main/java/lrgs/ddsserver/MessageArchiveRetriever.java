@@ -39,9 +39,9 @@ import lrgs.common.DcpMsg;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgSource;
 import lrgs.common.LrgsErrorCode;
-import lrgs.archive.MsgArchive;
 import lrgs.archive.MsgFilter;
 import lrgs.archive.SearchHandle;
+import lrgs.archive.XmlMsgArchive;
 
 /**
 This class acts both as the retriever and the source for the new Java-Only-
@@ -62,7 +62,7 @@ public class MessageArchiveRetriever extends DcpMsgRetriever implements MsgFilte
 	private String clientName;
 
 	/** The archive from which to serve data. */
-	private MsgArchive msgArchive;
+	private XmlMsgArchive msgArchive;
 
 	/** the status structure */
 	private AttachedProcess attachedProcess;
@@ -85,7 +85,7 @@ public class MessageArchiveRetriever extends DcpMsgRetriever implements MsgFilte
 	/**
 	 * Constructor.
 	 */
-	public MessageArchiveRetriever(MsgArchive msgArchive, AttachedProcess ap)
+	public MessageArchiveRetriever(XmlMsgArchive msgArchive, AttachedProcess ap)
 	{
 		super();
 		searchHandle = null;
@@ -213,9 +213,9 @@ public class MessageArchiveRetriever extends DcpMsgRetriever implements MsgFilte
 		log.trace("Starting search...");
 		int result = msgArchive.search(searchHandle, stopSearchMsec);
 		log.trace("Search Result={}", result);
-		if (result == MsgArchive.SEARCH_RESULT_MORE
-		 || result == MsgArchive.SEARCH_RESULT_DONE
-		 || result == MsgArchive.SEARCH_RESULT_TIMELIMIT)
+		if (result == XmlMsgArchive.SEARCH_RESULT_MORE
+		 || result == XmlMsgArchive.SEARCH_RESULT_DONE
+		 || result == XmlMsgArchive.SEARCH_RESULT_TIMELIMIT)
 		{
 			ret = searchHandle.getNextIndex();
 			if (ret != null)
@@ -225,12 +225,12 @@ public class MessageArchiveRetriever extends DcpMsgRetriever implements MsgFilte
 				attachedProcess.lastSeqNum++;
 				return 1;
 			}
-			else if (result == MsgArchive.SEARCH_RESULT_DONE)
+			else if (result == XmlMsgArchive.SEARCH_RESULT_DONE)
 				throw new UntilReachedException();
 			else
 				throw new SearchTimeoutException("Search Time Expired");
 		}
-		else if (result == MsgArchive.SEARCH_RESULT_PAUSE)
+		else if (result == XmlMsgArchive.SEARCH_RESULT_PAUSE)
 		{
 			throw new EndOfArchiveException();
 		}

@@ -1,0 +1,12 @@
+{
+  "dropdownLabel": "Menü für bevorzugten Standortnamen öffnen",
+  "menuTitle": "Bevorzugter Standortname",
+  "activate": "Standortname als {{type}} anzeigen",
+  "default": "Standard",
+  "CWMS": "CWMS",
+  "NWSHB5": "NWSHB5",
+  "USGS": "USGS",
+  "USGS-DRGS": "USGS-DRGS",
+  "Local": "Lokal",
+  "nos": "NOS"
+}

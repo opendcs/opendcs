@@ -63,7 +63,7 @@ public class PropertiesEditDialog extends JDialog
 	*/
     public PropertiesEditDialog(String entityName, Properties properties)
 	{
-        super(GuiApp.topFrame, "Properties for " + entityName, true);
+        super((Frame)null, "Properties for " + entityName, true);
         genericLabels = getGenericLabels();
         
         this.setTitle(LoadResourceBundle.sprintf(

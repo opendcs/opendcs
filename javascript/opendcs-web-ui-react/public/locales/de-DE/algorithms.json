@@ -13,9 +13,11 @@
     "execClass": "Ausführungsklasse",
     "description": "Beschreibung",
     "edit_for": "Algorithmus {{id}} bearbeiten",
+    "copy_for": "Algorithmus {{id}} kopieren",
     "delete_for": "Algorithmus {{id}} löschen",
     "cancel_for": "Bearbeitung von Algorithmus {{id}} abbrechen",
-    "save_for": "Algorithmus {{id}} speichern"
+    "save_for": "Algorithmus {{id}} speichern",
+    "save_error": "Speichern fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen."
   },
   "check_new": {
     "button": "Neue suchen",

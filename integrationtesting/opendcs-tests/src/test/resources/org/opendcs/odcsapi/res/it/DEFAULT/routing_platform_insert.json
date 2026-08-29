@@ -10,5 +10,17 @@
   "production" : false,
   "properties" : { },
   "platformSensors" : [ ],
-  "transportMedia" : [ ]
+  "transportMedia" : [
+    {"mediumType" : "goes",
+     "mediumId" : "DEADBEEF",
+     "scriptName" : "RoutingPlatConfig",
+     "channelNum" : 1,
+     "assignedTime" : 123456789,
+     "transportWindow" : 2,
+     "transportInterval" : 1,
+     "timeAdjustment" : 0,
+     "timezone" : "UTC",
+     "loggerType" : null,
+     "baud" : 300}
+   ]
 }

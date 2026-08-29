@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.opendcs.util.functional.ThrowingFunction;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -39,7 +40,6 @@ import ilex.util.TextUtil;
 import ilex.var.TimedVariable;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
-import opendcs.util.functional.ThrowingFunction;
 
 /**
  * Utility class to handle importing OpenDCS import/export time-series files
@@ -266,7 +266,7 @@ public class TsImporter
         {
             try
             {
-                TimeSeriesIdentifier tsId = makeTsIdFunc.accept(key);
+                TimeSeriesIdentifier tsId = makeTsIdFunc.apply(key);
                 return new CTimeSeries(tsId);
             }
             catch (DbIoException ex)

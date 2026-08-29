@@ -20,6 +20,7 @@
   "save_config": "Guardar configuración con ID {{id}}",
   "cancel_for": "Cancelar la edición de la configuración con ID {{id}}",
   "sensor_num": "Sensor n.º",
+  "duplicate_sensor_number": "Este número de sensor ya está en uso por otro sensor en esta configuración.",
   "sensor_name": "Nombre",
   "data_types": "Tipo(s) de dato",
   "recording_mode": "Modo de registro",

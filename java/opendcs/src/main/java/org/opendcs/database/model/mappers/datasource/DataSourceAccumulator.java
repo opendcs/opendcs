@@ -1,58 +1,94 @@
 package org.opendcs.database.model.mappers.datasource;
 
-import java.sql.ResultSet;
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Optional;
 
-import org.jdbi.v3.core.mapper.ColumnMapper;
-import org.jdbi.v3.core.result.ResultSetAccumulator;
-import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.utils.sql.GenericColumns;
+import org.jdbi.v3.core.config.ConfigRegistry;
+import org.jdbi.v3.core.generic.GenericType;
+import org.jdbi.v3.core.mapper.RowMapper;
+import org.jdbi.v3.core.mapper.RowMapperFactory;
+import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
+import org.jdbi.v3.core.result.RowView;
+import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 
 import decodes.db.DataSource;
 import decodes.sql.DbKey;
 
-import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
-import static org.opendcs.utils.ExceptionUtil.wrappedComputeIfAbsent;
-
-public final class DataSourceAccumulator implements ResultSetAccumulator<Map<DbKey,DataSource>>
+public final class DataSourceAccumulator implements LinkedHashMapRowReducer<DbKey,DataSource>
 {
-    public static final DataSourceAccumulator DATA_SOURCE_ACCUMULATOR = new DataSourceAccumulator("ds", "dsm");
-
-    private final String primaryPrefix;
-    private final String memberPrefix;
-
-    private final DataSourceMapper primaryMapper;
-    private final DataSourceMapper memberMapper;
-
-    private DataSourceAccumulator(String primaryPrefix, String memberPrefix)
+    // NOTE, this doesn't actually work due to type erasure.
+    public static final GenericType<DataSource> PRIMARY_SOURCE = new GenericType<>()
     {
-        this.primaryPrefix = primaryPrefix == null ? "" : addUnderscoreIfMissing(primaryPrefix);
-        this.memberPrefix = memberPrefix == null ? "" : addUnderscoreIfMissing(memberPrefix);
-        primaryMapper = DataSourceMapper.withPrefix(primaryPrefix);
-        memberMapper = DataSourceMapper.withPrefix(memberPrefix);
+        /* marker type */    
+    };
+    public static final GenericType<DataSource> MEMBER_SOURCE = new GenericType<>()
+    {
+        /* marker type */
+    };
+
+    public final DataSourceMapper primaryMapper;
+    public final DataSourceMapper memberMapper;
+
+    public DataSourceAccumulator(DataSourceMapper primaryMapper, DataSourceMapper memberMapper)
+    {
+        this.primaryMapper = primaryMapper;
+        this.memberMapper = memberMapper;
 
     }
 
     @Override
-    public Map<DbKey,DataSource> apply(Map<DbKey,DataSource> previous, ResultSet rs, StatementContext ctx) throws SQLException
+    public void accumulate(Map<DbKey,DataSource> previous, RowView rowView)
     {
-        ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
-                                             .orElseThrow(() -> new SQLException("No mapper registered for DbKey class."));
-
-        final var primaryDs = wrappedComputeIfAbsent(
-                    previous,
-                    dbKeyMapper.map(rs, primaryMapper.column(DataSourceMapper.Columns.ID), ctx),
-                    newKey -> primaryMapper.map(rs, ctx),
-                    SQLException.class
-        );
-
-        int sequence = rs.getInt(memberMapper.column(DataSourceMapper.Columns.SEQUENCE_NUMBER));
-        if (!rs.wasNull())
+        try
         {
-            primaryDs.addGroupMember(sequence, memberMapper.map(rs, ctx));
+            final var primaryDs = previous.computeIfAbsent(
+                rowView.getColumn(primaryMapper.column(DataSourceMapper.Columns.ID), DbKey.class),
+                newKey -> primaryMapper.mapView(rowView)
+            );
+
+            if (memberMapper != null)
+            {
+                var sequence = rowView.getColumn(memberMapper.column(DataSourceMapper.Columns.SEQUENCE_NUMBER),
+                                                Integer.class);
+                if (sequence != null)
+                {
+                    var member = memberMapper.mapView(rowView);
+                    primaryDs.addGroupMember(sequence, member);
+                }
+            }
+        }
+        catch (SQLException ex)
+        {
+            throw new UnableToExecuteStatementException("Unable to map ID column to prefix", ex, null);
+        }
+    }
+
+    public static class DataSourceMapperFactory implements RowMapperFactory
+    {
+        private final DataSourceMapper primaryMapper;
+        private final DataSourceMapper memberMapper;
+
+        public DataSourceMapperFactory(DataSourceMapper primaryMapper, DataSourceMapper memberMapper)
+        {
+            this.primaryMapper = primaryMapper;
+            this.memberMapper = memberMapper;
         }
 
-        return previous;
+        @Override
+        public Optional<RowMapper<?>> build(Type type, ConfigRegistry config)
+        {
+            Optional<RowMapper<?>> ret = Optional.empty();
+            if (type == PRIMARY_SOURCE)
+            {
+                ret = Optional.of(primaryMapper);
+            }
+            else if (type == MEMBER_SOURCE)
+            {
+                ret = Optional.of(memberMapper);
+            }
+            return ret;
+        }
     }
 }

@@ -1,0 +1,150 @@
+package org.opendcs.fixtures.lrgs;
+
+import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.opendcs.logging.spi.LoggingEventProvider;
+import org.opendcs.lrgs.dao.MsgArchive;
+import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.logging.LoggingEventBuffer;
+
+import ilex.util.PasswordFile;
+import ilex.util.PasswordFileEntry;
+import ilex.util.QueueLogger;
+import lrgs.lrgsmain.LrgsConfig;
+import lrgs.lrgsmain.LrgsInputInterface;
+import lrgs.lrgsmain.LrgsMain;
+
+import uk.org.webcompere.systemstubs.security.SystemExit;
+
+public class LrgsTestInstance
+{
+    private final LrgsMain lrgs;
+    private final MsgArchive archive;
+    private final QueueLogger queueLogger;
+    private final File configFile;
+    private final Thread lrgsThread;
+
+    public LrgsTestInstance(File lrgsHome) throws Exception
+    {
+        this(lrgsHome, null);
+    }
+
+    public LrgsTestInstance(File lrgsHome, String additionalConfig) throws Exception
+    {
+        this(lrgsHome, null, null, TlsMode.NONE, additionalConfig);
+    }
+
+    public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword, TlsMode tlsMode) throws Exception
+    {
+        this(lrgsHome, keyStore, keyStorePassword, tlsMode, null);
+    }
+
+    public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword, TlsMode tlsMode, String additionalConfig) throws Exception
+    {
+        if (!lrgsHome.canRead())
+        {
+            throw new FileNotFoundException(
+                String.format("Directory '%s' doesn't exist or can't be read.", lrgsHome.getAbsolutePath())
+            );
+        }
+        System.setProperty("LRGSHOME", lrgsHome.getAbsolutePath());
+        configFile = new File(lrgsHome,"lrgsconf");
+        try (FileWriter fw = new FileWriter(configFile))
+        {
+            fw.write("archiveDir=$LRGSHOME/archive"+System.lineSeparator());
+            fw.write("hritTimeoutSec=120"+System.lineSeparator());
+            fw.write("hritInputDir=$LRGSHOME/hritfiles"+System.lineSeparator());
+            fw.write("hritFileMaxAgeSec=7200"+System.lineSeparator());
+            fw.write("hritSourceCode=HR"+System.lineSeparator());
+            fw.write("hritFileEnabled=true"+System.lineSeparator());
+            fw.write("noTimeout=true"+System.lineSeparator());
+            fw.write("ddsListenPort=0"+System.lineSeparator());
+            fw.write("enableDdsRecv=true"+System.lineSeparator());
+            fw.write("ddsServerTlsMode="+tlsMode.name()+System.lineSeparator());
+
+            if (keyStore!=null)
+            {
+                String fileName =keyStore.getAbsolutePath();
+                fileName = fileName.replace('\\','/');
+                fw.write("keyStoreFile="+fileName+System.lineSeparator());
+                fw.write("keyStorePassword="+keyStorePassword+System.lineSeparator());
+            }
+
+            if (additionalConfig != null)
+            {
+                fw.write(System.lineSeparator());
+                fw.write(additionalConfig);
+                fw.write(System.lineSeparator());
+            }
+
+            fw.flush();
+        }
+        new File(lrgsHome,"netlist").mkdirs();
+        queueLogger = new QueueLogger(
+			new LoggingEventBuffer.Builder()
+								  .withProvider(LoggingEventProvider.getProvider())
+                                  .withDefaultSize(QueueLogger.MAX_MESSAGES)
+								  .withThreadName("PollGUI Log Thread")
+								  .build()
+								  .getPublisher());
+        SystemExit exit = new SystemExit();
+        lrgs = new LrgsMain("-", configFile.getAbsolutePath());
+
+        lrgsThread = new Thread(lrgs);
+        // Sonar is correct here, but I don't want to mess with this test harness much at the
+        // moment.
+        exit.execute(() -> lrgsThread.start()); // NOSONAR
+        assertResultWithinTimeFrame(value ->
+        {
+            try
+            {
+                return lrgs.getStatusProvider().getStatusSnapshot().isUsable;
+            }
+            catch (NullPointerException ex) // NOSONAR
+            {
+                // Future work should remove the need for this NPE catch.
+                return false;
+            }
+        }, 3, TimeUnit.MINUTES, 5, TimeUnit.SECONDS,
+        "LRGS has not started within the expected time frame.");
+
+        this.archive = lrgs.msgArchive;
+        var pwf = new PasswordFile(new File(lrgsHome, ".lrgs.passwd"));
+        var pwe = new PasswordFileEntry("anonymous");
+        pwe.assignRole("dds");
+        pwf.addEntry(pwe);
+        new File(lrgsHome, "users.local/anonymous").mkdirs();
+    }
+
+    public MsgArchive getArchive()
+    {
+        return archive;
+    }
+
+    public LrgsMain getLrgsMain()
+    {
+        return lrgs;
+    }
+
+    public int getDdsPort()
+    {
+        return lrgs.getDdsServer().getPort();
+    }
+
+    public LrgsConfig getConfig()
+    {
+        return LrgsConfig.instance();
+    }
+
+
+    public List<LrgsInputInterface> getLrgsInputs()
+    {
+        return lrgs.getInputs();
+    }
+}

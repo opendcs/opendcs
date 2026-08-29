@@ -1,3 +1,7 @@
+plugins {
+    id 'io.github.ben-manes.versions.settings' version '0.61.0'
+}
+
 rootProject.name = 'OPENDCS Toolkit'
 
 include ":install"
@@ -48,9 +52,6 @@ project(":testing:opendcs-tests").projectDir=file("integrationtesting/opendcs-te
 include ":testing:manual"
 project(":testing:manual").projectDir=file("integrationtesting/manual")
 
-include ":testing:gui"
-project(":testing:gui").projectDir=file("integrationtesting/test-gui-examples")
-
 include ":opendcs-rest-api"
 project(":opendcs-rest-api").projectDir=file("java/opendcs-rest-api")
 
@@ -59,6 +60,9 @@ project(":opendcs-web-ui-react").projectDir=file("javascript/opendcs-web-ui-reac
 
 include ":api-client-typescript"
 project(":api-client-typescript").projectDir=file("java/api-clients/api-client-typescript")
+
+include ":dds-api-client-typescript"
+project(":dds-api-client-typescript").projectDir=file("java/api-clients/dds-api-client-typescript")
 
 include ":api-client-java"
 project(":api-client-java").projectDir=file("java/api-clients/api-client-java")

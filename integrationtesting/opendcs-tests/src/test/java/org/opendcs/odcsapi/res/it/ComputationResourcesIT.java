@@ -655,6 +655,123 @@ final class ComputationResourcesIT extends BaseApiIT
 	}
 
 	@Test
+	void testPostComputationWithBareRoleOnlyParms() throws Exception
+	{
+		// Mirrors what the web UI's "Copy" action sends: an algorithm's required
+		// roles with no site/dataType attached yet
+		ApiComputation comp = new ApiComputation();
+		comp.setName("BareRoleParmsCopy_" + UUID.randomUUID());
+		comp.setEnabled(true);
+		comp.setAppId(appId);
+		comp.setAlgorithmId(algId);
+
+		ApiCompParm input = new ApiCompParm();
+		input.setAlgoRoleName("input");
+		input.setAlgoParmType("i");
+		input.setDeltaT(0);
+		ApiCompParm output = new ApiCompParm();
+		output.setAlgoRoleName("output");
+		output.setAlgoParmType("o");
+		output.setDeltaT(0);
+		comp.setParmList(List.of(input, output));
+
+		String compJson = MAPPER.writeValueAsString(comp);
+
+		var response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.body(compJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("computation")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.extract()
+		;
+
+		Long newCompId = response.body().jsonPath().getLong("computationId");
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
+			.accept(MediaType.APPLICATION_JSON)
+			.queryParam("computationid", newCompId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("computation")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+		;
+	}
+
+	@Test
+	void testPostComputationWithMalformedDataTypeDoesNotServerError() throws Exception
+	{
+		// A parm's Data Type field is free text in the web UI (ComputationParamsTable.tsx)
+		// with no "standard:code" format enforcement, so a bare code with no colon is a
+		// real user input.
+		ApiComputation comp = new ApiComputation();
+		comp.setName("MalformedDataTypeCopy_" + UUID.randomUUID());
+		comp.setEnabled(true);
+		comp.setAppId(appId);
+		comp.setAlgorithmId(algId);
+
+		ApiCompParm input = new ApiCompParm();
+		input.setAlgoRoleName("input");
+		input.setAlgoParmType("i");
+		input.setDataType("HG");
+		comp.setParmList(List.of(input));
+
+		String compJson = MAPPER.writeValueAsString(comp);
+
+		var response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.body(compJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("computation")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.extract()
+		;
+
+		Long newCompId = response.body().jsonPath().getLong("computationId");
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.spec(authSpec)
+			.header(LoggingFilter.HEADER_TRACE_ID, traceId)
+			.accept(MediaType.APPLICATION_JSON)
+			.queryParam("computationid", newCompId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("computation")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+		;
+	}
+
+	@Test
 	@EnableIfTsDb(value = "CWMS-Oracle")
 	void testExecuteComputationCWMS() throws Exception
 	{

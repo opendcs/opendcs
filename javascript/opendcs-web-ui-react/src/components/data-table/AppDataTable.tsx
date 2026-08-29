@@ -4,7 +4,7 @@ import DataTable, {
 } from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import dtButtons from "datatables.net-buttons-bs5";
-import { Alert } from "react-bootstrap";
+import { Button, Modal } from "react-bootstrap";
 import {
   Suspense,
   useCallback,
@@ -17,8 +17,10 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
-import { useContextWrapper } from "../../util/ContextWrapper";
+import { unmountToDom, useContextWrapper } from "../../util/ContextWrapper";
 import { useTableProcessing } from "./useTableProcessing";
+import { SaveErrorAlert } from "../forms";
+import { useSaveError } from "../../hooks/useSaveError";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -95,7 +97,13 @@ export interface RowAction<T> {
   aria: (row: T) => string;
   /** Return `false` to omit this action for the given row. */
   show?: (row: T) => boolean;
-  /** Handler invoked when the button is clicked. */
+  /**
+   * When set, clicking the button first shows a confirmation dialog and
+   * `onClick` only runs if the user confirms — for destructive actions like
+   * delete. Pass `true` for the generic confirmation message, or a function
+   * returning a row-specific message.
+   */
+  confirm?: boolean | ((row: T) => string);
   onClick: (ctx: RowActionContext<T>) => void;
 }
 
@@ -364,6 +372,8 @@ function syncChildRow<T>(
   if (state === undefined) {
     if (!isShown) return;
     row.child(false);
+    const closedNode = refs.childNodesRef.current[id];
+    if (closedNode) unmountToDom(closedNode);
     delete refs.childModeRef.current[id];
     delete refs.childNodesRef.current[id];
     return;
@@ -374,6 +384,10 @@ function syncChildRow<T>(
 
   if (isShown) row.child.hide();
   const cached = prevMode === state ? refs.childNodesRef.current[id] : undefined;
+  if (!cached) {
+    const replaced = refs.childNodesRef.current[id];
+    if (replaced) unmountToDom(replaced);
+  }
   const node = cached ?? buildDetailNode(rowData, state);
   refs.childNodesRef.current[id] = node;
   refs.childModeRef.current[id] = state;
@@ -447,10 +461,17 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   const [localItems, setLocalItems] = useState<T[]>([]);
   // Set when a row's onSave rejects, so the failure is visible instead of
   // silently discarded. Cleared on the next save attempt.
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("save_failed"),
+    "Failed to save row",
+  );
   // rowState is keyed by stringified row id so both consumer ids (TId) and
   // wrapper-generated synthetic ids (for inline-edit new rows) coexist.
   const [rowState, setRowState] = useState<Record<string, RowMode>>({});
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    action: RowAction<T>;
+    ctx: RowActionContext<T>;
+  } | null>(null);
   // Fade the wrapper in once DataTables finishes its first init. React renders
   // the bare <table> (with <caption> + <thead>) before DataTables inserts the
   // top toolbar (buttons / search / page-length), which would otherwise flash
@@ -475,10 +496,28 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   const childModeRef = useRef<Record<string, RowMode>>({});
   const childNodesRef = useRef<Record<string, Node>>({});
 
+  useEffect(() => {
+    return () => {
+      Object.values(childNodesRef.current).forEach(unmountToDom);
+    };
+  }, []);
+
   // Synthetic ids for inline-edit new rows (row object → synthetic string).
   // WeakMap so GC can reclaim rows that leave `localItems`.
   const newRowIdsRef = useRef<WeakMap<object, string>>(new WeakMap());
   const newRowCounterRef = useRef(0);
+
+  const nextNumericIdRef = useRef<number | null>(null);
+  const nextNumericId = useCallback(
+    (existing: T[]): number => {
+      nextNumericIdRef.current =
+        nextNumericIdRef.current === null
+          ? nextAddNewId(existing, getId)
+          : nextNumericIdRef.current - 1;
+      return nextNumericIdRef.current;
+    },
+    [getId],
+  );
 
   // Stringify a row's id, preferring a synthetic id if the row is a pending
   // inline-edit new row. Used for every rowState / cache lookup internally.
@@ -552,14 +591,14 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   const appendLocalItem = useCallback(
     (template: (nextId: number) => T, mode: RowMode = "new") => {
       setLocalItems((prev) => {
-        const newId = nextAddNewId(prev, getId);
+        const newId = nextNumericId(prev);
         const newItem = template(newId);
         const newIdStr = String(getId(newItem));
         setRowState((prevRS) => ({ ...prevRS, [newIdStr]: mode }));
         return [...prev, newItem];
       });
     },
-    [getId],
+    [getId, nextNumericId],
   );
 
   // --- Expose imperative handle --------------------------------------------
@@ -651,6 +690,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
               variant: "danger",
               show: inShowMode,
               aria: (row: T) => labels.remove?.(row, idOf(row)) ?? "Delete",
+              confirm: true,
               onClick: ({ row }: RowActionContext<T>) => inlineEdit.onRemove!(row),
             } as RowAction<T>,
           ]
@@ -705,19 +745,18 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           // Await the consumer's save (if it's a Promise) before transitioning
           // so the follow-up `renderDetail` fetch reads committed data.
           // `await` works on thenables and passes through non-promises unchanged.
-          setSaveError(null);
-          try {
+          if (isNewLocal) {
+            // Let a new local row's failure propagate so the renderDetail
+            // component can display it and the row stays in edit mode
+            // (preserving user input); the transitions below are skipped.
+            clearSaveError();
             await onSave?.(updated);
-          } catch (err) {
-            console.error("Failed to save row", err);
-            // For new local items, re-throw so the renderDetail component can
-            // display the error and the row stays in edit mode (preserving user
-            // input). For existing server rows, closing is safe — they remain
-            // in the data list with their last-saved values.
-            if (isNewLocal) throw err;
-            setSaveError(t("save_failed"));
+            pendingNavRef.current = true;
+          } else {
+            // Existing server rows: report the failure in the banner and close
+            // anyway — they keep their last-saved values in the data list.
+            await attemptSave(() => onSave?.(updated));
           }
-          if (isNewLocal) pendingNavRef.current = true;
           setLocalItems((prev) => withoutId(prev, id, idOf));
           setModeByIdStr(id, "show");
         },
@@ -734,7 +773,16 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         </Suspense>,
       );
     },
-    [idOf, onSave, setModeByIdStr, toDom, renderDetail, renderSkeleton, t],
+    [
+      idOf,
+      onSave,
+      setModeByIdStr,
+      toDom,
+      renderDetail,
+      renderSkeleton,
+      attemptSave,
+      clearSaveError,
+    ],
   );
 
   // Stable ref so the drawCallback closure always sees the latest renderer.
@@ -846,7 +894,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
                         }
                       }
                       setLocalItems((prev) => {
-                        const newItem = addNew.template(nextAddNewId(prev, getId));
+                        const newItem = addNew.template(nextNumericId(prev));
                         const newId = String(getId(newItem));
                         setRowState((prevRS) => ({ ...prevRS, [newId]: "new" }));
                         return [...prev, newItem];
@@ -914,7 +962,12 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
         if (action && rowEl && rowData) {
           e.preventDefault();
           e.stopPropagation();
-          action.onClick({ row: rowData, rowEl, api: rowActionApi });
+          const ctx = { row: rowData, rowEl, api: rowActionApi };
+          if (action.confirm) {
+            setPendingConfirm({ action, ctx });
+          } else {
+            action.onClick(ctx);
+          }
           return;
         }
       }
@@ -971,6 +1024,13 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     dt.draw(false);
   }, [rowState, hasInlineEdit]);
 
+  // --- Confirmation dialog for `confirm`-flagged row actions ----------------
+  const handleConfirmAccept = useCallback(() => {
+    if (pendingConfirm) pendingConfirm.action.onClick(pendingConfirm.ctx);
+    setPendingConfirm(null);
+  }, [pendingConfirm]);
+  const handleConfirmCancel = useCallback(() => setPendingConfirm(null), []);
+
   // --- Processing overlay while loading -------------------------------------
   useTableProcessing(table, loading);
 
@@ -990,11 +1050,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   return (
     <div style={{ opacity: isInitialized ? undefined : 0 }}>
-      {saveError && (
-        <Alert variant="danger" dismissible onClose={() => setSaveError(null)}>
-          {saveError}
-        </Alert>
-      )}
+      <SaveErrorAlert error={saveError} onClose={clearSaveError} className="" />
       <DataTable
         key={tableKey}
         id={tableId}
@@ -1017,6 +1073,25 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           </tr>
         </thead>
       </DataTable>
+      <Modal show={pendingConfirm !== null} onHide={handleConfirmCancel} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{t("confirm_delete_title")}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {pendingConfirm &&
+            (typeof pendingConfirm.action.confirm === "function"
+              ? pendingConfirm.action.confirm(pendingConfirm.ctx.row)
+              : t("confirm_delete_message"))}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleConfirmCancel}>
+            {t("cancel")}
+          </Button>
+          <Button variant="danger" onClick={handleConfirmAccept}>
+            {t("delete")}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

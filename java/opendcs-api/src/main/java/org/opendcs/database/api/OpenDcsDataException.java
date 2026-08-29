@@ -22,8 +22,13 @@ public class OpenDcsDataException extends Exception
         super(msg);
     }
 
+    public OpenDcsDataException(Throwable cause)
+    {
+        super(cause);
+    }
+
     public OpenDcsDataException(String msg, Throwable cause)
     {
-        super(msg);
+        super(msg, cause);
     }
 }

@@ -8,7 +8,7 @@ import type {
   ApiPresentationRef,
   ApiUnit,
 } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, screen, waitFor } from "storybook/test";
 import { PresentationsPage } from "./PresentationsPage";
 
 const PRESENTATION_REFS: ApiPresentationRef[] = [
@@ -252,6 +252,10 @@ export const DeletePresentationRow: Story = {
       name: i18n.t("presentations:delete_for", { id: 2 }),
     });
     await act(async () => userEvent.click(deleteBtn));
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("translation:delete"),
+    });
+    await act(async () => userEvent.click(confirmBtn));
     await waitFor(() =>
       expect(canvas.queryByText("shef-english-derived")).not.toBeInTheDocument(),
     );

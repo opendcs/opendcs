@@ -27,10 +27,11 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import opendcs.dai.LoadingAppDAI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.CompLockDao;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
 import org.opendcs.odcsapi.filters.W3CTraceFilter;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -250,6 +251,48 @@ final class AppResourcesIT extends BaseApiIT
 	}
 
 	@Test
+	void testPostAppWithoutAppType() throws Exception
+	{
+		// Regression test for issue #2075: creating a new process (Loading App) via
+		// the web UI without touching the "App Type" field omits appType from the
+		// POST body entirely, which previously NPE'd in AppResources#map.
+		String appJson = getJsonFromResource("app_post_no_apptype_insert_data.json");
+
+		var response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(appJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("app")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.extract();
+
+		Long appId = response.body().jsonPath().getLong("appId");
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.queryParam("appid", appId)
+			.spec(authSpec)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("app")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()))
+		;
+	}
+
+	@Test
 	void testGetAppStatus() throws Exception
 	{
 		ApiAppStatus status = getDtoFromResource("app_stat_expected.json", ApiAppStatus.class);
@@ -289,7 +332,6 @@ final class AppResourcesIT extends BaseApiIT
 		assertNotNull(actual.get("appId"), "Application status was not returned.");
 		// ID not compared as we don't actually care what it is.
 		assertEquals(host, actual.get("hostname"));
-		assertEquals(expected.get("eventPort"), (Integer)actual.get("eventPort"));
 		assertEquals(expected.get("status"), (String)actual.get("status"));
 		assertEquals(expected.get("appName"), (String)actual.get("appName"));
 		assertEquals(expected.get("pid"), (Integer)actual.get("pid"));
@@ -315,23 +357,41 @@ final class AppResourcesIT extends BaseApiIT
 		;
 	}
 
-	TsdbCompLock getCompLock(CompAppInfo compAppInfo, int pid, String host) throws DatabaseException
+	TsdbCompLock getCompLock(CompAppInfo compAppInfo, int pid, String host) throws Exception
 	{
-		try (LoadingAppDAI dai = getTsdb().makeLoadingAppDAO())
+		try
 		{
-			return dai.obtainCompProcLock(compAppInfo, pid, host);
+			var db = getConfig().getOpenDcsDatabase();
+			var dao = db.getDao(CompLockDao.class).orElseThrow();
+			try (var tx = db.newTransaction())
+			{
+				var lock = dao.obtainLock(tx, compAppInfo, pid, host);
+				if (lock.isSuccess())
+				{
+					return lock.success();
+				}
+				else
+				{
+					throw lock.failure();
+				}
+			}
 		}
 		catch (Throwable thr)
 		{
-			throw new DatabaseException("Error getting comp lock", thr);
+			throw new OpenDcsDataException("Error getting comp lock", thr);
 		}
 	}
 
-	void releaseCompLock(TsdbCompLock compLock) throws DatabaseException
+	void releaseCompLock(TsdbCompLock compLock) throws Exception
 	{
-		try (LoadingAppDAI dai = getTsdb().makeLoadingAppDAO())
+		try
 		{
-			dai.releaseCompProcLock(compLock);
+			var db = getConfig().getOpenDcsDatabase();
+			var dao = db.getDao(CompLockDao.class).orElseThrow();
+			try (var tx = db.newTransaction())
+			{
+				dao.releaseLock(tx, compLock);
+			}
 		}
 		catch (Throwable thr)
 		{

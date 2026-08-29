@@ -1,0 +1,78 @@
+group RoutingSpecDaoImpl;
+
+select(where, limit, collate, spec_columns, prop_columns, prop_join, spec_list_columns, spec_list_join,
+       list_columns, list_join, list_entry_columns, list_entry_join, datasource_columns,
+       datasource_member_columns, datasource_join, datasource_member_join, schedule) ::= <<
+with routingspec_limit (id, name, datasourceid, enableequations, useperformancemeasurements,
+                     outputformat, outputtimezone, presentationgroupname, sincetime, untiltime,
+                     consumertype, consumerarg, lastmodifytime, isproduction)
+     as (
+        select id, name, datasourceid, enableequations, useperformancemeasurements,
+               outputformat, outputtimezone, presentationgroupname, sincetime, untiltime,
+               consumertype, consumerarg, lastmodifytime, isproduction
+          from routingspec
+        <if(where)><where><endif>
+        <if(schedule)>
+              <if(where)> and <else> where <endif> <schedule>
+        <endif>
+        order by name <collate> asc
+        <if(limit)><limit><endif>
+)
+select
+    <spec_columns>
+    <if(spec_list_columns)>, <spec_list_columns> <endif>
+    <if(prop_columns)>, <prop_columns> <endif>
+    <if(list_columns)>, <list_columns> <endif>
+    <if(list_entry_columns)>, <list_entry_columns> <endif>
+    <if(datasource_columns)>, <datasource_columns> <endif>
+    <if(datasource_member_columns)>
+        , <datasource_member_columns>,
+        dsgm.sequencenum as dsm_sequencenum
+    <endif>
+from routingspec_limit rs
+<if(spec_list_join)> <spec_list_join> <endif>
+<if(prop_join)> <prop_join> <endif>
+<if(list_join)> <list_join> <endif>
+<if(list_entry_join)> <list_entry_join> <endif>
+<if(datasource_join)> <datasource_join> <endif>
+<if(datasource_member_join)> <datasource_member_join> <endif>
+order by rs.name <collate> asc <if(datasource_member_join)>, dsgm.sequencenum asc <endif>
+>>
+
+
+mergeSpec(dual) ::= <<
+merge into routingspec rs
+using (select :id id, :name name, :datasourceid datasourceid, :enableequations enableequations,
+       :useperformancemeasurements useperformancemeasurements, :outputformat outputformat,
+       :outputtimezone outputtimezone, :presentationgroupname presentationgroupname,
+       :sincetime sincetime, :untiltime untiltime, :consumertype consumertype, :consumerarg consumerarg,
+       :lastmodifytime lastmodifytime, :isproduction isproduction
+        <dual>) input
+on (rs.id = input.id)
+when matched then
+    update set name = input.name, datasourceid = input.datasourceid, enableequations = input.enableequations,
+        useperformancemeasurements = input.useperformancemeasurements, outputformat = input.outputformat,
+        outputtimezone = input.outputtimezone, presentationgroupname = input.presentationgroupname,
+        sincetime = input.sincetime, untiltime = input.untiltime, consumertype = input.consumertype,
+        consumerarg = input.consumerarg, lastmodifytime = input.lastmodifytime, isproduction = input.isproduction
+when not matched then
+insert(id, name, datasourceid, enableequations, useperformancemeasurements, outputformat, outputtimezone,
+       presentationgroupname, sincetime, untiltime, consumertype, consumerarg, lastmodifytime, isproduction)
+values(input.id, input.name, input.datasourceid, input.enableequations, input.useperformancemeasurements,
+       input.outputformat, input.outputtimezone, input.presentationgroupname, input.sincetime, input.untiltime,
+       input.consumertype, input.consumerarg, input.lastmodifytime, input.isproduction)
+>>
+
+deleteSpec() ::= "delete from routingspec where id = :id"
+
+deleteSpecProps() ::= "delete from routingspecproperty where routingspecid = :id"
+insertSpecProps() ::= <<
+insert into routingspecproperty(routingspecid, prop_name, prop_value)
+values (:routingspecid, :prop_name, :prop_value)
+>>
+
+deleteSpecLists() ::= "delete from routingspecnetworklist where routingspecid = :id"
+insertSpecList() ::= <<
+insert into routingspecnetworklist(routingspecid, networklistname)
+values(:routingspecid, :networklistname)
+>>

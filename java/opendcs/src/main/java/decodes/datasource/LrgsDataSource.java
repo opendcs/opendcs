@@ -959,7 +959,7 @@ public class LrgsDataSource extends DataSourceExec
                 : null;
             final String realUserName = EnvExpander.expand(username);
             final String realPassword = EnvExpander.expand(password);
-            lddsClient = new LddsClient(host, LrgsConfig.def_ddsListenPort, socketFactory, tls);
+            lddsClient = new LddsClient(host, this.port, socketFactory, tls);
 
             lddsClient.setModule("lrgsds-" + (connum++));
 

@@ -101,6 +101,7 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
         key: "delete",
         icon: "bi-trash",
         variant: "danger",
+        confirm: true,
         show: (row) => (row.schedEntryId ?? 0) > 0,
         aria: (row) => t("schedule:delete_for", { id: row.schedEntryId }),
         onClick: ({ row }) => {

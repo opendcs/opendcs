@@ -83,7 +83,7 @@ public class DcpMonitorConsumer extends DataConsumer implements MsgValidatee
 	{
 		log.debug("DcpMonitorConsumer.open()");
 		DcpMonitorConfig cfg = DcpMonitorConfig.instance();
-		msgValidator = new MsgValidator(this, Pdt.instance(),
+		msgValidator = new MsgValidator(null, Pdt.instance(),
 			ChannelMap.instance());
 		msgValidator.setMaxCarrierMS(cfg.maxCarrierMS);
 		msgValidator.setMinSignalStrength(cfg.yellowSignalStrength);

@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.Optional;
 
 import org.opendcs.database.api.OpenDcsDao;
-import org.opendcs.utils.FailableResult;
+import org.opendcs.util.Result;
 
 import opendcs.dao.DbObjectCache;
 
@@ -44,11 +44,11 @@ public interface TimeSeriesDAI extends DaiBase, OpenDcsDao
 	 */
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString) throws DbIoException, NoSuchObjectException;
 
-	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString);
+	public Result<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString);
 
-	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime);
+	public Result<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime);
 		
-	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key);
+	public Result<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key);
 	/**
 	 * Retrieve a time series identifier by unique surrogate key.
 	 * @param key the key

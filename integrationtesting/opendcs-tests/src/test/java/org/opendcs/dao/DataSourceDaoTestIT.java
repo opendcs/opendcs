@@ -79,7 +79,7 @@ class DataSourceDaoTestIT extends AppTestBase
 
             for (int i = 0; i < 30; i++)
             {
-                final var name = String.format("aaaDS%03d", i);
+                final var name = String.format("AAAaaaDS%03d", i);
                 var dsTmp = new DataSource(name, "roundrobin");
                 // entirely arbitrary, we just need a few groups to play havoc with the queries to validate
                 // them.
@@ -91,7 +91,6 @@ class DataSourceDaoTestIT extends AppTestBase
                 var dsTmpOut = dao.save(tx, dsTmp);
                 sources.add(dsTmpOut);
             }
-            System.out.println(sources.size());
 
             var dsListOut = dao.getDataSources(tx, -1, -1);
             assertFalse(dsListOut.isEmpty(), "Unable to retrieve any sources");
@@ -103,7 +102,7 @@ class DataSourceDaoTestIT extends AppTestBase
             var dsListFirst10 = dao.getDataSources(tx, 10, 0); 
             assertFalse(dsListFirst10.isEmpty());
             var lastOfFirst10 = dsListFirst10.getLast();
-            assertEquals("aaaDS009", lastOfFirst10.getName());
+            assertEquals("AAAaaaDS009", lastOfFirst10.getName());
             assertTrue(lastOfFirst10.groupMembers.isEmpty());
             var seventh =dsListFirst10.get(7);
             assertFalse(seventh.groupMembers.isEmpty());
@@ -112,7 +111,7 @@ class DataSourceDaoTestIT extends AppTestBase
             var dsListSecond10 = dao.getDataSources(tx, 10, 10);
             assertFalse(dsListSecond10.isEmpty());
             var firstOfSecond10 = dsListSecond10.getFirst();
-            assertEquals("aaaDS010", firstOfSecond10.getName());
+            assertEquals("AAAaaaDS010", firstOfSecond10.getName());
 
         }
         finally

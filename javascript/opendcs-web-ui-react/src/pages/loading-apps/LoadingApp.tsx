@@ -12,7 +12,9 @@ import {
   INPUT_H,
   LABEL_H,
   SaveButton,
+  SaveErrorAlert,
 } from "../../components/forms";
+import { useSaveError } from "../../hooks/useSaveError";
 
 const APP_FIELDS = ["appName", "appType", "comment"] as const;
 
@@ -94,6 +96,10 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
   const { t } = useTranslation(["loadingapps", "translation"]);
   const providedApp = app instanceof Promise ? use(app) : app;
   const [localApp, dispatch] = useReducer(LoadingAppReducer, providedApp);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("loadingapps:save_error"),
+    "Loading app save failed",
+  );
 
   const props = useMemo<Property[]>(
     () =>
@@ -118,9 +124,10 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
       }
     : {};
 
-  const saveApp = useCallback(() => {
-    actions.save?.(localApp as ApiLoadingApp);
-  }, [actions, localApp]);
+  const saveApp = useCallback(
+    () => attemptSave(() => actions.save?.(localApp as ApiLoadingApp)),
+    [attemptSave, actions, localApp],
+  );
 
   const inputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -226,6 +233,8 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
             </Col>
           </Row>
 
+          <SaveErrorAlert error={saveError} onClose={clearSaveError} />
+
           {edit && (
             <EditFormActions>
               <CancelButton
@@ -235,7 +244,9 @@ export const LoadingApp: React.FC<LoadingAppProperties> = ({
                 aria-label={t("loadingapps:cancel_for", { id: providedApp.appId })}
               />
               <SaveButton
-                onClick={saveApp}
+                onClick={() => {
+                  void saveApp();
+                }}
                 aria-label={t("loadingapps:save_app", { id: localApp.appId })}
               />
             </EditFormActions>

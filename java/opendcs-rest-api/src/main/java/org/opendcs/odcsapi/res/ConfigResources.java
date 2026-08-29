@@ -18,8 +18,10 @@ package org.opendcs.odcsapi.res;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import decodes.db.ConfigSensor;
@@ -326,17 +328,18 @@ public final class ConfigResources extends OpenDcsResource
 	public Response postConfig(ApiPlatformConfig config) throws WebAppException
 	{
 		final var db = createDb();
+		final var dataTypeDao = db.getDao(DataTypeDao.class).orElseThrow();
+		final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 		try (var tx = db.newTransaction())
 		{
-			final var dataTypeDao = db.getDao(DataTypeDao.class).orElseThrow();
-			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
-			var configIn = map(config, dataTypeDao, tx);
-
-			final var configOut =  dao.save(tx, configIn);
-
-			return Response.status(Response.Status.CREATED)
-						   .entity(map(configOut))
-						   .build();
+			return tx.wrapErrors(() ->
+			{
+				var configIn = map(config, dataTypeDao, tx);
+				final var configOut =  dao.save(tx, configIn);
+				return Response.status(Response.Status.CREATED)
+							   .entity(map(configOut))
+							   .build();
+			});
 		}
 		catch (OpenDcsDataException ex)
 		{
@@ -345,59 +348,19 @@ public final class ConfigResources extends OpenDcsResource
 		}
 	}
 
-	static PlatformConfig map(ApiPlatformConfig config, DataTypeDao dataTypeDao, DataTransaction tx) throws OpenDcsDataException
+	static PlatformConfig map(ApiPlatformConfig config, DataTypeDao dataTypeDao, DataTransaction tx)
+			throws OpenDcsDataException, WebAppException
 	{
 		try
 		{
 			PlatformConfig pc = new PlatformConfig(config.getName());
-			if (config.getConfigId() != null)
-			{
-				pc.setId(DbKey.createDbKey(config.getConfigId()));
-			}
-			else
-			{
-				pc.setId(DbKey.NullKey);
-			}
+			pc.setId(config.getConfigId() != null ? DbKey.createDbKey(config.getConfigId()) : DbKey.NullKey);
 			pc.description = config.getDescription();
 			pc.numPlatformsUsing = config.getNumPlatforms();
 
 			pc.configName = config.getName();
 			pc.decodesScripts = map(config.getScripts(), pc);
-			for (ApiConfigSensor sensor : config.getConfigSensors())
-			{
-				ConfigSensor configSensor = new ConfigSensor(null, sensor.getSensorNumber());
-				configSensor.sensorName = sensor.getSensorName();
-				configSensor.platformConfig = pc;
-				Double absoluteMax = sensor.getAbsoluteMax();
-				if(absoluteMax != null)
-				{
-					configSensor.absoluteMax = absoluteMax;
-				}
-				Double absoluteMin = sensor.getAbsoluteMin();
-				if(absoluteMin != null)
-				{
-					configSensor.absoluteMin = absoluteMin;
-				}
-				configSensor.recordingInterval = sensor.getRecordingInterval();
-				configSensor.timeOfFirstSample = sensor.getTimeOfFirstSample();
-				configSensor.recordingMode = sensor.getRecordingMode().getCode();
-				configSensor.setUsgsStatCode(sensor.getUsgsStatCode());
-				for (Map.Entry<String, String> entry : sensor.getDataTypes().entrySet())
-				{
-					DataType dt = dataTypeDao.lookup(tx, entry.getKey(), entry.getValue())
-											 .orElse(null);
-					if(dt == null )
-					{
-						dt = new DataType(entry.getKey(), entry.getValue());
-					}
-					configSensor.addDataType(dt);
-				}
-				for (String name : sensor.getProperties().stringPropertyNames())
-				{
-					configSensor.setProperty(name, sensor.getProperties().getProperty(name));
-				}
-				pc.addSensor(configSensor);
-			}
+			mapSensors(config.getConfigSensors(), pc, dataTypeDao, tx);
 
 			return pc;
 		}
@@ -405,6 +368,58 @@ public final class ConfigResources extends OpenDcsResource
 		{
 			throw new OpenDcsDataException("Error mapping platform config", ex);
 		}
+	}
+
+	private static void mapSensors(List<ApiConfigSensor> sensors, PlatformConfig pc, DataTypeDao dataTypeDao,
+			DataTransaction tx) throws OpenDcsDataException, WebAppException
+	{
+		Set<Integer> seenSensorNumbers = new HashSet<>();
+		for (ApiConfigSensor sensor : sensors)
+		{
+			if (!seenSensorNumbers.add(sensor.getSensorNumber()))
+			{
+				throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
+						"Duplicate sensor number: " + sensor.getSensorNumber());
+			}
+			pc.addSensor(mapSensor(sensor, pc, dataTypeDao, tx));
+		}
+	}
+
+	private static ConfigSensor mapSensor(ApiConfigSensor sensor, PlatformConfig pc, DataTypeDao dataTypeDao,
+			DataTransaction tx) throws OpenDcsDataException
+	{
+		ConfigSensor configSensor = new ConfigSensor(null, sensor.getSensorNumber());
+		configSensor.sensorName = sensor.getSensorName();
+		configSensor.platformConfig = pc;
+		Double absoluteMax = sensor.getAbsoluteMax();
+		if(absoluteMax != null)
+		{
+			configSensor.absoluteMax = absoluteMax;
+		}
+		Double absoluteMin = sensor.getAbsoluteMin();
+		if(absoluteMin != null)
+		{
+			configSensor.absoluteMin = absoluteMin;
+		}
+		configSensor.recordingInterval = sensor.getRecordingInterval();
+		configSensor.timeOfFirstSample = sensor.getTimeOfFirstSample();
+		configSensor.recordingMode = sensor.getRecordingMode().getCode();
+		configSensor.setUsgsStatCode(sensor.getUsgsStatCode());
+		for (Map.Entry<String, String> entry : sensor.getDataTypes().entrySet())
+		{
+			DataType dt = dataTypeDao.lookup(tx, entry.getKey(), entry.getValue())
+									 .orElse(null);
+			if(dt == null )
+			{
+				dt = new DataType(entry.getKey(), entry.getValue());
+			}
+			configSensor.addDataType(dt);
+		}
+		for (String name : sensor.getProperties().stringPropertyNames())
+		{
+			configSensor.setProperty(name, sensor.getProperties().getProperty(name));
+		}
+		return configSensor;
 	}
 
 	static Vector<DecodesScript> map(List<ApiConfigScript> scripts, PlatformConfig config) throws DbException
@@ -554,19 +569,20 @@ public final class ConfigResources extends OpenDcsResource
 
 
 		final var db = createDb();
+		final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 		try (var tx = db.newTransaction())
 		{
-			final var dao = db.getDao(DecodesConfigDao.class).orElseThrow(() -> UNABLE_TO_GET_CONFIG_DAO);
 			// no need to check if platforms use script, both the platform table
 			// has a foreign key on platformconfig that prevents deletion if used.
 			// will likely want to handle "foreign key errors" better
 			// but that should be generic to all deletes, not super specific.
-
-			dao.delete(tx, DbKey.createDbKey(configId));
-
-			return Response.noContent()
-					.entity("Config with ID " + configId + " deleted")
-					.build();
+			return tx.wrapErrors(() ->
+			{
+				dao.delete(tx, DbKey.createDbKey(configId));
+				return Response.noContent()
+						.entity("Config with ID " + configId + " deleted")
+						.build();
+			});
 		}
 		catch (OpenDcsDataException ex)
 		{

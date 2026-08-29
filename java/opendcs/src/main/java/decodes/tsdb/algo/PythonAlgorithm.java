@@ -74,7 +74,6 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.NoValueException;
 import decodes.tsdb.ScriptType;
 import decodes.tsdb.VarFlags;
-import decodes.tsdb.compedit.PythonAlgoTracer;
 import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -113,7 +112,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	DatchkReader datchkReader = null;
 	HashSet<String> datchkInitialized = new HashSet<String>();
 	HashMap<String, Screening> cwmsScreenings = new HashMap<String, Screening>();
-	PythonAlgoTracer tracer = null;
 	private HashMap<String, LookupTable> filename2table = new HashMap<String, LookupTable>();
 	private LookupTable errorTable = new LookupTable();
 	private NumberFormat pyNumFmt = NumberFormat.getNumberInstance();
@@ -164,15 +162,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		inputs.toArray(_inputNames);
 		_outputNames = new String[outputs.size()];
 		outputs.toArray(_outputNames);
-		if (tracer != null)
-		{
-			tracer.traceMsg("Inputs:");
-			for(String name : inputs)
-				tracer.traceMsg("\t" + name);
-			tracer.traceMsg("Outputs:");
-			for(String name : inputs)
-				tracer.traceMsg("\t" + name);
-		}
 
 		runningInstance = this;
 		firstTsGroup = true;
@@ -571,8 +560,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public void setOutput(String rolename, double value)
 	{
 		log.debug("setOutput({},{})", rolename, value);
-		if (tracer != null)
-			return;
 		NamedVariable nv = new NamedVariable(rolename, value);
 
 		// Don't overwrite a triggering value:
@@ -606,8 +593,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public boolean isPresent(String rolename)
 	{
 		log.debug("isPresent({})", rolename);
-		if (tracer != null)
-			return true;
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
@@ -653,8 +638,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public boolean isQuestionable(String rolename)
 	{
 		log.debug("isQuestionable({})", rolename);
-		if (tracer != null)
-			return false;
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
@@ -679,8 +662,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public boolean isRejected(String rolename)
 	{
 		log.debug("isRejected({})", rolename);
-		if (tracer != null)
-			return false;
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
@@ -711,8 +692,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public boolean isGoodQuality(String rolename)
 	{
 		log.debug("isGoodQuality({})", rolename);
-		if (tracer != null)
-			return true;
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
@@ -755,8 +734,7 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public boolean isNew(String rolename)
 	{
 		log.debug("isNew({})", rolename);
-		if (tracer != null)
-			return true;
+
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
 			return false;
@@ -858,8 +836,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public int datchk(String rolename)
 	{
 		log.debug("datchk({})", rolename);
-		if (tracer != null)
-			return 0;
 
 		if (!tsdb.isCwms())
 			return 0;
@@ -1025,8 +1001,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public int screening(String rolename)
 	{
 		log.debug("screening({})", rolename);
-		if (tracer != null)
-			return 0;
 
 		if (!tsdb.isCwms())
 			return 0;
@@ -1098,8 +1072,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public void setQual(String rolename, int qual)
 	{
 		log.debug("setQual({}, 0x{})", rolename, Integer.toHexString(qual));
-		if (tracer != null)
-			return;
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
@@ -1124,8 +1096,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public void setOutputAndQual(String rolename, double value, int qual)
 	{
 		log.debug("setOutputAndQual({}, 0x{})", rolename, value, Integer.toHexString(qual));
-		if (tracer != null)
-			return;
 
 		if (value < missingLimit)
 			qual |= IFlags.IS_MISSING;
@@ -1164,8 +1134,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		throws NoSuchObjectException, NoValueException
 	{
 		log.debug("changeSince({}, {})", rolename, duration);
-		if (tracer != null)
-			return 5.0;
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
@@ -1246,8 +1214,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			sb.append(" " + d);
 
 		log.atDebug().log(() -> sb.toString());
-		if (tracer != null)
-			return 100.0;
 
 		try
 		{
@@ -1264,8 +1230,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 		String tabFileExp = EnvExpander.expand(tabfile);
 		log.debug("rdbrating({},{})", tabfile, pyNumFmt.format(indep));
-		if (tracer != null)
-			return 100.0;
 
 		LookupTable lookupTable = filename2table.get(tabFileExp);
 		if (lookupTable == errorTable)
@@ -1306,8 +1270,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 		String tabFileExp = EnvExpander.expand(tabfile);
 		log.debug("tabrating({},{})", tabfile, pyNumFmt.format(indep));
-		if (tracer != null)
-			return 100.0;
 
 		LookupTable lookupTable = filename2table.get(tabFileExp);
 		if (lookupTable == errorTable)
@@ -1356,11 +1318,6 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public PythonInterpreter getPythonIntepreter()
 	{
 		return pythonIntepreter;
-	}
-
-	public void setTracer(PythonAlgoTracer tracer)
-	{
-		this.tracer = tracer;
 	}
 
 	public void abortComp(String msg)

@@ -111,6 +111,7 @@ export const ConfigScriptsTable: React.FC<ConfigScriptsTableProperties> = ({
               key: "delete",
               icon: "bi-trash",
               variant: "danger",
+              confirm: true,
               show: (row) => Boolean(row.name),
               aria: (row) => t("configs:delete_script_for", { name: row.name }),
               onClick: ({ row }) => {

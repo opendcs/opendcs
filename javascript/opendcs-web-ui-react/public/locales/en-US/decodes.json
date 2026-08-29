@@ -21,5 +21,8 @@
       "raw_data_input": "Sample Data text input"
     }
   },
-  "decode": "Decode"
+  "decode": "Decode",
+  "config": {
+    "transport_medium_select": "Header Type Selector"
+  }
 }
