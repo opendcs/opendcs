@@ -12,6 +12,7 @@ const variants: Record<DcpStatus, string> = {
   partial: "warning",
   parity: "info",
   missing: "danger",
+  unknown: "secondary",
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {

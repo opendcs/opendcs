@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/dds": {
-        target: process.env.DDS_PROXY_TARGET ?? "http://localhost:16003",
+        target: process.env.DDS_PROXY_TARGET ?? "http://localhost:7001",
         changeOrigin: true,
       },
     },

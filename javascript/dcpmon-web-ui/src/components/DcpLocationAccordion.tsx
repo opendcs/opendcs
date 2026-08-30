@@ -10,13 +10,11 @@ import { StatusBadge } from "./StatusBadge";
 type DcpLocationAccordionProps = {
   dcpAddress: string;
   summary: DcpSummary;
-  totalHours: number;
 };
 
 export function DcpLocationAccordion({
   dcpAddress,
   summary,
-  totalHours,
 }: DcpLocationAccordionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const messages = useDcpMessages(dcpAddress, isOpen);
@@ -41,7 +39,7 @@ export function DcpLocationAccordion({
               {preferredIdentifier?.id ?? "No identifier"}
             </span>
             <span className="dcpmon-message-count text-secondary">
-              {summary.messageTotal} / {totalHours}
+              {summary.messageTotal} / {summary.expectedMessageTotal ?? "?"}
             </span>
           </span>
         </Accordion.Header>

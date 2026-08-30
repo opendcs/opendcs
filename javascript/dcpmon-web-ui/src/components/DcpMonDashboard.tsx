@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Alert from "react-bootstrap/Alert";
 import Card from "react-bootstrap/Card";
 import Col from "react-bootstrap/Col";
@@ -5,21 +6,42 @@ import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Spinner from "react-bootstrap/Spinner";
 import Stack from "react-bootstrap/Stack";
-import { DEFAULT_GROUP } from "../constants";
+import { PREFERRED_GROUP } from "../constants";
+import { useDataGroups } from "../hooks/useDataGroups";
 import { useStatusGroupSummary } from "../hooks/useStatusGroupSummary";
 import { DcpLocationAccordion } from "./DcpLocationAccordion";
 import { SummaryCards } from "./SummaryCards";
 
 export function DcpMonDashboard() {
-  const summary = useStatusGroupSummary(DEFAULT_GROUP);
+  const groups = useDataGroups();
+  const [requestedGroup, setRequestedGroup] = useState("");
+  const preferredGroup = groups.data?.find(
+    (group) => group.id.toLowerCase() === PREFERRED_GROUP.toLowerCase(),
+  );
+  const selectedGroup = groups.data?.some((group) => group.id === requestedGroup)
+    ? requestedGroup
+    : (preferredGroup ?? groups.data?.[0])?.id ?? "";
+  const summary = useStatusGroupSummary(selectedGroup);
 
-  if (summary.isLoading) {
+  if (groups.isLoading || (selectedGroup && summary.isLoading)) {
     return (
       <div className="d-flex align-items-center gap-2 p-4 text-secondary">
         <Spinner animation="border" size="sm" />
         Loading DCP status
       </div>
     );
+  }
+
+  if (groups.isError) {
+    return <Alert variant="danger">Unable to load DCPMon groups.</Alert>;
+  }
+
+  if (!groups.data?.length) {
+    return <Alert variant="warning">No DCP status groups are configured.</Alert>;
+  }
+
+  if (!selectedGroup) {
+    return null;
   }
 
   if (summary.isError || !summary.data) {
@@ -38,15 +60,24 @@ export function DcpMonDashboard() {
         <Col>
           <h1 className="h3 mb-1">DCPMon</h1>
           <div className="text-secondary">
-            Group {DEFAULT_GROUP.toUpperCase()} for the last {durationHours} hours
+            Group {selectedGroup} for the last {durationHours} hours
           </div>
         </Col>
         <Col md={3}>
           <Form.Label htmlFor="dcpmon-group" className="small text-secondary">
             Group
           </Form.Label>
-          <Form.Select id="dcpmon-group" value={DEFAULT_GROUP.toUpperCase()} disabled>
-            <option>{DEFAULT_GROUP.toUpperCase()}</option>
+          <Form.Select
+            id="dcpmon-group"
+            value={selectedGroup}
+            onChange={(event) => setRequestedGroup(event.target.value)}
+            disabled={groups.data.length < 2}
+          >
+            {groups.data.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.displayName}
+              </option>
+            ))}
           </Form.Select>
         </Col>
       </Row>
@@ -71,7 +102,6 @@ export function DcpMonDashboard() {
               key={dcpAddress}
               dcpAddress={dcpAddress}
               summary={dcpSummary}
-              totalHours={durationHours}
             />
           ))}
         </Card.Body>

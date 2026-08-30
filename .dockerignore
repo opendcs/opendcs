@@ -9,6 +9,8 @@ bin
 **/doc
 Dockerfile
 compose_files
+!compose_files/
+!compose_files/dcpmon-nginx.conf
 .dockerignore
 **/build
 **/node_modules

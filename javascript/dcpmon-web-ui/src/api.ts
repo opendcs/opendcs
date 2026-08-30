@@ -2,6 +2,7 @@ import {
   Configuration,
   DefaultApi,
   ResponseError,
+  type DataGroup,
   type DcpMessages,
   type StatusGroupSummary,
 } from "opendcs-dds-api";
@@ -33,6 +34,10 @@ export async function getStatusGroupSummary(
   return requestDds(() =>
     ddsApi.dataSummaryGet({ dataGroup: group }),
   );
+}
+
+export async function getDataGroups(): Promise<DataGroup[]> {
+  return requestDds(() => ddsApi.groupsGet());
 }
 
 export async function getDcpMessages(

@@ -1,5 +1,5 @@
 import Table from "react-bootstrap/Table";
-import type { DcpMessage, GoesMessage } from "opendcs-dds-api";
+import type { DcpMessage } from "opendcs-dds-api";
 
 type DcpMessageTableProps = {
   messages: DcpMessage[];
@@ -23,10 +23,8 @@ export function DcpMessageTable({ messages }: DcpMessageTableProps) {
         </thead>
         <tbody>
           {messages.map((message, index) => {
-            // The query is restricted to GOES messages. The generated union
-            // cannot narrow on the standard's nested discriminator yet.
-            const goesMessage = message as GoesMessage;
-            const receiveTime: unknown = goesMessage.receiveTime;
+            if (message.messageType !== "GOES") return null;
+            const receiveTime: unknown = message.receiveTime;
             const receiveTimeText =
               receiveTime instanceof Date
                 ? receiveTime.toLocaleString()
@@ -34,18 +32,18 @@ export function DcpMessageTable({ messages }: DcpMessageTableProps) {
 
             return (
               <tr
-                key={`${String(receiveTime)}-${goesMessage.channel ?? index}`}
+                key={`${String(receiveTime)}-${message.channel ?? index}`}
               >
                 <td>{receiveTimeText}</td>
-                <td>{goesMessage.cType ?? "-"}</td>
-                <td>{goesMessage.arm ?? "-"}</td>
-                <td>{goesMessage.eirp ?? "-"}</td>
-                <td>{goesMessage.frequency ?? "-"}</td>
-                <td>{goesMessage.quality ?? "-"}</td>
-                <td>{goesMessage.channel ?? "-"}</td>
+                <td>{message.cType ?? "-"}</td>
+                <td>{message.arm ?? "-"}</td>
+                <td>{message.eirp ?? "-"}</td>
+                <td>{message.frequency ?? "-"}</td>
+                <td>{message.quality ?? "-"}</td>
+                <td>{message.channel ?? "-"}</td>
                 <td>
                   <pre className="dcpmon-message-data">
-                    {goesMessage.data ?? ""}
+                    {message.data ?? ""}
                   </pre>
                 </td>
               </tr>

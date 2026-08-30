@@ -41,4 +41,16 @@ describe("DcpMonDashboard", () => {
     expect(within(table).getAllByText("162W")).toHaveLength(2);
     expect(within(table).getAllByText(/749\.73/).length).toBeGreaterThan(0);
   });
+
+  it("discovers and switches configured DCP groups", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    const groupSelect = await screen.findByRole("combobox", { name: "Group" });
+    expect(groupSelect).toHaveValue("SWT");
+    expect(within(groupSelect).getByRole("option", { name: "New England District" })).toBeVisible();
+
+    await user.selectOptions(groupSelect, "NAE");
+    expect(await screen.findByText("Group NAE for the last 24 hours")).toBeVisible();
+  });
 });

@@ -5,6 +5,13 @@ import { goesMessages } from "../data/goesMessages";
 import { statusGroupSummary } from "../data/statusGroupSummary";
 
 export const dcpmonHandlers = [
+  http.get(`${DCPMON_API_BASE_URL}/groups`, () =>
+    HttpResponse.json([
+      { id: "SWT", displayName: "Tulsa District" },
+      { id: "NAE", displayName: "New England District" },
+    ]),
+  ),
+
   http.get(`${DCPMON_API_BASE_URL}/data/summary`, ({ request }) => {
     const url = new URL(request.url);
     const group = url.searchParams.get("data-group");
@@ -15,7 +22,7 @@ export const dcpmonHandlers = [
       });
     }
 
-    if (group.toLowerCase() !== "swt") {
+    if (!["swt", "nae"].includes(group.toLowerCase())) {
       return HttpResponse.text(`Group (${group}) Not Implemented`, { status: 404 });
     }
 

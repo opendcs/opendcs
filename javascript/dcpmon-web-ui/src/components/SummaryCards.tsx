@@ -13,12 +13,13 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
     ["Partial", summary.counts?.partial ?? 0, "text-bg-warning"],
     ["Parity", summary.counts?.parity ?? 0, "text-bg-info"],
     ["Missing", summary.counts?.missing ?? 0, "text-bg-danger"],
+    ["Unknown", summary.counts?.unknown ?? 0, "text-bg-secondary"],
   ] as const;
 
   return (
     <Row className="g-3 mb-4">
       {cards.map(([label, value, className]) => (
-        <Col key={label} xs={6} lg={3}>
+        <Col key={label} xs={6} lg>
           <Card className={`dcpmon-summary-card ${className}`}>
             <Card.Body>
               <div className="small text-uppercase">{label}</div>

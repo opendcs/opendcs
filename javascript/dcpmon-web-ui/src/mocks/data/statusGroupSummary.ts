@@ -8,6 +8,7 @@ export const statusGroupSummary: StatusGroupSummary = {
     partial: 15,
     parity: 14,
     missing: 5,
+    unknown: 0,
   },
   dcpSummaries: {
     CE1F40D4: {
@@ -17,6 +18,7 @@ export const statusGroupSummary: StatusGroupSummary = {
       ],
       status: "complete",
       messageTotal: 23,
+      expectedMessageTotal: 24,
       parityCount: 48,
       lowBattery: true,
     },
@@ -27,6 +29,7 @@ export const statusGroupSummary: StatusGroupSummary = {
       ],
       status: "complete",
       messageTotal: 24,
+      expectedMessageTotal: 24,
       parityCount: 0,
       lowBattery: false,
     },
@@ -37,6 +40,7 @@ export const statusGroupSummary: StatusGroupSummary = {
       ],
       status: "partial",
       messageTotal: 16,
+      expectedMessageTotal: 24,
       parityCount: 2,
       lowBattery: false,
     },
