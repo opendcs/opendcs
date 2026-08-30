@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Accordion from "react-bootstrap/Accordion";
 import Alert from "react-bootstrap/Alert";
 import Badge from "react-bootstrap/Badge";
@@ -64,12 +64,18 @@ function StationList({
   displaySettings,
   badgeLabel,
   badgeVariant,
+  emptyFallback,
 }: {
   stations: StationEntry[];
   displaySettings: DisplaySettings;
   badgeLabel?: string;
   badgeVariant?: string;
+  emptyFallback?: ReactNode;
 }) {
+  if (!stations.length) {
+    return emptyFallback ?? <span className="text-secondary">No locations</span>;
+  }
+
   return stations.map(([dcpAddress, stationSummary]) => (
     <ErrorBoundary
       key={dcpAddress}
@@ -89,6 +95,94 @@ function StationList({
       />
     </ErrorBoundary>
   ));
+}
+
+function DashboardStations({
+  normalizedSearch,
+  searchQuery,
+  filteredStations,
+  visibleSections,
+  displaySettings,
+  sectionResetKey,
+}: {
+  normalizedSearch: string;
+  searchQuery: string;
+  filteredStations: StationEntry[];
+  visibleSections: StatusSection[];
+  displaySettings: DisplaySettings;
+  sectionResetKey: string;
+}) {
+  if (normalizedSearch) {
+    return (
+      <Card>
+        <Card.Header className="d-flex align-items-center justify-content-between">
+          <Card.Title as="h2" className="h5 mb-0">
+            Search results
+          </Card.Title>
+          <Badge bg="primary">{filteredStations.length} locations</Badge>
+        </Card.Header>
+        <Card.Body>
+          <StationList
+            stations={filteredStations}
+            displaySettings={displaySettings}
+            emptyFallback={
+              <Alert variant="secondary" className="mb-0">
+                No locations match “{searchQuery.trim()}”.
+              </Alert>
+            }
+          />
+        </Card.Body>
+      </Card>
+    );
+  }
+
+  return (
+    <Accordion
+      alwaysOpen
+      defaultActiveKey={visibleSections
+        .filter((section) =>
+          ["missing", "parity", "partial", "unknown"].includes(
+            section.eventKey,
+          ),
+        )
+        .map((section) => section.eventKey)}
+      className="dcpmon-status-sections"
+    >
+      {visibleSections.map((section) => (
+        <Accordion.Item
+          key={section.eventKey}
+          eventKey={section.eventKey}
+          className={`dcpmon-section-${section.eventKey}`}
+        >
+          <Accordion.Header>
+            <span className="d-flex align-items-center justify-content-between w-100 pe-3">
+              <span className="fw-semibold">{section.label}</span>
+              <Badge bg={section.variant}>
+                {section.stations.length} locations
+              </Badge>
+            </span>
+          </Accordion.Header>
+          <Accordion.Body>
+            <ErrorBoundary
+              resetKey={`${sectionResetKey}-${section.eventKey}`}
+              fallback={
+                <Alert variant="danger" className="mb-0">
+                  Unable to display this status category.
+                </Alert>
+              }
+            >
+              <StationList
+                stations={section.stations}
+                displaySettings={displaySettings}
+                badgeLabel={section.badgeLabel}
+                badgeVariant={section.badgeVariant}
+              />
+            </ErrorBoundary>
+          </Accordion.Body>
+        </Accordion.Item>
+      ))}
+    </Accordion>
+  );
 }
 
 function matchesSearch([dcpAddress, stationSummary]: StationEntry, query: string) {
@@ -354,78 +448,14 @@ export function DcpMonDashboard() {
         </Card.Body>
       </Card>
 
-      {normalizedSearch ? (
-        <Card>
-          <Card.Header className="d-flex align-items-center justify-content-between">
-            <Card.Title as="h2" className="h5 mb-0">
-              Search results
-            </Card.Title>
-            <Badge bg="primary">{filteredStations.length} locations</Badge>
-          </Card.Header>
-          <Card.Body>
-            {filteredStations.length ? (
-              <StationList
-                stations={filteredStations}
-                displaySettings={displaySettings}
-              />
-            ) : (
-              <Alert variant="secondary" className="mb-0">
-                No locations match “{searchQuery.trim()}”.
-              </Alert>
-            )}
-          </Card.Body>
-        </Card>
-      ) : (
-        <Accordion
-          alwaysOpen
-          defaultActiveKey={visibleSections
-            .filter((section) =>
-              ["missing", "parity", "partial", "unknown"].includes(
-                section.eventKey,
-              ),
-            )
-            .map((section) => section.eventKey)}
-          className="dcpmon-status-sections"
-        >
-          {visibleSections.map((section) => (
-              <Accordion.Item
-                key={section.eventKey}
-                eventKey={section.eventKey}
-                className={`dcpmon-section-${section.eventKey}`}
-              >
-                <Accordion.Header>
-                  <span className="d-flex align-items-center justify-content-between w-100 pe-3">
-                    <span className="fw-semibold">{section.label}</span>
-                    <Badge bg={section.variant}>
-                      {section.stations.length} locations
-                    </Badge>
-                  </span>
-                </Accordion.Header>
-                <Accordion.Body>
-                  <ErrorBoundary
-                    resetKey={`${selectedGroup}-${section.eventKey}-${summary.data.timestamp.toISOString()}`}
-                    fallback={
-                      <Alert variant="danger" className="mb-0">
-                        Unable to display this status category.
-                      </Alert>
-                    }
-                  >
-                    {section.stations.length ? (
-                      <StationList
-                        stations={section.stations}
-                        displaySettings={displaySettings}
-                        badgeLabel={section.badgeLabel}
-                        badgeVariant={section.badgeVariant}
-                      />
-                    ) : (
-                      <span className="text-secondary">No locations</span>
-                    )}
-                  </ErrorBoundary>
-                </Accordion.Body>
-              </Accordion.Item>
-            ))}
-        </Accordion>
-      )}
+      <DashboardStations
+        normalizedSearch={normalizedSearch}
+        searchQuery={searchQuery}
+        filteredStations={filteredStations}
+        visibleSections={visibleSections}
+        displaySettings={displaySettings}
+        sectionResetKey={`${selectedGroup}-${summary.data.timestamp.toISOString()}`}
+      />
 
       <ErrorBoundary
         resetKey={selectedGroup}
