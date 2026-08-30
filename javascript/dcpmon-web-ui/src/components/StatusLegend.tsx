@@ -57,6 +57,19 @@ export function StatusLegend() {
           ))}
           <div className="dcpmon-status-legend-item dcpmon-status-legend-condition">
             <span
+              className="dcpmon-status-swatch bg-gps-sync"
+              aria-hidden="true"
+            />
+            <span>
+              <span className="d-block small fw-semibold">GPS sync issue</span>
+              <span className="d-block small text-secondary">
+                The newest decodable self-timed transmission reports that the
+                DCP clock is not GPS synchronized.
+              </span>
+            </span>
+          </div>
+          <div className="dcpmon-status-legend-item dcpmon-status-legend-condition">
+            <span
               className="dcpmon-status-swatch dcpmon-status-swatch-low-battery"
               aria-hidden="true"
             />

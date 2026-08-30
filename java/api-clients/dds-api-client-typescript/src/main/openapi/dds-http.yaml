@@ -295,12 +295,16 @@ components:
               type: integer
             unknown:
               type: integer
+            gps:
+              type: integer
+              description: Number of DCPs whose newest decodable self-timed message reports GPS out of sync
           required:
             - missing
             - partial
             - parity
             - complete
             - unknown
+            - gps
         dcpSummaries:
           type: object
           description: Map of DCPs (by Address) and their summary information
@@ -338,12 +342,17 @@ components:
         lowBattery:
           description: If this DCP is in  low battery status
           type: boolean
+        gpsSync:
+          description: Whether the newest decodable self-timed message reports GPS synchronization; null when it cannot be determined
+          type: boolean
+          nullable: true
       required:
         - status
         - messageTotal
         - expectedMessageTotal
         - parityCount
         - lowBattery
+        - gpsSync
     dcpIdentifier:
       type: object
       properties:

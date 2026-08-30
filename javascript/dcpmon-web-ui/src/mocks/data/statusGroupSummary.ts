@@ -9,6 +9,7 @@ export const statusGroupSummary: StatusGroupSummary = {
     parity: 14,
     missing: 5,
     unknown: 0,
+    gps: 1,
   },
   dcpSummaries: {
     CE1F40D4: {
@@ -21,6 +22,7 @@ export const statusGroupSummary: StatusGroupSummary = {
       expectedMessageTotal: 24,
       parityCount: 48,
       lowBattery: true,
+      gpsSync: true,
     },
     CE1F2532: {
       identifiers: [
@@ -32,6 +34,7 @@ export const statusGroupSummary: StatusGroupSummary = {
       expectedMessageTotal: 24,
       parityCount: 0,
       lowBattery: false,
+      gpsSync: false,
     },
     CE000001: {
       identifiers: [
@@ -43,6 +46,7 @@ export const statusGroupSummary: StatusGroupSummary = {
       expectedMessageTotal: 24,
       parityCount: 2,
       lowBattery: false,
+      gpsSync: true,
     },
   },
 };

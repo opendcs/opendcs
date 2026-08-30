@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -213,10 +214,14 @@ final class DdsHttpTest
             .body("counts.parity", is(1))
             .body("counts.missing", is(1))
             .body("counts.unknown", is(1))
+            .body("counts.gps", is(1))
             .body("dcpSummaries.CE1F40D4.expectedMessageTotal", is(24))
             .body("dcpSummaries.CE1F40D4.identifiers.find { it.type == 'Description' }.id",
                 is("Nimbus complete"))
-            .body("dcpSummaries.CE000001.lowBattery", is(true));
+            .body("dcpSummaries.CE000001.lowBattery", is(true))
+            .body("dcpSummaries.CE000001.gpsSync", is(false))
+            .body("dcpSummaries.CE1F40D4.gpsSync", is(true))
+            .body("dcpSummaries.CE000002.gpsSync", nullValue());
 
         given()
             .queryParam("data-group", "swt")

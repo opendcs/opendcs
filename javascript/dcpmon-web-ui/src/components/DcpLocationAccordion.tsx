@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Accordion from "react-bootstrap/Accordion";
 import Alert from "react-bootstrap/Alert";
+import Badge from "react-bootstrap/Badge";
 import Spinner from "react-bootstrap/Spinner";
 import type { DcpSummary } from "opendcs-dds-api";
 import type { DisplaySettings } from "../displaySettings";
@@ -12,12 +13,16 @@ type DcpLocationAccordionProps = {
   dcpAddress: string;
   summary: DcpSummary;
   displaySettings: DisplaySettings;
+  badgeLabel?: string;
+  badgeVariant?: string;
 };
 
 export function DcpLocationAccordion({
   dcpAddress,
   summary,
   displaySettings,
+  badgeLabel,
+  badgeVariant,
 }: DcpLocationAccordionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const messages = useDcpMessages(dcpAddress, isOpen);
@@ -38,7 +43,11 @@ export function DcpLocationAccordion({
       <Accordion.Item eventKey={dcpAddress}>
         <Accordion.Header>
           <span className="dcpmon-station-heading">
-            <StatusBadge status={summary.status} />
+            {badgeLabel ? (
+              <Badge bg={badgeVariant}>{badgeLabel}</Badge>
+            ) : (
+              <StatusBadge status={summary.status} />
+            )}
             <span className="dcpmon-station-address fw-semibold">
               {dcpAddress}
             </span>

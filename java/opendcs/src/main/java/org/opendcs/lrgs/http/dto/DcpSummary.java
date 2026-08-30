@@ -8,6 +8,7 @@ public record DcpSummary(
     int messageTotal,
     Integer expectedMessageTotal,
     int parityCount,
-    boolean lowBattery)
+    boolean lowBattery,
+    Boolean gpsSync)
 {
 }

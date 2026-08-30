@@ -31,6 +31,7 @@ export function DisplaySettingsModal({
       show
       onHide={onHide}
       centered
+      dialogClassName="dcpmon-settings-dialog"
       aria-labelledby="dcpmon-display-settings-title"
     >
       <Modal.Header closeButton>
@@ -124,7 +125,7 @@ export function DisplaySettingsModal({
           />
         </Form>
       </Modal.Body>
-      <Modal.Footer className="justify-content-between">
+      <Modal.Footer className="dcpmon-settings-footer justify-content-between">
         <Button
           variant="link"
           className="px-0"
@@ -132,7 +133,7 @@ export function DisplaySettingsModal({
         >
           Reset defaults
         </Button>
-        <div className="d-flex gap-2">
+        <div className="dcpmon-settings-actions d-flex gap-2">
           <Button variant="outline-secondary" onClick={onHide}>
             Cancel
           </Button>

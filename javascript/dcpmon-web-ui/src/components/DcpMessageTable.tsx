@@ -64,13 +64,15 @@ export function DcpMessageTable({
                   className="dcpmon-missing-transmission"
                   key={`missing-${String(expectedTime)}-${index}`}
                 >
-                  <td>
+                  <td data-label="Transmit time">
                     <TimestampDisplay
                       value={expectedTime}
                       settings={displaySettings}
                     />
                   </td>
-                  <td colSpan={7}>Missing transmission</td>
+                  <td className="dcpmon-missing-label" colSpan={7}>
+                    Missing transmission
+                  </td>
                 </tr>
               );
             }
@@ -81,19 +83,19 @@ export function DcpMessageTable({
               <tr
                 key={`${String(transmitTime)}-${message.channel ?? index}`}
               >
-                <td>
+                <td data-label="Transmit time">
                   <TimestampDisplay
                     value={transmitTime}
                     settings={displaySettings}
                   />
                 </td>
-                <td>{message.cType ?? "-"}</td>
-                <td>{message.arm ?? "-"}</td>
-                <td>{message.eirp ?? "-"}</td>
-                <td>{message.frequency ?? "-"}</td>
-                <td>{message.quality ?? "-"}</td>
-                <td>{message.channel ?? "-"}</td>
-                <td>
+                <td data-label="C-Type">{message.cType ?? "-"}</td>
+                <td data-label="ARM">{message.arm ?? "-"}</td>
+                <td data-label="EIRP">{message.eirp ?? "-"}</td>
+                <td data-label="Freq">{message.frequency ?? "-"}</td>
+                <td data-label="Quality">{message.quality ?? "-"}</td>
+                <td data-label="Channel">{message.channel ?? "-"}</td>
+                <td data-label="Data">
                   <pre className="dcpmon-message-data">
                     {message.data ?? ""}
                   </pre>

@@ -67,7 +67,9 @@ describe("DcpMonDashboard", () => {
     expect(screen.getByText(/Group SWT for the last 24 hours/)).toBeVisible();
     expect(screen.getByRole("searchbox", { name: "Search locations" })).toBeVisible();
     expect(screen.getByRole("button", { name: /Complete data/ })).toBeVisible();
-    expect(screen.getByText("Low battery: CE1F40D4")).toBeVisible();
+    expect(screen.queryByRole("button", { name: /Unknown schedule/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Low battery.*1 locations/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /GPS sync issues.*1 locations/ })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Status legend" })).toBeVisible();
     expect(
       screen.getByText("All expected transmissions received with no parity failures."),

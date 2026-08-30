@@ -50,17 +50,18 @@ public final class DcpMonFixtureInput implements LoadableLrgsInputInterface
         enabled = enable;
         if (!enable || loaded)
             return;
-        seed(COMPLETE, 24, false, false);
-        seed(PARTIAL, 12, false, false);
-        seed(PARITY, 24, true, true);
-        seed(UNKNOWN, 3, false, false);
+        seed(COMPLETE, 24, false, false, true);
+        seed(PARTIAL, 12, false, false, true);
+        seed(PARITY, 24, true, true, false);
+        seed(UNKNOWN, 3, false, false, true);
         if (archive instanceof XmlMsgArchive xmlArchive)
             xmlArchive.checkpoint();
         loaded = true;
         log.info("Loaded deterministic DCPMon fixture messages");
     }
 
-    private void seed(String address, int count, boolean parity, boolean lowBattery)
+    private void seed(
+        String address, int count, boolean parity, boolean lowBattery, boolean gpsSynced)
     {
         long now = System.currentTimeMillis();
         long latestTransmit = now / (60L * 60L * 1000L) * (60L * 60L * 1000L) + 5_000L;
@@ -71,8 +72,8 @@ public final class DcpMonFixtureInput implements LoadableLrgsInputInterface
             Date transmitTime = new Date(
                 latestTransmit - (long)(count - index - 1) * 60L * 60L * 1000L);
             char arm = parity && index == count - 1 ? '?' : 'G';
-            String payload = lowBattery && index == count - 1
-                ? " STAGE 12.34 V LOW BATTERY " : " STAGE 12.34 ";
+            String payload = (gpsSynced ? "\"" : "") + (lowBattery && index == count - 1
+                ? " STAGE 12.34 V LOW BATTERY " : " STAGE 12.34 ");
             byte[] bytes = goesMessage(address, transmitTime, arm, payload);
             DcpMsg message = new DcpMsg(
                 DcpMsgFlag.MSG_PRESENT | DcpMsgFlag.SRC_DOMSAT

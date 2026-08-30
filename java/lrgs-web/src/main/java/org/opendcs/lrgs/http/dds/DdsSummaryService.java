@@ -8,6 +8,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,7 @@ final class DdsSummaryService
             byAddress.computeIfAbsent(address, ignored -> new ArrayList<>()).add(message);
         }
 
-        int missing = 0, partial = 0, parity = 0, complete = 0, unknown = 0;
+        int missing = 0, partial = 0, parity = 0, complete = 0, unknown = 0, gps = 0;
         Map<String, DcpSummary> summaries = new LinkedHashMap<>();
         for (NetworkListItem item : netlist)
         {
@@ -76,6 +77,9 @@ final class DdsSummaryService
             int messageTotal = (int)dcpMessages.stream().filter(m -> "g-s-t".equals(m.cType())).count();
             int parityCount = (int)dcpMessages.stream().filter(DdsSummaryService::hasParity).count();
             boolean lowBattery = dcpMessages.stream().anyMatch(DdsSummaryService::hasLowBattery);
+            Boolean gpsSync = gpsSync(dcpMessages);
+            if (Boolean.FALSE.equals(gpsSync))
+                gps++;
             Integer expected = expectedMessages(Pdt.instance().find(item.addr));
             String status;
             if (expected == null)
@@ -111,13 +115,13 @@ final class DdsSummaryService
             if (item.description != null && !item.description.isBlank())
                 identifiers.add(new DcpIdentifier("Description", item.description));
             summaries.put(address, new DcpSummary(
-                identifiers, status, messageTotal, expected, parityCount, lowBattery));
+                identifiers, status, messageTotal, expected, parityCount, lowBattery, gpsSync));
         }
 
         return new StatusGroupSummary(
             DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("UTC"))),
             DURATION_HOURS,
-            new StatusCounts(missing, partial, parity, complete, unknown), summaries);
+            new StatusCounts(missing, partial, parity, complete, unknown, gps), summaries);
     }
 
     static List<DataGroup> listGroups() throws IOException
@@ -188,6 +192,23 @@ final class DdsSummaryService
     private static boolean hasLowBattery(GoesMessage message)
     {
         return "V".equals(message.arm()) || message.data().contains(" V ");
+    }
+
+    /**
+     * Returns the GPS state reported by the newest decodable self-timed message.
+     * A leading quote is the DCP clock-synchronization marker. Binary messages do
+     * not expose that marker and therefore cannot establish a GPS state.
+     */
+    private static Boolean gpsSync(List<GoesMessage> messages)
+    {
+        return messages.stream()
+            .filter(message -> "g-s-t".equals(message.cType()))
+            .filter(message -> message.data() != null && !message.data().isBlank())
+            .filter(message -> !message.data().stripLeading().toLowerCase(java.util.Locale.ROOT)
+                .startsWith("b"))
+            .max(Comparator.comparing(GoesMessage::transmitTime))
+            .map(message -> message.data().stripLeading().startsWith("\""))
+            .orElse(null);
     }
 
     private static Integer expectedMessages(PdtEntry entry)

@@ -25,6 +25,14 @@ import { TimestampDisplay } from "./TimestampDisplay";
 
 type StationEntry = [string, DcpSummary];
 type DcpStatus = DcpSummary["status"];
+type StatusSection = {
+  eventKey: string;
+  label: string;
+  variant: string;
+  stations: StationEntry[];
+  badgeLabel?: string;
+  badgeVariant?: string;
+};
 
 const statusOrder: DcpStatus[] = [
   "missing",
@@ -53,9 +61,13 @@ const statusVariants: Record<DcpStatus, string> = {
 function StationList({
   stations,
   displaySettings,
+  badgeLabel,
+  badgeVariant,
 }: {
   stations: StationEntry[];
   displaySettings: DisplaySettings;
+  badgeLabel?: string;
+  badgeVariant?: string;
 }) {
   return stations.map(([dcpAddress, stationSummary]) => (
     <DcpLocationAccordion
@@ -63,6 +75,8 @@ function StationList({
       dcpAddress={dcpAddress}
       summary={stationSummary}
       displaySettings={displaySettings}
+      badgeLabel={badgeLabel}
+      badgeVariant={badgeVariant}
     />
   ));
 }
@@ -117,15 +131,52 @@ export function DcpMonDashboard() {
   const filteredStations = stations.filter((station) =>
     matchesSearch(station, normalizedSearch),
   );
-  const lowBatteryAddresses = stations
-    .filter(([, stationSummary]) => stationSummary.lowBattery)
-    .map(([dcpAddress]) => dcpAddress);
+  const statusSections: StatusSection[] = statusOrder.map((status) => ({
+    eventKey: status,
+    label: statusLabels[status],
+    variant: statusVariants[status],
+    stations: stations.filter(
+      ([, stationSummary]) => stationSummary.status === status,
+    ),
+  }));
+  const completeSection = statusSections.find(
+    (section) => section.eventKey === "complete",
+  )!;
+  const conditionSections: StatusSection[] = [
+    {
+      eventKey: "low-battery",
+      label: "Low battery",
+      variant: "warning",
+      stations: stations.filter(([, stationSummary]) => stationSummary.lowBattery),
+      badgeLabel: "LOW BATTERY",
+      badgeVariant: "warning",
+    },
+    {
+      eventKey: "gps-sync",
+      label: "GPS sync issues",
+      variant: "gps-sync",
+      stations: stations.filter(
+        ([, stationSummary]) => stationSummary.gpsSync === false,
+      ),
+      badgeLabel: "GPS SYNC",
+      badgeVariant: "gps-sync",
+    },
+  ].filter((section) => section.stations.length > 0);
+  const visibleSections = [
+    ...statusSections.filter(
+      (section) =>
+        section.eventKey !== "complete" &&
+        (section.eventKey !== "unknown" || section.stations.length > 0),
+    ),
+    ...conditionSections,
+    completeSection,
+  ];
   const durationHours = summary.data.durationHours ?? 0;
 
   return (
     <Stack gap={4}>
-      <Row className="align-items-end g-3">
-        <Col>
+      <Row className="dcpmon-dashboard-header align-items-end g-3">
+        <Col xs={12} md>
           <h1 className="h3 mb-1">DCPMon</h1>
           <div className="text-secondary">
             Group {selectedGroup} for the last {durationHours} hours · {stations.length}{" "}
@@ -139,17 +190,19 @@ export function DcpMonDashboard() {
             />
           </div>
         </Col>
-        <Col md="auto">
+        <Col xs="auto" md="auto">
           <Button
             variant="outline-secondary"
-            className="d-flex align-items-center gap-2"
+            className="dcpmon-settings-button d-flex align-items-center gap-2"
             onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            title="Display settings"
           >
             <Gear aria-hidden="true" />
-            Settings
+            <span className="dcpmon-settings-label">Settings</span>
           </Button>
         </Col>
-        <Col md={3}>
+        <Col xs md={3}>
           <Form.Label htmlFor="dcpmon-group" className="small text-secondary">
             Group
           </Form.Label>
@@ -184,12 +237,6 @@ export function DcpMonDashboard() {
 
       <SummaryCards summary={summary.data} />
 
-      {lowBatteryAddresses.length > 0 && (
-        <Alert variant="warning" className="mb-0">
-          Low battery: {lowBatteryAddresses.join(", ")}
-        </Alert>
-      )}
-
       <Card>
         <Card.Body>
           <Form.Label htmlFor="dcpmon-search" className="fw-semibold">
@@ -204,7 +251,7 @@ export function DcpMonDashboard() {
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Local ID, configured description, or NESDIS address"
+              placeholder="ID, description, or NESDIS address"
               aria-describedby="dcpmon-search-help"
             />
             {searchQuery && (
@@ -247,36 +294,43 @@ export function DcpMonDashboard() {
       ) : (
         <Accordion
           alwaysOpen
-          defaultActiveKey={["missing", "parity", "partial", "unknown"]}
+          defaultActiveKey={visibleSections
+            .filter((section) =>
+              ["missing", "parity", "partial", "unknown"].includes(
+                section.eventKey,
+              ),
+            )
+            .map((section) => section.eventKey)}
           className="dcpmon-status-sections"
         >
-          {statusOrder.map((status) => {
-            const statusStations = stations.filter(
-              ([, stationSummary]) => stationSummary.status === status,
-            );
-            return (
-              <Accordion.Item key={status} eventKey={status}>
+          {visibleSections.map((section) => (
+              <Accordion.Item
+                key={section.eventKey}
+                eventKey={section.eventKey}
+                className={`dcpmon-section-${section.eventKey}`}
+              >
                 <Accordion.Header>
                   <span className="d-flex align-items-center justify-content-between w-100 pe-3">
-                    <span className="fw-semibold">{statusLabels[status]}</span>
-                    <Badge bg={statusVariants[status]}>
-                      {statusStations.length} locations
+                    <span className="fw-semibold">{section.label}</span>
+                    <Badge bg={section.variant}>
+                      {section.stations.length} locations
                     </Badge>
                   </span>
                 </Accordion.Header>
                 <Accordion.Body>
-                  {statusStations.length ? (
+                  {section.stations.length ? (
                     <StationList
-                      stations={statusStations}
+                      stations={section.stations}
                       displaySettings={displaySettings}
+                      badgeLabel={section.badgeLabel}
+                      badgeVariant={section.badgeVariant}
                     />
                   ) : (
                     <span className="text-secondary">No locations</span>
                   )}
                 </Accordion.Body>
               </Accordion.Item>
-            );
-          })}
+            ))}
         </Accordion>
       )}
 
