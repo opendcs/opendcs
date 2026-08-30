@@ -4,6 +4,7 @@ const messages: GoesMessage[] = [
   {
     messageType: "GOES",
     dcpAddress: "CE1F40D4",
+    transmitTime: new Date("2025-06-22T20:00:05Z"),
     receiveTime: new Date("2025-06-22T20:03:01Z"),
     dataSource: { name: "GOES", type: "GOES" },
     cType: "g-s-t",
@@ -18,6 +19,7 @@ const messages: GoesMessage[] = [
   {
     messageType: "GOES",
     dcpAddress: "CE1F40D4",
+    transmitTime: new Date("2025-06-22T21:00:04Z"),
     receiveTime: new Date("2025-06-22T21:03:01Z"),
     dataSource: { name: "GOES", type: "GOES" },
     arm: "G",
@@ -33,4 +35,20 @@ const messages: GoesMessage[] = [
 export const goesMessages = {
   total: 2,
   messages: messages.map(GoesMessageToJSON),
+  transmissionSlots: [
+    {
+      expectedTime: "2025-06-22T20:00:00Z",
+      status: "received",
+      message: GoesMessageToJSON(messages[0]),
+    },
+    {
+      expectedTime: "2025-06-22T21:00:00Z",
+      status: "received",
+      message: GoesMessageToJSON(messages[1]),
+    },
+    {
+      expectedTime: "2025-06-22T22:00:00Z",
+      status: "missing",
+    },
+  ],
 };

@@ -4,6 +4,7 @@ package org.opendcs.lrgs.http.dto;
 public record GoesMessage(
     String messageType,
     String dcpAddress,
+    String transmitTime,
     String receiveTime,
     DataSource dataSource,
     String cType,

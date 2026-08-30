@@ -3,6 +3,7 @@ import Accordion from "react-bootstrap/Accordion";
 import Alert from "react-bootstrap/Alert";
 import Spinner from "react-bootstrap/Spinner";
 import type { DcpSummary } from "opendcs-dds-api";
+import type { DisplaySettings } from "../displaySettings";
 import { useDcpMessages } from "../hooks/useDcpMessages";
 import { DcpMessageTable } from "./DcpMessageTable";
 import { StatusBadge } from "./StatusBadge";
@@ -10,11 +11,13 @@ import { StatusBadge } from "./StatusBadge";
 type DcpLocationAccordionProps = {
   dcpAddress: string;
   summary: DcpSummary;
+  displaySettings: DisplaySettings;
 };
 
 export function DcpLocationAccordion({
   dcpAddress,
   summary,
+  displaySettings,
 }: DcpLocationAccordionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const messages = useDcpMessages(dcpAddress, isOpen);
@@ -70,7 +73,11 @@ export function DcpLocationAccordion({
             <Alert variant="danger">Error loading DCP message data.</Alert>
           )}
           {messages.data && (
-            <DcpMessageTable messages={messages.data.messages ?? []} />
+            <DcpMessageTable
+              messages={messages.data.messages ?? []}
+              transmissionSlots={messages.data.transmissionSlots}
+              displaySettings={displaySettings}
+            />
           )}
         </Accordion.Body>
       </Accordion.Item>

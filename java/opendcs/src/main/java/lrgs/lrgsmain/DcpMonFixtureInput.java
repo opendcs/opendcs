@@ -63,9 +63,13 @@ public final class DcpMonFixtureInput implements LoadableLrgsInputInterface
     private void seed(String address, int count, boolean parity, boolean lowBattery)
     {
         long now = System.currentTimeMillis();
+        long latestTransmit = now / (60L * 60L * 1000L) * (60L * 60L * 1000L) + 5_000L;
+        if (latestTransmit > now)
+            latestTransmit -= 60L * 60L * 1000L;
         for (int index = 0; index < count; index++)
         {
-            Date transmitTime = new Date(now - (long)(count - index) * 60L * 60L * 1000L + 60_000L);
+            Date transmitTime = new Date(
+                latestTransmit - (long)(count - index - 1) * 60L * 60L * 1000L);
             char arm = parity && index == count - 1 ? '?' : 'G';
             String payload = lowBattery && index == count - 1
                 ? " STAGE 12.34 V LOW BATTERY " : " STAGE 12.34 ";

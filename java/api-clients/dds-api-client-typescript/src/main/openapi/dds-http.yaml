@@ -114,6 +114,10 @@ components:
         dcpAddress:
           type: string
           description: Primary NESDIS DCP address
+        transmitTime:
+          type: string
+          format: date-time
+          description: Timestamp encoded by the DCP for the transmission (in UTC).
         receiveTime:
           type: string
           format: date-time
@@ -153,6 +157,7 @@ components:
       required:
         - messageType
         - dcpAddress
+        - transmitTime
         - receiveTime
         - dataSource
 
@@ -231,6 +236,11 @@ components:
             $ref: '#/components/schemas/dcpMessage'
         dataSource:
           $ref: '#/components/schemas/dataSource'
+        transmissionSlots:
+          type: array
+          description: PDT-derived expected self-timed transmission windows for a single-address query.
+          items:
+            $ref: '#/components/schemas/dcpTransmission'
         groupingKey:
           $ref: '#/components/schemas/groupingKey'
         knownSourceTypes:
@@ -242,6 +252,23 @@ components:
       required:
         - total
         - messages
+
+    dcpTransmission:
+      type: object
+      description: An expected self-timed transmission window and the message received in that window, if any.
+      properties:
+        expectedTime:
+          type: string
+          format: date-time
+          description: Start of the expected PDT transmission window (in UTC).
+        status:
+          type: string
+          enum: [received, missing]
+        message:
+          $ref: '#/components/schemas/goesMessage'
+      required:
+        - expectedTime
+        - status
 
     statusGroupSummary:
       type: object

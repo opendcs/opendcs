@@ -71,6 +71,7 @@ public final class MessageRetrieval
         return new GoesMessage(
             "GOES",
             message.getDcpAddress().toString(),
+            DateTimeFormatter.ISO_INSTANT.format(message.getXmitTime().toInstant()),
             DateTimeFormatter.ISO_INSTANT.format(received.toInstant()),
             new DataSource(message.getSource(), "GOES"),
             cType,

@@ -10,13 +10,18 @@ import InputGroup from "react-bootstrap/InputGroup";
 import Row from "react-bootstrap/Row";
 import Spinner from "react-bootstrap/Spinner";
 import Stack from "react-bootstrap/Stack";
-import { Search, X } from "react-bootstrap-icons";
+import { Gear, Search, X } from "react-bootstrap-icons";
 import type { DcpSummary } from "opendcs-dds-api";
 import { PREFERRED_GROUP } from "../constants";
+import type { DisplaySettings } from "../displaySettings";
+import { useDisplaySettings } from "../displaySettingsStore";
 import { useDataGroups } from "../hooks/useDataGroups";
 import { useStatusGroupSummary } from "../hooks/useStatusGroupSummary";
 import { DcpLocationAccordion } from "./DcpLocationAccordion";
+import { DisplaySettingsModal } from "./DisplaySettingsModal";
+import { StatusLegend } from "./StatusLegend";
 import { SummaryCards } from "./SummaryCards";
+import { TimestampDisplay } from "./TimestampDisplay";
 
 type StationEntry = [string, DcpSummary];
 type DcpStatus = DcpSummary["status"];
@@ -45,12 +50,19 @@ const statusVariants: Record<DcpStatus, string> = {
   complete: "success",
 };
 
-function StationList({ stations }: { stations: StationEntry[] }) {
+function StationList({
+  stations,
+  displaySettings,
+}: {
+  stations: StationEntry[];
+  displaySettings: DisplaySettings;
+}) {
   return stations.map(([dcpAddress, stationSummary]) => (
     <DcpLocationAccordion
       key={dcpAddress}
       dcpAddress={dcpAddress}
       summary={stationSummary}
+      displaySettings={displaySettings}
     />
   ));
 }
@@ -67,6 +79,8 @@ export function DcpMonDashboard() {
   const groups = useDataGroups();
   const [requestedGroup, setRequestedGroup] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { settings: displaySettings, saveSettings } = useDisplaySettings();
   const preferredGroup = groups.data?.find(
     (group) => group.id.toLowerCase() === PREFERRED_GROUP.toLowerCase(),
   );
@@ -107,7 +121,6 @@ export function DcpMonDashboard() {
     .filter(([, stationSummary]) => stationSummary.lowBattery)
     .map(([dcpAddress]) => dcpAddress);
   const durationHours = summary.data.durationHours ?? 0;
-  const updated = summary.data.timestamp.toLocaleString();
 
   return (
     <Stack gap={4}>
@@ -118,7 +131,23 @@ export function DcpMonDashboard() {
             Group {selectedGroup} for the last {durationHours} hours · {stations.length}{" "}
             locations
           </div>
-          <div className="small text-secondary">Updated {updated}</div>
+          <div className="small text-secondary">
+            Updated{" "}
+            <TimestampDisplay
+              value={summary.data.timestamp}
+              settings={displaySettings}
+            />
+          </div>
+        </Col>
+        <Col md="auto">
+          <Button
+            variant="outline-secondary"
+            className="d-flex align-items-center gap-2"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Gear aria-hidden="true" />
+            Settings
+          </Button>
         </Col>
         <Col md={3}>
           <Form.Label htmlFor="dcpmon-group" className="small text-secondary">
@@ -141,6 +170,17 @@ export function DcpMonDashboard() {
           </Form.Select>
         </Col>
       </Row>
+
+      {settingsOpen && (
+        <DisplaySettingsModal
+          settings={displaySettings}
+          onHide={() => setSettingsOpen(false)}
+          onSave={(nextSettings) => {
+            saveSettings(nextSettings);
+            setSettingsOpen(false);
+          }}
+        />
+      )}
 
       <SummaryCards summary={summary.data} />
 
@@ -193,7 +233,10 @@ export function DcpMonDashboard() {
           </Card.Header>
           <Card.Body>
             {filteredStations.length ? (
-              <StationList stations={filteredStations} />
+              <StationList
+                stations={filteredStations}
+                displaySettings={displaySettings}
+              />
             ) : (
               <Alert variant="secondary" className="mb-0">
                 No locations match “{searchQuery.trim()}”.
@@ -223,7 +266,10 @@ export function DcpMonDashboard() {
                 </Accordion.Header>
                 <Accordion.Body>
                   {statusStations.length ? (
-                    <StationList stations={statusStations} />
+                    <StationList
+                      stations={statusStations}
+                      displaySettings={displaySettings}
+                    />
                   ) : (
                     <span className="text-secondary">No locations</span>
                   )}
@@ -233,6 +279,8 @@ export function DcpMonDashboard() {
           })}
         </Accordion>
       )}
+
+      <StatusLegend />
     </Stack>
   );
 }

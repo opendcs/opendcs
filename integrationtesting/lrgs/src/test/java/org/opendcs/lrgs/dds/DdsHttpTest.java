@@ -139,9 +139,24 @@ final class DdsHttpTest
             .body("total", is(24))
             .body("messages[0].messageType", is("GOES"))
             .body("messages[0].dcpAddress", is("CE1F40D4"))
+            .body("messages[0].transmitTime", matchesPattern("^\\d{4}-\\d{2}-\\d{2}T.*Z$"))
             .body("messages[0].receiveTime", matchesPattern("^\\d{4}-\\d{2}-\\d{2}T.*Z$"))
             .body("messages[0].channel", is("162W"))
+            .body("transmissionSlots.size()", is(24))
+            .body("transmissionSlots.findAll { it.status == 'missing' }.size()", is(0))
         ;
+
+        given()
+            .queryParam("dcpAddress", "CE1F2532")
+            .queryParam("source", "GOES")
+            .queryParam("since", Instant.now().minusSeconds(24 * 60 * 60).toString())
+        .when()
+            .get("dds/data/query")
+        .then()
+            .statusCode(is(Response.Status.OK.getStatusCode()))
+            .body("messages.size()", is(12))
+            .body("transmissionSlots.size()", is(24))
+            .body("transmissionSlots.findAll { it.status == 'missing' }.size()", is(12));
     }
 
     @Test

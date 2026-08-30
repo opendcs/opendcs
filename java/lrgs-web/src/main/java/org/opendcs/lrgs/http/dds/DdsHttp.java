@@ -2,6 +2,8 @@ package org.opendcs.lrgs.http.dds;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +26,7 @@ import org.opendcs.data.goes.SpaceCraft;
 import org.opendcs.lrgs.dds.DdsSession;
 import org.opendcs.lrgs.http.dto.DataSource;
 import org.opendcs.lrgs.http.dto.DcpMessages;
+import org.opendcs.lrgs.http.dto.DcpTransmission;
 import org.opendcs.lrgs.http.dto.GoesMessage;
 import org.opendcs.lrgs.messages.MessageRetrieval;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -41,6 +44,8 @@ import lrgs.common.UntilReachedException;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
 import ilex.util.IDateFormat;
+import decodes.util.Pdt;
+import decodes.util.PdtEntry;
 
 /** DDS-over-HTTP resources served by an LRGS. */
 @Path("/dds")
@@ -120,13 +125,16 @@ public class DdsHttp
             if (result.ex() != null)
                 result = MessageRetrieval.getMessages(retriever, lrgs, Integer.MAX_VALUE);
             List<GoesMessage> filtered = filterSources(result.messages(), sources);
+            List<DcpTransmission> transmissionSlots = transmissionSlots(
+                filtered, dcpAddresses, since, until);
             return switch (result.ex())
             {
-                case UntilReachedException ur -> handleArchiveError.apply(filtered, ur);
-                case SearchTimeoutException st -> handleArchiveError.apply(filtered, st);
-                case EndOfArchiveException ea -> handleArchiveError.apply(filtered, ea);
-                case null -> filtered.isEmpty() ? Response.noContent().build()
-                    : Response.ok().entity(envelope(filtered)).build();
+                case UntilReachedException ur -> queryArchiveResult(filtered, transmissionSlots, ur);
+                case SearchTimeoutException st -> queryArchiveResult(filtered, transmissionSlots, st);
+                case EndOfArchiveException ea -> queryArchiveResult(filtered, transmissionSlots, ea);
+                case null -> filtered.isEmpty() && transmissionSlots.isEmpty()
+                    ? Response.noContent().build()
+                    : Response.ok().entity(envelope(filtered, transmissionSlots)).build();
                 default -> Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
                     .entity(MESSAGE_RETRIEVE_FAILED).build();
             };
@@ -204,8 +212,80 @@ public class DdsHttp
 
     private static DcpMessages envelope(List<GoesMessage> messages)
     {
+        return envelope(messages, List.of());
+    }
+
+    private static Response queryArchiveResult(
+        List<GoesMessage> messages, List<DcpTransmission> transmissionSlots, Exception exception)
+    {
+        return messages.isEmpty() && transmissionSlots.isEmpty()
+            ? Response.noContent().header("reason", exception.getMessage())
+                .header("Retry-After", "10").build()
+            : Response.ok().entity(envelope(messages, transmissionSlots)).build();
+    }
+
+    private static DcpMessages envelope(
+        List<GoesMessage> messages, List<DcpTransmission> transmissionSlots)
+    {
         DataSource source = messages.isEmpty() ? null : messages.getFirst().dataSource();
-        return new DcpMessages(messages.size(), messages, source);
+        return new DcpMessages(messages.size(), messages, source, transmissionSlots);
+    }
+
+    private static List<DcpTransmission> transmissionSlots(
+        List<GoesMessage> messages, List<String> addresses, String since, String until)
+    {
+        if (addresses == null || addresses.size() != 1)
+            return List.of();
+
+        PdtEntry schedule = Pdt.instance().find(new DcpAddress(addresses.getFirst()));
+        if (schedule == null || schedule.st_xmit_interval <= 0)
+            return List.of();
+
+        Date end = queryTime(until, new Date());
+        Date start = queryTime(since, new Date(end.getTime() - 24L * 60L * 60L * 1000L));
+        long startSeconds = start.getTime() / 1000L;
+        long endSeconds = end.getTime() / 1000L;
+        long dayStart = Math.floorDiv(startSeconds, 24L * 60L * 60L) * 24L * 60L * 60L;
+        long expected = dayStart + schedule.st_first_xmit_sod;
+        if (expected < startSeconds)
+        {
+            long intervals = Math.floorDiv(
+                startSeconds - expected + schedule.st_xmit_interval - 1,
+                schedule.st_xmit_interval);
+            expected += intervals * schedule.st_xmit_interval;
+        }
+
+        List<GoesMessage> unmatched = new ArrayList<>(messages.stream()
+            .filter(message -> "g-s-t".equals(message.cType()))
+            .toList());
+        List<DcpTransmission> slots = new ArrayList<>();
+        int window = Math.max(schedule.st_xmit_window, 10);
+        for (; expected <= endSeconds; expected += schedule.st_xmit_interval)
+        {
+            GoesMessage match = null;
+            for (GoesMessage message : unmatched)
+            {
+                long transmitted = Instant.parse(message.transmitTime()).getEpochSecond();
+                if (transmitted >= expected - 10 && transmitted <= expected + window)
+                {
+                    match = message;
+                    break;
+                }
+            }
+            if (match != null)
+                unmatched.remove(match);
+            slots.add(new DcpTransmission(
+                DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(expected)),
+                match == null ? "missing" : "received",
+                match));
+        }
+        return slots;
+    }
+
+    private static Date queryTime(String value, Date defaultValue)
+    {
+        return value == null || value.isBlank()
+            ? defaultValue : IDateFormat.parse(normalizeDateTime(value));
     }
 
     private static List<GoesMessage> filterSources(List<GoesMessage> messages, List<String> sources)
