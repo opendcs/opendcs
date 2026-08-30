@@ -1,5 +1,61 @@
+:root {
+  --odcs-bg-page: #f9fafb;
+  --odcs-bg-topbar: #fff;
+  --odcs-text-primary: #111827;
+  --odcs-text-secondary: #6b7280;
+  --odcs-border: #e5e7eb;
+  --odcs-topbar-height: 3.5rem;
+  --odcs-shadow-sm: 0 1px 2px rgb(0 0 0 / 5%);
+}
+
+body {
+  background: var(--odcs-bg-page);
+  color: var(--odcs-text-primary);
+}
+
+.odcs-topbar {
+  height: var(--odcs-topbar-height);
+  padding: 0;
+  background-color: var(--odcs-bg-topbar);
+  border-bottom: 1px solid var(--odcs-border);
+  box-shadow: var(--odcs-shadow-sm);
+  z-index: 1030;
+}
+
+.odcs-topbar .odcs-topbar__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 0.75rem;
+}
+
+.odcs-topbar .odcs-topbar__left,
+.odcs-topbar .odcs-topbar__actions {
+  display: flex;
+  align-items: center;
+}
+
+.odcs-topbar .navbar-brand {
+  margin: 0;
+  padding: 0;
+  color: var(--odcs-text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.odcs-topbar .navbar-text {
+  color: var(--odcs-text-secondary);
+}
+
+.dcpmon-main {
+  min-height: 100vh;
+  padding-top: var(--odcs-topbar-height);
+}
+
 .dcpmon-shell {
-  max-width: 1280px;
+  max-width: 1440px;
 }
 
 .dcpmon-summary-card {
@@ -45,6 +101,13 @@
   margin: 0;
   overflow: auto;
   white-space: pre-wrap;
+}
+
+.dcpmon-status-sections > .accordion-item {
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--odcs-border);
+  border-radius: 0.5rem;
 }
 
 @media (max-width: 575.98px) {

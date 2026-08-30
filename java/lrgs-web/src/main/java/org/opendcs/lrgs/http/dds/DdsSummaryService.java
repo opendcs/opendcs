@@ -52,10 +52,14 @@ final class DdsSummaryService
             criteria.ExplicitDcpAddrs.add(item.addr);
         retriever.setSearchCriteria(criteria);
 
-        var result = MessageRetrieval.getMessages(retriever, lrgs, Integer.MAX_VALUE);
-        if (result.ex() != null)
-            result = MessageRetrieval.getMessages(retriever, lrgs, Integer.MAX_VALUE);
-        List<GoesMessage> messages = result.messages();
+        List<GoesMessage> messages = new ArrayList<>();
+        for (int attempt = 0; attempt < 100; attempt++)
+        {
+            var result = MessageRetrieval.getMessages(retriever, lrgs, Integer.MAX_VALUE);
+            messages.addAll(result.messages());
+            if (result.ex() == null)
+                break;
+        }
         Map<String, List<GoesMessage>> byAddress = new LinkedHashMap<>();
         for (GoesMessage message : messages)
         {
@@ -104,6 +108,8 @@ final class DdsSummaryService
             identifiers.add(new DcpIdentifier("NESDIS", address));
             if (item.name != null && !item.name.isBlank())
                 identifiers.add(new DcpIdentifier("Local", item.name));
+            if (item.description != null && !item.description.isBlank())
+                identifiers.add(new DcpIdentifier("Description", item.description));
             summaries.put(address, new DcpSummary(
                 identifiers, status, messageTotal, expected, parityCount, lowBattery));
         }

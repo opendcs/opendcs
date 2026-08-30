@@ -11,6 +11,7 @@ import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFram
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -125,6 +126,7 @@ final class DdsHttpTest
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam("dcpAddress", "CE1F40D4")
             .queryParam("source", "GOES")
+            .queryParam("since", Instant.now().minusSeconds(24 * 60 * 60).toString())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -173,8 +175,16 @@ final class DdsHttpTest
     }
 
     @Test
-    void test_summary()
+    void test_summary() throws Exception
     {
+        assertResultWithinTimeFrame(value -> given()
+                .queryParam("data-group", "SWT")
+                .when().get("dds/data/summary")
+                .jsonPath().getInt("counts.complete") == 1,
+            30, TimeUnit.SECONDS,
+            1, TimeUnit.SECONDS,
+            "Fixture data was not available to the summary endpoint");
+
         given()
             .queryParam("data-group", "SWT")
         .when()
@@ -189,6 +199,8 @@ final class DdsHttpTest
             .body("counts.missing", is(1))
             .body("counts.unknown", is(1))
             .body("dcpSummaries.CE1F40D4.expectedMessageTotal", is(24))
+            .body("dcpSummaries.CE1F40D4.identifiers.find { it.type == 'Description' }.id",
+                is("Nimbus complete"))
             .body("dcpSummaries.CE000001.lowBattery", is(true));
 
         given()

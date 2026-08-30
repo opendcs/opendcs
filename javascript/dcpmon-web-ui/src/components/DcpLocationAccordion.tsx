@@ -21,7 +21,11 @@ export function DcpLocationAccordion({
   const preferredIdentifier =
     summary.identifiers?.find(
       (identifier) => identifier.type.toLowerCase() === "shef",
-    ) ?? summary.identifiers?.[0];
+    ) ??
+    summary.identifiers?.find(
+      (identifier) => identifier.type.toLowerCase() === "local",
+    ) ??
+    summary.identifiers?.[0];
 
   return (
     <Accordion

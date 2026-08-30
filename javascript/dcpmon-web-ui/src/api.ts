@@ -43,10 +43,12 @@ export async function getDataGroups(): Promise<DataGroup[]> {
 export async function getDcpMessages(
   dcpAddress: string,
 ): Promise<DcpMessages | null | undefined> {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
   return requestDds(() =>
     ddsApi.dataQueryGet({
       source: ["GOES"],
       dcpAddress: [dcpAddress],
+      since,
     }),
   );
 }

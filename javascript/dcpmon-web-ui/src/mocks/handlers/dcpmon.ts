@@ -33,6 +33,7 @@ export const dcpmonHandlers = [
     const url = new URL(request.url);
     const source = url.searchParams.get("source");
     const dcpAddress = url.searchParams.get("dcpAddress");
+    const since = url.searchParams.get("since");
 
     if (!source) {
       return HttpResponse.text("Missing 'source' query parameter", { status: 400 });
@@ -42,6 +43,10 @@ export const dcpmonHandlers = [
       return HttpResponse.text("Missing 'dcpAddress' query parameter", {
         status: 400,
       });
+    }
+
+    if (!since || Number.isNaN(Date.parse(since))) {
+      return HttpResponse.text("Missing 24-hour query window", { status: 400 });
     }
 
     if (source.toLowerCase() !== "goes") {

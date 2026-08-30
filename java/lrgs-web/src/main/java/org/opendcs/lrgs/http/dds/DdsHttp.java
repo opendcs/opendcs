@@ -1,6 +1,8 @@
 package org.opendcs.lrgs.http.dds;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -38,6 +40,7 @@ import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
+import ilex.util.IDateFormat;
 
 /** DDS-over-HTTP resources served by an LRGS. */
 @Path("/dds")
@@ -107,8 +110,8 @@ public class DdsHttp
                 .stream().map(DcpAddress::new).toList());
             criteria.setAscendingTimeOnly(ascending);
             criteria.single = single;
-            criteria.setLrgsUntil(until);
-            criteria.setLrgsSince(since);
+            criteria.setLrgsUntil(normalizeDateTime(until));
+            criteria.setLrgsSince(normalizeDateTime(since));
             if (spaceCraft != null)
                 criteria.spacecraft = spaceCraft.toChar();
             retriever.setSearchCriteria(criteria);
@@ -134,6 +137,13 @@ public class DdsHttp
             return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
                 .entity(MESSAGE_RETRIEVE_FAILED).build();
         }
+    }
+
+    private static String normalizeDateTime(String value)
+    {
+        if (value == null || value.isBlank() || !value.contains("T"))
+            return value;
+        return IDateFormat.toString(Date.from(Instant.parse(value)), false);
     }
 
     @GET
