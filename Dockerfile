@@ -18,7 +18,7 @@ COPY . .
 ARG VITE_DCPMON_DEFAULT_GROUP=""
 ENV VITE_DCPMON_DEFAULT_GROUP=${VITE_DCPMON_DEFAULT_GROUP}
 
-RUN --mount=type=cache,target=/root \
+RUN --mount=type=cache,target=/root,sharing=locked \
     ./gradlew --no-daemon installDist war :dcpmon-web-ui:build \
         -PversionOverride=0.0.0-docker-SNAPSHOT -Dno.docs=true --info
 # end initial build
