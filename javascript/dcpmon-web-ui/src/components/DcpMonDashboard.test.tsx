@@ -1,10 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it } from "vitest";
+import { DCPMON_API_BASE_URL } from "../constants";
 import { DcpMonDashboard } from "./DcpMonDashboard";
 import { DcpMonTopBar } from "./DcpMonTopBar";
 import { DisplaySettingsProvider } from "../DisplaySettingsContext";
+import { server } from "../mocks/server";
 
 function renderDashboard() {
   const queryClient = new QueryClient({
@@ -63,8 +66,7 @@ describe("DcpMonDashboard", () => {
   it("renders the mocked status summary and stations", async () => {
     renderDashboard();
 
-    expect(await screen.findByRole("heading", { name: "DCPMon" })).toBeVisible();
-    expect(screen.getByText(/Group SWT for the last 24 hours/)).toBeVisible();
+    expect(await screen.findByText(/Group SWT for the last 24 hours/)).toBeVisible();
     expect(screen.getByRole("searchbox", { name: "Search locations" })).toBeVisible();
     expect(screen.getByRole("button", { name: /Complete data/ })).toBeVisible();
     expect(screen.queryByRole("button", { name: /Unknown schedule/ })).not.toBeInTheDocument();
@@ -80,6 +82,7 @@ describe("DcpMonDashboard", () => {
     const user = userEvent.setup();
     renderDashboard();
 
+    await screen.findByText(/Group SWT for the last 24 hours/);
     const search = await screen.findByRole("searchbox", { name: "Search locations" });
     await user.type(search, "NIMB");
     await user.click(await screen.findByRole("button", { name: /CE1F40D4/ }));
@@ -95,7 +98,7 @@ describe("DcpMonDashboard", () => {
     const user = userEvent.setup();
     renderDashboard();
 
-    await screen.findByRole("heading", { name: "DCPMon" });
+    await screen.findByText(/Group SWT for the last 24 hours/);
     const firstTimestamp = document.querySelector("time");
     expect(firstTimestamp).not.toBeNull();
     await user.hover(firstTimestamp!);
@@ -118,10 +121,11 @@ describe("DcpMonDashboard", () => {
     const user = userEvent.setup();
     renderDashboard();
 
+    await screen.findByText(/Group SWT for the last 24 hours/);
     const search = await screen.findByRole("searchbox", { name: "Search locations" });
     await user.type(search, "BMRA4");
 
-    expect(await screen.findByText("1 locations")).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Search results" })).toBeVisible();
     expect(screen.getByRole("button", { name: /CE1F2532/ })).toBeVisible();
   });
 
@@ -129,11 +133,51 @@ describe("DcpMonDashboard", () => {
     const user = userEvent.setup();
     renderDashboard();
 
+    await screen.findByText(/Group SWT for the last 24 hours/);
     const groupSelect = await screen.findByRole("combobox", { name: "Group" });
     expect(groupSelect).toHaveValue("SWT");
     expect(within(groupSelect).getByRole("option", { name: "New England District" })).toBeVisible();
 
     await user.selectOptions(groupSelect, "NAE");
     expect(await screen.findByText(/Group NAE for the last 24 hours/)).toBeVisible();
+  });
+
+  it("keeps the dashboard structure visible during the first load", () => {
+    renderDashboard();
+
+    expect(screen.getByRole("heading", { name: "DCPMon" })).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading DCP status");
+    expect(screen.getByRole("button", { name: /Missing data.*— locations/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Complete data.*— locations/ })).toBeVisible();
+    expect(screen.getByRole("searchbox", { name: "Search locations" })).toBeDisabled();
+  });
+
+  it("keeps the dashboard heading and offers recovery when groups fail", async () => {
+    server.use(
+      http.get(`${DCPMON_API_BASE_URL}/groups`, () =>
+        HttpResponse.text("Unavailable", { status: 503 }),
+      ),
+    );
+    renderDashboard();
+
+    expect(await screen.findByText("Unable to load DCPMon groups.")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "DCPMon" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+  });
+
+  it("keeps group controls available when a summary call fails", async () => {
+    server.use(
+      http.get(`${DCPMON_API_BASE_URL}/data/summary`, () =>
+        HttpResponse.text("Unavailable", { status: 503 }),
+      ),
+    );
+    renderDashboard();
+
+    expect(
+      await screen.findByText("Unable to load DCPMon status summary."),
+    ).toBeVisible();
+    const groupSelect = screen.getByRole("combobox", { name: "Group" });
+    await waitFor(() => expect(groupSelect).toHaveValue("SWT"));
+    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
   });
 });

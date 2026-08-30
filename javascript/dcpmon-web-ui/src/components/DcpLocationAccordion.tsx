@@ -2,11 +2,13 @@ import { useState } from "react";
 import Accordion from "react-bootstrap/Accordion";
 import Alert from "react-bootstrap/Alert";
 import Badge from "react-bootstrap/Badge";
+import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
 import type { DcpSummary } from "opendcs-dds-api";
 import type { DisplaySettings } from "../displaySettings";
 import { useDcpMessages } from "../hooks/useDcpMessages";
 import { DcpMessageTable } from "./DcpMessageTable";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { StatusBadge } from "./StatusBadge";
 
 type DcpLocationAccordionProps = {
@@ -79,14 +81,33 @@ export function DcpLocationAccordion({
             </div>
           )}
           {messages.isError && (
-            <Alert variant="danger">Error loading DCP message data.</Alert>
+            <Alert variant="danger" className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+              <span>Error loading DCP message data.</span>
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={() => void messages.refetch()}
+                disabled={messages.isFetching}
+              >
+                Try again
+              </Button>
+            </Alert>
           )}
           {messages.data && (
-            <DcpMessageTable
-              messages={messages.data.messages ?? []}
-              transmissionSlots={messages.data.transmissionSlots}
-              displaySettings={displaySettings}
-            />
+            <ErrorBoundary
+              resetKey={`${dcpAddress}-${messages.data.messages?.length ?? 0}`}
+              fallback={
+                <Alert variant="danger" className="mb-0">
+                  Unable to display message details for this location.
+                </Alert>
+              }
+            >
+              <DcpMessageTable
+                messages={messages.data.messages ?? []}
+                transmissionSlots={messages.data.transmissionSlots}
+                displaySettings={displaySettings}
+              />
+            </ErrorBoundary>
           )}
         </Accordion.Body>
       </Accordion.Item>

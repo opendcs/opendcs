@@ -8,7 +8,6 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
 import Row from "react-bootstrap/Row";
-import Spinner from "react-bootstrap/Spinner";
 import Stack from "react-bootstrap/Stack";
 import { Gear, Search, X } from "react-bootstrap-icons";
 import type { DcpSummary } from "opendcs-dds-api";
@@ -18,7 +17,9 @@ import { useDisplaySettings } from "../displaySettingsStore";
 import { useDataGroups } from "../hooks/useDataGroups";
 import { useStatusGroupSummary } from "../hooks/useStatusGroupSummary";
 import { DcpLocationAccordion } from "./DcpLocationAccordion";
+import { DcpMonLoadingSkeleton } from "./DcpMonLoadingSkeleton";
 import { DisplaySettingsModal } from "./DisplaySettingsModal";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { StatusLegend } from "./StatusLegend";
 import { SummaryCards } from "./SummaryCards";
 import { TimestampDisplay } from "./TimestampDisplay";
@@ -70,14 +71,23 @@ function StationList({
   badgeVariant?: string;
 }) {
   return stations.map(([dcpAddress, stationSummary]) => (
-    <DcpLocationAccordion
+    <ErrorBoundary
       key={dcpAddress}
-      dcpAddress={dcpAddress}
-      summary={stationSummary}
-      displaySettings={displaySettings}
-      badgeLabel={badgeLabel}
-      badgeVariant={badgeVariant}
-    />
+      resetKey={`${dcpAddress}-${stationSummary.status}-${stationSummary.messageTotal}-${stationSummary.expectedMessageTotal}`}
+      fallback={
+        <Alert variant="danger">
+          Unable to display location {dcpAddress}.
+        </Alert>
+      }
+    >
+      <DcpLocationAccordion
+        dcpAddress={dcpAddress}
+        summary={stationSummary}
+        displaySettings={displaySettings}
+        badgeLabel={badgeLabel}
+        badgeVariant={badgeVariant}
+      />
+    </ErrorBoundary>
   ));
 }
 
@@ -105,15 +115,47 @@ export function DcpMonDashboard() {
 
   if (groups.isLoading || (selectedGroup && summary.isLoading)) {
     return (
-      <div className="d-flex align-items-center gap-2 p-4 text-secondary">
-        <Spinner animation="border" size="sm" />
-        Loading DCP status
-      </div>
+      <>
+        <DcpMonLoadingSkeleton
+          groups={groups.data}
+          selectedGroup={selectedGroup}
+          onGroupChange={(group) => {
+            setRequestedGroup(group);
+            setSearchQuery("");
+          }}
+          onSettingsClick={() => setSettingsOpen(true)}
+        />
+        {settingsOpen && (
+          <DisplaySettingsModal
+            settings={displaySettings}
+            onHide={() => setSettingsOpen(false)}
+            onSave={(nextSettings) => {
+              saveSettings(nextSettings);
+              setSettingsOpen(false);
+            }}
+          />
+        )}
+      </>
     );
   }
 
   if (groups.isError) {
-    return <Alert variant="danger">Unable to load DCPMon groups.</Alert>;
+    return (
+      <Stack gap={3}>
+        <h1 className="h3 mb-0">DCPMon</h1>
+        <Alert variant="danger" className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <span>Unable to load DCPMon groups.</span>
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => void groups.refetch()}
+            disabled={groups.isFetching}
+          >
+            Try again
+          </Button>
+        </Alert>
+      </Stack>
+    );
   }
 
   if (!groups.data?.length) {
@@ -123,7 +165,44 @@ export function DcpMonDashboard() {
   if (!selectedGroup) return null;
 
   if (summary.isError || !summary.data) {
-    return <Alert variant="danger">Unable to load DCPMon status summary.</Alert>;
+    return (
+      <Stack gap={3}>
+        <Row className="dcpmon-dashboard-header align-items-end g-3">
+          <Col xs={12} md>
+            <h1 className="h3 mb-1">DCPMon</h1>
+            <div className="text-secondary">Group {selectedGroup}</div>
+          </Col>
+          <Col xs md={3}>
+            <Form.Label htmlFor="dcpmon-group" className="small text-secondary">
+              Group
+            </Form.Label>
+            <Form.Select
+              id="dcpmon-group"
+              value={selectedGroup}
+              onChange={(event) => setRequestedGroup(event.target.value)}
+              disabled={groups.data.length < 2}
+            >
+              {groups.data.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.displayName}
+                </option>
+              ))}
+            </Form.Select>
+          </Col>
+        </Row>
+        <Alert variant="danger" className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <span>Unable to load DCPMon status summary.</span>
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => void summary.refetch()}
+            disabled={summary.isFetching}
+          >
+            Try again
+          </Button>
+        </Alert>
+      </Stack>
+    );
   }
 
   const stations = Object.entries(summary.data.dcpSummaries ?? {}) as StationEntry[];
@@ -235,7 +314,12 @@ export function DcpMonDashboard() {
         />
       )}
 
-      <SummaryCards summary={summary.data} />
+      <ErrorBoundary
+        resetKey={`${selectedGroup}-${summary.data.timestamp.toISOString()}`}
+        fallback={<Alert variant="danger">Unable to display summary counts.</Alert>}
+      >
+        <SummaryCards summary={summary.data} />
+      </ErrorBoundary>
 
       <Card>
         <Card.Body>
@@ -318,23 +402,37 @@ export function DcpMonDashboard() {
                   </span>
                 </Accordion.Header>
                 <Accordion.Body>
-                  {section.stations.length ? (
-                    <StationList
-                      stations={section.stations}
-                      displaySettings={displaySettings}
-                      badgeLabel={section.badgeLabel}
-                      badgeVariant={section.badgeVariant}
-                    />
-                  ) : (
-                    <span className="text-secondary">No locations</span>
-                  )}
+                  <ErrorBoundary
+                    resetKey={`${selectedGroup}-${section.eventKey}-${summary.data.timestamp.toISOString()}`}
+                    fallback={
+                      <Alert variant="danger" className="mb-0">
+                        Unable to display this status category.
+                      </Alert>
+                    }
+                  >
+                    {section.stations.length ? (
+                      <StationList
+                        stations={section.stations}
+                        displaySettings={displaySettings}
+                        badgeLabel={section.badgeLabel}
+                        badgeVariant={section.badgeVariant}
+                      />
+                    ) : (
+                      <span className="text-secondary">No locations</span>
+                    )}
+                  </ErrorBoundary>
                 </Accordion.Body>
               </Accordion.Item>
             ))}
         </Accordion>
       )}
 
-      <StatusLegend />
+      <ErrorBoundary
+        resetKey={selectedGroup}
+        fallback={<Alert variant="danger">Unable to display the status legend.</Alert>}
+      >
+        <StatusLegend />
+      </ErrorBoundary>
     </Stack>
   );
 }

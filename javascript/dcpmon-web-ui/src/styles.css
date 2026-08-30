@@ -2,24 +2,50 @@
   --odcs-bg-page: #f9fafb;
   --odcs-bg-topbar: #fff;
   --odcs-text-primary: #111827;
-  --odcs-text-secondary: #6b7280;
-  --odcs-border: #e5e7eb;
+  --odcs-text-secondary: #5f6774;
+  --odcs-border: #7f8a99;
+  --odcs-on-secondary: #fff;
   --odcs-topbar-height: 3.5rem;
   --odcs-shadow-sm: 0 1px 2px rgb(0 0 0 / 5%);
+  --bs-border-color: var(--odcs-border);
 }
 
 [data-bs-theme="dark"] {
   --odcs-bg-page: #111827;
   --odcs-bg-topbar: #1f2937;
   --odcs-text-primary: #f9fafb;
-  --odcs-text-secondary: #9ca3af;
-  --odcs-border: #374151;
+  --odcs-text-secondary: #b0bac8;
+  --odcs-border: #64748b;
+  --odcs-on-secondary: #111827;
   --odcs-shadow-sm: 0 1px 2px rgb(0 0 0 / 30%);
+  --bs-border-color: var(--odcs-border);
 }
 
 body {
   background: var(--odcs-bg-page);
   color: var(--odcs-text-primary);
+}
+
+.text-secondary {
+  color: var(--odcs-text-secondary) !important;
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--odcs-text-secondary);
+  --bs-btn-border-color: var(--odcs-text-secondary);
+  --bs-btn-hover-color: var(--odcs-on-secondary);
+  --bs-btn-hover-bg: var(--odcs-text-secondary);
+  --bs-btn-hover-border-color: var(--odcs-text-secondary);
+  --bs-btn-active-color: var(--odcs-on-secondary);
+  --bs-btn-active-bg: var(--odcs-text-secondary);
+  --bs-btn-active-border-color: var(--odcs-text-secondary);
+  --bs-btn-disabled-color: var(--odcs-text-secondary);
+  --bs-btn-disabled-border-color: var(--odcs-text-secondary);
+}
+
+.badge.bg-warning,
+.badge.bg-info {
+  color: #111827;
 }
 
 .odcs-topbar {
@@ -110,6 +136,50 @@ body {
 
 .dcpmon-summary-value {
   font-size: 1.75rem;
+}
+
+.dcpmon-skeleton-line,
+.dcpmon-skeleton-value {
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 0.25rem;
+  background: currentcolor;
+  opacity: 0.22;
+  animation: dcpmon-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.dcpmon-skeleton-line {
+  height: 0.75rem;
+}
+
+.dcpmon-skeleton-value {
+  width: 3rem;
+  height: 1.75rem;
+  margin-top: 0.4rem;
+}
+
+.dcpmon-station-skeleton {
+  display: grid;
+  grid-template-columns: 5rem 8rem minmax(5rem, 1fr) 3.5rem;
+  align-items: center;
+  gap: 1rem;
+  min-height: 3.375rem;
+  padding: 0 1rem;
+  border: 1px solid var(--odcs-border);
+  border-radius: 0.375rem;
+}
+
+@keyframes dcpmon-skeleton-pulse {
+  50% {
+    opacity: 0.1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dcpmon-skeleton-line,
+  .dcpmon-skeleton-value {
+    animation: none;
+  }
 }
 
 .dcpmon-status-legend {
@@ -356,6 +426,16 @@ body {
     row-gap: 0.25rem;
     column-gap: 0.5rem;
     padding-right: 0.25rem;
+  }
+
+  .dcpmon-station-skeleton {
+    grid-template-columns: 4rem minmax(0, 1fr);
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .dcpmon-station-skeleton > :nth-child(3) {
+    grid-column: 1 / -1;
   }
 
   .dcpmon-station-address {
