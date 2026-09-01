@@ -41,6 +41,7 @@ public final class PlatformStatusMapper extends PrefixRowMapper<PlatformStatus, 
         status.setLastMessageTime(dateMapper.map(rs, column(Columns.LAST_MESSAGE_TIME), ctx));
         status.setLastErrorTime(dateMapper.map(rs, column(Columns.LAST_ERROR_TIME), ctx));
         status.setLastRoutingSpecName(rs.getString(column(Columns.LAST_ROUTING_SPEC_NAME)));
+        status.setDesignator(rs.getString(column(Columns.PLATFORM_DESIGNATOR)));
         return status;
 
     }
@@ -59,7 +60,8 @@ public final class PlatformStatusMapper extends PrefixRowMapper<PlatformStatus, 
         LAST_ERROR_TIME("last_error_time"),
         LAST_SCHEDULE_ENTRY_STATUS_ID("last_schedule_entry_status_id"),
         ANNOTATION("annotation"),
-        LAST_ROUTING_SPEC_NAME("last_routing_spec_name")
+        LAST_ROUTING_SPEC_NAME("last_routing_spec_name"),
+        PLATFORM_DESIGNATOR("platform_designator")
         ;
 
         private final String column;

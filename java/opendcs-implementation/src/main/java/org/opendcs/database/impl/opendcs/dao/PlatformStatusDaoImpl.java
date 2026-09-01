@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
@@ -14,7 +29,6 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.PlatformStatusDao;
-import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformStatusMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -60,11 +74,11 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
             throw new OpenDcsDataException("Could not find template");
         }
         selectTemplate.add(WHERE_CLAUSE, "where ps.platform_id = :platform_id")
-                      .add("columns", statusMapper.columnsForSelect(PlatformStatusMapper.Columns.LAST_ROUTING_SPEC_NAME))
+                      .add("columns", statusMapper.columnsForSelect(PlatformStatusMapper.Columns.LAST_ROUTING_SPEC_NAME,
+                                                                          PlatformStatusMapper.Columns.PLATFORM_DESIGNATOR))
                       .add("prefix", statusMapper.getPrefix());
         try (var select = handle.createQuery(selectTemplate.render()))
         {
-            select.setSqlLogger(new DetailSqlLogger(log));
             return select.bind(PlatformStatusMapper.Columns.PLATFORM_ID.column(), platformId)
                          .registerRowMapper(statusMapper)
                          .mapTo(PlatformStatus.class)
@@ -139,7 +153,8 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
         }
         selectTemplate.add(WHERE_CLAUSE, whereClause)
                       .add(LIMIT_CLAUSE, addLimitOffset(limit, offset))
-                      .add("columns", statusMapper.columnsForSelect(PlatformStatusMapper.Columns.LAST_ROUTING_SPEC_NAME))
+                      .add("columns", statusMapper.columnsForSelect(PlatformStatusMapper.Columns.LAST_ROUTING_SPEC_NAME,
+                                                                          PlatformStatusMapper.Columns.PLATFORM_DESIGNATOR))
                       .add("prefix", statusMapper.getPrefix());
         try (var select = handle.createQuery(selectTemplate.render()))
         {
