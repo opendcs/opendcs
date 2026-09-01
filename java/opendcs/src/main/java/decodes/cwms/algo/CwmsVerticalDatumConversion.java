@@ -50,7 +50,8 @@ import decodes.util.PropertySpec;
  * Convert vertical values between CWMS vertical datums using
  * cwms_loc.get_vertical_datum_offset (datum1 -> datum2), or explicitly
  * convert stage to the location's native datum using CWMS_V_LOC.elevation
- * and CWMS_V_LOC.vertical_datum.
+ * and CWMS_V_LOC.vertical_datum before optionally converting onward to
+ * datum2.
  *
  * Typical usage:
  *   - Input: stage/local-datum series (valueInDatum1).
@@ -60,8 +61,9 @@ import decodes.util.PropertySpec;
 	description = "Convert vertical values between CWMS vertical datums using "
 			+ "cwms_loc.get_vertical_datum_offset (datum1 -> datum2), or "
 			+ "explicitly convert STAGE to the location native datum using "
-			+ "CWMS_V_LOC.elevation and CWMS_V_LOC.vertical_datum. Typical "
-			+ "use: stage/local datum to NAVD88 elevation.")
+			+ "CWMS_V_LOC.elevation and CWMS_V_LOC.vertical_datum before "
+			+ "optionally converting onward to datum2. Typical use: "
+			+ "stage/local datum to NAVD88 elevation.")
 public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -88,7 +90,9 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	@org.opendcs.annotations.PropertySpec(
 		name = "datum1",
 		propertySpecType = PropertySpec.STRING,
-		description = "Input vertical datum (e.g., LOCAL, NGVD29, NAVD88).")
+		description = "Input vertical datum (e.g. LOCAL, NGVD29, NAVD88).For "
+			+ "conversionMode=locationElevationOffset, use datum1=STAGE to convert from stage "
+			+ "to use the location's native datum from CWMS-VUE Locations")
 	public String datum1;
 
 	@org.opendcs.annotations.PropertySpec(
@@ -117,7 +121,8 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 		description = "Conversion source: 'cwmsDatumOffset' (default) uses "
 			+ "cwms_loc.get_vertical_datum_offset; 'locationElevationOffset' "
 			+ "uses CWMS_V_LOC.elevation and CWMS_V_LOC.vertical_datum for "
-			+ "STAGE to native-datum elevation.")
+			+ "STAGE to native-datum elevation before any native-to-datum2 "
+			+ "CWMS conversion.")
 	public String conversionMode = MODE_CWMS_DATUM_OFFSET;
 
 	String _propertyNames[] =
@@ -132,6 +137,7 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	private String inputUnit;
 	private String locationIdFromTs;
 	private LocationElevationInfo locationElevationInfo;
+	private LocationSiteLoader locationSiteLoader = this::readLocationSiteFromCwmsLoc;
 
 	static final class LocationElevationInfo
 	{
@@ -146,6 +152,12 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			this.elevationInMeters = elevationInMeters;
 			this.verticalDatum = verticalDatum;
 		}
+	}
+
+	@FunctionalInterface
+	interface LocationSiteLoader
+	{
+		Site load(String locationId, String officeId) throws DbCompException;
 	}
 
 	@Override
@@ -208,7 +220,10 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	protected void beforeTimeSlices() throws DbCompException
 	{
 		// Determine input units once and set output units to match.
-		inputUnit = getInputUnitsAbbr("valueInDatum1");
+		if (inputUnit == null)
+		{
+			inputUnit = getInputUnitsAbbr("valueInDatum1");
+		}
 		if (inputUnit == null || inputUnit.trim().isEmpty() ||
 			"unknown".equalsIgnoreCase(inputUnit))
 		{
@@ -240,16 +255,9 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			locationIdFromTs = tsId.getSiteName();
 		}
 
-		if (isLocationElevationOffsetMode() && locationElevationInfo == null)
+		if (isLocationElevationOffsetMode())
 		{
-			locationElevationInfo = loadLocationElevationInfo();
-			if (normalizedDatum2 == null)
-			{
-				normalizedDatum2 = locationElevationInfo.verticalDatum;
-				log.info("CwmsVerticalDatumConversion resolved datum2={} from CWMS_V_LOC.vertical_datum "
-					   + "for location={}.", normalizedDatum2, locationIdFromTs);
-			}
-			validateLocationElevationInfo();
+			ensureLocationElevationInfoLoaded();
 		}
 	}
 
@@ -264,12 +272,12 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 
 		if (isLocationElevationOffsetMode())
 		{
-			if (locationElevationInfo == null)
+			LocationElevationInfo locationInfo = ensureLocationElevationInfoLoaded();
+			double outVal = valueInDatum1 + locationInfo.elevationOffsetInInputUnit;
+			if (!locationInfo.verticalDatum.equals(normalizedDatum2))
 			{
-				locationElevationInfo = loadLocationElevationInfo();
+				outVal += computeVerticalDatumOffset(locationInfo.verticalDatum, normalizedDatum2);
 			}
-			validateLocationElevationInfo();
-			double outVal = valueInDatum1 + locationElevationInfo.elevationOffsetInInputUnit;
 			setOutput(valueInDatum2, outVal, _timeSliceBaseTime);
 			return;
 		}
@@ -283,62 +291,9 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			return;
 		}
 
-		// 2. Determine offset timestamp based on effectiveDateMode
-		Date offsetTime;
-		if ("latestOverall".equalsIgnoreCase(effectiveDateMode))
-		{
-			// Far-future date so CWMS selects the latest effective_date
-			offsetTime = new GregorianCalendar(3000, Calendar.JANUARY, 1).getTime();
-		}
-		else if ("latestOnOrBefore".equalsIgnoreCase(effectiveDateMode))
-		{
-			offsetTime = _timeSliceBaseTime;
-		}
-		else
-		{
-			throw new DbCompException(
-				"Unknown effectiveDateMode '" + effectiveDateMode
-			  + "'. Expected 'latestOnOrBefore' or 'latestOverall'.");
-		}
-
-		String office = (officeId == null || officeId.trim().isEmpty())
-			? null
-			: officeId.trim();
-
-		// 3. Call CWMS via DAO and apply offset
-		try
-		{
-			double offset = verticalDatumDao.getVerticalDatumOffset(
-				locationIdFromTs,
-				normalizedDatum1,
-				normalizedDatum2,
-				offsetTime,
-				CWMS_TIME_ZONE_UTC,
-				inputUnit,
-				office
-			);
-
-			double outVal = valueInDatum1 + offset;
-
-			setOutput(valueInDatum2, outVal, _timeSliceBaseTime);
-		}
-		catch (NoVerticalDatumMappingException ex)
-		{
-			// Treat this as a per-timeslice failure; caller will see detailed message.
-			String msg =
-				"No vertical datum mapping for location=" + locationIdFromTs +
-				", " + normalizedDatum1 + "->" + normalizedDatum2 +
-				" at " + offsetTime + " (unit=" + inputUnit +
-				", office=" + (office != null ? office : "default") + ")";
-			throw new DbCompException(msg, ex);
-		}
-		catch (DbIoException ex)
-		{
-			throw new DbCompException(
-				"Database error calling cwms_loc.get_vertical_datum_offset "
-			  + "for location=" + locationIdFromTs + ", " + normalizedDatum1 + "->" + normalizedDatum2,
-				ex);
-		}
+		// 2. Call CWMS via DAO and apply offset
+		double outVal = valueInDatum1 + computeVerticalDatumOffset(normalizedDatum1, normalizedDatum2);
+		setOutput(valueInDatum2, outVal, _timeSliceBaseTime);
 	}
 
 	@Override
@@ -370,6 +325,24 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 		return MODE_LOCATION_ELEVATION_OFFSET.equalsIgnoreCase(normalizedConversionMode);
 	}
 
+	private LocationElevationInfo ensureLocationElevationInfoLoaded() throws DbCompException
+	{
+		if (locationElevationInfo == null)
+		{
+			locationElevationInfo = loadLocationElevationInfo();
+		}
+
+		if (normalizedDatum2 == null)
+		{
+			normalizedDatum2 = locationElevationInfo.verticalDatum;
+			log.info("CwmsVerticalDatumConversion resolved datum2={} from CWMS_V_LOC.vertical_datum "
+				   + "for location={}.", normalizedDatum2, locationIdFromTs);
+		}
+
+		validateLocationElevationInfo();
+		return locationElevationInfo;
+	}
+
 	private void validateLocationElevationInfo() throws DbCompException
 	{
 		if (locationElevationInfo == null)
@@ -379,67 +352,71 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			  + "could not load CWMS_V_LOC metadata for location=" + locationIdFromTs + ".");
 		}
 
-		if (!normalizedDatum2.equals(locationElevationInfo.verticalDatum))
+		if (normalizedDatum2 == null)
 		{
 			throw new DbCompException(
 				"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
-			  + "requires datum2='" + locationElevationInfo.verticalDatum
-			  + "' to match CWMS_V_LOC.vertical_datum for location=" + locationIdFromTs
-			  + "; received '" + normalizedDatum2 + "'.");
+			  + "could not determine datum2 for location=" + locationIdFromTs + ".");
 		}
 	}
 
 	private LocationElevationInfo loadLocationElevationInfo() throws DbCompException
 	{
 		String office = effectiveOfficeId();
+		Site site = locationSiteLoader.load(locationIdFromTs, office);
+		double elevationInMeters = site.getElevation();
+		if (elevationInMeters == Constants.undefinedDouble)
+		{
+			throw new DbCompException(
+				"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
+			  + "requires CWMS_V_LOC.elevation for location=" + locationIdFromTs + ".");
+		}
+
+		String verticalDatum = site.getProperty("vertical_datum");
+		if (verticalDatum == null || verticalDatum.trim().isEmpty())
+		{
+			throw new DbCompException(
+				"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
+			  + "requires CWMS_V_LOC.vertical_datum for location=" + locationIdFromTs + ".");
+		}
+
+		String normalizedVerticalDatum = verticalDatum.trim().toUpperCase(Locale.US);
+		double elevationOffsetInInputUnit =
+			convertUnits(elevationInMeters, CWMS_LOCATION_ELEVATION_UNIT, inputUnit);
+		log.info("CwmsVerticalDatumConversion using locationElevationOffset for location={} "
+			   + "with CWMS_V_LOC.elevation={} {} and CWMS_V_LOC.vertical_datum={}.",
+			   locationIdFromTs, elevationInMeters, CWMS_LOCATION_ELEVATION_UNIT,
+			   normalizedVerticalDatum);
+		return new LocationElevationInfo(
+			elevationOffsetInInputUnit,
+			elevationInMeters,
+			normalizedVerticalDatum);
+	}
+
+	private Site readLocationSiteFromCwmsLoc(String locationId, String office)
+		throws DbCompException
+	{
 		CwmsSiteDAO siteDao = new CwmsSiteDAO((CwmsTimeSeriesDb) tsdb, office);
 		try
 		{
-			DbKey siteId = siteDao.lookupSiteID(locationIdFromTs);
+			DbKey siteId = siteDao.lookupSiteID(locationId);
 			if (DbKey.isNull(siteId))
 			{
 				throw new DbCompException(
 					"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
-				  + "could not find a CWMS_V_LOC row for location=" + locationIdFromTs
+				  + "could not find a CWMS_V_LOC row for location=" + locationId
 				  + " (office=" + office + ").");
 			}
 
 			// Read directly from CWMS_V_LOC. readSite() merges site_property
 			// values onto the Site object, which can override vertical_datum.
-			Site site = siteDao.readSiteFromCwmsLoc(siteId);
-			double elevationInMeters = site.getElevation();
-			if (elevationInMeters == Constants.undefinedDouble)
-			{
-				throw new DbCompException(
-					"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
-				  + "requires CWMS_V_LOC.elevation for location=" + locationIdFromTs + ".");
-			}
-
-			String verticalDatum = site.getProperty("vertical_datum");
-			if (verticalDatum == null || verticalDatum.trim().isEmpty())
-			{
-				throw new DbCompException(
-					"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
-				  + "requires CWMS_V_LOC.vertical_datum for location=" + locationIdFromTs + ".");
-			}
-
-			String normalizedVerticalDatum = verticalDatum.trim().toUpperCase(Locale.US);
-			double elevationOffsetInInputUnit =
-				convertUnits(elevationInMeters, CWMS_LOCATION_ELEVATION_UNIT, inputUnit);
-			log.info("CwmsVerticalDatumConversion using locationElevationOffset for location={} "
-				   + "with CWMS_V_LOC.elevation={} {} and CWMS_V_LOC.vertical_datum={}.",
-				   locationIdFromTs, elevationInMeters, CWMS_LOCATION_ELEVATION_UNIT,
-				   normalizedVerticalDatum);
-			return new LocationElevationInfo(
-				elevationOffsetInInputUnit,
-				elevationInMeters,
-				normalizedVerticalDatum);
+			return siteDao.readSiteFromCwmsLoc(siteId);
 		}
 		catch (DbIoException | NoSuchObjectException ex)
 		{
 			throw new DbCompException(
 				"Failed to load CWMS_V_LOC.elevation and CWMS_V_LOC.vertical_datum "
-			  + "for location=" + locationIdFromTs + ".",
+			  + "for location=" + locationId + ".",
 				ex);
 		}
 		finally
@@ -455,6 +432,66 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			return officeId.trim();
 		}
 		return ((CwmsTimeSeriesDb) tsdb).getDbOfficeId();
+	}
+
+	private String effectiveOfficeIdOverride()
+	{
+		return officeId == null || officeId.trim().isEmpty()
+			? null
+			: officeId.trim();
+	}
+
+	private double computeVerticalDatumOffset(String fromDatum, String toDatum)
+		throws DbCompException
+	{
+		Date offsetTime = determineOffsetTime();
+		String office = effectiveOfficeIdOverride();
+
+		try
+		{
+			return verticalDatumDao.getVerticalDatumOffset(
+				locationIdFromTs,
+				fromDatum,
+				toDatum,
+				offsetTime,
+				CWMS_TIME_ZONE_UTC,
+				inputUnit,
+				office
+			);
+		}
+		catch (NoVerticalDatumMappingException ex)
+		{
+			String msg =
+				"No vertical datum mapping for location=" + locationIdFromTs +
+				", " + fromDatum + "->" + toDatum +
+				" at " + offsetTime + " (unit=" + inputUnit +
+				", office=" + (office != null ? office : "default") + ")";
+			throw new DbCompException(msg, ex);
+		}
+		catch (DbIoException ex)
+		{
+			throw new DbCompException(
+				"Database error calling cwms_loc.get_vertical_datum_offset "
+			  + "for location=" + locationIdFromTs + ", " + fromDatum + "->" + toDatum,
+				ex);
+		}
+	}
+
+	private Date determineOffsetTime() throws DbCompException
+	{
+		if ("latestOverall".equalsIgnoreCase(effectiveDateMode))
+		{
+			// Far-future date so CWMS selects the latest effective_date
+			return new GregorianCalendar(3000, Calendar.JANUARY, 1).getTime();
+		}
+		if ("latestOnOrBefore".equalsIgnoreCase(effectiveDateMode))
+		{
+			return _timeSliceBaseTime;
+		}
+
+		throw new DbCompException(
+			"Unknown effectiveDateMode '" + effectiveDateMode
+		  + "'. Expected 'latestOnOrBefore' or 'latestOverall'.");
 	}
 
 	private double convertUnits(double value, String fromUnit, String toUnit)

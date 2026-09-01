@@ -1,10 +1,12 @@
 package decodes.cwms.algo;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,7 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsVerticalDatumDao;
 import decodes.cwms.NoVerticalDatumMappingException;
+import decodes.db.Constants;
+import decodes.db.Database;
+import decodes.db.Site;
+import decodes.db.UnitConverterDb;
 import decodes.tsdb.DbCompException;
+import mil.army.usace.hec.metadata.UnitUtil;
 
 /**
  * Database-free unit tests for CwmsVerticalDatumConversion.
@@ -27,6 +34,34 @@ import decodes.tsdb.DbCompException;
  */
 final class CwmsVerticalDatumConversionTest
 {
+	@BeforeAll
+	static void setupUnitConversions() throws Exception
+	{
+		Database database = new Database();
+		Database.setDb(database);
+		String[] availableUnits = UnitUtil.getAvailableUnits();
+		for (String unit : availableUnits)
+		{
+			List<String> allConvertTo = UnitUtil.getAllUnitsThatCanConvertTo(unit, UnitUtil.ENGLISH);
+			for (String convertTo : allConvertTo)
+			{
+				UnitConverterDb unitConverterDb = new UnitConverterDb(unit, convertTo);
+				unitConverterDb.algorithm = Constants.eucvt_linear;
+				unitConverterDb.coefficients = new double[]
+					{ UnitUtil.getScalarFactor(unit, convertTo), 0.0 };
+				database.unitConverterSet.addDbConverter(unitConverterDb);
+			}
+
+			allConvertTo = UnitUtil.getAllUnitsThatCanConvertTo(unit, UnitUtil.SI);
+			for (String convertTo : allConvertTo)
+			{
+				UnitConverterDb unitConverterDb = new UnitConverterDb(unit, convertTo);
+				unitConverterDb.algorithm = Constants.eucvt_linear;
+				database.unitConverterSet.addDbConverter(unitConverterDb);
+			}
+		}
+	}
+
 	/**
 	 * Stub CwmsVerticalDatumDao that records the last call and returns a fixed offset.
 	 */
@@ -199,23 +234,38 @@ final class CwmsVerticalDatumConversionTest
 		CwmsVerticalDatumConversion algo = new CwmsVerticalDatumConversion();
 		algo.datum1 = "STAGE";
 		algo.conversionMode = "locationElevationOffset";
+		algo.officeId = "LRL";
 		algo.initAWAlgorithm();
 
-		setPrivateField(algo, "normalizedDatum2", "NAVD88");
-		setPrivateField(algo, "inputUnit", "m");
+		setPrivateField(algo, "inputUnit", "ft");
 		setPrivateField(algo, "locationIdFromTs", "LOCKDAM_03");
-		setPrivateField(
-			algo,
-			"locationElevationInfo",
-			new CwmsVerticalDatumConversion.LocationElevationInfo(182.88, 182.88, "NAVD88"));
+
+		String[] loadedLocation = new String[1];
+		String[] loadedOffice = new String[1];
+		setPrivateField(algo, "locationSiteLoader",
+			(CwmsVerticalDatumConversion.LocationSiteLoader)(locationId, officeId) ->
+			{
+				loadedLocation[0] = locationId;
+				loadedOffice[0] = officeId;
+				Site site = new Site();
+				site.setElevation(100.0);
+				site.setProperty("vertical_datum", "navd88");
+				return site;
+			});
 
 		Date baseTime = new Date(1_700_000_000_000L);
 		setPrivateField(algo, "_timeSliceBaseTime", baseTime);
 
+		algo.beforeTimeSlices();
+
+		assertEquals("LOCKDAM_03", loadedLocation[0]);
+		assertEquals("LRL", loadedOffice[0]);
+		assertEquals("NAVD88", getPrivateField(algo, "normalizedDatum2"));
+
 		algo.valueInDatum1 = 4.0;
 		algo.doAWTimeSlice();
 
-		assertEquals(186.88, algo.valueInDatum2.getDoubleValue(), 1e-9);
+		assertEquals(332.0839895, algo.valueInDatum2.getDoubleValue(), 1e-7);
 	}
 
 	@Test
@@ -231,7 +281,7 @@ final class CwmsVerticalDatumConversionTest
 	}
 
 	@Test
-	void locationElevationOffsetRejectsDatum2Mismatch() throws Exception
+	void locationElevationOffsetConvertsFromNativeDatumToRequestedTarget() throws Exception
 	{
 		CwmsVerticalDatumConversion algo = new CwmsVerticalDatumConversion();
 		algo.datum1 = "STAGE";
@@ -239,6 +289,9 @@ final class CwmsVerticalDatumConversionTest
 		algo.conversionMode = "locationElevationOffset";
 		algo.initAWAlgorithm();
 
+		StubVerticalDatumDao stubDao = new StubVerticalDatumDao();
+		stubDao.offsetToReturn = 5.0;
+		setPrivateField(algo, "verticalDatumDao", stubDao);
 		setPrivateField(algo, "inputUnit", "m");
 		setPrivateField(algo, "locationIdFromTs", "LOCKDAM_03");
 		setPrivateField(
@@ -249,9 +302,15 @@ final class CwmsVerticalDatumConversionTest
 		Date baseTime = new Date(1_700_000_000_000L);
 		setPrivateField(algo, "_timeSliceBaseTime", baseTime);
 
-		algo.valueInDatum1 = 1.0;
-		DbCompException ex = assertThrows(DbCompException.class, algo::doAWTimeSlice);
-		assertTrue(ex.getMessage().contains("CWMS_V_LOC.vertical_datum"));
+		algo.valueInDatum1 = 4.0;
+		algo.doAWTimeSlice();
+
+		assertEquals(1, stubDao.callCount);
+		assertEquals("LOCKDAM_03", stubDao.lastLocationId);
+		assertEquals("LOCAL", stubDao.lastDatum1);
+		assertEquals("NAVD88", stubDao.lastDatum2);
+		assertEquals(baseTime, stubDao.lastDatetime);
+		assertEquals(191.88, algo.valueInDatum2.getDoubleValue(), 1e-9);
 	}
 
 	private static void setPrivateField(Object target, String fieldName, Object value)
@@ -277,5 +336,30 @@ final class CwmsVerticalDatumConversionTest
 		}
 		f.setAccessible(true);
 		f.set(target, value);
+	}
+
+	private static Object getPrivateField(Object target, String fieldName)
+		throws NoSuchFieldException, IllegalAccessException
+	{
+		Class<?> cls = target.getClass();
+		Field f;
+		while (true)
+		{
+			try
+			{
+				f = cls.getDeclaredField(fieldName);
+				break;
+			}
+			catch (NoSuchFieldException ex)
+			{
+				cls = cls.getSuperclass();
+				if (cls == null)
+				{
+					throw ex;
+				}
+			}
+		}
+		f.setAccessible(true);
+		return f.get(target);
 	}
 }
