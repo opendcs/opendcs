@@ -92,7 +92,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         selectTemplate.add("where", whereClause)
                       .add("columns",
                            entryMapper.columnsForSelect(ScheduleEntryMapper.Columns.LOADING_APPLICATION_NAME,
-                                                        ScheduleEntryMapper.Columns.ROUTINSPEC_NAME
+                                                        ScheduleEntryMapper.Columns.ROUTINGSPEC_NAME
                       ))
                       .add(SqlQueries.COLLATE_CLAUSE, collateClauseFor(dbEngine));
         try (var select = handle.createQuery(selectTemplate.render()))
@@ -276,7 +276,8 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
         var selectTemplate = queries.getInstanceOf(SELECT);
         if (selectTemplate == null)
         {
@@ -285,8 +286,9 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         selectTemplate.add(SqlKeywords.LIMIT, addLimitOffset(limit, offset))
                       .add("columns",
                            entryMapper.columnsForSelect(ScheduleEntryMapper.Columns.LOADING_APPLICATION_NAME,
-                                                        ScheduleEntryMapper.Columns.ROUTINSPEC_NAME
-                      ));
+                                                        ScheduleEntryMapper.Columns.ROUTINGSPEC_NAME
+                       ))
+                      .add(SqlQueries.COLLATE_CLAUSE, collateClauseFor(dbEngine));
         var byApp = app != null && !DbKey.isNull(app.getAppId());
         if (byApp)
         {

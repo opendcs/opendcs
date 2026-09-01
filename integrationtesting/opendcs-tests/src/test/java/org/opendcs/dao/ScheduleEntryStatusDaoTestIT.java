@@ -37,11 +37,6 @@ import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
 import decodes.sql.DbKey;
 
-/**
- * NOTE: substantially similar to {@see ScheduleEntryTest}, however this is targetted at the
- * new DAO.
- * ScheduleEntryDaoTest
- */
 @DecodesConfigurationRequired({
         "shared/test-sites.xml",
         "shared/ROWI4.xml",

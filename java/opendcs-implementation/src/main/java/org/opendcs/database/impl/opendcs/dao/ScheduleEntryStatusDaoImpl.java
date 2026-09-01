@@ -129,7 +129,7 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
                 // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
                 id = existing.get().getId();
                 log.trace("""
-                    Using ID from existing ScheduleENtry, id={}, that was found. Provided ID was {}.
+                    Using ID from existing ScheduleEntryStatus, id={}, that was found. Provided ID was {}.
                     """,
                     id, status.getId());
             }

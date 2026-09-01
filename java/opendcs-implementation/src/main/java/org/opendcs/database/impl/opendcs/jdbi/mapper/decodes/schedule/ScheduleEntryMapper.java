@@ -54,7 +54,7 @@ public final class ScheduleEntryMapper extends PrefixRowMapper<ScheduleEntry, Sc
         ret.setLoadingAppId(keyMapper.map(rs, column(Columns.LOADING_APPLICATION_ID), ctx));
         ret.setLoadingAppName(rs.getString(column(Columns.LOADING_APPLICATION_NAME)));
         ret.setRoutingSpecId(keyMapper.map(rs, column(Columns.ROUTINGSPEC_ID), ctx));
-        ret.setRoutingSpecName(rs.getString(column(Columns.ROUTINSPEC_NAME)));
+        ret.setRoutingSpecName(rs.getString(column(Columns.ROUTINGSPEC_NAME)));
         ret.setTimezone(rs.getString(column(Columns.TIME_ZONE)));
         ret.setStartTime(dateMapper.map(rs, column(Columns.START_TIME), ctx));
         ret.setRunInterval(rs.getString(column(Columns.RUN_INTERVAL)));
