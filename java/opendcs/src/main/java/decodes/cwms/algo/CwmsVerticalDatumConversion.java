@@ -120,7 +120,7 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 		propertySpecType = PropertySpec.STRING,
 		description = "Conversion source: 'cwmsDatumOffset' (default) uses "
 			+ "cwms_loc.get_vertical_datum_offset; 'locationElevationOffset' "
-			+ "uses CWMS_V_LOC.elevation and CWMS_V_LOC.vertical_datum for "
+			+ "uses CWMS_V_LOC.elevation and CWMS_V_LOC.vertical_datum from CWMS-VUE Locations tab for "
 			+ "STAGE to native-datum elevation before any native-to-datum2 "
 			+ "CWMS conversion.")
 	public String conversionMode = MODE_CWMS_DATUM_OFFSET;
