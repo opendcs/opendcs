@@ -2,6 +2,7 @@ package decodes.db;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 import java.util.TimeZone;
 
 import decodes.sql.DbKey;
@@ -260,5 +261,122 @@ public class ScheduleEntryStatus
 	{
 		return "#msgs=" + getNumMessages() + ", #plat=" + getNumPlatforms() + ", #errs="
 			+ getNumDecodesErrors();
+	}
+
+	// The following are mostly for tests. Performance isn't a high consideration
+	// but do keep it in mind a bit.
+
+	@Override
+	public String toString()
+	{
+		var sb = new StringBuilder();
+		sb.append("ScheduleEntryStatus{")
+		  .append("id=").append(getId()).append(", ")
+		  .append("scheduleEntryId=").append(scheduleEntryId).append(", ")
+		  .append("scheduleEntryName=").append(scheduleEntryName).append(", ")
+		  .append("runStatus=").append(runStatus).append(", ")
+		  .append("runStart=").append(runStart).append(", ")
+		  .append("runStop=").append(runStop).append(", ")
+		  .append("lastMessageTime=").append(lastMessageTime).append(", ")
+		  .append("lastModified=").append(lastModified).append(", ")
+		  .append("hostname=").append(hostname).append(", ")
+		  .append("numMessages=").append(numMessages).append(", ")
+		  .append("numDecodesErrors=").append(numDecodesErrors).append(", ")
+		  .append("numPlatforms=").append(numPlatforms).append(", ")
+		  .append("lastConsumer=").append(lastConsumer).append(", ")
+		  .append("lastSource=").append(lastSource)
+		  .append("}");
+
+		return sb.toString();
+	}
+
+	@Override
+	public boolean equals(Object other)
+	{
+		if (this == other)
+		{
+			return true;
+		}
+		else if (!(other instanceof ScheduleEntryStatus))
+		{
+			return false;
+		}
+		var ses = (ScheduleEntryStatus)other;
+		// cheapest checks first
+		if (this.numMessages != ses.numMessages)
+		{
+			return false;
+		}
+
+		if (this.numDecodesErrors != ses.numDecodesErrors)
+		{
+			return false;
+		}
+
+		if (this.numPlatforms != ses.numPlatforms)
+		{
+			return false;
+		}
+
+
+		if (!Objects.equals(this.getId(), ses.getId()))
+		{
+			return false;
+		}
+
+		if (!Objects.equals(this.getScheduleEntryId(), ses.getScheduleEntryId()))
+		{
+			return false;
+		}
+
+		if (!Objects.equals(this.getRunStart(), ses.getRunStart()))
+		{
+			return false;
+		}
+
+		if (!Objects.equals(this.getRunStop(), ses.getRunStop()))
+		{
+			return false;
+		}
+
+		if (!Objects.equals(this.getLastModified(), ses.getLastModified()))
+		{
+			return false;
+		}
+
+		if (!Objects.equals(this.getLastMessageTime(), ses.getLastMessageTime()))
+		{
+			return false;
+		}
+
+		if (!Objects.equals(this.hostname, ses.hostname))
+		{
+			return false;
+		}
+
+		if (!Objects.equals(this.lastConsumer, ses.lastConsumer))
+		{
+			return false;
+		}
+
+		if (!Objects.equals(this.lastSource, ses.lastSource))
+		{
+			return false;
+		}
+
+		if (!Objects.equals(this.runStatus, ses.runStatus))
+		{
+			return false;
+		}
+
+		return Objects.equals(this.scheduleEntryName, ses.scheduleEntryName);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(getId(), scheduleEntryId, scheduleEntryName, runStart,
+							runStop, runStatus, hostname, lastConsumer, lastMessageTime,
+							lastModified, lastSource, numDecodesErrors, numMessages, numPlatforms);
 	}
 }
