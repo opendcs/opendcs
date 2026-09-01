@@ -37,12 +37,12 @@ public interface ScheduleEntryDao extends OpenDcsDao
 
     void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
-    default List<ScheduleEntry> getAll(DataTransaction tx, int limit, int ofset) throws OpenDcsDataException
+    default List<ScheduleEntry> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
-        return getAll(tx, limit, ofset, null);
+        return getAll(tx, limit, offset, null);
     }
 
-    List<ScheduleEntry> getAll(DataTransaction tx, int limit, int ofset, CompAppInfo forApp) throws OpenDcsDataException;
+    List<ScheduleEntry> getAll(DataTransaction tx, int limit, int offset, CompAppInfo forApp) throws OpenDcsDataException;
 
     Optional<ScheduleEntry> ifStatusUpdatedSince(DataTransaction tx, DbKey entryId, ZonedDateTime previous) throws OpenDcsDataException;
    

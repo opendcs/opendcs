@@ -110,7 +110,7 @@ public class ScheduleEntryStatusDaoImpl implements ScheduleEntryStatusDao
     @Override
     public ScheduleEntryStatus updateStatus(DataTransaction tx, ScheduleEntryStatus status) throws OpenDcsDataException
     {
-        Objects.requireNonNull(status, "A valid ScheduleEntry instance must be provided.");
+        Objects.requireNonNull(status, "A valid ScheduleEntryStatus instance must be provided.");
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();

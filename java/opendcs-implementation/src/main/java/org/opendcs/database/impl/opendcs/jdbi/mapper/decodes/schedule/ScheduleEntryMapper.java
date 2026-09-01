@@ -75,7 +75,7 @@ public final class ScheduleEntryMapper extends PrefixRowMapper<ScheduleEntry, Sc
         LOADING_APPLICATION_ID("loading_application_id"),
         LOADING_APPLICATION_NAME("loading_application_name"),
         ROUTINGSPEC_ID("routingspec_id"),
-        ROUTINSPEC_NAME("routingspec_name"),
+        ROUTINGSPEC_NAME("routingspec_name"),
         START_TIME("start_time"),
         TIME_ZONE("timezone"),
         RUN_INTERVAL("run_interval"),

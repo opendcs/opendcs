@@ -41,7 +41,7 @@ import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 
 /**
- * NOTE: substantially similar to {@see ScheduleEntryTest}, however this is targetted at the
+ * NOTE: substantially similar to {@link ScheduleEntryTest}, however this is targeted at the
  * new DAO.
  * ScheduleEntryDaoTest
  */
@@ -94,7 +94,7 @@ class ScheduleEntryDaoTestIT extends AppTestBase
             assertEquals(se.getLoadingAppName(), seOut2.getLoadingAppName());
             assertEquals(se.getRunInterval(), seOut2.getRunInterval());
             assertEquals(se.getStartTime(), seOut2.getStartTime());
-            assertEquals(se.getTimezone(), seOut.getTimezone());
+            assertEquals(se.getTimezone(), seOut2.getTimezone());
 
 
             var id = seOut.getId();

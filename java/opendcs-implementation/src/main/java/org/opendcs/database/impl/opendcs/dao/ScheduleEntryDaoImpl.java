@@ -176,7 +176,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         }
         else
         {
-            throw new OpenDcsDataException("Cannot save schedule entry with valid routing spec reference (name or id)");
+            throw new OpenDcsDataException("Cannot save schedule entry without valid routing spec reference (name or id)");
         }
 
         Object loadingAppBind = entry.getLoadingAppName();
@@ -209,7 +209,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
                 // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
                 id = existing.get().getId();
                 log.trace("""
-                    Using ID from existing ScheduleENtry, id={}, that was found. Provided ID was {}.
+                    Using ID from existing ScheduleEntry, id={}, that was found. Provided ID was {}.
                     """,
                     id, entry.getId());
             }
