@@ -399,8 +399,7 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	private Site readLocationSiteFromCwmsLoc(String locationId, String office)
 		throws DbCompException
 	{
-		CwmsSiteDAO siteDao = new CwmsSiteDAO((CwmsTimeSeriesDb) tsdb, office);
-		try
+		try (CwmsSiteDAO siteDao = new CwmsSiteDAO((CwmsTimeSeriesDb) tsdb, office))
 		{
 			DbKey siteId = siteDao.lookupSiteID(locationId);
 			if (DbKey.isNull(siteId))
@@ -421,10 +420,6 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 				"Failed to load CWMS_V_LOC.elevation and CWMS_V_LOC.vertical_datum "
 			  + "for location=" + locationId + ".",
 				ex);
-		}
-		finally
-		{
-			siteDao.close();
 		}
 	}
 
