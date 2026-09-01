@@ -125,8 +125,6 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			+ "CWMS conversion.")
 	public String conversionMode = MODE_CWMS_DATUM_OFFSET;
 
-	String _propertyNames[] =
-		{ "datum1", "datum2", "officeId", "effectiveDateMode", "conversionMode" };
 	//AW:PROPERTIES_END
 
 	// Local fields
