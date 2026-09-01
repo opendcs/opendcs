@@ -152,6 +152,11 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 		}
 	}
 
+	/**
+	 * Local seam around site loading so this algorithm can unit test the
+	 * location-elevation path without bootstrapping the full CWMS DAO stack.
+	 * The default implementation still reads directly from CWMS_V_LOC.
+	 */
 	@FunctionalInterface
 	interface LocationSiteLoader
 	{
