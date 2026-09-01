@@ -135,6 +135,7 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	private String inputUnit;
 	private String locationIdFromTs;
 	private LocationElevationInfo locationElevationInfo;
+	private UnitConverter locationElevationUnitConverter;
 	private LocationSiteLoader locationSiteLoader = this::readLocationSiteFromCwmsLoc;
 
 	static final class LocationElevationInfo
@@ -260,6 +261,9 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 
 		if (isLocationElevationOffsetMode())
 		{
+			initializeLocationElevationUnitConverter(
+				CWMS_LOCATION_ELEVATION_UNIT,
+				inputUnit);
 			ensureLocationElevationInfoLoaded();
 		}
 	}
@@ -321,6 +325,7 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			verticalDatumDao = null;
 		}
 		locationElevationInfo = null;
+		locationElevationUnitConverter = null;
 	}
 
 	private boolean isLocationElevationOffsetMode()
@@ -509,10 +514,7 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			  + toUnit + "' because engineering unit converters are not initialized.");
 		}
 
-		EngineeringUnit fromEu = EngineeringUnit.getEngineeringUnit(fromUnit);
-		EngineeringUnit toEu = EngineeringUnit.getEngineeringUnit(toUnit);
-		UnitConverter converter = db.unitConverterSet.get(fromEu, toEu);
-		if (converter == null)
+		if (locationElevationUnitConverter == null)
 		{
 			throw new DbCompException(
 				"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
@@ -522,7 +524,7 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 
 		try
 		{
-			return converter.convert(value);
+			return locationElevationUnitConverter.convert(value);
 		}
 		catch (DecodesException ex)
 		{
@@ -532,6 +534,29 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			  + toUnit + "'.",
 				ex);
 		}
+	}
+
+	private void initializeLocationElevationUnitConverter(String fromUnit, String toUnit)
+		throws DbCompException
+	{
+		if (fromUnit == null || toUnit == null || fromUnit.equalsIgnoreCase(toUnit))
+		{
+			locationElevationUnitConverter = null;
+			return;
+		}
+
+		Database db = Database.getDb();
+		if (db == null || db.unitConverterSet == null)
+		{
+			throw new DbCompException(
+				"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
+			  + "cannot convert CWMS_V_LOC.elevation from '" + fromUnit + "' to '"
+			  + toUnit + "' because engineering unit converters are not initialized.");
+		}
+
+		EngineeringUnit fromEu = EngineeringUnit.getEngineeringUnit(fromUnit);
+		EngineeringUnit toEu = EngineeringUnit.getEngineeringUnit(toUnit);
+		locationElevationUnitConverter = db.unitConverterSet.get(fromEu, toEu);
 	}
 
 	private String normalizeOptionalDatum(String datum)
