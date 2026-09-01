@@ -7,10 +7,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Date;
 
 import org.junit.jupiter.api.Test;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.NetworkListDao;
 import org.opendcs.database.dai.PlatformDao;
 import org.opendcs.database.dai.PlatformStatusDao;
+import org.opendcs.database.dai.SiteDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
@@ -18,8 +21,10 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
+import decodes.db.Platform;
 import decodes.db.PlatformStatus;
 import decodes.db.Site;
+import decodes.db.TransportMedium;
 
 @DecodesConfigurationRequired({
         "shared/test-sites.xml",
@@ -99,6 +104,47 @@ class PlatformStatusDaoTestIT extends AppTestBase
             assertEquals(1, statuses.size());
 
             assertEquals(status, statuses.getFirst());
+            tx.rollback();
+        }
+    }
+
+
+    @Test
+    void test_get_all() throws Exception
+    {
+        var statusDao = db.getDao(PlatformStatusDao.class).orElseThrow();
+        var platformDao = db.getDao(PlatformDao.class).orElseThrow();
+        var siteDao = db.getDao(SiteDao.class).orElseThrow();
+        final int MAX_COUNT = 100;
+        try (var tx = db.newTransaction())
+        {
+            createPlatforms(tx, statusDao, platformDao, siteDao, MAX_COUNT);
+            
+            var statuses = statusDao.getAll(tx, 100, -1);
+            assertEquals(MAX_COUNT, statuses.size());
+            tx.rollback();
+        }        
+    }
+
+    private void createPlatforms(DataTransaction tx, PlatformStatusDao statusDao, PlatformDao platformDao, SiteDao siteDao, int count) throws OpenDcsDataException
+    {
+        for (int i = 0; i < count; i++)
+        {
+            var site = new Site();
+            site.addName("cwms", "TestPlatformSite-" + i);
+            var siteOut = siteDao.save(tx, site);
+            var platform = new Platform();
+            platform.setSite(siteOut);
+            var tm = new TransportMedium(platform);
+            tm.setMediumType("logger");
+            tm.setMediumId(String.format("AAA-Logger-%03d", i));
+            platform.transportMedia.add(tm);
+            var platformOut = platformDao.save(tx, platform);
+
+            var status = new PlatformStatus(platformOut.getId());
+            status.setAnnotation("Status for platform " + i);
+            status.setLastContactTime(new Date());
+            statusDao.updatePlatformStatus(tx, status);
         }
     }
 }

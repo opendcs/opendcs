@@ -59,12 +59,12 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
         {
             throw new OpenDcsDataException("Could not find template");
         }
-        selectTemplate.add(WHERE_CLAUSE, "ps.platform_id =:platform_id")
+        selectTemplate.add(WHERE_CLAUSE, "where ps.platform_id = :platform_id")
                       .add("columns", statusMapper.columnsForSelect(PlatformStatusMapper.Columns.LAST_ROUTING_SPEC_NAME))
-                      .add("prefix", "ps"); // TODO: update once schedule entry is merged in.
+                      .add("prefix", statusMapper.getPrefix());
         try (var select = handle.createQuery(selectTemplate.render()))
         {
-            
+            select.setSqlLogger(new DetailSqlLogger(log));
             return select.bind(PlatformStatusMapper.Columns.PLATFORM_ID.column(), platformId)
                          .registerRowMapper(statusMapper)
                          .mapTo(PlatformStatus.class)
@@ -88,7 +88,6 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
         
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
-            merge.setSqlLogger(new DetailSqlLogger(log));
             merge.bind(PlatformStatusMapper.Columns.PLATFORM_ID.column(), platformStatus.getPlatformId())
                  .bind(PlatformStatusMapper.Columns.LAST_SCHEDULE_ENTRY_STATUS_ID.column(),
                        platformStatus.getLastScheduleEntryStatusId())
@@ -125,17 +124,11 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
     @Override
     public List<PlatformStatus> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException
     {
-        return List.of();
+        return getAll(tx, limit, offset, "");
     }
 
-    @Override
-    public List<PlatformStatus> getPlatformStatusForNetList(DataTransaction tx, DbKey netlistId, int limit, int offset)
-            throws OpenDcsDataException 
+    private List<PlatformStatus> getAll(DataTransaction tx, int limit, int offset, String whereClause, Object... additionalBinds) throws OpenDcsDataException
     {
-        if (DbKey.isNull(netlistId))
-        {
-            return List.of();
-        }
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var selectTemplate = queries.getInstanceOf(SELECT);
@@ -144,16 +137,10 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
         {
             throw new OpenDcsDataException("Could not find template");
         }
-        selectTemplate.add(WHERE_CLAUSE, """
-                        ps.platform_id in (
-                            select tm.platformid from
-                                networklistentry nle
-                            left outer join transportmedium tm on tm.mediumid = nle.transportid
-                            where nle.networklistid = :netlistid)       
-                        """)
+        selectTemplate.add(WHERE_CLAUSE, whereClause)
                       .add(LIMIT_CLAUSE, addLimitOffset(limit, offset))
                       .add("columns", statusMapper.columnsForSelect(PlatformStatusMapper.Columns.LAST_ROUTING_SPEC_NAME))
-                      .add("prefix", "ps"); // TODO: update once schedule entry is merged in.
+                      .add("prefix", statusMapper.getPrefix());
         try (var select = handle.createQuery(selectTemplate.render()))
         {
             if (limit >= 0)
@@ -165,10 +152,38 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
                 select.bind(SqlKeywords.OFFSET, offset);
             }
 
-            return select.bind("netlistid", netlistId)
-                         .registerRowMapper(statusMapper)
+            if (additionalBinds.length % 2 != 0)
+            {
+                throw new OpenDcsDataException(
+                    "Length of Additional arguments not divisible by 2. Arguments must be bind, value pairs");
+            }
+            for (int i = 0; i < additionalBinds.length; i = i + 2)
+            {
+                select.bindByType((String)additionalBinds[i], additionalBinds[i+1], additionalBinds[i+1].getClass());
+            }
+            return select.registerRowMapper(statusMapper)
                          .mapTo(PlatformStatus.class)
                          .list();
         }
+    }
+
+
+    @Override
+    public List<PlatformStatus> getPlatformStatusForNetList(DataTransaction tx, DbKey netlistId, int limit, int offset)
+            throws OpenDcsDataException 
+    {
+        if (DbKey.isNull(netlistId))
+        {
+            return List.of();
+        }
+        final String where = """
+                        where ps.platform_id in (
+                            select tm.platformid from
+                                networklistentry nle
+                            left outer join transportmedium tm on tm.mediumid = nle.transportid
+                            where nle.networklistid = :netlistid)       
+                        """;
+
+        return getAll(tx, limit, offset, where, "netlistid", netlistId);
     }
 }
