@@ -490,38 +490,30 @@ public class CwmsSiteDAO extends SiteDAO
 	public void readSite(Site site) throws DbIoException, NoSuchObjectException
 	{
 		DbKey id = site.getId();
-		String q = "select " + siteAttributes + " from " + siteTableName
-		         + " where " + siteTableKeyColumn + " = ?"
-				 + " and UNIT_SYSTEM = 'SI'"
-				 + " and upper(DB_OFFICE_ID) =upper(?)";
-		try
+		readSiteFromCwmsLoc(site);
+		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
 		{
-			Site ret = getSingleResult(q, rs->
-			{
-				resultSet2Site(site, rs);
-				return site;
-			}, site.getId(),officeId);
-
-			if (ret == null)
-			{
-				throw new NoSuchObjectException("No site for location code =" + site.getId());
-			}
-			readNames(site);
-			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
-			{
-				propsDao.readProperties("site_property", "site_id", id, site.getProperties());
-			}
-		}
-		catch (SQLException ex)
-		{
-			throw new DbIoException("Unable to retrieve site.", ex);
+			propsDao.readProperties("site_property", "site_id", id, site.getProperties());
 		}
 	}
 
+	/**
+	 * Reads the raw CWMS location record without overlaying OpenDCS
+	 * {@code site_property} values. Callers that need the exact
+	 * {@code CWMS_V_LOC.vertical_datum} should use this method rather than
+	 * {@link #readSite(Site)} or {@link #getSiteById(DbKey)}.
+	 */
 	public Site readSiteFromCwmsLoc(DbKey id) throws DbIoException, NoSuchObjectException
 	{
 		Site site = new Site();
 		site.forceSetId(id);
+		readSiteFromCwmsLoc(site);
+		return site;
+	}
+
+	private void readSiteFromCwmsLoc(Site site) throws DbIoException, NoSuchObjectException
+	{
+		DbKey id = site.getId();
 		String q = "select " + siteAttributes + " from " + siteTableName
 		         + " where " + siteTableKeyColumn + " = ?"
 				 + " and UNIT_SYSTEM = 'SI'"
@@ -539,7 +531,6 @@ public class CwmsSiteDAO extends SiteDAO
 				throw new NoSuchObjectException("No site for location code =" + id);
 			}
 			readNames(site);
-			return site;
 		}
 		catch (SQLException ex)
 		{
