@@ -517,4 +517,33 @@ public class CwmsSiteDAO extends SiteDAO
 			throw new DbIoException("Unable to retrieve site.", ex);
 		}
 	}
+
+	public Site readSiteFromCwmsLoc(DbKey id) throws DbIoException, NoSuchObjectException
+	{
+		Site site = new Site();
+		site.forceSetId(id);
+		String q = "select " + siteAttributes + " from " + siteTableName
+		         + " where " + siteTableKeyColumn + " = ?"
+				 + " and UNIT_SYSTEM = 'SI'"
+				 + " and upper(DB_OFFICE_ID) =upper(?)";
+		try
+		{
+			Site ret = getSingleResult(q, rs->
+			{
+				resultSet2Site(site, rs);
+				return site;
+			}, id, officeId);
+
+			if (ret == null)
+			{
+				throw new NoSuchObjectException("No site for location code =" + id);
+			}
+			readNames(site);
+			return site;
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to retrieve site from CWMS_V_LOC.", ex);
+		}
+	}
 }
