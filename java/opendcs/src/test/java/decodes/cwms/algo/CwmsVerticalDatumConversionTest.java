@@ -1,6 +1,5 @@
 package decodes.cwms.algo;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Calendar;
 import java.util.Date;
@@ -105,28 +104,74 @@ final class CwmsVerticalDatumConversionTest
 		}
 	}
 
+	private static final class TestableCwmsVerticalDatumConversion extends CwmsVerticalDatumConversion
+	{
+		final StubVerticalDatumDao stubDao = new StubVerticalDatumDao();
+		String testInputUnit = "ft";
+		String testLocationId = "TEST";
+		Site siteToLoad = null;
+		String loadedLocation = null;
+		String loadedOffice = null;
+
+		@Override
+		protected String getInputUnitsAbbr(String rolename)
+		{
+			if ("valueInDatum1".equals(rolename))
+			{
+				return testInputUnit;
+			}
+			return super.getInputUnitsAbbr(rolename);
+		}
+
+		@Override
+		protected String resolveLocationIdFromInput() throws DbCompException
+		{
+			return testLocationId;
+		}
+
+		@Override
+		protected CwmsVerticalDatumDao getVerticalDatumDao() throws DbCompException
+		{
+			return stubDao;
+		}
+
+		@Override
+		protected Site loadLocationSite(String locationId, String officeId) throws DbCompException
+		{
+			loadedLocation = locationId;
+			loadedOffice = officeId;
+			if (siteToLoad == null)
+			{
+				throw new DbCompException("No test site configured.");
+			}
+			return siteToLoad;
+		}
+
+		void runTimeSlice(double inputValue, Date baseTime) throws DbCompException
+		{
+			valueInDatum1 = inputValue;
+			_timeSliceBaseTime = baseTime;
+			doAWTimeSlice();
+		}
+	}
+
 	@Test
 	void identityConversionCopiesInputAndSkipsDao() throws Exception
 	{
-		CwmsVerticalDatumConversion algo = new CwmsVerticalDatumConversion();
+		TestableCwmsVerticalDatumConversion algo = new TestableCwmsVerticalDatumConversion();
 		algo.datum1 = "NAVD88";
 		algo.datum2 = "navd88"; // different case on purpose
 		algo.effectiveDateMode = "latestOnOrBefore";
 		algo.initAWAlgorithm();
-
-		StubVerticalDatumDao stubDao = new StubVerticalDatumDao();
-		setPrivateField(algo, "verticalDatumDao", stubDao);
-		setPrivateField(algo, "inputUnit", "ft");
-		setPrivateField(algo, "locationIdFromTs", "FOO");
+		algo.testInputUnit = "ft";
+		algo.testLocationId = "FOO";
+		algo.beforeTimeSlices();
 
 		Date baseTime = new Date(1_700_000_000_000L);
-		setPrivateField(algo, "_timeSliceBaseTime", baseTime);
-
-		algo.valueInDatum1 = 123.45;
-		algo.doAWTimeSlice();
+		algo.runTimeSlice(123.45, baseTime);
 
 		// DAO should not be called for identity conversions.
-		assertEquals(0, stubDao.callCount);
+		assertEquals(0, algo.stubDao.callCount);
 		// Output NamedVariable value should equal input.
 		assertEquals(123.45, algo.valueInDatum2.getDoubleValue(), 1e-9);
 	}
@@ -134,33 +179,28 @@ final class CwmsVerticalDatumConversionTest
 	@Test
 	void nonIdentityConversionAddsOffsetAndUsesBaseTime() throws Exception
 	{
-		CwmsVerticalDatumConversion algo = new CwmsVerticalDatumConversion();
+		TestableCwmsVerticalDatumConversion algo = new TestableCwmsVerticalDatumConversion();
 		algo.datum1 = "LOCAL";
 		algo.datum2 = "NAVD88";
 		algo.effectiveDateMode = "latestOnOrBefore";
 		algo.initAWAlgorithm();
-
-		StubVerticalDatumDao stubDao = new StubVerticalDatumDao();
-		stubDao.offsetToReturn = 5.0; // CWMS offset
-		setPrivateField(algo, "verticalDatumDao", stubDao);
-		setPrivateField(algo, "inputUnit", "ft");
-		setPrivateField(algo, "locationIdFromTs", "BAR");
+		algo.stubDao.offsetToReturn = 5.0; // CWMS offset
+		algo.testInputUnit = "ft";
+		algo.testLocationId = "BAR";
+		algo.beforeTimeSlices();
 
 		Date baseTime = new Date(1_700_000_000_000L);
-		setPrivateField(algo, "_timeSliceBaseTime", baseTime);
-
-		algo.valueInDatum1 = 10.0;
-		algo.doAWTimeSlice();
+		algo.runTimeSlice(10.0, baseTime);
 
 		// DAO should be called exactly once with expected parameters.
-		assertEquals(1, stubDao.callCount);
-		assertEquals("BAR", stubDao.lastLocationId);
-		assertEquals("LOCAL", stubDao.lastDatum1);
-		assertEquals("NAVD88", stubDao.lastDatum2);
-		assertEquals("ft", stubDao.lastUnit);
-		assertEquals("UTC", stubDao.lastTimeZone);
-		assertNull(stubDao.lastOfficeId);
-		assertEquals(baseTime, stubDao.lastDatetime);
+		assertEquals(1, algo.stubDao.callCount);
+		assertEquals("BAR", algo.stubDao.lastLocationId);
+		assertEquals("LOCAL", algo.stubDao.lastDatum1);
+		assertEquals("NAVD88", algo.stubDao.lastDatum2);
+		assertEquals("ft", algo.stubDao.lastUnit);
+		assertEquals("UTC", algo.stubDao.lastTimeZone);
+		assertNull(algo.stubDao.lastOfficeId);
+		assertEquals(baseTime, algo.stubDao.lastDatetime);
 
 		// Output = input + offset
 		assertEquals(15.0, algo.valueInDatum2.getDoubleValue(), 1e-9);
@@ -169,30 +209,25 @@ final class CwmsVerticalDatumConversionTest
 	@Test
 	void latestOverallUsesFarFutureDate() throws Exception
 	{
-		CwmsVerticalDatumConversion algo = new CwmsVerticalDatumConversion();
+		TestableCwmsVerticalDatumConversion algo = new TestableCwmsVerticalDatumConversion();
 		algo.datum1 = "LOCAL";
 		algo.datum2 = "NAVD88";
 		algo.effectiveDateMode = "latestOverall";
 		algo.initAWAlgorithm();
-
-		StubVerticalDatumDao stubDao = new StubVerticalDatumDao();
-		stubDao.offsetToReturn = 1.0;
-		setPrivateField(algo, "verticalDatumDao", stubDao);
-		setPrivateField(algo, "inputUnit", "m");
-		setPrivateField(algo, "locationIdFromTs", "BAZ");
+		algo.stubDao.offsetToReturn = 1.0;
+		algo.testInputUnit = "m";
+		algo.testLocationId = "BAZ";
+		algo.beforeTimeSlices();
 
 		// Base time should be ignored for latestOverall.
 		Date baseTime = new Date(1_600_000_000_000L);
-		setPrivateField(algo, "_timeSliceBaseTime", baseTime);
+		algo.runTimeSlice(2.0, baseTime);
 
-		algo.valueInDatum1 = 2.0;
-		algo.doAWTimeSlice();
-
-		assertEquals(1, stubDao.callCount);
+		assertEquals(1, algo.stubDao.callCount);
 		// expected far-future date of 3000-01-01
 		Calendar expected = new GregorianCalendar(3000, Calendar.JANUARY, 1);
 		Calendar actual = Calendar.getInstance();
-		actual.setTime(stubDao.lastDatetime);
+		actual.setTime(algo.stubDao.lastDatetime);
 		assertEquals(expected.get(Calendar.YEAR), actual.get(Calendar.YEAR));
 		assertEquals(expected.get(Calendar.MONTH), actual.get(Calendar.MONTH));
 		assertEquals(expected.get(Calendar.DAY_OF_MONTH), actual.get(Calendar.DAY_OF_MONTH));
@@ -202,69 +237,45 @@ final class CwmsVerticalDatumConversionTest
 	@Test
 	void locationElevationOffsetAddsConfiguredSiteElevation() throws Exception
 	{
-		CwmsVerticalDatumConversion algo = new CwmsVerticalDatumConversion();
+		TestableCwmsVerticalDatumConversion algo = new TestableCwmsVerticalDatumConversion();
 		algo.datum1 = "STAGE";
+		algo.datum2 = "LOCAL";
 		algo.conversionMode = "locationElevationOffset";
+		algo.officeId = "TEST";
 		algo.initAWAlgorithm();
-
-		setPrivateField(algo, "normalizedDatum2", "LOCAL");
-
-		StubVerticalDatumDao stubDao = new StubVerticalDatumDao();
-		setPrivateField(algo, "verticalDatumDao", stubDao);
-		setPrivateField(algo, "inputUnit", "m");
-		setPrivateField(algo, "locationIdFromTs", "LOCKDAM_03");
-		setPrivateField(
-			algo,
-			"locationElevationInfo",
-			new CwmsVerticalDatumConversion.LocationElevationInfo(182.88, 182.88, "LOCAL"));
+		algo.testInputUnit = "m";
+		algo.testLocationId = "LOCKDAM_03";
+		algo.siteToLoad = siteWithElevation(182.88, "LOCAL");
+		algo.beforeTimeSlices();
 
 		Date baseTime = new Date(1_700_000_000_000L);
-		setPrivateField(algo, "_timeSliceBaseTime", baseTime);
+		algo.runTimeSlice(4.0, baseTime);
 
-		algo.valueInDatum1 = 4.0;
-		algo.doAWTimeSlice();
-
-		assertEquals(0, stubDao.callCount);
+		assertEquals(0, algo.stubDao.callCount);
 		assertEquals(186.88, algo.valueInDatum2.getDoubleValue(), 1e-9);
 	}
 
 	@Test
 	void locationElevationOffsetAllowsBlankDatum2AndResolvesFromLocation() throws Exception
 	{
-		CwmsVerticalDatumConversion algo = new CwmsVerticalDatumConversion();
+		TestableCwmsVerticalDatumConversion algo = new TestableCwmsVerticalDatumConversion();
 		algo.datum1 = "STAGE";
 		algo.conversionMode = "locationElevationOffset";
 		algo.officeId = "LRL";
 		algo.initAWAlgorithm();
-
-		setPrivateField(algo, "inputUnit", "ft");
-		setPrivateField(algo, "locationIdFromTs", "LOCKDAM_03");
-
-		String[] loadedLocation = new String[1];
-		String[] loadedOffice = new String[1];
-		setPrivateField(algo, "locationSiteLoader",
-			(CwmsVerticalDatumConversion.LocationSiteLoader)(locationId, officeId) ->
-			{
-				loadedLocation[0] = locationId;
-				loadedOffice[0] = officeId;
-				Site site = new Site();
-				site.setElevation(100.0);
-				site.setProperty("vertical_datum", "navd88");
-				return site;
-			});
-
-		Date baseTime = new Date(1_700_000_000_000L);
-		setPrivateField(algo, "_timeSliceBaseTime", baseTime);
+		algo.testInputUnit = "ft";
+		algo.testLocationId = "LOCKDAM_03";
+		algo.siteToLoad = siteWithElevation(100.0, "navd88");
 
 		algo.beforeTimeSlices();
 
-		assertEquals("LOCKDAM_03", loadedLocation[0]);
-		assertEquals("LRL", loadedOffice[0]);
-		assertEquals("NAVD88", getPrivateField(algo, "normalizedDatum2"));
+		assertEquals("LOCKDAM_03", algo.loadedLocation);
+		assertEquals("LRL", algo.loadedOffice);
 
-		algo.valueInDatum1 = 4.0;
-		algo.doAWTimeSlice();
+		Date baseTime = new Date(1_700_000_000_000L);
+		algo.runTimeSlice(4.0, baseTime);
 
+		assertEquals(0, algo.stubDao.callCount);
 		assertEquals(332.0839895, algo.valueInDatum2.getDoubleValue(), 1e-7);
 	}
 
@@ -283,83 +294,34 @@ final class CwmsVerticalDatumConversionTest
 	@Test
 	void locationElevationOffsetConvertsFromNativeDatumToRequestedTarget() throws Exception
 	{
-		CwmsVerticalDatumConversion algo = new CwmsVerticalDatumConversion();
+		TestableCwmsVerticalDatumConversion algo = new TestableCwmsVerticalDatumConversion();
 		algo.datum1 = "STAGE";
 		algo.datum2 = "NAVD88";
 		algo.conversionMode = "locationElevationOffset";
+		algo.officeId = "TEST";
 		algo.initAWAlgorithm();
-
-		StubVerticalDatumDao stubDao = new StubVerticalDatumDao();
-		stubDao.offsetToReturn = 5.0;
-		setPrivateField(algo, "verticalDatumDao", stubDao);
-		setPrivateField(algo, "inputUnit", "m");
-		setPrivateField(algo, "locationIdFromTs", "LOCKDAM_03");
-		setPrivateField(
-			algo,
-			"locationElevationInfo",
-			new CwmsVerticalDatumConversion.LocationElevationInfo(182.88, 182.88, "LOCAL"));
+		algo.stubDao.offsetToReturn = 5.0;
+		algo.testInputUnit = "m";
+		algo.testLocationId = "LOCKDAM_03";
+		algo.siteToLoad = siteWithElevation(182.88, "LOCAL");
+		algo.beforeTimeSlices();
 
 		Date baseTime = new Date(1_700_000_000_000L);
-		setPrivateField(algo, "_timeSliceBaseTime", baseTime);
+		algo.runTimeSlice(4.0, baseTime);
 
-		algo.valueInDatum1 = 4.0;
-		algo.doAWTimeSlice();
-
-		assertEquals(1, stubDao.callCount);
-		assertEquals("LOCKDAM_03", stubDao.lastLocationId);
-		assertEquals("LOCAL", stubDao.lastDatum1);
-		assertEquals("NAVD88", stubDao.lastDatum2);
-		assertEquals(baseTime, stubDao.lastDatetime);
+		assertEquals(1, algo.stubDao.callCount);
+		assertEquals("LOCKDAM_03", algo.stubDao.lastLocationId);
+		assertEquals("LOCAL", algo.stubDao.lastDatum1);
+		assertEquals("NAVD88", algo.stubDao.lastDatum2);
+		assertEquals(baseTime, algo.stubDao.lastDatetime);
 		assertEquals(191.88, algo.valueInDatum2.getDoubleValue(), 1e-9);
 	}
 
-	private static void setPrivateField(Object target, String fieldName, Object value)
-		throws NoSuchFieldException, IllegalAccessException
+	private static Site siteWithElevation(double elevation, String verticalDatum)
 	{
-		Class<?> cls = target.getClass();
-		Field f;
-		while (true)
-		{
-			try
-			{
-				f = cls.getDeclaredField(fieldName);
-				break;
-			}
-			catch (NoSuchFieldException ex)
-			{
-				cls = cls.getSuperclass();
-				if (cls == null)
-				{
-					throw ex;
-				}
-			}
-		}
-		f.setAccessible(true);
-		f.set(target, value);
-	}
-
-	private static Object getPrivateField(Object target, String fieldName)
-		throws NoSuchFieldException, IllegalAccessException
-	{
-		Class<?> cls = target.getClass();
-		Field f;
-		while (true)
-		{
-			try
-			{
-				f = cls.getDeclaredField(fieldName);
-				break;
-			}
-			catch (NoSuchFieldException ex)
-			{
-				cls = cls.getSuperclass();
-				if (cls == null)
-				{
-					throw ex;
-				}
-			}
-		}
-		f.setAccessible(true);
-		return f.get(target);
+		Site site = new Site();
+		site.setElevation(elevation);
+		site.setProperty("vertical_datum", verticalDatum);
+		return site;
 	}
 }

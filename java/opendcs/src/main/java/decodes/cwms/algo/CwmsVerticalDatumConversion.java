@@ -64,7 +64,7 @@ import decodes.util.PropertySpec;
 			+ "CWMS_V_LOC.elevation and CWMS_V_LOC.vertical_datum before "
 			+ "optionally converting onward to datum2. Typical use: "
 			+ "stage/local datum to NAVD88 elevation.")
-public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
+public class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String CWMS_TIME_ZONE_UTC = "UTC";
@@ -241,22 +241,7 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 		// Derive CWMS location ID from the input time series identifier.
 		if (locationIdFromTs == null)
 		{
-			if (getParmRef("valueInDatum1") == null
-				|| getParmRef("valueInDatum1").timeSeries == null
-				|| getParmRef("valueInDatum1").timeSeries.getTimeSeriesIdentifier() == null)
-			{
-				throw new DbCompException(
-					"CwmsVerticalDatumConversion requires a bound CWMS time series for 'valueInDatum1'.");
-			}
-
-			if (!(getParmRef("valueInDatum1").timeSeries.getTimeSeriesIdentifier() instanceof CwmsTsId))
-			{
-				throw new DbCompException(
-					"CwmsVerticalDatumConversion requires 'valueInDatum1' to use a CwmsTsId TSID.");
-			}
-
-			CwmsTsId tsId = (CwmsTsId) getParmRef("valueInDatum1").timeSeries.getTimeSeriesIdentifier();
-			locationIdFromTs = tsId.getSiteName();
+			locationIdFromTs = resolveLocationIdFromInput();
 		}
 
 		if (isLocationElevationOffsetMode())
@@ -371,7 +356,7 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	private LocationElevationInfo loadLocationElevationInfo() throws DbCompException
 	{
 		String office = effectiveOfficeId();
-		Site site = locationSiteLoader.load(locationIdFromTs, office);
+		Site site = loadLocationSite(locationIdFromTs, office);
 		double elevationInMeters = site.getElevation();
 		if (elevationInMeters == Constants.undefinedDouble)
 		{
@@ -428,6 +413,12 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 		}
 	}
 
+	protected Site loadLocationSite(String locationId, String officeId)
+		throws DbCompException
+	{
+		return locationSiteLoader.load(locationId, officeId);
+	}
+
 	private String effectiveOfficeId()
 	{
 		if (officeId != null && !officeId.trim().isEmpty())
@@ -449,10 +440,11 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	{
 		Date offsetTime = determineOffsetTime();
 		String office = effectiveOfficeIdOverride();
+		CwmsVerticalDatumDao dao = getVerticalDatumDao();
 
 		try
 		{
-			return verticalDatumDao.getVerticalDatumOffset(
+			return dao.getVerticalDatumOffset(
 				locationIdFromTs,
 				fromDatum,
 				toDatum,
@@ -478,6 +470,35 @@ public final class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			  + "for location=" + locationIdFromTs + ", " + fromDatum + "->" + toDatum,
 				ex);
 		}
+	}
+
+	protected CwmsVerticalDatumDao getVerticalDatumDao() throws DbCompException
+	{
+		if (verticalDatumDao == null)
+		{
+			throw new DbCompException("CwmsVerticalDatumConversion vertical datum DAO not initialized.");
+		}
+		return verticalDatumDao;
+	}
+
+	protected String resolveLocationIdFromInput() throws DbCompException
+	{
+		if (getParmRef("valueInDatum1") == null
+			|| getParmRef("valueInDatum1").timeSeries == null
+			|| getParmRef("valueInDatum1").timeSeries.getTimeSeriesIdentifier() == null)
+		{
+			throw new DbCompException(
+				"CwmsVerticalDatumConversion requires a bound CWMS time series for 'valueInDatum1'.");
+		}
+
+		if (!(getParmRef("valueInDatum1").timeSeries.getTimeSeriesIdentifier() instanceof CwmsTsId))
+		{
+			throw new DbCompException(
+				"CwmsVerticalDatumConversion requires 'valueInDatum1' to use a CwmsTsId TSID.");
+		}
+
+		CwmsTsId tsId = (CwmsTsId) getParmRef("valueInDatum1").timeSeries.getTimeSeriesIdentifier();
+		return tsId.getSiteName();
 	}
 
 	private Date determineOffsetTime() throws DbCompException
