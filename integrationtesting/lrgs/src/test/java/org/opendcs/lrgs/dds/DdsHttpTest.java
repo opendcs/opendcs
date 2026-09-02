@@ -38,6 +38,8 @@ import lrgs.lrgsmain.LrgsInputInterface;
     LrgsInput.web.class=org.opendcs.lrgs.http.LrgsHttpInput
     LrgsInput.web.enabled=true
     LrgsInput.web.port=0
+    LrgsInput.web.daddsWebHook_0=testHook
+    LrgsInput.web.daddsWebHook_1=testHook2
     """)
 final class DdsHttpTest
 {
@@ -151,6 +153,50 @@ final class DdsHttpTest
             .body("[2]", is("DDS-Recv:Main(Secondary)"))
             .body("[3]", is("DRGS-Recv:Main"))
             .body("[4]", is("HTTP:web:0"))
+        ;
+    }
+
+
+    @Test
+    void test_webhook(LrgsTestInstance lrgs)
+    {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .body("Test Message")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("webhook/dadds/{hookId}", "testHook")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(Response.Status.OK.getStatusCode()))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .body("Test Message")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("webhook/dadds/{hookId}", "badHook")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .body("Test Message")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("webhook/dadds/{hookId}", "testHook2")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(Response.Status.OK.getStatusCode()))
         ;
     }
 }
