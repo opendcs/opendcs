@@ -292,7 +292,7 @@ When **save** is clicked the wrapper:
 ### 4. Add button for new rows
 
 When `inlineEdit.newTemplate` is provided, the wrapper puts an "Add" button in
-the caption toolbar. Clicking it calls `newTemplate()` to build a fresh row,
+the top-end toolbar. Clicking it calls `newTemplate()` to build a fresh row,
 stores it locally in `"new"` mode, and assigns it a synthetic id via an
 internal `WeakMap` so it never collides with real ids — **your `getId`
 doesn't need to handle this case**.
@@ -320,7 +320,7 @@ local numeric id, so it's unique against server-side positive ids.
 
 ### `extraHeaderButtons`
 
-Arbitrary buttons in the caption toolbar (e.g. "Check for new", "Import…"):
+Arbitrary buttons in the top-end toolbar (e.g. "Check for new", "Import…"):
 
 ```tsx
 extraHeaderButtons={[
@@ -335,14 +335,27 @@ extraHeaderButtons={[
 
 ### Where the header buttons live
 
-`addNew`, `inlineEdit.newTemplate` and `extraHeaderButtons` all render into
-the table's `<caption>` — one row with the `caption` title centered and the
-buttons right-aligned above the Actions column — so an "Add" control always
-sits against the table it adds a row to. The whole
-table, including DataTables' own length/search/paging controls, is wrapped in
-a `.dt-panel` outline so pages with several tables make it obvious which
-controls belong to which table (issue #2009). Use `TableCaption` directly if
-you have a hand-rolled `<DataTable>` that needs the same treatment.
+`addNew`, `inlineEdit.newTemplate` and `extraHeaderButtons` all render into the
+DataTables **top-end toolbar cell** — inline with the search box on the right.
+The wrapper builds a plain `<button>` node (same markup as
+`TableCaption`) and routes its clicks by the `data-caption-action` attribute,
+the way row-action buttons are delegated. The `caption` title, when provided,
+still renders centered in the table `<caption>` above the toolbar.
+
+The whole table, including DataTables' length/search/paging controls, is
+wrapped in a `.dt-panel` outline so pages with several tables make it obvious
+which controls belong to which table. Use `TableCaption` directly if you have a
+hand-rolled `<DataTable>` that needs a caption row of buttons.
+
+### Toolbar layout and scrolling
+
+The wrapper sets a DataTables `layout` so the controls read left-to-right in a
+predictable order: **search** top-left, the table's **buttons** top-right,
+the **page-length** menu next to the **"showing N of M"** info on the
+bottom-left, and **paging** on the bottom-right. Each table body is also capped
+at `60vh` and scrolls with a **sticky header**, so a long list stays inside its
+panel (and larger page sizes stay usable) instead of pushing the paging
+controls off-screen. Override individual regions via `dataTableOptions.layout`.
 
 ### `loading`
 
@@ -432,9 +445,10 @@ Both component files are <150 lines — the wrapper absorbs the rest.
   `WeakMap` with synthetic ids. Don't mutate new-row objects by reference
   after save — the WeakMap entry is cleaned up on commit, but replacing the
   object identity would orphan its mode state.
-- **`dataTableOptions.layout`.** The wrapper no longer claims any layout
-  region — header buttons live in the caption — so `dataTableOptions.layout`
-  passes straight through to DataTables.
+- **`dataTableOptions.layout`.** The wrapper sets `topStart`/`topEnd`/
+  `bottomStart`/`bottomEnd` (search, buttons, page-length + info, paging). Any
+  region you pass in `dataTableOptions.layout` is merged over the wrapper's
+  defaults (your value wins), so override only the cells you need.
 
 ---
 

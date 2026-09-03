@@ -279,6 +279,21 @@ function renderActionButtonHtml<T>(action: RowAction<T>, row: T): string {
   );
 }
 
+function renderCaptionButtonHtml(btn: CaptionButton): string {
+  const icon = btn.icon
+    ? `<i class="bi ${escapeHtml(btn.icon)}" aria-hidden="true"></i>`
+    : "";
+  const text = btn.text ? `<span>${escapeHtml(btn.text)}</span>` : "";
+  return (
+    `<button type="button"` +
+    ` class="btn btn-sm btn-${escapeHtml(btn.variant ?? "secondary")} dt-caption__button"` +
+    ` data-caption-action="${escapeHtml(btn.key)}"` +
+    ` aria-label="${escapeHtml(btn.ariaLabel)}">` +
+    `${icon}${text}` +
+    `</button>`
+  );
+}
+
 /**
  * Read edited cell values from a row's DOM and merge with the original row.
  * Only cells for columns with `edit.read` defined contribute values.
@@ -913,6 +928,40 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     })) ?? []),
   ];
 
+  const captionButtonsRef = useRef(captionButtons);
+  useEffect(() => {
+    captionButtonsRef.current = captionButtons;
+  });
+
+  // eslint-disable-next-line react-hooks/refs
+  const captionButtonsSig = captionButtons
+    .map(
+      (b) =>
+        `${b.key}|${b.text ?? ""}|${b.ariaLabel}|${b.icon ?? ""}|${b.variant ?? ""}`,
+    )
+    .join(";");
+  const buttonsNode = useMemo(() => {
+    if (!hasCaptionButtons) return null;
+    const div = document.createElement("div");
+    div.className = "dt-caption__actions dt-toolbar-actions";
+    // eslint-disable-next-line react-hooks/refs
+    div.innerHTML = captionButtons.map(renderCaptionButtonHtml).join("");
+    return div;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [captionButtonsSig, hasCaptionButtons]);
+
+  useEffect(() => {
+    if (!buttonsNode) return;
+    const onClick = (e: MouseEvent) => {
+      const el = (e.target as Element | null)?.closest("[data-caption-action]");
+      if (!el) return;
+      const key = el.getAttribute("data-caption-action");
+      captionButtonsRef.current.find((b) => b.key === key)?.onClick();
+    };
+    buttonsNode.addEventListener("click", onClick);
+    return () => buttonsNode.removeEventListener("click", onClick);
+  }, [buttonsNode]);
+
   // --- DataTable options ----------------------------------------------------
   const options: DataTableProps["options"] = {
     paging: true,
@@ -922,6 +971,14 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     deferRender: true,
     language: dtLangs.get(i18n.language),
     ...dataTableOptions,
+
+    layout: {
+      topStart: "search",
+      topEnd: buttonsNode ?? null,
+      bottomStart: ["pageLength", "info"],
+      bottomEnd: "paging",
+      ...dataTableOptions?.layout,
+    },
     createdRow: (_row, _data, dataIndex) => {
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
     },
@@ -1082,9 +1139,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           (hasDetail ? `${BASE_TABLE_CLASS} ${CLICKABLE_ROW_CLASS}` : BASE_TABLE_CLASS)
         }
       >
-        {(caption || hasCaptionButtons) && (
-          <TableCaption title={caption} buttons={captionButtons} />
-        )}
+        {caption && <TableCaption title={caption} />}
         <thead>
           <tr>
             {columns.map((c, i) => (

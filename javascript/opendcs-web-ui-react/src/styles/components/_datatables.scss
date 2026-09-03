@@ -60,6 +60,15 @@
   white-space: nowrap;
 }
 
+// The same buttons, when injected into the DataTables top-end toolbar cell
+// (inline with the search box) instead of the caption row.
+.dt-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
 // Narrow viewports: let the buttons drop under the title rather than
 // squeezing it out of the row.
 @media (max-width: 575.98px) {
@@ -100,6 +109,28 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   border-bottom-width: 2px;
+}
+
+// -----------------------------------------------------------------------------
+// Scrollable table body with a sticky header
+//
+// Cap each table's body height so a long list scrolls inside the panel instead
+// of pushing the paging controls off-screen, and pin the header while it does.
+// This lets larger "entries per page" sizes stay usable. `.dt-layout-table` is
+// the DataTables layout row that wraps the <table> (the toolbar rows are
+// separate siblings, so only the table body scrolls).
+// -----------------------------------------------------------------------------
+.dt-panel .dt-layout-table {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.dt-panel .dt-layout-table thead th {
+  position: sticky;
+  top: 0;
+  // Sit above the (non-sticky) body cells and any inline-edit form controls
+  // that scroll underneath.
+  z-index: 2;
 }
 
 .dataTable td {
