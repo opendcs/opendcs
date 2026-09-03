@@ -40,10 +40,12 @@ import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.messagemanager.sns.SnsMessageManager;
+import software.amazon.awssdk.messagemanager.sns.internal.SnsHostProvider;
 import software.amazon.awssdk.messagemanager.sns.model.SnsMessage;
 import software.amazon.awssdk.messagemanager.sns.model.SnsSubscriptionConfirmation;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.endpoints.SnsEndpointProvider;
 
 @Path("/webhook/dadds")
 public class DaddsWebHookResource
@@ -107,7 +109,6 @@ public class DaddsWebHookResource
 
     private Region parseRegion(String topicArn)
     {
-        log.trace("Topic Arn {}", topicArn);
         String[] parts = topicArn != null ? topicArn.split(":") : new String[0];
         if (parts.length < 4)
         {
