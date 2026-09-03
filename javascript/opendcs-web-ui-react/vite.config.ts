@@ -31,6 +31,7 @@ export default defineConfig({
     ],
   },
   server: {
+    allowedHosts: [".apps.hecdev.net"],
     fs: {
       // Allow serving files from one level up the project root
       allow: [
