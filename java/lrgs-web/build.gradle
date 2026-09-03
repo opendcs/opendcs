@@ -5,11 +5,15 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":opendcs"))
-    implementation(libs.org.slf4j.api)
     api(libs.bundles.jersey)
     api(libs.bundles.faster.xml)
+    implementation(project(":opendcs"))
+    implementation(libs.org.slf4j.api)
     implementation(libs.json.jackson)
+    implementation(libs.com.faster.xml.jackson.jsr310)
+    implementation(platform(libs.com.amazon.sdk.bom))
+    implementation(libs.com.amazon.sdk.sns)
+    implementation(libs.com.amazon.sdk.sns.message.manager)
 }
 // We don't publish the logger provider to  maven central. Its purpose is a stop gap for the application.
 project.tasks.findAll { task -> task.name.startsWith("publish")}.each { task -> task.enabled = false }
