@@ -48,12 +48,15 @@ public final class DataSourceAccumulator implements LinkedHashMapRowReducer<DbKe
                 newKey -> primaryMapper.mapView(rowView)
             );
 
-            var sequence = rowView.getColumn(memberMapper.column(DataSourceMapper.Columns.SEQUENCE_NUMBER),
-                                             Integer.class);
-            if (sequence != null)
+            if (memberMapper != null)
             {
-                var member = memberMapper.mapView(rowView);
-                primaryDs.addGroupMember(sequence, member);
+                var sequence = rowView.getColumn(memberMapper.column(DataSourceMapper.Columns.SEQUENCE_NUMBER),
+                                                Integer.class);
+                if (sequence != null)
+                {
+                    var member = memberMapper.mapView(rowView);
+                    primaryDs.addGroupMember(sequence, member);
+                }
             }
         }
         catch (SQLException ex)

@@ -96,7 +96,9 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
 
         specOnlyData = new RoutingSpecMappers(
             allData.specMapper(), null, null,
-            null, null, null);
+            null, null,
+            new DataSourceAccumulator(DataSourceMapper.withPrefix("ds"), null)
+        );
     }
 
     @Override
@@ -169,7 +171,10 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         if (mappers.dataSourceAccumulator() != null)
         {
             select.registerRowMapper(DataSource.class, mappers.dataSourceAccumulator().primaryMapper);
-            select.registerRowMapper(DataSourceAccumulator.MEMBER_SOURCE, mappers.dataSourceAccumulator().memberMapper);
+            if (mappers.dataSourceAccumulator().memberMapper != null)
+            {
+                select.registerRowMapper(DataSourceAccumulator.MEMBER_SOURCE, mappers.dataSourceAccumulator().memberMapper);
+            }
         }
         return select;
     }
@@ -215,18 +220,20 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             var sourceMapper = mappers.dataSourceAccumulator().primaryMapper;
             var memberMapper = mappers.dataSourceAccumulator().memberMapper;
             select.add("datasource_columns",
-                       sourceMapper.columnsForSelect(DataSourceMapper.Columns.SEQUENCE_NUMBER))
-                  .add("datasource_member_columns",
-                       memberMapper.columnsForSelect(DataSourceMapper.Columns.SEQUENCE_NUMBER));
-
+                       sourceMapper.columnsForSelect(DataSourceMapper.Columns.SEQUENCE_NUMBER));
             select.add("datasource_join",
                 sourceMapper.joinStatement(LEFT_OUTER, DataSourceMapper.Columns.ID, "rs", "datasourceid")
             );
 
-            select.add("datasource_member_join", """
+            if (memberMapper != null)
+            {
+                select.add("datasource_member_columns",
+                           memberMapper.columnsForSelect(DataSourceMapper.Columns.SEQUENCE_NUMBER));
+                select.add("datasource_member_join", """
                     left outer join datasourcegroupmember dsgm on ds.id = dsgm.groupid
                     left outer join datasource dsm on dsm.id = dsgm.memberid
                     """);
+            }
         }
 
         return select.render();
