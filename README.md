@@ -233,6 +233,11 @@ JDK 21 and Node 22 or higher are required to build the project.
 ### OPENDCS API
 The gradle task `./gradlew :opendcs-rest-api:war` will create a war file in the `build/libs` directory.
 
+The default API context is `/api`. For a manual Tomcat deployment, deploy the REST WAR as `api.war`.
+When upgrading an existing deployment, remove the previous API context and update reverse proxies,
+external clients, and registered OIDC callback URLs to use `/api` (callback: `/api/oidc-callback`).
+The offline OpenAPI specification and generated clients also default to `/api`.
+
 The SwaggerUI location can be found at the relative url path of /<context>/swaggerui.
 Assuming the context is 'api', an example of the SwaggerUI location is http://localhost:8080/api/swaggerui.
 These files are being served up from the resource file 'SwaggerResources.java' file located at 
