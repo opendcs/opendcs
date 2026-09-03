@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
 
+import java.net.Inet4Address;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.fixtures.extensions.lrgs.LrgsConfig;
 import org.opendcs.fixtures.extensions.lrgs.LrgsTestExtension;
+import org.opendcs.fixtures.inet.InterceptingInetAddressResolver;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.lrgs.http.LrgsHttpInput;
@@ -156,12 +158,11 @@ final class DdsHttpTest
         ;
     }
 
-
     @Test
     void test_webhook(LrgsTestInstance lrgs)
     {
 
-        String message = """
+        final String message = """
                 {
                     "Type" : "Notification",
                     "MessageId" : "b9e5d9cd-d2ca-5ec6-8745-bb281a27a287",
@@ -173,8 +174,8 @@ final class DdsHttpTest
                     "SigningCertURL" : "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-7506a1e35b36ef5a444dd1a8e7cc3ed8.pem",
                     "UnsubscribeURL" : "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new:6963c8ed-7d28-45bb-96ee-04dc10b89278"
                 }
-    """;
-
+        """;
+        InterceptingInetAddressResolver.registerIntercept("sns.us-east-1.amazonaws.com", Inet4Address.getLoopbackAddress());
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("x-amz-sns-message-type", "Notification")
