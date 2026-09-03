@@ -105,6 +105,10 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
         if (!daddsWebHooks.isEmpty())
         {
             sb.append(",").append(DaddsWebHookResource.class.getPackageName());
+            for (var hook: daddsWebHooks.values())
+            {
+                this.lrgs.addInput(hook);
+            }
         }
         serHol.setInitParameter("jersey.config.server.provider.packages", sb.toString());
         serHol.setInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true");
