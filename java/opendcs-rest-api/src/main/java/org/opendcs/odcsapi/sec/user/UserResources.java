@@ -91,7 +91,7 @@ public final class UserResources extends OpenDcsResource
      * Verifies the caller's current password and, if it matches, writes the new one within the
      * supplied transaction. The transaction is rolled back and never committed if anything fails.
      */
-    void applyPasswordChange(OpenDcsDatabase db, IdentityProviderDao idpDao, DataTransaction tx,
+    private void applyPasswordChange(OpenDcsDatabase db, IdentityProviderDao idpDao, DataTransaction tx,
             OpenDcsPrincipal sessionPrincipal, ApiPasswordChange passwordChange) throws WebAppException
     {
         try
@@ -122,7 +122,7 @@ public final class UserResources extends OpenDcsResource
      * @throws WebAppException with a 403 status if the subject has no such provider, which is the
      *         case for externally authenticated users whose passwords we do not own.
      */
-    BuiltInIdentityProvider findCredentialUpdatingProvider(IdentityProviderDao idpDao, DataTransaction tx,
+    private BuiltInIdentityProvider findCredentialUpdatingProvider(IdentityProviderDao idpDao, DataTransaction tx,
             String subject) throws OpenDcsDataException, WebAppException
     {
         for (var provider : idpDao.getIdentityProvidersForSubject(tx, subject))

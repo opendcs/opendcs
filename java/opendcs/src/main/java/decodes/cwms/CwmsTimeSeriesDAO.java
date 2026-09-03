@@ -1353,7 +1353,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
      * application id is always bind parameter 1; the debounce seconds, when enabled, are bind
      * parameter 2.
      */
-    String buildTaskListQuery(int maxTake, int tasklistDebounceSeconds)
+    private String buildTaskListQuery(int maxTake, int tasklistDebounceSeconds)
     {
         String failTimeClause =
                     DecodesSettings.instance().retryFailedComputations
@@ -1382,7 +1382,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
      * <p>Rows flagged 'U' are TsCodeChanged notifications rather than data: they update the tsid
      * cache in place and are not returned.</p>
      */
-    List<TasklistRec> readTasklistRecs(ResultSet rs) throws SQLException
+    private List<TasklistRec> readTasklistRecs(ResultSet rs) throws SQLException
     {
         List<TasklistRec> tasklistRecs = new ArrayList<>();
         Date lastTimestamp = null;
@@ -1435,7 +1435,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
      * @return true if the cache held the old key and the row was consumed, false if the tsid was
      *         not cached and the row should be treated as ordinary data.
      */
-    boolean applyTsCodeChange(ResultSet rs, DbKey sdi) throws SQLException
+    private boolean applyTsCodeChange(ResultSet rs, DbKey sdi) throws SQLException
     {
         DbObjectCache<TimeSeriesIdentifier> cache = getCache();
         synchronized(cache)
@@ -1457,7 +1457,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
      * Folds the real-time records into {@code dataCollection} and purges any tasklist rows that
      * could not be resolved to a time series.
      */
-    void collectTasklistRecs(List<TasklistRec> tasklistRecs, DataCollection dataCollection,
+    private void collectTasklistRecs(List<TasklistRec> tasklistRecs, DataCollection dataCollection,
         DbKey applicationId) throws DbIoException, SQLException
     {
         RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
@@ -1482,7 +1482,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
     }
 
     /** Shows each tasklist entry in the log if we're at debug level 3. */
-    void logReturnedTimeSeries(DataCollection dataCollection)
+    private void logReturnedTimeSeries(DataCollection dataCollection)
     {
         if (log.isTraceEnabled())
         {

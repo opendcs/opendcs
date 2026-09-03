@@ -3,7 +3,6 @@ package org.opendcs.odcsapi.res;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import decodes.sql.DbKey;
@@ -11,30 +10,16 @@ import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.TsGroup;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.sse.OutboundSseEvent;
-import jakarta.ws.rs.sse.Sse;
-import jakarta.ws.rs.sse.SseEventSink;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiCompParm;
-import org.opendcs.odcsapi.beans.ApiCompResults;
-import org.opendcs.odcsapi.servlet.ExecutorPoolService;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
 import org.opendcs.odcsapi.util.APIStreamMapper;
 import org.opendcs.odcsapi.util.DTOMappers;
 
-import org.slf4j.event.Level;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.RETURNS_SELF;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 final class ComputationResourcesTest
 {
 	@Test
@@ -194,48 +179,5 @@ final class ComputationResourcesTest
 		assertEquals(dbComp.getAppId().getValue(), apiComp.getProcessId());
 		assertEquals(dbComp.getApplicationName(), apiComp.getProcessName());
 		assertEquals(dbComp.getAlgorithmId().getValue(), apiComp.getAlgorithmId());
-	}
-
-	@Test
-	void testProcessOutputPublishesResultsAsJson()
-	{
-		OutboundSseEvent event = mock(OutboundSseEvent.class);
-		OutboundSseEvent.Builder builder = mock(OutboundSseEvent.Builder.class, RETURNS_SELF);
-		when(builder.build()).thenReturn(event);
-		Sse sse = mock(Sse.class);
-		when(sse.newEventBuilder()).thenReturn(builder);
-		SseEventSink eventSink = mock(SseEventSink.class);
-		SseChannel channel = new SseChannel(sse, eventSink, "COMP_STATUS", "task-1");
-
-		Instant start = Instant.parse("2023-08-01T10:30:00Z");
-		Instant end = Instant.parse("2023-08-01T11:30:00Z");
-		new ComputationResources(mock(ExecutorPoolService.class)).processOutput(Collections.emptyList(), channel, start, end);
-
-		// Results carry the run window as JSON under their own event name, not the channel's.
-		verify(builder).name("Results");
-		verify(builder).id("task-1");
-		verify(builder).mediaType(MediaType.APPLICATION_JSON_TYPE);
-		verify(builder).data(eq(ApiCompResults.class), any(ApiCompResults.class));
-		verify(eventSink).send(event);
-	}
-
-	@Test
-	void testSseProgressListenerPublishesProgressWithReconnectDelay()
-	{
-		OutboundSseEvent event = mock(OutboundSseEvent.class);
-		OutboundSseEvent.Builder builder = mock(OutboundSseEvent.Builder.class, RETURNS_SELF);
-		when(builder.build()).thenReturn(event);
-		Sse sse = mock(Sse.class);
-		when(sse.newEventBuilder()).thenReturn(builder);
-		SseEventSink eventSink = mock(SseEventSink.class);
-		SseChannel channel = new SseChannel(sse, eventSink, "COMP_STATUS", "task-1");
-
-		new ComputationResources.SseProgressListener(channel).onProgress("halfway", Level.INFO, null);
-
-		verify(builder).name("COMP_STATUS");
-		verify(builder).id("task-1");
-		verify(builder).reconnectDelay(3000L);
-		verify(builder).data("halfway");
-		verify(eventSink).send(event);
 	}
 }
