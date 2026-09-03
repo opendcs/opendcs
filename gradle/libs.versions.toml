@@ -84,6 +84,9 @@ bucket4j = "8.15.0"
 # manual test deps
 gherkin-kiwi = "1.0.0-M12"
 
+# AWS deps... because sometimes it may not be the "best" way, but it is likely the only way.
+aws-sdk = "2.54.11"
+
 [libraries]
 gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }
 oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc11", version.ref = "oracle" }
@@ -187,6 +190,11 @@ hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata" }
 hec-nucleus-data = { module = "mil.army.usace.hec:hec-nucleus-data" }
 com-google-flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
 usgs-waterdata-api = { module = "org.opendcs:usgs-waterdata-api", version.ref = "usgs-waterdata-api" }
+
+# AWS
+com-amazon-sdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "aws-sdk" }
+com-amazon-sdk-sns = { module = "software.amazon.awssdk:sns" }
+com-amazon-sdk-sns-message-manager = { module = "software.amazon.awssdk:sns-message-manager" }
 
 # test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
