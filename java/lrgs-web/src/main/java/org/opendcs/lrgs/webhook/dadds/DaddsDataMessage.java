@@ -120,5 +120,5 @@ public record DaddsDataMessage(
     String addressCode,
     @JsonProperty("Ber")
     int bitErrorRate)
-{    
+{
 }

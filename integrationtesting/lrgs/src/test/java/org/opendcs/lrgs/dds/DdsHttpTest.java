@@ -9,20 +9,44 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
 
 import java.net.Inet4Address;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.opendcs.dadds.SnsMessageCreator;
 import org.opendcs.fixtures.extensions.lrgs.LrgsConfig;
 import org.opendcs.fixtures.extensions.lrgs.LrgsTestExtension;
 import org.opendcs.fixtures.inet.InterceptingInetAddressResolver;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.lrgs.http.LrgsHttpInput;
+import org.opendcs.lrgs.webhook.dadds.DaddsDataMessage;
+
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
 
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
@@ -33,6 +57,10 @@ import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.lrgsmain.LrgsInputInterface;
+import nl.altindag.ssl.SSLFactory;
+import software.amazon.awssdk.http.SdkHttpConfigurationOption;
+import software.amazon.awssdk.messagemanager.sns.model.SnsMessage;
+import software.amazon.awssdk.messagemanager.sns.model.SnsMessageType;
 
 @ExtendWith(LrgsTestExtension.class)
 @LrgsConfig("""
@@ -159,43 +187,87 @@ final class DdsHttpTest
     }
 
     @Test
-    void test_webhook(LrgsTestInstance lrgs)
+    void test_webhook(LrgsTestInstance lrgs) throws Exception
     {
+        
+        var messages = createMessages();               
+        final String topicArn = "arn:aws:sns:us-east-1:000000000000:dadds-webhooks-messages-new";
+        final var keyStorePassword = "awsmock".toCharArray(); // NOSONAR
+        final var keyAlias = "awssigning";
+        var keyStore = KeyStore.getInstance("JKS");
+        try (var inputStream = DdsHttpTest.class.getResourceAsStream("/awsmock.jks"))
+        {
+            keyStore.load(inputStream, keyStorePassword);
+        }
+        assertTrue(keyStore.containsAlias("awssigning"));
+        var privateKey = (PrivateKey)keyStore.getKey(keyAlias, keyStorePassword);
+        assertNotNull(privateKey);
+        var publicKey = keyStore.getCertificate(keyAlias).getPublicKey();
 
-        final String message = """
-                {
-                    "Type" : "Notification",
-                    "MessageId" : "b9e5d9cd-d2ca-5ec6-8745-bb281a27a287",
-                    "TopicArn" : "arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new",
-                    "Message" : "{\\"Id\\":\\"8d88e58d-a5ab-463c-8ede-7ffa2421ee04\\",\\"Address\\":\\"CE09A476\\",\\"Time\\":\\"2026-07-30T21:48:22.613\\",\\"InfoCd\\":\\"G\\",\\"GroupCd\\":\\"CESPL1\\",\\"Data\\":\\"\\\\u0000\\\\u0000\\\\u0000\\\\b\\\\u0013\\\\u0000\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\",\\"DataHex\\":\\"200D8AB0AEB5382031B3AEB60D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8A\\",\\"ArmCodes\\":[],\\"LockTime\\":\\"2026-07-30T21:48:20.285\\",\\"Baud\\":300,\\"SigStrength\\":41.9,\\"FreqDevStart\\":-0.7,\\"PhaseNoise\\":1.64,\\"GoodPhase\\":100,\\"ChannelId\\":88,\\"SatLocation\\":\\"W\\",\\"Source\\":\\"w\\",\\"NoEot\\":false,\\"Par\\":0,\\"NwsDescriptor\\":\\"SRAZ30\\",\\"IsNws\\":true,\\"NwsCenter\\":\\"KWAL\\",\\"PdtId\\":30785,\\"GroupId\\":2108,\\"AddressRecv\\":\\"CE09A476\\",\\"SyncTime\\":\\"2026-07-30T21:48:20.877\\",\\"Snr\\":30.9,\\"Length\\":112,\\"Quality\\":\\"G\\",\\"SatId\\":18,\\"Priority\\":4,\\"Duration\\":2.328,\\"FrameSync\\":\\"R\\",\\"FreqDevEnd\\":-0.5,\\"AddressCode\\":\\"V\\",\\"Ber\\":0}",
-                    "Timestamp" : "2026-07-30T21:48:29.649Z",
-                    "SignatureVersion" : "1",
-                    "Signature" : "R/D7URvZ6kj6GTnNMlG/QdpBkVugnrvH+sHZndGcFVGBP4wbvKxR9IksIiD7c26aaT+9Iasp3H3+Og/89/FJHBUTV9HyVecJ1nMSWxpb47jlrROSEuCekqc+fmrMzWLwyrgTwRvVdflvbvEdokn0+UIXA/UdLhCsx1b2daHTBN6WlZd44RF1QQCmyKd6zPJB6ozRmBHBfxzp2fXY7ZlwtQKioN35w8pjL/l6A73BxEKeu+uJkNdhP/HnQPFhvZfqn9KbQoY2z/A7xdA9fMFxvV8p7rXJdoEYd+8j4OS5R2v1keCV0sTw9FMmBIe33w/93/5GrFFX3jgH4/QsuN0N7g==",
-                    "SigningCertURL" : "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-7506a1e35b36ef5a444dd1a8e7cc3ed8.pem",
-                    "UnsubscribeURL" : "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new:6963c8ed-7d28-45bb-96ee-04dc10b89278"
-                }
-        """;
+        byte[] publicBytes = publicKey.getEncoded();
+        
+        // Encode the bytes into Base64 format
+        var encoder = Base64.getMimeEncoder(64, new byte[]{'\n'});
+        String base64Encoded = encoder.encodeToString(publicBytes);
+        
+        // Wrap with standard X.509 Public Key headers and footers
+        var publicKeyPem = "-----BEGIN PUBLIC KEY-----\n" + base64Encoded + "\n-----END PUBLIC KEY-----";
+
+        var trust = SSLFactory.builder()
+                              .withDefaultTrustMaterial()
+                              .withSystemTrustMaterial()
+                              .withTrustMaterial(keyStore)
+                              .withInflatableTrustMaterial(Path.of("test.jks"), keyStorePassword, "PKCS12",
+                                c ->
+                            {
+                                System.out.println("Host is: " + c.getHostname().orElse("No name?"));
+                                return true;
+                            } )
+                              .build();
+        SSLContext.setDefault(trust.getSslContext());
+
+        var sslContext = SSLContext.getInstance("TLS");
+        var kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(keyStore, keyStorePassword);
+        sslContext.init(kmf.getKeyManagers(), null, null);
+
+        HttpsServer server = HttpsServer.create(new InetSocketAddress(63543), 0);
+        var conf = new HttpsConfigurator(sslContext);
+        server.setHttpsConfigurator(conf);
+        server.setExecutor(null);
+        server.createContext("/cert.pem", ctx ->
+        {
+            ctx.sendResponseHeaders(200, 0);
+            ctx.getResponseBody().write(publicKeyPem.getBytes());
+        });
+        server.start();
+        final int port = server.getAddress().getPort();
+
         InterceptingInetAddressResolver.registerIntercept("sns.us-east-1.amazonaws.com", Inet4Address.getLoopbackAddress());
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .header("x-amz-sns-message-type", "Notification")
-            .header("x-amz-sns-topic-arn","arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new")
-            .body(message)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("webhook/dadds/{hookId}", "testHook")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(Response.Status.OK.getStatusCode()))
-        ;
+
+        for (var message: messages)
+        {
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .header("x-amz-sns-message-type", "Notification")
+                .header("x-amz-sns-topic-arn",topicArn)
+                .body(SnsMessageCreator.createDaddsNotification(message, privateKey, topicArn, port))
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("webhook/dadds/{hookId}", "testHook")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(Response.Status.OK.getStatusCode()))
+            ;
+        }
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("x-amz-sns-message-type", "Notification")
-            .header("x-amz-sns-topic-arn","arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new")
-            .body(message)
+            .header("x-amz-sns-topic-arn",topicArn)
+            .body("I don't matter.")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -209,8 +281,8 @@ final class DdsHttpTest
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("x-amz-sns-message-type", "Notification")
-            .header("x-amz-sns-topic-arn","arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new")
-            .body(message)
+            .header("x-amz-sns-topic-arn", topicArn)
+            .body(SnsMessageCreator.createDaddsNotification(messages.getFirst(), null, topicArn, port))
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -220,5 +292,23 @@ final class DdsHttpTest
         .assertThat()
             .statusCode(is(Response.Status.OK.getStatusCode()))
         ;
+    }
+
+    List<DaddsDataMessage> createMessages()
+    {
+        ArrayList<DaddsDataMessage> ret = new ArrayList<>();
+        for (int i = 0; i < 50; i++)
+        {
+            String data = "This is test data";
+            String addr = String.format("%8s", HexFormat.of().toHexDigits(i)).replace(' ', '0');
+            ret.add(new DaddsDataMessage(
+                UUID.randomUUID(),
+                addr, LocalDateTime.now(), "G", "Test", data, null,
+                List.of(), LocalDateTime.now(), 300, 100.0f, 0.5f,
+                .5f, 0.0f, 100, 88, "w", "W", false, 0, null, false, null, i,
+                i, addr, LocalDateTime.now(), 35.4f, data.length(), "G", i, i, 1.3f, "R", "V", i)
+            );
+        }
+        return ret;
     }
 }
