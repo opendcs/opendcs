@@ -29,6 +29,7 @@
   ],
   "properties": {
     "goesSelfTimed": "false",
+    "RoutingSpecName": "Application Routing",
     "goesChannel": "1"
   },
   "goesSelfTimed": false,

@@ -3,6 +3,7 @@ package org.opendcs.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -120,12 +121,12 @@ class RoutingSpecDaoTestIT extends AppTestBase
 
         try (var tx = db.newTransaction())
         {
-            var dataSources = createDataSources(db,tx );
+            var dataSources = createDataSources(db, tx);
             assumeFalse(dataSources.isEmpty());
             final int NUM_SPECS = 50;
             for (int i = 0; i < NUM_SPECS; i++)
             {
-                var ds = dataSources.get(random.nextInt(dataSources.size()-1));
+                var ds = dataSources.get(random.nextInt(dataSources.size() - 1));
                 var spec = createSpec(i, ds);
                 var specOut = dao.save(tx, spec);
 
@@ -134,7 +135,7 @@ class RoutingSpecDaoTestIT extends AppTestBase
 
             var allSpecOnly = dao.getAll(tx, -1, -1, false);
             assertFalse(allSpecOnly.isEmpty(), "No RoutingSpecs were retrieved");
-            assertNull(allSpecOnly.get(0).dataSource, "Data Source was set when it shouldn't have been");
+            assertNotNull(allSpecOnly.get(0).dataSource, "Data Source was not set when it should have been");
             assertTrue(allSpecOnly.get(0).networkLists.isEmpty(), "NetLists returned when they shouldn't have been.");
 
             var all = dao.getAll(tx, -1, -1, true);

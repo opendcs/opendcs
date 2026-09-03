@@ -24,5 +24,7 @@ public final class DetailSqlLogger implements SqlLogger
     public void logBeforeExecution(StatementContext ctx)
     {
         log.atError().log(ctx.getRawSql());
+        log.atError().log("args {}", ctx.getAttributes());
+        log.atError().log("bindings {}", ctx.getBinding());
     }    
 }

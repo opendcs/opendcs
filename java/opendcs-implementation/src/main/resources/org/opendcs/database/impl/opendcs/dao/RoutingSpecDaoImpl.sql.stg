@@ -24,9 +24,9 @@ select
     <if(prop_columns)>, <prop_columns> <endif>
     <if(list_columns)>, <list_columns> <endif>
     <if(list_entry_columns)>, <list_entry_columns> <endif>
-    <if(datasource_columns)>,
-        <datasource_columns>,
-        <datasource_member_columns>,
+    <if(datasource_columns)>, <datasource_columns> <endif>
+    <if(datasource_member_columns)>
+        , <datasource_member_columns>,
         dsgm.sequencenum as dsm_sequencenum
     <endif>
 from routingspec_limit rs
@@ -34,10 +34,8 @@ from routingspec_limit rs
 <if(prop_join)> <prop_join> <endif>
 <if(list_join)> <list_join> <endif>
 <if(list_entry_join)> <list_entry_join> <endif>
-<if(datasource_join)>
-<datasource_join>
-<datasource_member_join>
-<endif>
+<if(datasource_join)> <datasource_join> <endif>
+<if(datasource_member_join)> <datasource_member_join> <endif>
 order by rs.name <collate> asc <if(datasource_member_join)>, dsgm.sequencenum asc <endif>
 >>
 

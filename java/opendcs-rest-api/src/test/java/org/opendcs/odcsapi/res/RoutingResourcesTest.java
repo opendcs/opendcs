@@ -11,7 +11,6 @@ import java.util.Vector;
 
 import decodes.db.DataSource;
 import decodes.db.RoutingSpec;
-import decodes.db.RoutingSpecList;
 import decodes.db.RoutingStatus;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
@@ -32,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.odcsapi.res.RoutingResources.map;
+import static org.opendcs.odcsapi.res.RoutingResources.mapRef;
 import static org.opendcs.odcsapi.res.RoutingResources.statusMap;
 
 final class RoutingResourcesTest
@@ -39,11 +39,11 @@ final class RoutingResourcesTest
 	@Test
 	void testRoutingRefListMap() throws Exception
 	{
-		RoutingSpecList routingSpecList = new RoutingSpecList();
+		
 		RoutingSpec routingSpec = buildRoutingSpec();
-		routingSpecList.add(routingSpec);
 
-		List<ApiRoutingRef> apiRoutingRefs = map(routingSpecList);
+		List<ApiRoutingRef> apiRoutingRefs = new ArrayList<>();
+		apiRoutingRefs.add(mapRef(routingSpec));
 
 		ApiRoutingRef apiRoutingRef = apiRoutingRefs.get(0);
 		assertNotNull(apiRoutingRef);
