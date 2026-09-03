@@ -58,20 +58,20 @@ const FULL_DATA_SOURCES: Record<number, ApiDataSource> = {
 };
 
 const baseHandlers = {
-  dataSourceRefs: http.get("/odcsapi/datasourcerefs", () =>
+  dataSourceRefs: http.get("/api/datasourcerefs", () =>
     HttpResponse.json<ApiDataSourceRef[]>(DATA_SOURCE_REFS),
   ),
-  dataSource: http.get("/odcsapi/datasource", ({ request }) => {
+  dataSource: http.get("/api/datasource", ({ request }) => {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("datasourceid"));
     return HttpResponse.json<ApiDataSource>(
       FULL_DATA_SOURCES[id] ?? { dataSourceId: id },
     );
   }),
-  postDataSource: http.post("/odcsapi/datasource", async () =>
+  postDataSource: http.post("/api/datasource", async () =>
     HttpResponse.json<ApiDataSource>({}),
   ),
-  deleteDataSource: http.delete("/odcsapi/datasource", () => HttpResponse.json({})),
+  deleteDataSource: http.delete("/api/datasource", () => HttpResponse.json({})),
 };
 
 const meta = {
@@ -99,7 +99,7 @@ export const Empty: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        dataSourceRefs: http.get("/odcsapi/datasourcerefs", () =>
+        dataSourceRefs: http.get("/api/datasourcerefs", () =>
           HttpResponse.json<ApiDataSourceRef[]>([]),
         ),
       },
@@ -211,10 +211,10 @@ export const DeleteDataSourceRow: Story = {
         const list = [...DATA_SOURCE_REFS];
         return {
           ...baseHandlers,
-          dataSourceRefs: http.get("/odcsapi/datasourcerefs", () =>
+          dataSourceRefs: http.get("/api/datasourcerefs", () =>
             HttpResponse.json<ApiDataSourceRef[]>(list),
           ),
-          deleteDataSource: http.delete("/odcsapi/datasource", ({ request }) => {
+          deleteDataSource: http.delete("/api/datasource", ({ request }) => {
             const url = new URL(request.url);
             const id = Number(url.searchParams.get("datasourceid"));
             const idx = list.findIndex((d) => d.dataSourceId === id);

@@ -83,7 +83,7 @@ const REFLISTS: Record<string, ApiRefList> = {
   },
 };
 
-const reflistHandler = http.get("/odcsapi/reflists", () => HttpResponse.json(REFLISTS));
+const reflistHandler = http.get("/api/reflists", () => HttpResponse.json(REFLISTS));
 
 const goesMedium: ApiTransportMedium = {
   mediumType: "goes",

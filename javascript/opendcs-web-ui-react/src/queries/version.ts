@@ -7,7 +7,7 @@ export interface ApiVersion {
 }
 
 export const fetchVersion = (): Promise<ApiVersion> =>
-  fetch("/odcsapi/version").then((res) => {
+  fetch("/api/version").then((res) => {
     if (!res.ok) throw new Error(`Version fetch failed: ${res.status}`);
     return res.json() as Promise<ApiVersion>;
   });

@@ -34,7 +34,7 @@ export const Loading: Story = {
       handlers: [
         // Never resolves, so the query stays pending and the component's
         // "render nothing until success" branch stays observable.
-        http.get("/odcsapi/version", () => new Promise(() => {})),
+        http.get("/api/version", () => new Promise(() => {})),
       ],
     },
   },
@@ -49,7 +49,7 @@ export const Loaded: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.get("/odcsapi/version", () =>
+        http.get("/api/version", () =>
           HttpResponse.json({
             version: "99.main-SNAPSHOT",
             commitHash: "0123456789abcdef0123456789abcdef01234567",

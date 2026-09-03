@@ -55,24 +55,24 @@ const mockPropSpecs: ApiPropSpec[] = [
 ];
 
 const algorithmHandlers = {
-  algorithmRefs: http.get("/odcsapi/algorithmrefs", () => {
+  algorithmRefs: http.get("/api/algorithmrefs", () => {
     return HttpResponse.json<ApiAlgorithmRef[]>(mockAlgoRefs);
   }),
-  algorithm: http.get("/odcsapi/algorithm", ({ request }) => {
+  algorithm: http.get("/api/algorithm", ({ request }) => {
     const url = new URL(request.url);
     const id = parseInt(url.searchParams.get("algorithmid") ?? "-1");
     const algo = mockAlgorithms.find((a) => a.algorithmId === id);
     if (!algo) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(algo);
   }),
-  saveAlgorithm: http.post("/odcsapi/algorithm", async ({ request }) => {
+  saveAlgorithm: http.post("/api/algorithm", async ({ request }) => {
     const body = (await request.json()) as ApiAlgorithm;
     return HttpResponse.json({ ...body, algorithmId: body.algorithmId ?? 99 });
   }),
-  deleteAlgorithm: http.delete("/odcsapi/algorithm", () => {
+  deleteAlgorithm: http.delete("/api/algorithm", () => {
     return new HttpResponse(null, { status: 204 });
   }),
-  propSpecs: http.get("/odcsapi/propspecs", () => {
+  propSpecs: http.get("/api/propspecs", () => {
     return HttpResponse.json<ApiPropSpec[]>(mockPropSpecs);
   }),
 };

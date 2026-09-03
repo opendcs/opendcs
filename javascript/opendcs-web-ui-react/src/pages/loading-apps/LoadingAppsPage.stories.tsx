@@ -29,10 +29,10 @@ const mockAppStats: ApiAppStatus[] = [
 ];
 
 const handlers = {
-  appRefs: http.get("/odcsapi/apprefs", () =>
+  appRefs: http.get("/api/apprefs", () =>
     HttpResponse.json<ApiAppRef[]>(mockAppRefs),
   ),
-  appStat: http.get("/odcsapi/appstat", () =>
+  appStat: http.get("/api/appstat", () =>
     HttpResponse.json<ApiAppStatus[]>(mockAppStats),
   ),
 };
@@ -70,7 +70,7 @@ export const WithUnavailableMonitor: Story = {
     msw: {
       handlers: {
         ...handlers,
-        appStat: http.get("/odcsapi/appstat", () => HttpResponse.error()),
+        appStat: http.get("/api/appstat", () => HttpResponse.error()),
       },
     },
   },
@@ -115,7 +115,7 @@ const toApiApp = (app: StoredApp): ApiLoadingApp => ({
 });
 
 const statefulHandlers = {
-  appRefs: http.get("/odcsapi/apprefs", async () => {
+  appRefs: http.get("/api/apprefs", async () => {
     await delay(25);
     return HttpResponse.json<ApiAppRef[]>(
       storedApps.map((app) => ({
@@ -126,11 +126,11 @@ const statefulHandlers = {
       })),
     );
   }),
-  appStat: http.get("/odcsapi/appstat", async () => {
+  appStat: http.get("/api/appstat", async () => {
     await delay(25);
     return HttpResponse.json<ApiAppStatus[]>([]);
   }),
-  getApp: http.get("/odcsapi/app", async ({ request }) => {
+  getApp: http.get("/api/app", async ({ request }) => {
     await delay(25);
     const id = Number(new URL(request.url).searchParams.get("appid"));
     const app = storedApps.find((a) => a.appId === id);
@@ -138,7 +138,7 @@ const statefulHandlers = {
       ? HttpResponse.json(toApiApp(app))
       : new HttpResponse(null, { status: 404 });
   }),
-  postApp: http.post("/odcsapi/app", async ({ request }) => {
+  postApp: http.post("/api/app", async ({ request }) => {
     await delay(25);
     const body = (await request.json()) as ApiLoadingApp;
     const properties: Record<string, string> = {

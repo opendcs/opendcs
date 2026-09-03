@@ -635,7 +635,7 @@ export const AddFromAlgorithms: Story = {
   parameters: {
     msw: {
       handlers: {
-        algorithmRefs: http.get("/odcsapi/algorithmrefs", () =>
+        algorithmRefs: http.get("/api/algorithmrefs", () =>
           HttpResponse.json<ApiAlgorithmRef[]>(mockAlgorithmRefs),
         ),
       },

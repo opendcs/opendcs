@@ -23,7 +23,7 @@ const MOCK_DATA_TYPES: ApiDataType[] = [
 ];
 
 const baseHandlers = {
-  dataTypes: http.get("/odcsapi/datatypelist", () =>
+  dataTypes: http.get("/api/datatypelist", () =>
     HttpResponse.json<ApiDataType[]>(MOCK_DATA_TYPES),
   ),
 };
@@ -81,7 +81,7 @@ export const DataTypesWithoutStandard: Story = {
   parameters: {
     msw: {
       handlers: {
-        dataTypes: http.get("/odcsapi/datatypelist", () =>
+        dataTypes: http.get("/api/datatypelist", () =>
           HttpResponse.json<ApiDataType[]>([
             { code: "HG", displayName: "Stage" }, // no standard
             { standard: "CWMS", code: "Stage", displayName: "Stage" },
@@ -157,7 +157,7 @@ export const UnitsNotReady: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        units: http.get("/odcsapi/unitlist", () => HttpResponse.error()),
+        units: http.get("/api/unitlist", () => HttpResponse.error()),
       },
     },
   },

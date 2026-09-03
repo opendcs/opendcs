@@ -234,7 +234,7 @@ JDK 21 and Node 22 or higher are required to build the project.
 The gradle task `./gradlew :opendcs-rest-api:war` will create a war file in the `build/libs` directory.
 
 The SwaggerUI location can be found at the relative url path of /<context>/swaggerui.
-Assuming the context is 'odcsapi', an example of the SwaggerUI location is http://localhost:8080/odcsapi/swaggerui.
+Assuming the context is 'api', an example of the SwaggerUI location is http://localhost:8080/api/swaggerui.
 These files are being served up from the resource file 'SwaggerResources.java' file located at 
 'src/main/java/org/opendcs/odcsapi/res/SwaggerResources.java'.
 

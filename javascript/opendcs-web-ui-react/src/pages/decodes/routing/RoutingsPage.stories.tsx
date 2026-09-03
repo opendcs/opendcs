@@ -133,28 +133,28 @@ const PRESENTATION_REFS: ApiPresentationRef[] = [
 ];
 
 const baseHandlers = {
-  routingRefs: http.get("/odcsapi/routingrefs", () =>
+  routingRefs: http.get("/api/routingrefs", () =>
     HttpResponse.json<ApiRoutingRef[]>(ROUTING_REFS),
   ),
-  routing: http.get("/odcsapi/routing", ({ request }) => {
+  routing: http.get("/api/routing", ({ request }) => {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("routingid"));
     return HttpResponse.json<ApiRouting>(FULL_ROUTINGS[id] ?? { routingId: id });
   }),
-  postRouting: http.post("/odcsapi/routing", async () =>
+  postRouting: http.post("/api/routing", async () =>
     HttpResponse.json<ApiRouting>({}),
   ),
-  deleteRouting: http.delete("/odcsapi/routing", () => HttpResponse.json({})),
-  platformRefs: http.get("/odcsapi/platformrefs", () =>
+  deleteRouting: http.delete("/api/routing", () => HttpResponse.json({})),
+  platformRefs: http.get("/api/platformrefs", () =>
     HttpResponse.json<ApiPlatformRef[]>(PLATFORM_REFS),
   ),
-  netlistRefs: http.get("/odcsapi/netlistrefs", () =>
+  netlistRefs: http.get("/api/netlistrefs", () =>
     HttpResponse.json<ApiNetlistRef[]>(NETLIST_REFS),
   ),
-  dataSourceRefs: http.get("/odcsapi/datasourcerefs", () =>
+  dataSourceRefs: http.get("/api/datasourcerefs", () =>
     HttpResponse.json<ApiDataSourceRef[]>(DATA_SOURCE_REFS),
   ),
-  presentationRefs: http.get("/odcsapi/presentationrefs", () =>
+  presentationRefs: http.get("/api/presentationrefs", () =>
     HttpResponse.json<ApiPresentationRef[]>(PRESENTATION_REFS),
   ),
 };
@@ -193,7 +193,7 @@ export const Empty: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        routingRefs: http.get("/odcsapi/routingrefs", () =>
+        routingRefs: http.get("/api/routingrefs", () =>
           HttpResponse.json<ApiRoutingRef[]>([]),
         ),
       },
@@ -409,7 +409,7 @@ export const ChangeDataSourceSelection: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        postRouting: http.post("/odcsapi/routing", async ({ request }) => {
+        postRouting: http.post("/api/routing", async ({ request }) => {
           const body = (await request.json()) as ApiRouting;
           expect(body.dataSourceName).toEqual("lrgs-main");
           expect(body.dataSourceId).toEqual(13);
@@ -455,10 +455,10 @@ export const DeleteRoutingRow: Story = {
         const list = [...ROUTING_REFS];
         return {
           ...baseHandlers,
-          routingRefs: http.get("/odcsapi/routingrefs", () =>
+          routingRefs: http.get("/api/routingrefs", () =>
             HttpResponse.json<ApiRoutingRef[]>(list),
           ),
-          deleteRouting: http.delete("/odcsapi/routing", ({ request }) => {
+          deleteRouting: http.delete("/api/routing", ({ request }) => {
             const url = new URL(request.url);
             const id = Number(url.searchParams.get("routingid"));
             const idx = list.findIndex((r) => r.routingId === id);
