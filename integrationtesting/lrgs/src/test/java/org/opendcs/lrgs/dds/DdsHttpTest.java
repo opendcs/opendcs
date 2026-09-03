@@ -160,9 +160,26 @@ final class DdsHttpTest
     @Test
     void test_webhook(LrgsTestInstance lrgs)
     {
+
+        String message = """
+                {
+                    "Type" : "Notification",
+                    "MessageId" : "b9e5d9cd-d2ca-5ec6-8745-bb281a27a287",
+                    "TopicArn" : "arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new",
+                    "Message" : "{\\"Id\\":\\"8d88e58d-a5ab-463c-8ede-7ffa2421ee04\\",\\"Address\\":\\"CE09A476\\",\\"Time\\":\\"2026-07-30T21:48:22.613\\",\\"InfoCd\\":\\"G\\",\\"GroupCd\\":\\"CESPL1\\",\\"Data\\":\\"\\\\u0000\\\\u0000\\\\u0000\\\\b\\\\u0013\\\\u0000\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\\\u0000X\\\\u0000\\",\\"DataHex\\":\\"200D8AB0AEB5382031B3AEB60D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8AB0AEB5380D8A\\",\\"ArmCodes\\":[],\\"LockTime\\":\\"2026-07-30T21:48:20.285\\",\\"Baud\\":300,\\"SigStrength\\":41.9,\\"FreqDevStart\\":-0.7,\\"PhaseNoise\\":1.64,\\"GoodPhase\\":100,\\"ChannelId\\":88,\\"SatLocation\\":\\"W\\",\\"Source\\":\\"w\\",\\"NoEot\\":false,\\"Par\\":0,\\"NwsDescriptor\\":\\"SRAZ30\\",\\"IsNws\\":true,\\"NwsCenter\\":\\"KWAL\\",\\"PdtId\\":30785,\\"GroupId\\":2108,\\"AddressRecv\\":\\"CE09A476\\",\\"SyncTime\\":\\"2026-07-30T21:48:20.877\\",\\"Snr\\":30.9,\\"Length\\":112,\\"Quality\\":\\"G\\",\\"SatId\\":18,\\"Priority\\":4,\\"Duration\\":2.328,\\"FrameSync\\":\\"R\\",\\"FreqDevEnd\\":-0.5,\\"AddressCode\\":\\"V\\",\\"Ber\\":0}",
+                    "Timestamp" : "2026-07-30T21:48:29.649Z",
+                    "SignatureVersion" : "1",
+                    "Signature" : "R/D7URvZ6kj6GTnNMlG/QdpBkVugnrvH+sHZndGcFVGBP4wbvKxR9IksIiD7c26aaT+9Iasp3H3+Og/89/FJHBUTV9HyVecJ1nMSWxpb47jlrROSEuCekqc+fmrMzWLwyrgTwRvVdflvbvEdokn0+UIXA/UdLhCsx1b2daHTBN6WlZd44RF1QQCmyKd6zPJB6ozRmBHBfxzp2fXY7ZlwtQKioN35w8pjL/l6A73BxEKeu+uJkNdhP/HnQPFhvZfqn9KbQoY2z/A7xdA9fMFxvV8p7rXJdoEYd+8j4OS5R2v1keCV0sTw9FMmBIe33w/93/5GrFFX3jgH4/QsuN0N7g==",
+                    "SigningCertURL" : "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-7506a1e35b36ef5a444dd1a8e7cc3ed8.pem",
+                    "UnsubscribeURL" : "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new:6963c8ed-7d28-45bb-96ee-04dc10b89278"
+                }
+    """;
+
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .body("Test Message")
+            .header("x-amz-sns-message-type", "Notification")
+            .header("x-amz-sns-topic-arn","arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new")
+            .body(message)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -175,7 +192,9 @@ final class DdsHttpTest
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .body("Test Message")
+            .header("x-amz-sns-message-type", "Notification")
+            .header("x-amz-sns-topic-arn","arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new")
+            .body(message)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -188,7 +207,9 @@ final class DdsHttpTest
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .body("Test Message")
+            .header("x-amz-sns-message-type", "Notification")
+            .header("x-amz-sns-topic-arn","arn:aws:sns:us-east-1:940482412785:dadds-webhooks-messages-new")
+            .body(message)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
