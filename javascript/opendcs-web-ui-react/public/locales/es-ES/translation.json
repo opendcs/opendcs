@@ -23,6 +23,7 @@
   "save": "Guardar",
   "save_failed": "No se pudieron guardar los cambios. Inténtelo de nuevo.",
   "delete": "Eliminar",
+  "add": "Añadir",
   "confirm_delete_title": "Confirmar eliminación",
   "confirm_delete_message": "¿Está seguro de que desea eliminar esto? Esta acción no se puede deshacer.",
   "select": "Seleccionar",
