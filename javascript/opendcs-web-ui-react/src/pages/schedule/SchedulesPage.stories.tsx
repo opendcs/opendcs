@@ -84,22 +84,22 @@ const ROUTING_REFS: ApiRoutingRef[] = [
 ];
 
 const baseHandlers = {
-  scheduleRefs: http.get("/odcsapi/schedulerefs", () =>
+  scheduleRefs: http.get("/api/schedulerefs", () =>
     HttpResponse.json<ApiScheduleEntryRef[]>(SCHEDULE_REFS),
   ),
-  schedule: http.get("/odcsapi/schedule", ({ request }) => {
+  schedule: http.get("/api/schedule", ({ request }) => {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("scheduleid"));
     return HttpResponse.json<ApiScheduleEntry>(
       FULL_SCHEDULES[id] ?? { schedEntryId: id },
     );
   }),
-  postSchedule: http.post("/odcsapi/schedule", async () =>
+  postSchedule: http.post("/api/schedule", async () =>
     HttpResponse.json<ApiScheduleEntry>({}),
   ),
-  deleteSchedule: http.delete("/odcsapi/schedule", () => HttpResponse.json({})),
-  appRefs: http.get("/odcsapi/apprefs", () => HttpResponse.json<ApiAppRef[]>(APP_REFS)),
-  routingRefs: http.get("/odcsapi/routingrefs", () =>
+  deleteSchedule: http.delete("/api/schedule", () => HttpResponse.json({})),
+  appRefs: http.get("/api/apprefs", () => HttpResponse.json<ApiAppRef[]>(APP_REFS)),
+  routingRefs: http.get("/api/routingrefs", () =>
     HttpResponse.json<ApiRoutingRef[]>(ROUTING_REFS),
   ),
 };
@@ -131,7 +131,7 @@ export const Empty: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        scheduleRefs: http.get("/odcsapi/schedulerefs", () =>
+        scheduleRefs: http.get("/api/schedulerefs", () =>
           HttpResponse.json<ApiScheduleEntryRef[]>([]),
         ),
       },
@@ -409,7 +409,7 @@ export const SaveContinuouslyClearsScheduleFields: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        postSchedule: http.post("/odcsapi/schedule", async ({ request }) => {
+        postSchedule: http.post("/api/schedule", async ({ request }) => {
           const body = (await request.json()) as Partial<ApiScheduleEntry>;
           (
             globalThis as unknown as { __lastSchedulePost?: typeof body }
@@ -459,10 +459,10 @@ export const DeleteScheduleRow: Story = {
         const list = [...SCHEDULE_REFS];
         return {
           ...baseHandlers,
-          scheduleRefs: http.get("/odcsapi/schedulerefs", () =>
+          scheduleRefs: http.get("/api/schedulerefs", () =>
             HttpResponse.json<ApiScheduleEntryRef[]>(list),
           ),
-          deleteSchedule: http.delete("/odcsapi/schedule", ({ request }) => {
+          deleteSchedule: http.delete("/api/schedule", ({ request }) => {
             const url = new URL(request.url);
             const id = Number(url.searchParams.get("scheduleid"));
             const idx = list.findIndex((s) => s.schedEntryId === id);

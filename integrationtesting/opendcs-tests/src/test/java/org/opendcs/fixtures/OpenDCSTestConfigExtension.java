@@ -130,7 +130,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                     tomcatInstance = startTomcat();
                     RestAssured.baseURI = "http://localhost";
                     RestAssured.port = tomcatInstance.getPort();
-                    RestAssured.basePath = "odcsapi";
+                    RestAssured.basePath = "api";
                     healthCheck();
                     TomcatServer.setupTestUser(configuration.getOpenDcsDatabase());
                 }

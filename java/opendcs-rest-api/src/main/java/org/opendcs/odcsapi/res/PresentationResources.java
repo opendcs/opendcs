@@ -130,7 +130,7 @@ public final class PresentationResources extends OpenDcsResource
     @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
     @Operation(
             summary = "This method returns a JSON representation of a single, complete DECODES Presentation Group record",
-            description = "Example: \n \n `http://localhost:8080/odcsapi/presentation?groupid=4` \n \n "
+            description = "Example: \n \n `http://localhost:8080/api/presentation?groupid=4` \n \n "
                     + "This method returns a JSON representation of a single, complete DECODES Presentation Group record. "
                     + "The following structure is returned.\n\n"
                     + "**Note**: the optional min and max elements are not always present.",

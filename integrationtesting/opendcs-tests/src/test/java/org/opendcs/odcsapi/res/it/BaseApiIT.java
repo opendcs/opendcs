@@ -165,7 +165,7 @@ public class BaseApiIT extends AppTestBase
 								  .setHttpOnly(true)
 								  .setSecured(true)
 								  .setMaxAge(-1)
-								  .setPath("/odcsapi")
+								  .setPath("/api")
 								  .build();
 		String organization = getOrganization();
 		authSpec = new RequestSpecBuilder()

@@ -122,34 +122,32 @@ const mockGroupRefs: ApiTsGroupRef[] = [
 ];
 
 const computationHandlers = {
-  computationRefs: http.get("/odcsapi/computationrefs", () =>
+  computationRefs: http.get("/api/computationrefs", () =>
     HttpResponse.json<ApiComputationRef[]>(mockComputationRefs),
   ),
-  computation: http.get("/odcsapi/computation", ({ request }) => {
+  computation: http.get("/api/computation", ({ request }) => {
     const url = new URL(request.url);
     const id = Number.parseInt(url.searchParams.get("computationid") ?? "-1");
     const comp = mockComputations.find((c) => c.computationId === id);
     if (!comp) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(comp);
   }),
-  saveComputation: http.post("/odcsapi/computation", async ({ request }) => {
+  saveComputation: http.post("/api/computation", async ({ request }) => {
     const body = (await request.json()) as ApiComputation;
     return HttpResponse.json({ ...body, computationId: body.computationId ?? 99 });
   }),
-  deleteComputation: http.delete("/odcsapi/computation", () => {
+  deleteComputation: http.delete("/api/computation", () => {
     return new HttpResponse(null, { status: 204 });
   }),
-  algorithm: http.get("/odcsapi/algorithm", ({ request }) => {
+  algorithm: http.get("/api/algorithm", ({ request }) => {
     const url = new URL(request.url);
     const id = Number.parseInt(url.searchParams.get("algorithmid") ?? "-1");
     const algo = mockAlgorithms.find((a) => a.algorithmId === id);
     if (!algo) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(algo);
   }),
-  appRefs: http.get("/odcsapi/apprefs", () =>
-    HttpResponse.json<ApiAppRef[]>(mockAppRefs),
-  ),
-  groupRefs: http.get("/odcsapi/tsgrouprefs", () =>
+  appRefs: http.get("/api/apprefs", () => HttpResponse.json<ApiAppRef[]>(mockAppRefs)),
+  groupRefs: http.get("/api/tsgrouprefs", () =>
     HttpResponse.json<ApiTsGroupRef[]>(mockGroupRefs),
   ),
 };
@@ -248,10 +246,8 @@ export const AddAndCancel: Story = {
 };
 
 const orgScopedHandlers = {
-  appRefs: http.get("/odcsapi/apprefs", () =>
-    HttpResponse.json<ApiAppRef[]>(mockAppRefs),
-  ),
-  groupRefs: http.get("/odcsapi/tsgrouprefs", () =>
+  appRefs: http.get("/api/apprefs", () => HttpResponse.json<ApiAppRef[]>(mockAppRefs)),
+  groupRefs: http.get("/api/tsgrouprefs", () =>
     HttpResponse.json<ApiTsGroupRef[]>(mockGroupRefs),
   ),
   computationRefs: computationHandlers.computationRefs,
@@ -284,7 +280,7 @@ export const AppRefsFetchFailureFallsBackToEmpty: Story = {
       handlers: {
         ...orgScopedHandlers,
         appRefs: http.get(
-          "/odcsapi/apprefs",
+          "/api/apprefs",
           () => new HttpResponse(null, { status: 500 }),
         ),
       },
@@ -308,7 +304,7 @@ export const GroupRefsFetchFailureFallsBackToEmpty: Story = {
       handlers: {
         ...orgScopedHandlers,
         groupRefs: http.get(
-          "/odcsapi/tsgrouprefs",
+          "/api/tsgrouprefs",
           () => new HttpResponse(null, { status: 500 }),
         ),
       },
@@ -366,10 +362,10 @@ const statefulDeleteHandlers = (() => {
   let remainingRefs: ApiComputationRef[] = [...mockComputationRefs];
   return {
     ...orgScopedHandlers,
-    computationRefs: http.get("/odcsapi/computationrefs", () =>
+    computationRefs: http.get("/api/computationrefs", () =>
       HttpResponse.json<ApiComputationRef[]>(remainingRefs),
     ),
-    deleteComputation: http.delete("/odcsapi/computation", ({ request }) => {
+    deleteComputation: http.delete("/api/computation", ({ request }) => {
       const url = new URL(request.url);
       const id = Number.parseInt(url.searchParams.get("computationid") ?? "-1");
       remainingRefs = remainingRefs.filter((ref) => ref.computationId !== id);
@@ -415,7 +411,7 @@ export const DeleteFailureLogsError: Story = {
       handlers: {
         ...orgScopedHandlers,
         deleteComputation: http.delete(
-          "/odcsapi/computation",
+          "/api/computation",
           () => new HttpResponse(null, { status: 500 }),
         ),
       },
@@ -474,7 +470,7 @@ const mockTsData = {
 };
 
 const sseSuccessHandler = http.get(
-  "/odcsapi/runcomputation",
+  "/api/runcomputation",
   () =>
     new HttpResponse(
       makeSseStream([
@@ -490,7 +486,7 @@ const sseSuccessHandler = http.get(
     ),
 );
 
-const tsDataHandler = http.get("/odcsapi/tsdata", () => HttpResponse.json(mockTsData));
+const tsDataHandler = http.get("/api/tsdata", () => HttpResponse.json(mockTsData));
 
 export const RunComputationSuccess: Story = {
   args: {},
@@ -550,7 +546,7 @@ export const RunComputationSuccess: Story = {
 };
 
 const sseErrorEventHandler = http.get(
-  "/odcsapi/runcomputation",
+  "/api/runcomputation",
   () =>
     new HttpResponse(
       makeSseStream([
@@ -602,7 +598,7 @@ export const RunComputationHttpError: Story = {
       handlers: {
         ...orgScopedHandlers,
         runComputation: http.get(
-          "/odcsapi/runcomputation",
+          "/api/runcomputation",
           () => new HttpResponse(null, { status: 500 }),
         ),
       },
@@ -654,12 +650,12 @@ const mockGroupTsIds: ApiTimeSeriesIdentifier[] = [
   },
 ];
 
-const expandGroupHandler = http.get("/odcsapi/expandgroup", () =>
+const expandGroupHandler = http.get("/api/expandgroup", () =>
   HttpResponse.json<ApiTimeSeriesIdentifier[]>(mockGroupTsIds),
 );
 
 const groupSseSuccessHandlers = [
-  http.get("/odcsapi/runcomputation", ({ request }) => {
+  http.get("/api/runcomputation", ({ request }) => {
     const url = new URL(request.url);
     const tsid = url.searchParams.get("tsid");
     const tsStr =
@@ -761,7 +757,7 @@ export const RunGroupComputationSuccess: Story = {
         ...orgScopedHandlers,
         expandGroup: expandGroupHandler,
         ...Object.fromEntries(groupSseSuccessHandlers.map((h, i) => [String(i), h])),
-        tsData: http.get("/odcsapi/tsdata", () =>
+        tsData: http.get("/api/tsdata", () =>
           HttpResponse.json({ tsid: {}, values: [] }),
         ),
       },
@@ -820,7 +816,7 @@ export const RunGroupComputationGroupLoadError: Story = {
       handlers: {
         ...orgScopedHandlers,
         expandGroup: http.get(
-          "/odcsapi/expandgroup",
+          "/api/expandgroup",
           () => new HttpResponse(null, { status: 500 }),
         ),
       },

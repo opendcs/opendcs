@@ -59,7 +59,7 @@ public final class EquipmentResources extends OpenDcsResource
     @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
     @Operation(
             summary = "Returns a list of equipment model references suitable for table and pick-list views.",
-            description = "Example:\n\n    http://localhost:8080/odcsapi/equipmentrefs",
+            description = "Example:\n\n    http://localhost:8080/api/equipmentrefs",
             operationId = "getequipmentrefs",
             tags = {"REST - DECODES Equipment Model Records"},
             responses = {
@@ -92,7 +92,7 @@ public final class EquipmentResources extends OpenDcsResource
     @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
     @Operation(
             summary = "Retrieve a single equipment model by its ID.",
-            description = "Example:\n\n    http://localhost:8080/odcsapi/equipment?equipmentid=1",
+            description = "Example:\n\n    http://localhost:8080/api/equipment?equipmentid=1",
             operationId = "getequipment",
             tags = {"REST - DECODES Equipment Model Records"},
             responses = {

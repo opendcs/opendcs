@@ -6,10 +6,10 @@ import { AuthProvider } from "../../contexts/app/AuthProvider";
 
 // Shared MSW handlers — mock the session-check and logout endpoints.
 const handlers = {
-  checkSession: http.get("/odcsapi/check", () =>
+  checkSession: http.get("/api/check", () =>
     HttpResponse.json({ email: "testuser@example.com" }),
   ),
-  logout: http.delete("/odcsapi/logout", () => new HttpResponse(null, { status: 204 })),
+  logout: http.delete("/api/logout", () => new HttpResponse(null, { status: 204 })),
 };
 
 /**

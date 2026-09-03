@@ -63,7 +63,7 @@ export const AuthProvider = ({
   //   2. On a 401 while the user is authenticated → session expired; force logout.
   const [enhancedConf] = useState(() =>
     createConfiguration({
-      baseServer: new ServerConfiguration("/odcsapi", {}),
+      baseServer: new ServerConfiguration("/api", {}),
       promiseMiddleware: [
         {
           pre: (ctx) => Promise.resolve(ctx),
@@ -134,7 +134,7 @@ export const AuthProvider = ({
   useEffect(() => {
     const fetchSchemes = async () => {
       const apiUrl = new URL(
-        "./odcsapi/openapi.json",
+        "./api/openapi.json",
         globalThis.window.location.toString(),
       );
 

@@ -43,18 +43,18 @@ const FULL_CONFIGS: Record<number, ApiPlatformConfig> = {
 };
 
 const baseHandlers = {
-  configRefs: http.get("/odcsapi/configrefs", () =>
+  configRefs: http.get("/api/configrefs", () =>
     HttpResponse.json<ApiConfigRef[]>(CONFIG_REFS),
   ),
-  config: http.get("/odcsapi/config", ({ request }) => {
+  config: http.get("/api/config", ({ request }) => {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("configid"));
     return HttpResponse.json<ApiPlatformConfig>(FULL_CONFIGS[id] ?? {});
   }),
-  postConfig: http.post("/odcsapi/config", async () =>
+  postConfig: http.post("/api/config", async () =>
     HttpResponse.json<ApiPlatformConfig>({}),
   ),
-  deleteConfig: http.delete("/odcsapi/config", () => HttpResponse.json({})),
+  deleteConfig: http.delete("/api/config", () => HttpResponse.json({})),
 };
 
 const meta = {
@@ -82,7 +82,7 @@ export const Empty: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        configRefs: http.get("/odcsapi/configrefs", () =>
+        configRefs: http.get("/api/configrefs", () =>
           HttpResponse.json<ApiConfigRef[]>([]),
         ),
       },
@@ -121,13 +121,13 @@ export const EditExistingConfigPersistsAfterSave: Story = {
         let saved: ApiPlatformConfig | null = null;
         return {
           ...baseHandlers,
-          config: http.get("/odcsapi/config", ({ request }) => {
+          config: http.get("/api/config", ({ request }) => {
             const url = new URL(request.url);
             const id = Number(url.searchParams.get("configid"));
             if (id === 101 && saved) return HttpResponse.json<ApiPlatformConfig>(saved);
             return HttpResponse.json<ApiPlatformConfig>(FULL_CONFIGS[id] ?? {});
           }),
-          postConfig: http.post("/odcsapi/config", async ({ request }) => {
+          postConfig: http.post("/api/config", async ({ request }) => {
             saved = (await request.json()) as ApiPlatformConfig;
             return HttpResponse.json<ApiPlatformConfig>(saved);
           }),

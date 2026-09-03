@@ -69,7 +69,7 @@ public class DataSourceResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON list of DECODES Data Source records suitable for displaying in a table or pick-list",
-			description = "Example: \n\n`http://localhost:8080/odcsapi/datasourcerefs`\n\n" +
+			description = "Example: \n\n`http://localhost:8080/api/datasourcerefs`\n\n" +
 					"The returned structure contains only the high-level descriptive information about each data source.\n\n" +
 					"The arguments (properties) are represented by a string with a comma delimiter. " +
 					"Passwords within the string are replaced with four asterisks.",
@@ -139,7 +139,7 @@ public class DataSourceResources extends OpenDcsResource
 	@Operation(
 			summary = "The GET datasource method returns a single DECODES data source with all of its detail.",
 			description = "The integer argument datasourceid is required.\n Example: " +
-					"\n\n\t http://localhost:8080/odcsapi/datasource?datasourceid=10 \n",
+					"\n\n\t http://localhost:8080/api/datasource?datasourceid=10 \n",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Success",
 						content = @Content(

@@ -61,18 +61,16 @@ const FULL_NETLISTS: Record<number, ApiNetList> = {
 };
 
 const baseHandlers = {
-  netlistRefs: http.get("/odcsapi/netlistrefs", () =>
+  netlistRefs: http.get("/api/netlistrefs", () =>
     HttpResponse.json<ApiNetlistRef[]>(NETLIST_REFS),
   ),
-  netlist: http.get("/odcsapi/netlist", ({ request }) => {
+  netlist: http.get("/api/netlist", ({ request }) => {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("netlistid"));
     return HttpResponse.json<ApiNetList>(FULL_NETLISTS[id] ?? { netlistId: id });
   }),
-  postNetlist: http.post("/odcsapi/netlist", async () =>
-    HttpResponse.json<ApiNetList>({}),
-  ),
-  deleteNetlist: http.delete("/odcsapi/netlist", () => HttpResponse.json({})),
+  postNetlist: http.post("/api/netlist", async () => HttpResponse.json<ApiNetList>({})),
+  deleteNetlist: http.delete("/api/netlist", () => HttpResponse.json({})),
 };
 
 const meta = {
@@ -99,7 +97,7 @@ export const Empty: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        netlistRefs: http.get("/odcsapi/netlistrefs", () =>
+        netlistRefs: http.get("/api/netlistrefs", () =>
           HttpResponse.json<ApiNetlistRef[]>([]),
         ),
       },
@@ -205,10 +203,10 @@ export const DeleteNetlistRow: Story = {
         const list = [...NETLIST_REFS];
         return {
           ...baseHandlers,
-          netlistRefs: http.get("/odcsapi/netlistrefs", () =>
+          netlistRefs: http.get("/api/netlistrefs", () =>
             HttpResponse.json<ApiNetlistRef[]>(list),
           ),
-          deleteNetlist: http.delete("/odcsapi/netlist", ({ request }) => {
+          deleteNetlist: http.delete("/api/netlist", ({ request }) => {
             const url = new URL(request.url);
             const id = Number(url.searchParams.get("netlistid"));
             const idx = list.findIndex((n) => n.netlistId === id);

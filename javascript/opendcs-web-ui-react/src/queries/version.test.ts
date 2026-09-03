@@ -17,7 +17,7 @@ describe("fetchVersion", () => {
     );
 
     await expect(fetchVersion()).resolves.toEqual(version);
-    expect(fetch).toHaveBeenCalledWith("/odcsapi/version");
+    expect(fetch).toHaveBeenCalledWith("/api/version");
   });
 
   test("rejects with the status code when the response is not ok", async () => {

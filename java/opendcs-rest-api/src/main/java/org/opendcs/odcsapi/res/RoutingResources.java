@@ -163,7 +163,7 @@ public final class RoutingResources extends OpenDcsResource
     @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
     @Operation(
             summary = "This method returns a JSON representation of a single routing spec",
-            description = "Example: \n\n    http://localhost:8080/odcsapi/routing?routingid=20",
+            description = "Example: \n\n    http://localhost:8080/api/routing?routingid=20",
             tags = {"REST - DECODES Routing Spec Records"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully retrieved routing spec",
@@ -573,7 +573,7 @@ public final class RoutingResources extends OpenDcsResource
     @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
     @Operation(
             summary = "Retrieve all schedule references",
-            description = "Example:  \n\n    http://localhost:8080/odcsapi/schedulerefs\n\n"
+            description = "Example:  \n\n    http://localhost:8080/api/schedulerefs\n\n"
                     + "The returned structure is:\n  \n**Note**: in the third entry below that appName may be omitted. "
                     + "In the database, a schedule entry may not (yet) be assigned to an application.\n```\n[\n  {\n    "
                     + "\"appName\": \"RoutingScheduler\",\n    \"enabled\": false,\n    "
@@ -645,7 +645,7 @@ public final class RoutingResources extends OpenDcsResource
     @Operation(
             summary = "This method returns a JSON representation of a single schedule entry",
             description = "Fetches a specific schedule object based on the provided schedule ID.\n\n"
-                    + "Example: \n\n    http://localhost:8080/odcsapi/schedule?scheduleid=21",
+                    + "Example: \n\n    http://localhost:8080/api/schedule?scheduleid=21",
             tags = {"REST - Schedule Entry Methods"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Success",
@@ -844,7 +844,7 @@ public final class RoutingResources extends OpenDcsResource
             + "view the status of all routing specs and to start/stop them.")
     @Operation(
             summary = "This method allows a developer to implement a web version of the OpenDCS Routing Monitor screen.",
-            description = "Sample URL:\n  \n    http://localhost:8080/odcsapi/routingstatus\n  \n"
+            description = "Sample URL:\n  \n    http://localhost:8080/api/routingstatus\n  \n"
                     + "The returned data structure is shown below. Note the following:\n  \n"
                     + "* All routing specs are contained in the list regardless of whether they have a "
                     + "schedule entry assigned. No schedule entry is indicated by scheduleEntryId = null.\n  \n"
@@ -966,7 +966,7 @@ public final class RoutingResources extends OpenDcsResource
     @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
     @Operation(
             summary = "The GET routingexecstatus method returns all of the executions for the specified schedule entry",
-            description = "Sample URL\n  \n      http://localhost:8080/odcsapi/routingexecstatus?scheduleentryid=38\n  \n"
+            description = "Sample URL\n  \n      http://localhost:8080/api/routingexecstatus?scheduleentryid=38\n  \n"
                     + "Note the 'GET routingstatus' method returns a list of routing specs showing a unique "
                     + "scheduleEntryId for each entry. There may be more than one entry for each routing spec because:\n    \n"
                     + "* The same routing spec may be run in multiple schedule entries.\n  \n* A 'manual' routing spec "
@@ -1074,7 +1074,7 @@ public final class RoutingResources extends OpenDcsResource
     @Operation(
             summary = "Returns data acquisition events stored in the DACQ_EVENT database table",
             description = "Sample URL:\n  \n    "
-                    + "http://localhost:8080/odcsapi/dacqevents?appid=26\n  \n"
+                    + "http://localhost:8080/api/dacqevents?appid=26\n  \n"
                     + "The 'GET dacqevents' method returns events stored in the DACQ_EVENT database table. "
                     + "These are events having to do with data acquisition (DACQ) events. "
                     + "That can be associated with …\n  \n"

@@ -38,7 +38,7 @@ const mockSiteRefs: ApiSiteRef[] = [
   },
 ];
 
-const siteHandler = http.get("/odcsapi/siterefs", () =>
+const siteHandler = http.get("/api/siterefs", () =>
   HttpResponse.json<ApiSiteRef[]>(mockSiteRefs),
 );
 
