@@ -71,7 +71,7 @@ public final class AppResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieves a list of application references",
-			description = "Example:  \n\n    http://localhost:8080/odcsapi/apprefs",
+			description = "Example:  \n\n    http://localhost:8080/api/apprefs",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Success",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -115,7 +115,7 @@ public final class AppResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve a Single Application by its ID",
-			description = "Example: \n\n    http://localhost:8080/odcsapi/app?appid=4  \n",
+			description = "Example: \n\n    http://localhost:8080/api/app?appid=4  \n",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Success",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -306,7 +306,7 @@ public final class AppResources extends OpenDcsResource
 					+ "app will listen on for event clients. If not set (the usual case), the port is determined by "
 					+ "the formula: port = (pid % 10000) + 20000\n\n"
 					+ "Example:  \n\n"
-					+ "`http://localhost:8080/odcsapi/appstat`\n          \n          \n"
+					+ "`http://localhost:8080/api/appstat`\n          \n          \n"
 					+ "The returned structure is an array with one element for each application returned by the "
 					+ "'GET apprefs' method described in the method GET /apprefs\n\n"
 					+ "If an application is currently running, the 'pid' will be the system process ID, "

@@ -81,7 +81,7 @@ public final class ReflistResources extends OpenDcsResource
 	@Operation(
 			summary = "The ‘reflists’ GET method will return all reference lists or a specific reference list.",
 			description = "The 'name' argument may have multiple values.   For example:    \n\n"
-					+ "`http://localhost:8080/odcsapi/reflists?name=scripttype,dataorder`  \n\n"
+					+ "`http://localhost:8080/api/reflists?name=scripttype,dataorder`  \n\n"
 					+ "If no 'name' argument is provided, then all reference lists in the database are returned.   "
 					+ "The JSON returned is an array of reference lists.  \n          \n"
 					+ "The following reference lists are currently available:  \n"
@@ -549,7 +549,7 @@ public final class ReflistResources extends OpenDcsResource
 			description = "The DELETE season method requires an argument"
 					+ " 'abbr' corresponding to the season abbreviation.  \n\n"
 					+ "For example, to DELETE the 'autumn' season, use the following URL:\n  \n"
-					+ "    http://localhost:8080/odcsapi/season?abbr=autumn",
+					+ "    http://localhost:8080/api/season?abbr=autumn",
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Season was deleted successfully"),
 					@ApiResponse(responseCode = "400", description = "Missing Parameter"),

@@ -186,7 +186,7 @@ public final class PlatformResources extends OpenDcsResource
 	@Operation(
 			summary = "This method returns a JSON representation of a single, complete DECODES Platform record",
 			description = "Fetches detailed information about a specific platform using its unique ID. "
-					+ "Example: \n\n    http://localhost:8080/odcsapi/platform?platformid=5",
+					+ "Example: \n\n    http://localhost:8080/api/platform?platformid=5",
 			operationId = "getPlatform",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Platform details retrieved successfully",
@@ -591,7 +591,7 @@ public final class PlatformResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Returned structure contains information about recent activity on each platform",
-			description = "Sample URL:\n  \n    http://localhost:8080/odcsapi/platformstat  \n  \n  \n"
+			description = "Sample URL:\n  \n    http://localhost:8080/api/platformstat  \n  \n  \n"
 					+ "Optional argument 'netlistid' can be passed to only return platforms that have a "
 					+ "transport medium in the referenced network list.\n  \nThe returned data structure contains "
 					+ "information about recent activity on each platform:\n  \n```\n  [\n    {\n      "

@@ -29,10 +29,10 @@ jobs:
       - name: Login/grab data
         run: |
             echo "Login"
-            curl -i --cookie-jar session.cj -X POST http://localhost:7000/odcsapi/credentials --data '{"username": "test_user", "password": "test_password"}' -H 'Content-Type: application/json' -H 'Accept: application/json'
+            curl -i --cookie-jar session.cj -X POST http://localhost:7000/api/credentials --data '{"username": "test_user", "password": "test_password"}' -H 'Content-Type: application/json' -H 'Accept: application/json'
             echo ""
             echo "Retrieve Data"
-            curl -s --cookie session.cj -X GET http://localhost:7000/odcsapi/reflists -H 'Content-Type: application/json' -H 'Accept: application/json' \
+            curl -s --cookie session.cj -X GET http://localhost:7000/api/reflists -H 'Content-Type: application/json' -H 'Accept: application/json' \
                  > data.json
             CHECKVALUE=`jq -r '.UnitFamily.defaultValue' data.json`
             [[ "$CHECKVALUE" == "english" ]]

@@ -108,7 +108,7 @@ public final class ComputationResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve Computation References",
-			description = "Example:  \n\n    http://localhost:8080/odcsapi/computationrefs",
+			description = "Example:  \n\n    http://localhost:8080/api/computationrefs",
 			tags = {"REST - Computation Methods"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Success",
@@ -176,7 +176,7 @@ public final class ComputationResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve Computation by its ID",
-			description = "Example: \n\n    http://localhost:8080/odcsapi/computation?computationid=4",
+			description = "Example: \n\n    http://localhost:8080/api/computation?computationid=4",
 			tags = {"REST - Computation Methods"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Success",
