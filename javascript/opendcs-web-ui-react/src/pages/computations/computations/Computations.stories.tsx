@@ -146,9 +146,7 @@ const computationHandlers = {
     if (!algo) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(algo);
   }),
-  appRefs: http.get("/api/apprefs", () =>
-    HttpResponse.json<ApiAppRef[]>(mockAppRefs),
-  ),
+  appRefs: http.get("/api/apprefs", () => HttpResponse.json<ApiAppRef[]>(mockAppRefs)),
   groupRefs: http.get("/api/tsgrouprefs", () =>
     HttpResponse.json<ApiTsGroupRef[]>(mockGroupRefs),
   ),
@@ -248,9 +246,7 @@ export const AddAndCancel: Story = {
 };
 
 const orgScopedHandlers = {
-  appRefs: http.get("/api/apprefs", () =>
-    HttpResponse.json<ApiAppRef[]>(mockAppRefs),
-  ),
+  appRefs: http.get("/api/apprefs", () => HttpResponse.json<ApiAppRef[]>(mockAppRefs)),
   groupRefs: http.get("/api/tsgrouprefs", () =>
     HttpResponse.json<ApiTsGroupRef[]>(mockGroupRefs),
   ),

@@ -69,9 +69,7 @@ const baseHandlers = {
     const id = Number(url.searchParams.get("netlistid"));
     return HttpResponse.json<ApiNetList>(FULL_NETLISTS[id] ?? { netlistId: id });
   }),
-  postNetlist: http.post("/api/netlist", async () =>
-    HttpResponse.json<ApiNetList>({}),
-  ),
+  postNetlist: http.post("/api/netlist", async () => HttpResponse.json<ApiNetList>({})),
   deleteNetlist: http.delete("/api/netlist", () => HttpResponse.json({})),
 };
 

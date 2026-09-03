@@ -29,9 +29,7 @@ const mockAppStats: ApiAppStatus[] = [
 ];
 
 const handlers = {
-  appRefs: http.get("/api/apprefs", () =>
-    HttpResponse.json<ApiAppRef[]>(mockAppRefs),
-  ),
+  appRefs: http.get("/api/apprefs", () => HttpResponse.json<ApiAppRef[]>(mockAppRefs)),
   appStat: http.get("/api/appstat", () =>
     HttpResponse.json<ApiAppStatus[]>(mockAppStats),
   ),

@@ -141,9 +141,7 @@ const baseHandlers = {
     const id = Number(url.searchParams.get("routingid"));
     return HttpResponse.json<ApiRouting>(FULL_ROUTINGS[id] ?? { routingId: id });
   }),
-  postRouting: http.post("/api/routing", async () =>
-    HttpResponse.json<ApiRouting>({}),
-  ),
+  postRouting: http.post("/api/routing", async () => HttpResponse.json<ApiRouting>({})),
   deleteRouting: http.delete("/api/routing", () => HttpResponse.json({})),
   platformRefs: http.get("/api/platformrefs", () =>
     HttpResponse.json<ApiPlatformRef[]>(PLATFORM_REFS),
