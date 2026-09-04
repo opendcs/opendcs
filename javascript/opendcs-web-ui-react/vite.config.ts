@@ -31,7 +31,10 @@ export default defineConfig({
     ],
   },
   server: {
-    allowedHosts: [".apps.hecdev.net"],
+    allowedHosts: (process.env.DEV_ALLOWED_HOSTS ?? "")
+      .split(",")
+      .map((host) => host.trim())
+      .filter(Boolean),
     fs: {
       // Allow serving files from one level up the project root
       allow: [
