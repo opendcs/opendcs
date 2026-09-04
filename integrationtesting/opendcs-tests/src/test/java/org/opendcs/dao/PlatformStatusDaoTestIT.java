@@ -1,0 +1,239 @@
+package org.opendcs.dao;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.NetworkListDao;
+import org.opendcs.database.dai.PlatformDao;
+import org.opendcs.database.dai.PlatformStatusDao;
+import org.opendcs.database.dai.ScheduleEntryDao;
+import org.opendcs.database.dai.ScheduleEntryStatusDao;
+import org.opendcs.database.dai.SiteDao;
+import org.opendcs.fixtures.AppTestBase;
+import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
+
+import decodes.db.NetworkList;
+import decodes.db.NetworkListEntry;
+import decodes.db.Platform;
+import decodes.db.PlatformStatus;
+import decodes.db.ScheduleEntry;
+import decodes.db.ScheduleEntryStatus;
+import decodes.db.Site;
+import decodes.db.TransportMedium;
+import decodes.sql.DbKey;
+
+@DecodesConfigurationRequired({
+        "shared/test-sites.xml",
+        "shared/ROWI4.xml",
+        "shared/presgrp-regtest.xml",
+        "HydroJsonTest/HydroJSON-rs.xml",
+        "SimpleDecodesTest/site-OKVI4.xml",
+        "SimpleDecodesTest/OKVI4-decodes.xml"
+})
+@EnableIfTsDb
+class PlatformStatusDaoTestIT extends AppTestBase
+{
+    private static final String MEDIUM_ID = "CE344292";
+
+    @ConfiguredField
+    OpenDcsDatabase db;
+   
+
+    @Test
+    void test_basic_operations() throws Exception
+    {
+        var statusDao = db.getDao(PlatformStatusDao.class).orElseThrow();
+        var platformDao = db.getDao(PlatformDao.class).orElseThrow();
+
+        try (var tx = db.newTransaction())
+        {
+            // TODO: change back to site and actually implement the PlatformDao by site
+            // logic.
+            var platform = platformDao.getByMediumId(tx, "goes-self-timed", MEDIUM_ID)
+                                      .orElseGet(() -> fail("Could not retrieve Platform."));
+
+
+            var status = new PlatformStatus(platform.getId());
+            status.setAnnotation("Initial status");
+            status.setLastContactTime(new Date(128, 7, 28, 9, 45, 0));
+            var statusOut = statusDao.updatePlatformStatus(tx, status);
+            assertEquals(status, statusOut);
+
+            var statusOutById = statusDao.getByPlatformId(tx, platform.getId())
+                                         .orElseGet(() -> fail("Could not retrieve status"));
+            assertEquals(statusOut, statusOutById);
+
+            statusDao.deletePlatformStatus(tx, platform.getId());
+            assertTrue(statusDao.getByPlatformId(tx, platform.getId()).isEmpty());
+        }
+    }
+
+    @Test
+    void test_by_network_list() throws Exception
+    {
+        var statusDao = db.getDao(PlatformStatusDao.class).orElseThrow();
+        var platformDao = db.getDao(PlatformDao.class).orElseThrow();
+        var networkListDao = db.getDao(NetworkListDao.class).orElseThrow();
+
+        
+        try (var tx = db.newTransaction())
+        {
+            var platform = platformDao.getByMediumId(tx, "goes-self-timed", MEDIUM_ID)
+                                      .orElseGet(() -> fail("Could not retrieve Platform."));
+
+            var list = new NetworkList("test-list");
+            list.addEntry(new NetworkListEntry(null, MEDIUM_ID));
+            list.transportMediumType = "goes";
+            list.siteNameTypePref = "cwms";
+
+            var listOut = networkListDao.save(tx, list);
+            
+            var statuses = statusDao.getPlatformStatusForNetList(tx, listOut.getId(), -1, -1);
+            assertTrue(statuses.isEmpty());
+
+            var status = new PlatformStatus(platform.getId());
+            status.setAnnotation("From list");
+            status.setLastContactTime(new Date(126, 7, 12, 35, 0, 0));
+            statusDao.updatePlatformStatus(tx, status);
+
+            statuses = statusDao.getPlatformStatusForNetList(tx, listOut.getId(), -1, -1);
+            assertEquals(1, statuses.size());
+
+            assertEquals(status, statuses.getFirst());
+            tx.rollback();
+        }
+    }
+
+
+    @Test
+    void test_get_all() throws Exception
+    {
+        var statusDao = db.getDao(PlatformStatusDao.class).orElseThrow();
+        var platformDao = db.getDao(PlatformDao.class).orElseThrow();
+        var siteDao = db.getDao(SiteDao.class).orElseThrow();
+        final int MAX_COUNT = 100;
+        try (var tx = db.newTransaction())
+        {
+            createPlatforms(tx, statusDao, platformDao, siteDao, MAX_COUNT);
+            
+            var statuses = statusDao.getAll(tx, 100, -1);
+            assertEquals(MAX_COUNT, statuses.size());
+
+            var first10 = statusDao.getAll(tx, 10, 0);
+            var second10 = statusDao.getAll(tx, 10, 10);
+            assertEquals(statuses.getFirst(), first10.getFirst());
+            assertEquals(statuses.get(9), first10.getLast());
+
+            assertEquals(statuses.get(10), second10.getFirst());
+            assertEquals(statuses.get(19), second10.getLast());
+
+
+            tx.rollback();
+        }        
+    }
+
+    @Test
+    void test_with_schedule_entry_statuses() throws Exception
+    {
+        var statusDao = db.getDao(PlatformStatusDao.class).orElseThrow();
+        var platformDao = db.getDao(PlatformDao.class).orElseThrow();
+        var siteDao = db.getDao(SiteDao.class).orElseThrow();
+        var entryDao = db.getDao(ScheduleEntryDao.class).orElseThrow();
+        var entryStatusDao = db.getDao(ScheduleEntryStatusDao.class).orElseThrow();
+
+
+
+        final int MAX_COUNT = 100;
+        try (var tx = db.newTransaction())
+        {
+            var se = new ScheduleEntry("test-status");
+            se.setEnabled(false);
+            se.setLoadingAppName("RoutingScheduler");
+            se.setRoutingSpecName("OKVI4-input");
+            se.setStartTime(new Date());
+            se.setRunInterval("1h");
+
+            var seOut = entryDao.save(tx, se);
+
+
+            var platforms = createPlatforms(tx, statusDao, platformDao, siteDao, MAX_COUNT);
+
+            var allBeforeEntry = statusDao.getAll(tx, -1, -1)
+                                          .stream()
+                                          .filter(p -> platforms.contains(p.getId()))
+                                          .toList();
+            assertTrue(allBeforeEntry.stream().allMatch(e -> DbKey.isNull(e.getLastScheduleEntryStatusId())));
+
+            var status = new ScheduleEntryStatus(DbKey.NullKey); // constructor ID is for the status, not the schedule entry
+            status.setHostname("the tests");
+            status.setRunStart(new Date(26, 1, 1, 0, 0, 0));
+            status.setLastMessageTime(new Date(26, 1, 1, 0, 0, 0));
+            status.setRunStatus("setting platform status");
+            status.setNumMessages(MAX_COUNT);
+            status.setNumDecodesErrors(0);
+            status.setScheduleEntryId(seOut.getId());
+
+            var statusOut = entryStatusDao.updateStatus(tx, status);
+            for (var p: platforms)
+            {
+                var platformStatus = new PlatformStatus(p);
+                platformStatus.setAnnotation("From entry");
+                platformStatus.setLastContactTime(new Date());
+                platformStatus.setLastScheduleEntryStatusId(statusOut.getId());
+                statusDao.updatePlatformStatus(tx, platformStatus);
+            }
+
+            var allAfterEntry = statusDao.getAll(tx, -1, -1)
+                                         .stream()
+                                         .filter(p -> platforms.contains(p.getId()))
+                                         .toList();
+            assertTrue(allAfterEntry.stream()
+                                     .allMatch(e -> statusOut.getId().equals(e.getLastScheduleEntryStatusId())));
+            assertEquals(se.getRoutingSpecName(), allAfterEntry.getFirst().getLastRoutingSpecName());
+            // getSiteName is not yet tested. Actually implementing that will take some coordination with the
+            // appropriate SiteDao and the SiteNameMapper due to the complexity of setting the site names.
+            assertEquals("Designator-0", allAfterEntry.getFirst().getDesignator());
+            assertEquals("From entry", allAfterEntry.getLast().getAnnotation());
+
+            tx.rollback();
+        }
+    }
+
+    private List<DbKey> createPlatforms(DataTransaction tx, PlatformStatusDao statusDao, PlatformDao platformDao, SiteDao siteDao, int count) throws OpenDcsDataException
+    {
+        var ret = new ArrayList<DbKey>(count);
+        for (int i = 0; i < count; i++)
+        {
+            var site = new Site();
+            site.addName("cwms", "TestPlatformSite-" + i);
+            var siteOut = siteDao.save(tx, site);
+            var platform = new Platform();
+            platform.setSite(siteOut);
+            platform.setPlatformDesignator("Designator-" + i);
+            var tm = new TransportMedium(platform);
+            tm.setMediumType("logger");
+            tm.setMediumId(String.format("AAA-Logger-%03d", i));
+            platform.transportMedia.add(tm);
+            var platformOut = platformDao.save(tx, platform);
+
+            var status = new PlatformStatus(platformOut.getId());
+            status.setAnnotation("Status for platform " + i);
+            status.setLastContactTime(new Date());
+            statusDao.updatePlatformStatus(tx, status);
+            ret.add(platformOut.getId());
+        }
+        return ret;
+    }
+}
