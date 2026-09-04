@@ -61,6 +61,7 @@ import nl.altindag.ssl.SSLFactory;
 import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 import software.amazon.awssdk.messagemanager.sns.model.SnsMessage;
 import software.amazon.awssdk.messagemanager.sns.model.SnsMessageType;
+import software.amazon.awssdk.utils.AttributeMap;
 
 @ExtendWith(LrgsTestExtension.class)
 @LrgsConfig("""
@@ -224,6 +225,8 @@ final class DdsHttpTest
                                 return true;
                             } )
                               .build();
+        
+        SdkHttpConfigurationOption.TLS_TRUST_MANAGERS_PROVIDER = null;
         SSLContext.setDefault(trust.getSslContext());
 
         var sslContext = SSLContext.getInstance("TLS");
@@ -237,11 +240,13 @@ final class DdsHttpTest
         server.setExecutor(null);
         server.createContext("/cert.pem", ctx ->
         {
-            ctx.sendResponseHeaders(200, 0);
-            ctx.getResponseBody().write(publicKeyPem.getBytes());
+            System.out.println("got here");
+            var bytes = publicKeyPem.getBytes();
+            ctx.sendResponseHeaders(200, bytes.length);
+            ctx.getResponseBody().write(bytes);
         });
         server.start();
-        final int port = server.getAddress().getPort();
+        final int snsPort = server.getAddress().getPort();
 
         InterceptingInetAddressResolver.registerIntercept("sns.us-east-1.amazonaws.com", Inet4Address.getLoopbackAddress());
 
@@ -251,7 +256,7 @@ final class DdsHttpTest
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .header("x-amz-sns-message-type", "Notification")
                 .header("x-amz-sns-topic-arn",topicArn)
-                .body(SnsMessageCreator.createDaddsNotification(message, privateKey, topicArn, port))
+                .body(SnsMessageCreator.createDaddsNotification(message, privateKey, topicArn, snsPort))
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -282,7 +287,7 @@ final class DdsHttpTest
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("x-amz-sns-message-type", "Notification")
             .header("x-amz-sns-topic-arn", topicArn)
-            .body(SnsMessageCreator.createDaddsNotification(messages.getFirst(), null, topicArn, port))
+            .body(SnsMessageCreator.createDaddsNotification(messages.getFirst(), null, topicArn, snsPort))
         .when()
             .redirects().follow(true)
             .redirects().max(3)

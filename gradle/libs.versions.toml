@@ -195,6 +195,7 @@ usgs-waterdata-api = { module = "org.opendcs:usgs-waterdata-api", version.ref = 
 com-amazon-sdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "aws-sdk" }
 com-amazon-sdk-sns = { module = "software.amazon.awssdk:sns" }
 com-amazon-sdk-sns-message-manager = { module = "software.amazon.awssdk:sns-message-manager" }
+com-amazon-sdk-apache-client = { module = "software.amazon.awssdk:apache5-client" }
 
 # test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
