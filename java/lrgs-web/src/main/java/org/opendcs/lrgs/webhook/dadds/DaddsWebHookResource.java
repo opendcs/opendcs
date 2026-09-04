@@ -16,8 +16,15 @@
 package org.opendcs.lrgs.webhook.dadds;
 
 import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -34,18 +41,18 @@ import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.http.apache5.Apache5HttpClient;
 import software.amazon.awssdk.messagemanager.sns.SnsMessageManager;
-import software.amazon.awssdk.messagemanager.sns.internal.SnsHostProvider;
 import software.amazon.awssdk.messagemanager.sns.model.SnsMessage;
 import software.amazon.awssdk.messagemanager.sns.model.SnsSubscriptionConfirmation;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
-import software.amazon.awssdk.services.sns.endpoints.SnsEndpointProvider;
 
 @Path("/webhook/dadds")
 public class DaddsWebHookResource
@@ -89,9 +96,12 @@ public class DaddsWebHookResource
             {
                 throw SdkClientException.create("Region could not be parsed from message topicArn");
             }
-            var snsMessage = snsManagers.computeIfAbsent(region, r -> SnsMessageManager.builder()
-                                                                                       .region(region)
-                                                                                       .build())
+            
+            var snsMessage = snsManagers.computeIfAbsent(
+                                    region,
+                                    r -> SnsMessageManager.builder()
+                                                          .region(region)
+                                                          .build())
                                         .parseMessage(message);
             return switch (snsMessage.type())
             {
@@ -106,7 +116,7 @@ public class DaddsWebHookResource
             return Response.status(Response.Status.NOT_FOUND).build();
         }
     }
-
+    
     private Region parseRegion(String topicArn)
     {
         String[] parts = topicArn != null ? topicArn.split(":") : new String[0];
