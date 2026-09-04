@@ -1,12 +1,17 @@
 package org.opendcs.database.impl.opendcs.dao.auth;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.PreparedBatch;
+import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.opendcs.annotations.api.InjectDao;
+import org.opendcs.data.Organization;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.RolesDao;
@@ -40,8 +45,18 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 })
 public class UsersDaoImpl implements UsersDao
 {
+    /** Placeholder until implemented */
+    private static final RowMapper<Organization> ORG_MAPPER = new RowMapper<>()
+    {
+        @Override
+        public Organization map(ResultSet rs, StatementContext ctx) throws SQLException
+        {
+            return Organization.NULL_ORG;
+        }   
+    };
+
     @InjectDao
-    RolesDao rolesDao;
+    RolesDao rolesDao;  
 
     @Override
     public User addUser(DataTransaction tx, User user) throws OpenDcsDataException
@@ -63,18 +78,21 @@ public class UsersDaoImpl implements UsersDao
 
         try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
         {
-            for (Role role: user.roles)
+            for (var roles: user.roles.values())
             {
-                var roleId = role.id;
-                if (DbKey.isNull(role.id))
+                for (var role: roles)
                 {
-                    roleId = rolesDao.getRoleByName(tx, role.name)
-                                .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name + "' that doesn't exist."))
-                                .id;
+                    var roleId = role.id();
+                    if (DbKey.isNull(role.id()))
+                    {
+                        roleId = rolesDao.getRoleByName(tx, role.name())
+                                    .orElseThrow(() -> new OpenDcsDataException("Request to map role '" + role.name() + "' that doesn't exist."))
+                                    .id();
+                    }
+                    roleBatch.bind(UserBuilderMapper.USER_ID, id)
+                            .bind(RoleMapper.ROLE_ID, roleId)
+                            .add();
                 }
-                roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, roleId)
-                        .add();
             }
             roleBatch.execute();
         }
@@ -106,7 +124,7 @@ public class UsersDaoImpl implements UsersDao
         try (var user = handle.createQuery(
             "select u.id u_id, u.preferences::text u_preferences, u.email u_email," +
             "       u.created_at u_created_at, u.updated_at u_updated_at, " +
-            "       r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
+            "       0 r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at," +
             "       uip.identity_provider_id i_id, uip.subject i_subject,  " +
             "       idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config::text i_config" +
             "  from opendcs_user u" +
@@ -121,6 +139,7 @@ public class UsersDaoImpl implements UsersDao
               .registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
               .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
               .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
+              .registerRowMapper(Organization.class, ORG_MAPPER)
               .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
               .map(UserBuilder::build)
               .findFirst()
@@ -150,11 +169,14 @@ public class UsersDaoImpl implements UsersDao
         }
         try (PreparedBatch roleBatch = handle.prepareBatch("insert into user_roles(user_id, role_id) values (:user_id, :role_id)"))
         {
-            for (Role role: user.roles)
+            for (var roles: user.roles.values()) // no org id column mapping yet
             {
-                roleBatch.bind(UserBuilderMapper.USER_ID, id)
-                        .bind(RoleMapper.ROLE_ID, role.id)
-                        .add();
+                for (var role: roles)
+                {
+                    roleBatch.bind(UserBuilderMapper.USER_ID, id)
+                            .bind(RoleMapper.ROLE_ID, role.id())
+                            .add();
+                }
             }
             roleBatch.execute();
         }
@@ -211,7 +233,7 @@ public class UsersDaoImpl implements UsersDao
                 )
             select u.id u_id, u.preferences u_preferences, u.email u_email,
                 u.created_at u_created_at, u.updated_at u_updated_at,
-                r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
+                0 r_org_id, r.id r_id, r.name r_name, r.description r_description, r.updated_at r_updated_at,
                 uip.identity_provider_id i_id, uip.subject i_subject,
                 idp.name i_name, idp.type i_type, idp.updated_at i_updated_at, idp.config i_config
             from user_cte u
@@ -237,6 +259,7 @@ public class UsersDaoImpl implements UsersDao
             return q.registerRowMapper(UserBuilder.class, UserBuilderMapper.withPrefix("u"))
                 .registerRowMapper(Role.class, RoleMapper.withPrefix("r"))
                 .registerRowMapper(IdentityProviderMapping.class, IdentityProviderMappingMapper.withPrefix("i"))
+                .registerRowMapper(Organization.class, ORG_MAPPER)
                 .reduceRows(UserBuilderReducer.USER_BUILDER_REDUCER)
                 .map(UserBuilder::build)
                 .toList();

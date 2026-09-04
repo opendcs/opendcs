@@ -15,10 +15,13 @@
 
 package org.opendcs.odcsapi.sec;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
+import org.opendcs.data.Organization;
 import org.opendcs.database.model.User;
+import org.opendcs.odcsapi.beans.ApiOrganization;
 import org.opendcs.odcsapi.util.ApiConstants;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -106,13 +109,16 @@ public final class SessionResource
 
 	public static ResponseBuilder updateSessionWithUser(User user, HttpServletRequest httpRequest)
 	{
-		var roles = new HashSet<OpenDcsApiRoles>();
-		for (var role: user.roles)
-		{
-			roles.add(OpenDcsApiRoles.valueOf(role.name));
-		}
-		roles.add(OpenDcsApiRoles.ODCS_API_REGISTERED);
-		OpenDcsPrincipal principal = new OpenDcsPrincipal(user, roles);
+		var roleMap = new HashMap<ApiOrganization, ArrayList<OpenDcsApiRoles>>();
+		user.roles.forEach((org, roles) ->
+			roleMap.put(OrganizationResource.map(org),
+						new ArrayList<OpenDcsApiRoles>(roles.stream()
+															.map(role -> OpenDcsApiRoles.valueOf(role.name()))
+															.toList()))
+		);
+		
+		roleMap.computeIfAbsent(OrganizationResource.map(Organization.NULL_ORG), org -> new ArrayList<>()).add(OpenDcsApiRoles.ODCS_API_REGISTERED);
+		OpenDcsPrincipal principal = new OpenDcsPrincipal(user, roleMap);
 		HttpSession oldSession = httpRequest.getSession(false);
 		if(oldSession != null)
 		{

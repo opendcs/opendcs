@@ -28,10 +28,12 @@ import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityP
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.OrganizationDao;
 import org.opendcs.database.dai.RolesDao;
 import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.database.model.IdentityProvider;
+import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.Role;
 import org.opendcs.database.model.User;
 import org.opendcs.fixtures.AppTestBase;
@@ -42,7 +44,7 @@ import decodes.sql.DbKey;
 
 /**
  * This tests UsersDao, RolesDao, and IdentityProviderDao.
- * 
+ *
  * While separate DAOs, they are generally used together.
  */
 @EnableIfTsDb({"OpenDCS-Postgres", "CWMS-Oracle"})
@@ -61,15 +63,15 @@ class UserManagementDaoTestIT extends AppTestBase
         try (DataTransaction tx = db.newTransaction())
         {
             Role role = dao.addRole(tx, new Role(DbKey.NullKey, "user", "a test", null));
-            assertEquals("user", role.name);
-            assertNotEquals(DbKey.NullKey, role.id);
-            id = role.id;
+            assertEquals("user", role.name());
+            assertNotEquals(DbKey.NullKey, role.id());
+            id = role.id();
         }
 
         try (DataTransaction tx = db.newTransaction())
         {
             Role role = dao.getRole(tx, id).orElseGet(() -> fail("could not retrieve role"));
-            assertEquals("user", role.name);
+            assertEquals("user", role.name());
 
             Role updated = new Role(null, "test", "a test2", null);
             dao.updateRole(tx, id, updated);
@@ -98,11 +100,11 @@ class UserManagementDaoTestIT extends AppTestBase
 
             List<Role> rolesLimit = dao.getRoles(tx, 10, 0);
             assertEquals(10, rolesLimit.size());
-            assertEquals("arole006", rolesLimit.get(rolesLimit.size()-1).name);
+            assertEquals("arole006", rolesLimit.get(rolesLimit.size()-1).name());
 
             List<Role> rolesLimitOffset = dao.getRoles(tx, 10, 10);
             assertEquals(10, rolesLimitOffset.size());
-            assertEquals("arole016", rolesLimitOffset.get(rolesLimitOffset.size()-1).name);
+            assertEquals("arole016", rolesLimitOffset.get(rolesLimitOffset.size()-1).name());
 
         }
     }
@@ -231,6 +233,58 @@ class UserManagementDaoTestIT extends AppTestBase
             assertEquals(10, usersLimitOffset.size());
             assertEquals("00user019", usersLimitOffset.get(usersLimitOffset.size()-1).email);
 
+        }
+    }
+
+    @Test
+    @EnableIfTsDb("CWMS-Oracle") // no orgs in OpenDCS-Postgres yet.
+    void test_multi_office_user() throws Exception
+    {
+        var userDao = db.getDao(UsersDao.class)
+                        .orElseThrow(() -> new UnsupportedOperationException("user dao not supported."));
+        var roleDao = db.getDao(RolesDao.class)
+                        .orElseThrow(() -> new UnsupportedOperationException("role dao not supported."));
+        var orgDao  = db.getDao(OrganizationDao.class)
+                        .orElseThrow(() -> new UnsupportedOperationException("org dao not supported."));
+        var idpDao = db.getDao(IdentityProviderDao.class)
+                       .orElseThrow(() -> new UnsupportedOperationException("IdentityProviderDao dao not supported."));
+
+        try (DataTransaction tx = db.newTransaction())
+        {
+            var roles = roleDao.getRoles(tx, -1, -1);
+            assertTrue(roles.size() >= 2);
+
+            var orgs = orgDao.getAll(tx, -1, -1);
+            assertTrue(orgs.size() >= 2);
+
+            var idp = idpDao.getIdentityProvider(tx, "builtin").orElseThrow();
+
+            var userIn = new UserBuilder().withEmail("bob@example.com")
+                                        .withIdentityMapping(new IdentityProviderMapping(idp, "bob"))
+                                        .withRole(orgs.get(0), roles.get(0))
+                                        .withRole(orgs.get(1), roles.get(0))
+                                        .withRole(orgs.get(1), roles.get(1))
+                                        .build();
+            var userOut = userDao.addUser(tx, userIn);
+
+            var userRoles = userOut.roles;
+
+
+
+            assertEquals(2, userRoles.size());
+            var org0 = orgs.get(0);
+
+            var org0FromMap = userRoles.keySet().stream().filter(o -> o.getId() == org0.getId()).findFirst().orElseThrow();
+
+            assertEquals(org0, org0FromMap);
+            var org0Roles = userRoles.get(org0);
+            assertEquals(1, org0Roles.size());
+
+            var org1 = orgs.get(1);
+            var org1Roles = userRoles.get(org1);
+            assertEquals(2, org1Roles.size());
+
+            assertEquals(roles.get(0), org0Roles.getFirst());
         }
     }
 }

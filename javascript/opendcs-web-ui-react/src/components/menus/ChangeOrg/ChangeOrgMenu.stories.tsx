@@ -3,6 +3,7 @@ import { ChangeOrgMenu } from "./ChangeOrgMenu";
 import { expect, fn, waitFor } from "storybook/test";
 import { ApiOrganization } from "opendcs-api";
 import { MOCK_ORGANIZATIONS } from "../../../../.storybook/mock/WithOrganization";
+import { CwmsUser } from "../../../../.storybook/mock/TestUsers";
 
 const meta = {
   component: ChangeOrgMenu,
@@ -16,6 +17,7 @@ export const CanClickChange: Story = {
   args: {
     org: { name: "SPK" } as ApiOrganization,
     orgs: MOCK_ORGANIZATIONS,
+    user: CwmsUser,
     changeOrg: fn(),
   },
   play: async ({ args, mount, userEvent, parameters }) => {
@@ -26,8 +28,8 @@ export const CanClickChange: Story = {
     });
     await userEvent.click(toggle);
 
-    const hq = await canvas.findByText("HQ");
-    await userEvent.click(hq);
+    const swt = await canvas.findByText("SWT");
+    await userEvent.click(swt);
 
     await waitFor(() => {
       expect(args.changeOrg).toHaveBeenCalled();
