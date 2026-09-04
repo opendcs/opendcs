@@ -68,7 +68,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 import opendcs.dai.CompDependsDAI;
@@ -379,34 +378,25 @@ public final class ComputationResources extends OpenDcsResource
 			Date startDate = Date.from(startTime);
 			Date endDate = Date.from(endTime);
 
+			final var channel = new SseChannel(sse, eventSink, compStatus, taskID);
+
 			List<TimeSeriesIdentifier> outputList = new ArrayList<>();
 			for(DbComputation resolvedComp : resolvedComps)
 			{
-				outputList.addAll(processOutputTsIds(resolvedComp, tsDai, siteDai, computationId, taskID, sse, eventSink));
+				outputList.addAll(processOutputTsIds(resolvedComp, tsDai, siteDai, computationId, channel));
 			}
 
 			final var contextMap = MDC.getCopyOfContextMap();
 			log.trace("Starting computation");
 			CompletableFuture.runAsync(() ->
 			{
-				OutboundSseEvent event = sse.newEventBuilder()
-						.name(compStatus)
-						.id(taskID)
-						.mediaType(MediaType.TEXT_PLAIN_TYPE)
-						.data(String.format("Running computation with ID: %s", computationId))
-						.build();
-				eventSink.send(event);
+				channel.sendText(String.format("Running computation with ID: %s", computationId));
 
 				// Anything the input resolution had to say -- a recovered binding, or the reason
 				// this run is expected to come back empty.
 				for(String diagnostic : diagnostics)
 				{
-					eventSink.send(sse.newEventBuilder()
-							.name(compStatus)
-							.id(taskID)
-							.mediaType(MediaType.TEXT_PLAIN_TYPE)
-							.data(diagnostic)
-							.build());
+					channel.sendText(diagnostic);
 				}
 
 				List<TimeSeriesIdentifier> written = List.of();
@@ -416,7 +406,7 @@ public final class ComputationResources extends OpenDcsResource
 					{
 						MDC.setContextMap(contextMap);
 					}
-					written = executeAndPublishResult(computationId, resolvedComps, startDate, endDate, sse, eventSink, compStatus, taskID);
+					written = executeAndPublishResult(computationId, resolvedComps, startDate, endDate, channel);
 				}
 				catch (RuntimeException ex)
 				{
@@ -430,7 +420,7 @@ public final class ComputationResources extends OpenDcsResource
 						// carry the real database keys the caller needs to read the computed values back.
 						// The parm-derived outputList is only a best-effort description of the intended
 						// outputs (no keys), so fall back to it when nothing was written.
-						processOutput(written.isEmpty() ? outputList : written, taskID, sse, eventSink, startTime, endTime);
+						processOutput(written.isEmpty() ? outputList : written, channel, startTime, endTime);
 					}
 					catch (RuntimeException ex)
 					{
@@ -589,7 +579,7 @@ public final class ComputationResources extends OpenDcsResource
 	}
 
 	private List<TimeSeriesIdentifier> processOutputTsIds(DbComputation comp, TimeSeriesDAI tsDai, SiteDAI siteDai,
-				Long computationId, String taskID, Sse sse, SseEventSink eventSink) throws DbIoException
+				Long computationId, SseChannel channel) throws DbIoException
 	{
 		List<TimeSeriesIdentifier> outputList = new ArrayList<>();
 		DbKey dataTypeId = null;
@@ -651,13 +641,10 @@ public final class ComputationResources extends OpenDcsResource
 				catch(NoSuchObjectException ex)
 				{
 					log.error(String.format("Unable to retrieve site name for site ID: %s", parm.getSiteId()), ex);
-					OutboundSseEvent event = sse.newEventBuilder()
-							.name("ERROR")
-							.id(taskID)
+					channel.send(channel.newEvent("ERROR")
 							.mediaType(MediaType.TEXT_PLAIN_TYPE)
 							.data(String.format("No site found with ID: %s for computation with ID: %s", parm.getSiteId().getValue(), computationId))
-							.build();
-					eventSink.send(event);
+							.build());
 				}
 				finally
 				{
@@ -680,9 +667,9 @@ public final class ComputationResources extends OpenDcsResource
 	 * @return the identifiers of the time series that were successfully saved
 	 */
 	private List<TimeSeriesIdentifier> executeAndPublishResult(Long computationId, List<DbComputation> comps,
-			Date startDate, Date endDate, Sse sse, SseEventSink eventSink, String compStatus, String taskID)
+			Date startDate, Date endDate, SseChannel channel)
 	{
-		SseProgressListener listener = new SseProgressListener(eventSink, sse, compStatus, taskID);
+		SseProgressListener listener = new SseProgressListener(channel);
 		// Computations are executed in parallel on the shared pool, so afterComp can be called from
 		// several threads at once. Only collect here -- saving happens on this thread once the batch
 		// has joined, because a TimeSeriesDAI is not safe to share across threads.
@@ -704,13 +691,7 @@ public final class ComputationResources extends OpenDcsResource
 
 			List<TimeSeriesIdentifier> written = saveOutputs(outputs, tsDb, listener);
 
-			OutboundSseEvent event = sse.newEventBuilder()
-					.name(compStatus)
-					.id(taskID)
-					.mediaType(MediaType.TEXT_PLAIN_TYPE)
-					.data(String.format("Computation executed with %d errors", results.numErrors()))
-					.build();
-			eventSink.send(event);
+			channel.sendText(String.format("Computation executed with %d errors", results.numErrors()));
 			return written;
 		}
 		catch (RuntimeException ex)
@@ -718,13 +699,10 @@ public final class ComputationResources extends OpenDcsResource
 			log.error("Error during computation execution for computation ID: {}", computationId, ex);
 			// Reported as ERROR, not as a status line: this is a hard failure and the caller has to
 			// be able to tell it apart from ordinary trace output.
-			OutboundSseEvent errEvent = sse.newEventBuilder()
-					.name("ERROR")
-					.id(taskID)
+			channel.send(channel.newEvent("ERROR")
 					.mediaType(MediaType.TEXT_PLAIN_TYPE)
 					.data(String.format("Computation failed: %s", describe(ex)))
-					.build();
-			eventSink.send(errEvent);
+					.build());
 			return List.of();
 		}
 	}
@@ -785,38 +763,28 @@ public final class ComputationResources extends OpenDcsResource
 		return sb.toString();
 	}
 
-	private void processOutput(List<TimeSeriesIdentifier> outputList, String taskID, Sse sse,
-			SseEventSink eventSink, Instant startDate, Instant endDate)
+	private void processOutput(List<TimeSeriesIdentifier> outputList, SseChannel channel,
+			Instant startDate, Instant endDate)
 	{
-		OutboundSseEvent event;
 		List<ApiTimeSeriesIdentifier> ids = APIStreamMapper.mapList(outputList, ApiTimeSeriesIdentifier.class);
 		ApiCompResults results = new ApiCompResults();
 		results.setEndTime(endDate.toString());
 		results.setStartTime(startDate.toString());
 		results.setTsIds(ids);
 
-		event = sse.newEventBuilder()
-				.name("Results")
-				.id(taskID)
+		channel.send(channel.newEvent("Results")
 				.mediaType(MediaType.APPLICATION_JSON_TYPE)
 				.data(ApiCompResults.class, results)
-				.build();
-		eventSink.send(event);
+				.build());
 	}
 
 	private static final class SseProgressListener extends ProgressListener
 	{
-		private final SseEventSink eventSink;
-		private final Sse sse;
-		private final String name;
-		private final String taskId;
+		private final SseChannel channel;
 
-		public SseProgressListener(SseEventSink eventSink, Sse sse, String name, String taskId)
+		public SseProgressListener(SseChannel channel)
 		{
-			this.eventSink = eventSink;
-			this.sse = sse;
-			this.name = name;
-			this.taskId = taskId;
+			this.channel = channel;
 		}
 
 		@Override
@@ -827,14 +795,11 @@ public final class ComputationResources extends OpenDcsResource
 			// 'x'" says nothing on its own), so fold it into the streamed line -- the caller has no
 			// access to the server log.
 			String data = cause == null ? message : String.format("%s -- %s", message, describe(cause));
-			OutboundSseEvent event = sse.newEventBuilder()
-					.name(name)
-					.id(taskId)
+			channel.send(channel.newEvent(channel.eventName())
 					.reconnectDelay(3000L)
 					.data(data)
 					.mediaType(MediaType.TEXT_PLAIN_TYPE)
-					.build();
-			eventSink.send(event);
+					.build());
 		}
 	}
 }
