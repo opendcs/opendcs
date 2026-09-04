@@ -102,6 +102,7 @@
     "fetching_data": "Fetching computed values...",
     "no_data": "No values written in this time window.",
     "fetch_warning": "Could not fetch computed values",
+    "unresolved_outputs": "Output time series could not be resolved in the database, so no values can be shown for",
     "group_select_label": "Select Input Time Series",
     "group_select_all": "All",
     "group_select_none": "None",

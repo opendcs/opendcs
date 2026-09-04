@@ -102,6 +102,7 @@
     "fetching_data": "Obteniendo valores calculados...",
     "no_data": "No se escribieron valores en esta ventana de tiempo.",
     "fetch_warning": "No se pudieron obtener los valores calculados",
+    "unresolved_outputs": "No se pudieron resolver las series de tiempo de salida en la base de datos, por lo que no se pueden mostrar valores para",
     "group_select_label": "Seleccionar series de tiempo de entrada",
     "group_select_all": "Todas",
     "group_select_none": "Ninguna",

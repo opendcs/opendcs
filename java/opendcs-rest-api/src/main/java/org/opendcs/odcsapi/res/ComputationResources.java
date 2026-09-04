@@ -19,9 +19,12 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import decodes.cwms.CwmsTimeSeriesDAO;
 import decodes.cwms.CwmsTsId;
@@ -30,6 +33,8 @@ import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
+import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.CompFilter;
 import decodes.tsdb.ComputationExecution;
 import decodes.tsdb.ConstraintException;
@@ -40,6 +45,7 @@ import decodes.tsdb.DbCompResolver;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ProgressListener;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -68,6 +74,7 @@ import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.beans.ApiCompResults;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
@@ -360,7 +367,9 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			DbComputation comp = dai.getComputationById(DbKey.createDbKey(computationId));
 
-			List<DbComputation> resolvedComps = resolveComputations(comp, computationId, tsId, tsDai, compDependsDai);
+			List<String> diagnostics = new ArrayList<>();
+			List<DbComputation> resolvedComps =
+					resolveComputations(comp, computationId, tsId, tsDai, compDependsDai, diagnostics);
 
 			String taskID = UUID.randomUUID().toString();
 
@@ -383,13 +392,21 @@ public final class ComputationResources extends OpenDcsResource
 			{
 				channel.sendText(String.format("Running computation with ID: %s", computationId));
 
+				// Anything the input resolution had to say -- a recovered binding, or the reason
+				// this run is expected to come back empty.
+				for(String diagnostic : diagnostics)
+				{
+					channel.sendText(diagnostic);
+				}
+
+				List<TimeSeriesIdentifier> written = List.of();
 				try
 				{
 					if (contextMap != null)
 					{
 						MDC.setContextMap(contextMap);
 					}
-					executeAndPublishResult(computationId, resolvedComps, startDate, endDate, channel);
+					written = executeAndPublishResult(computationId, resolvedComps, startDate, endDate, channel);
 				}
 				catch (RuntimeException ex)
 				{
@@ -399,7 +416,11 @@ public final class ComputationResources extends OpenDcsResource
 				{
 					try
 					{
-						processOutput(outputList, channel, startTime, endTime);
+						// Prefer the identifiers of the time series actually written by the run: those
+						// carry the real database keys the caller needs to read the computed values back.
+						// The parm-derived outputList is only a best-effort description of the intended
+						// outputs (no keys), so fall back to it when nothing was written.
+						processOutput(written.isEmpty() ? outputList : written, channel, startTime, endTime);
 					}
 					catch (RuntimeException ex)
 					{
@@ -435,16 +456,18 @@ public final class ComputationResources extends OpenDcsResource
 
 	/**
 	 * Resolves the computation(s) that should actually be executed. Non-group computations
-	 * run as-is. Group computations are made concrete against either the single supplied
+	 * run as-is, unless their input binding is missing -- see {@link #resolveConcreteInputs}.
+	 * Group computations are made concrete against either the single supplied
 	 * tsid, or -- if none was supplied -- against every time series currently known to
 	 * trigger the computation, mirroring the expansion the thick-client comp-run tool performs.
 	 */
 	private List<DbComputation> resolveComputations(DbComputation comp, Long computationId, Long tsId,
-			TimeSeriesDAI tsDai, CompDependsDAI compDependsDai) throws DbIoException, NoSuchObjectException
+			TimeSeriesDAI tsDai, CompDependsDAI compDependsDai, List<String> diagnostics)
+			throws DbIoException, NoSuchObjectException
 	{
 		if (!comp.hasGroupInput())
 		{
-			return List.of(comp);
+			return List.of(resolveConcreteInputs(comp, computationId, tsDai, compDependsDai, diagnostics));
 		}
 
 		if (tsId != null)
@@ -474,6 +497,85 @@ public final class ComputationResources extends OpenDcsResource
 					String.format("No resolvable input time series found for group computation ID: %s", computationId));
 		}
 		return resolvedComps;
+	}
+
+	/**
+	 * A non-group computation carries its input binding in each parm's SITE_DATATYPE_ID. If that
+	 * is missing the computation cannot read its inputs, and a manual run quietly produces
+	 * nothing -- the automatic path never notices because it takes its inputs from the tasklist
+	 * with real identifiers already attached.
+	 *
+	 * <p>Recover by resolving the computation against the dependency table, which lists the
+	 * concrete time series that trigger it, exactly as the group path does. This repairs
+	 * computations whose stored binding was lost without needing a data migration. If the
+	 * dependencies cannot supply a binding either, run anyway but record why the run is
+	 * expected to come back empty, so the caller is told rather than left guessing.
+	 */
+	private DbComputation resolveConcreteInputs(DbComputation comp, Long computationId,
+			TimeSeriesDAI tsDai, CompDependsDAI compDependsDai, List<String> diagnostics)
+			throws DbIoException
+	{
+		List<String> unresolved = unresolvedInputRoles(comp);
+		if (unresolved.isEmpty())
+		{
+			return comp;
+		}
+		log.info("Computation ID {} has unbound input parm(s) {} -- attempting to resolve from "
+				+ "its dependencies.", computationId, unresolved);
+		for(TimeSeriesIdentifier trigger : compDependsDai.getTriggersFor(DbKey.createDbKey(computationId)))
+		{
+			try
+			{
+				DbComputation concrete = DbCompResolver.makeConcrete(getLegacyTimeseriesDB(), tsDai,
+						trigger, comp, true);
+				if (unresolvedInputRoles(concrete).isEmpty())
+				{
+					diagnostics.add(String.format(
+							"Input parm(s) %s had no time series bound; resolved from dependency '%s'.",
+							unresolved, trigger.getUniqueString()));
+					return concrete;
+				}
+			}
+			catch(NoSuchObjectException ex)
+			{
+				log.warn("Could not resolve computation ID {} against dependency '{}' -- {}",
+						computationId, trigger.getUniqueString(), ex.getMessage());
+			}
+		}
+		diagnostics.add(String.format(
+				"Input parm(s) %s have no time series bound and none could be recovered from this "
+				+ "computation's dependencies. Bind the parm to a time series and save the "
+				+ "computation; until then it can only run from the tasklist.", unresolved));
+		return comp;
+	}
+
+	/** Roles of the input parms that cannot currently be resolved to a stored time series. */
+	private List<String> unresolvedInputRoles(DbComputation comp)
+	{
+		TimeSeriesDb tsdb = getLegacyTimeseriesDB();
+		List<String> unresolved = new ArrayList<>();
+		for(DbCompParm parm : comp.getParmList())
+		{
+			if (!parm.isInput())
+			{
+				continue;
+			}
+			try
+			{
+				// expandSDI also fills the parm's site and data type, which is what the executive
+				// later needs; a null return means the parm has no usable binding.
+				if (tsdb.expandSDI(parm) == null)
+				{
+					unresolved.add(parm.getRoleName());
+				}
+			}
+			catch(DbIoException | NoSuchObjectException ex)
+			{
+				log.debug("Input parm '{}' does not resolve -- {}", parm.getRoleName(), ex.getMessage());
+				unresolved.add(parm.getRoleName());
+			}
+		}
+		return unresolved;
 	}
 
 	private List<TimeSeriesIdentifier> processOutputTsIds(DbComputation comp, TimeSeriesDAI tsDai, SiteDAI siteDai,
@@ -553,21 +655,112 @@ public final class ComputationResources extends OpenDcsResource
 		return outputList;
 	}
 
-	private void executeAndPublishResult(Long computationId, List<DbComputation> comps, Date startDate, Date endDate,
-			SseChannel channel)
+	/**
+	 * Runs the resolved computations and persists whatever they produced.
+	 *
+	 * <p>{@link ComputationExecution} only computes: the output time series come back in the
+	 * {@code afterComp} handler and it is the caller's responsibility to write them, exactly as
+	 * {@code ComputationApp} does for the automatic (tasklist driven) path. Without this the run
+	 * would appear to succeed while nothing was ever stored, and the caller would read an empty
+	 * time series back.
+	 *
+	 * @return the identifiers of the time series that were successfully saved
+	 */
+	private List<TimeSeriesIdentifier> executeAndPublishResult(Long computationId, List<DbComputation> comps,
+			Date startDate, Date endDate, SseChannel channel)
 	{
-		try (ComputationExecution execution = new ComputationExecution(createDb(), executors.getComputationExecutor()))
+		SseProgressListener listener = new SseProgressListener(channel);
+		// Computations are executed in parallel on the shared pool, so afterComp can be called from
+		// several threads at once. Only collect here -- saving happens on this thread once the batch
+		// has joined, because a TimeSeriesDAI is not safe to share across threads.
+		List<CTimeSeries> outputs = new CopyOnWriteArrayList<>();
+		try
 		{
-			SseProgressListener listener = new SseProgressListener(channel);
-			ComputationExecution.CompResults results = execution.execute(comps, new DataCollection(), startDate, endDate, listener);
+			OpenDcsDatabase db = createDb();
+			TimeSeriesDb tsDb = db.getLegacyDatabase(TimeSeriesDb.class)
+					.orElseThrow(() -> new IllegalStateException("Time series database is unavailable."));
+			ComputationExecution.CompResults results;
+			try (ComputationExecution execution = new ComputationExecution(db, executors.getComputationExecutor()))
+			{
+				results = execution.execute(comps, new DataCollection(), startDate, endDate, listener, dc ->
+				{
+					outputs.addAll(dc.getAllTimeSeries());
+					return dc;
+				});
+			}
+
+			List<TimeSeriesIdentifier> written = saveOutputs(outputs, tsDb, listener);
 
 			channel.sendText(String.format("Computation executed with %d errors", results.numErrors()));
+			return written;
 		}
 		catch (RuntimeException ex)
 		{
 			log.error("Error during computation execution for computation ID: {}", computationId, ex);
-			channel.sendText(String.format("Computation failed: %s", ex.getMessage()));
+			// Reported as ERROR, not as a status line: this is a hard failure and the caller has to
+			// be able to tell it apart from ordinary trace output.
+			channel.send(channel.newEvent("ERROR")
+					.mediaType(MediaType.TEXT_PLAIN_TYPE)
+					.data(String.format("Computation failed: %s", describe(ex)))
+					.build());
+			return List.of();
 		}
+	}
+
+	/**
+	 * Writes the computed output time series and reports each one on the progress stream so the
+	 * caller can see what the run actually stored.
+	 */
+	private List<TimeSeriesIdentifier> saveOutputs(List<CTimeSeries> outputs, TimeSeriesDb tsDb,
+			ProgressListener listener)
+	{
+		if(outputs.isEmpty())
+		{
+			listener.onProgress("Computation produced no output time series to save.", Level.INFO, null);
+			return List.of();
+		}
+		// A group computation resolves into one concrete computation per trigger, and several of
+		// those can share an output series -- key the results so the caller gets one column per
+		// output rather than one per resolved computation.
+		Map<DbKey, TimeSeriesIdentifier> written = new LinkedHashMap<>();
+		try (TimeSeriesDAI timeSeriesDAO = tsDb.makeTimeSeriesDAO())
+		{
+			for(CTimeSeries cts : outputs)
+			{
+				TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
+				String name = tsid != null ? tsid.getUniqueString() : cts.getNameString();
+				try
+				{
+					timeSeriesDAO.saveTimeSeries(cts);
+					listener.onProgress(String.format("Saved %d values for '%s'", cts.size(), name), Level.INFO, null);
+					if(tsid != null && !DbKey.isNull(tsid.getKey()))
+					{
+						written.putIfAbsent(tsid.getKey(), tsid);
+					}
+				}
+				catch(DbIoException | BadTimeSeriesException ex)
+				{
+					listener.onProgress(String.format("Cannot save time series '%s'", name), Level.WARN, ex);
+				}
+			}
+		}
+		return new ArrayList<>(written.values());
+	}
+
+	/** Exception message plus its root cause, so a wrapped failure still says what went wrong. */
+	private static String describe(Throwable ex)
+	{
+		StringBuilder sb = new StringBuilder(ex.getMessage() != null ? ex.getMessage() : ex.toString());
+		Throwable cause = ex.getCause();
+		while(cause != null)
+		{
+			if(cause.getMessage() != null && sb.indexOf(cause.getMessage()) < 0)
+			{
+				sb.append(": ").append(cause.getMessage());
+			}
+			cause = cause.getCause();
+		}
+		return sb.toString();
 	}
 
 	private void processOutput(List<TimeSeriesIdentifier> outputList, SseChannel channel,
@@ -598,9 +791,13 @@ public final class ComputationResources extends OpenDcsResource
 		public void onProgress(String message, Level logLevel, Throwable cause)
 		{
 			logEvent(message, logLevel, cause);
+			// The cause carries the only useful detail for a failure ("Cannot initialize computation
+			// 'x'" says nothing on its own), so fold it into the streamed line -- the caller has no
+			// access to the server log.
+			String data = cause == null ? message : String.format("%s -- %s", message, describe(cause));
 			channel.send(channel.newEvent(channel.eventName())
 					.reconnectDelay(3000L)
-					.data(message)
+					.data(data)
 					.mediaType(MediaType.TEXT_PLAIN_TYPE)
 					.build());
 		}

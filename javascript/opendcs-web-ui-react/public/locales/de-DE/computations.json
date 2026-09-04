@@ -102,6 +102,7 @@
     "fetching_data": "Berechnete Werte werden abgerufen...",
     "no_data": "In diesem Zeitfenster wurden keine Werte geschrieben.",
     "fetch_warning": "Berechnete Werte konnten nicht abgerufen werden",
+    "unresolved_outputs": "Ausgabe-Zeitreihen konnten in der Datenbank nicht aufgelöst werden, daher können keine Werte angezeigt werden für",
     "group_select_label": "Eingabe-Zeitreihen auswählen",
     "group_select_all": "Alle",
     "group_select_none": "Keine",
