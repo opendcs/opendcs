@@ -526,14 +526,6 @@ public class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			return value;
 		}
 
-		Database db = Database.getDb();
-		if (db == null || db.unitConverterSet == null)
-		{
-			throw new DbCompException(
-				"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
-			  + "cannot convert CWMS_V_LOC.elevation from '" + fromUnit + "' to '"
-			  + toUnit + "' because engineering unit converters are not initialized.");
-		}
 
 		if (locationElevationUnitConverter == null)
 		{
