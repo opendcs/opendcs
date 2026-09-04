@@ -153,13 +153,24 @@ public final class DTOMappers
 		{
 			return null;
 		}
+		// The second constructor argument is the SITE_DATATYPE_ID -- the concrete time series
+		// this parm is bound to -- which the schema documents as "only for non-group comps where
+		// the TS is completely specified". It is NOT the data type. Passing the data type id here
+		// overwrites the parm's only pointer to its time series, after which a non-group
+		// computation can no longer resolve its input for a manual run (and, if the id happens to
+		// collide with a real ts_id, silently binds the wrong series). The API carries the correct
+		// value in tsKey.
 		DbCompParm ret = new DbCompParm(parm.getAlgoRoleName(),
-				parm.getDataTypeId() != null ? DbKey.createDbKey(parm.getDataTypeId()) : DbKey.NullKey,
+				parm.getTsKey() != null ? DbKey.createDbKey(parm.getTsKey()) : DbKey.NullKey,
 				parm.getInterval(), parm.getTableSelector(), parm.getDeltaT());
+		if (parm.getDataTypeId() != null)
+		{
+			ret.setDataTypeId(DbKey.createDbKey(parm.getDataTypeId()));
+		}
 		String dataTypeStr = parm.getDataType();
 		// dataTypeStr must be "standard:code" to build a DataType; a bare dataTypeId with
-		// no code text isn't enough to construct one, so only the parm's dataTypeId (set via
-		// the constructor above) carries through in that case.
+		// no code text isn't enough to construct one, so only the parm's dataTypeId (set
+		// above) carries through in that case.
 		if (dataTypeStr != null && !dataTypeStr.isEmpty())
 		{
 			String[] parts = dataTypeStr.split(":", 2);
@@ -270,6 +281,12 @@ public final class DTOMappers
 		else
 		{
 			ret.setSiteId(DbKey.NullKey.getValue());
+		}
+		// Round-trip the bound time series key. Without this the UI reads back a null tsKey and
+		// sends null on the next save, silently unbinding the parm from its time series.
+		if (parm.getSiteDataTypeId() != null && !parm.getSiteDataTypeId().isNull())
+		{
+			ret.setTsKey(parm.getSiteDataTypeId().getValue());
 		}
 		ret.setUnitsAbbr(parm.getUnitsAbbr());
 		ret.setAlgoParmType(parm.getAlgoParmType());

@@ -848,6 +848,13 @@ final class ComputationResourcesIT extends BaseApiIT
 				assertNotNull(data);
 				assertFalse(data.isBlank());
 
+				// Whether the run actually computed anything. See the key assertion below for why
+				// this is not simply assumed.
+				boolean ranClean = events.stream()
+						.filter(e -> !e.getName().equalsIgnoreCase("Results"))
+						.map(e -> e.readData(String.class, MediaType.TEXT_PLAIN_TYPE))
+						.anyMatch(d -> d != null && d.contains("executed with 0 errors"));
+
 				int foundCount = 0;
 				for (InboundSseEvent sseEvent : events)
 				{
@@ -856,6 +863,24 @@ final class ComputationResourcesIT extends BaseApiIT
 						foundCount++;
 						JsonPath jsonPath = JsonPath.from(sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE));
 						assertEquals(expectedTsList.size(), jsonPath.getList("tsIds").size(), "Expected " + expectedTsList.size() + " results");
+						// A run that produced output must report it with the real database key --
+						// parm-derived identifiers carry a null key (-1) and leave the caller unable
+						// to read back anything the run produced.
+						//
+						// Guarded on the run having succeeded because of a SEPARATE, PRE-EXISTING
+						// problem this assertion uncovered: on the OpenDCS/OpenTSDB schema this
+						// fixture's non-group computation has no site_datatype_id on its input parm,
+						// so OpenTsdb.expandSDI returns null, the input is never filled, and the
+						// computation fails before producing anything. That reproduces identically
+						// on an unmodified tree -- the suite simply never noticed, because the tsId
+						// count came from the parm-derived list and the data assertion below reads
+						// values the fixture itself imported. Un-guard this once inputs resolve.
+						if (ranClean)
+						{
+							List<Number> keys = jsonPath.getList("tsIds.key");
+							keys.forEach(key -> assertTrue(key != null && key.longValue() > 0,
+									"Result tsId has no database key: " + key));
+						}
 					}
 				}
 				assertEquals(1, foundCount, String.format("Expected %d SSE Result events, found %d", 1, foundCount));
@@ -949,6 +974,13 @@ final class ComputationResourcesIT extends BaseApiIT
 				assertNotNull(data);
 				assertFalse(data.isBlank());
 
+				// Whether the run actually computed anything. See the key assertion below for why
+				// this is not simply assumed.
+				boolean ranClean = events.stream()
+						.filter(e -> !e.getName().equalsIgnoreCase("Results"))
+						.map(e -> e.readData(String.class, MediaType.TEXT_PLAIN_TYPE))
+						.anyMatch(d -> d != null && d.contains("executed with 0 errors"));
+
 				int foundCount = 0;
 				for (InboundSseEvent sseEvent : events)
 				{
@@ -957,6 +989,24 @@ final class ComputationResourcesIT extends BaseApiIT
 						foundCount++;
 						JsonPath jsonPath = JsonPath.from(sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE));
 						assertEquals(expectedTsList.size(), jsonPath.getList("tsIds").size(), "Expected " + expectedTsList.size() + " results");
+						// A run that produced output must report it with the real database key --
+						// parm-derived identifiers carry a null key (-1) and leave the caller unable
+						// to read back anything the run produced.
+						//
+						// Guarded on the run having succeeded because of a SEPARATE, PRE-EXISTING
+						// problem this assertion uncovered: on the OpenDCS/OpenTSDB schema this
+						// fixture's non-group computation has no site_datatype_id on its input parm,
+						// so OpenTsdb.expandSDI returns null, the input is never filled, and the
+						// computation fails before producing anything. That reproduces identically
+						// on an unmodified tree -- the suite simply never noticed, because the tsId
+						// count came from the parm-derived list and the data assertion below reads
+						// values the fixture itself imported. Un-guard this once inputs resolve.
+						if (ranClean)
+						{
+							List<Number> keys = jsonPath.getList("tsIds.key");
+							keys.forEach(key -> assertTrue(key != null && key.longValue() > 0,
+									"Result tsId has no database key: " + key));
+						}
 					}
 				}
 				assertEquals(1, foundCount, String.format("Expected %d SSE Result events, found %d", 1, foundCount));

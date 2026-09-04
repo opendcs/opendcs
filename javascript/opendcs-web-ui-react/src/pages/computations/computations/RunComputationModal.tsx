@@ -412,6 +412,16 @@ export const RunComputationModal: React.FC<Props> = ({
   const fetchTsData = useCallback(
     async (results: CompResults): Promise<ApiTimeSeriesData[]> => {
       const validIds = results.tsIds.filter((id) => id.key !== undefined && id.key > 0);
+      // An output without a database key cannot be read back. Say so in the trace rather
+      // than returning an empty table with no explanation of why it is empty.
+      if (validIds.length < results.tsIds.length) {
+        appendLog(
+          `${t("computations:run.unresolved_outputs")}: ${results.tsIds
+            .filter((id) => id.key === undefined || id.key <= 0)
+            .map((id) => id.uniqueString ?? t("computations:run.unknown_ts"))
+            .join(", ")}`,
+        );
+      }
       if (validIds.length === 0) return [];
       setStatus("fetching");
       try {
