@@ -142,4 +142,26 @@
       </Description>
     </PlatformConfig>
   </Platform>
+  <Platform PlatformId="190666">
+    <Agency>CWMS</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>09/01/2026 15:55:00</LastModifyTime>
+    <Site>
+      <Latitude>0</Latitude>
+      <Longitude>0</Longitude>
+      <Elevation>100.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>UTC</Timezone>
+      <Country>UNITED STATES</Country>
+      <Description>Site used for vertical datum conversion regression testing</Description>
+      <SiteName NameType="CWMS">VDTEST1</SiteName>
+      <SiteProperty PropertyName="PUBLIC_NAME">VDTEST1</SiteProperty>
+      <SiteProperty PropertyName="vertical_datum">NAVD88</SiteProperty>
+    </Site>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
+  </Platform>
 </Database>
