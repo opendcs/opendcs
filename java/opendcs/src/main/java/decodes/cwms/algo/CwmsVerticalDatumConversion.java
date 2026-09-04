@@ -521,7 +521,7 @@ public class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	private double convertUnits(double value, String fromUnit, String toUnit)
 		throws DbCompException
 	{
-		if (fromUnit == null || toUnit == null || fromUnit.equalsIgnoreCase(toUnit))
+		if (fromUnit.equalsIgnoreCase(toUnit))
 		{
 			return value;
 		}
