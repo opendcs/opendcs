@@ -1,4 +1,46 @@
 services:
+  lrgs:
+    build:
+      context: .
+      target: lrgs
+      args:
+        VITE_DCPMON_DEFAULT_GROUP: SWT
+    environment:
+      - LRGS_ADMIN_PASSWORD=dcpmon-local
+      - LRGS_HTTP_ENABLED=true
+      - LRGS_HTTP_PORT=7000
+      - DCPMON_FIXTURES_ENABLED=true
+      - APP_NAME=lrgs-dcpmon
+    ports:
+      - "16003:16003"
+      - "7001:7000"
+    tmpfs:
+      - /lrgs_home:uid=1000,gid=1000,mode=0755
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:7000/health >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  dcpmon:
+    build:
+      context: .
+      target: dcpmon
+      args:
+        VITE_DCPMON_DEFAULT_GROUP: SWT
+    ports:
+      - "7200:80"
+    depends_on:
+      lrgs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
   db:
     image: postgres:16-alpine # Using a lightweight Alpine-based image for PostgreSQL 16
     restart: always # Ensure the container restarts if it crashes
@@ -7,7 +49,7 @@ services:
       POSTGRES_PASSWORD: dcs_password # Database password
       POSTGRES_DB: dcs # Name of the database to create
     ports:
-      - "5432:5432" # Map host port 5432 to container port 5432
+      - "5433:5432" # Keep the Compose database available without taking the default host PostgreSQL port
     volumes:
       - db_data:/var/lib/postgresql/data # Persistent storage for database data
     healthcheck:

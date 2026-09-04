@@ -12,7 +12,8 @@ docker run -d name lrgs -p 16003:16003 -v lrgs_volume:/lrgs_home -e LRGS_ADMIN_P
 
 ```
 
-16003 is the DDS protocol Port that the gui `rtstat` application can use. At this time there is no API and this is required for later configuration.
+16003 is the legacy DDS protocol port that the GUI `rtstat` application can use.
+The LRGS image can also enable DDS-over-HTTP on port 7000.
 There are additional input sources, and the ability to add additional custom input sources that may require you to 
 expose additional ports.
 
@@ -22,6 +23,19 @@ expose additional ports.
 |----------|---------|-------------|
 | LRGSHOME | /lrgs_home | location of primary files and output. |
 | LRGS_ADMIN_PASSWORD| <not set> | Admin password to use. If not set will be randomly generated and printed to console |
+| LRGS_HTTP_ENABLED | false | Enable the embedded DDS-over-HTTP service. |
+| LRGS_HTTP_PORT | 7000 | Internal port for DDS-over-HTTP. |
+| DCPMON_FIXTURES_ENABLED | false | Load deterministic DCPMon demo data. Development use only. |
+
+## Local DCPMon stack
+
+`docker compose up --build` starts the full OpenDCS development stack plus an
+LRGS and DCPMon. DCPMon is available at `http://localhost:7200`; direct LRGS
+DDS-over-HTTP access is available at `http://localhost:7001/dds`. The Compose
+LRGS uses ephemeral storage and deterministic SWT fixtures so every launch is
+repeatable and does not require external DDS credentials.
+The Compose PostgreSQL service is exposed on host port `5433` so it can run
+alongside a local PostgreSQL service using the default `5432` port.
 
 # TsDbApps
 

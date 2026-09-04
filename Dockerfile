@@ -15,8 +15,12 @@ WORKDIR /app
 
 COPY . .
 
-RUN --mount=type=cache,target=/root \
-    ./gradlew --no-daemon installDist war -Dno.docs=true --info
+ARG VITE_DCPMON_DEFAULT_GROUP=""
+ENV VITE_DCPMON_DEFAULT_GROUP=${VITE_DCPMON_DEFAULT_GROUP}
+
+RUN --mount=type=cache,target=/root,sharing=locked \
+    ./gradlew --no-daemon installDist war :dcpmon-web-ui:build \
+        -PversionOverride=0.0.0-docker-SNAPSHOT -Dno.docs=true --info
 # end initial build
 
 FROM --platform=$BUILDPLATFORM scratch AS export
@@ -45,13 +49,21 @@ LABEL org.opencontainers.image.documentation=https://github.com/opendcs/opendcs/
 # end baseline setup
 
 FROM opendcs_base AS lrgs
+RUN apk add --no-cache curl
 COPY docker_scripts/lrgs.sh /
 USER opendcs:opendcs
 WORKDIR /lrgs_home
 ENV LRGSHOME=/lrgs_home
 # DDS Port
 EXPOSE 16003
+# DDS-over-HTTP Port
+EXPOSE 7000
 CMD ["/lrgs.sh"]
+
+FROM nginx:alpine AS dcpmon
+COPY --from=builder /app/javascript/dcpmon-web-ui/dist/ /usr/share/nginx/html/
+COPY compose_files/dcpmon-nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
 
 
 FROM opendcs_base AS tsdbapp
