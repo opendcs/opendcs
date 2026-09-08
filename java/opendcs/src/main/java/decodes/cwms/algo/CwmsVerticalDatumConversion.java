@@ -35,6 +35,7 @@ import decodes.cwms.NoVerticalDatumMappingException;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.EngineeringUnit;
+import decodes.db.NullConverter;
 import decodes.db.Site;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
@@ -521,20 +522,6 @@ public class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	private double convertUnits(double value, String fromUnit, String toUnit)
 		throws DbCompException
 	{
-		if (fromUnit.equalsIgnoreCase(toUnit))
-		{
-			return value;
-		}
-
-
-		if (locationElevationUnitConverter == null)
-		{
-			throw new DbCompException(
-				"CwmsVerticalDatumConversion conversionMode=locationElevationOffset "
-			  + "cannot convert CWMS_V_LOC.elevation from '" + fromUnit + "' to '"
-			  + toUnit + "'.");
-		}
-
 		try
 		{
 			return locationElevationUnitConverter.convert(value);
@@ -552,9 +539,11 @@ public class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 	private void initializeLocationElevationUnitConverter(String fromUnit, String toUnit)
 		throws DbCompException
 	{
-		if (fromUnit == null || toUnit == null || fromUnit.equalsIgnoreCase(toUnit))
+		EngineeringUnit fromEu = EngineeringUnit.getEngineeringUnit(fromUnit);
+		EngineeringUnit toEu = EngineeringUnit.getEngineeringUnit(toUnit);
+		if (fromUnit.equalsIgnoreCase(toUnit))
 		{
-			locationElevationUnitConverter = null;
+			locationElevationUnitConverter = new NullConverter(fromEu, toEu);
 			return;
 		}
 
@@ -567,8 +556,6 @@ public class CwmsVerticalDatumConversion extends AW_AlgorithmBase
 			  + toUnit + "' because engineering unit converters are not initialized.");
 		}
 
-		EngineeringUnit fromEu = EngineeringUnit.getEngineeringUnit(fromUnit);
-		EngineeringUnit toEu = EngineeringUnit.getEngineeringUnit(toUnit);
 		locationElevationUnitConverter = db.unitConverterSet.get(fromEu, toEu);
 	}
 
