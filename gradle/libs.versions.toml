@@ -16,7 +16,7 @@ jsch="0.1.55"
 aspectj="1.8.10"
 json="20251224"
 slf4j-api= { strictly = "2.0.17" }
-logback = "1.5.32" 
+logback = "1.5.34" 
 jetty = "12.1.12"
 jersey = "4.0.2"
 servlet-api = "6.1.0"
