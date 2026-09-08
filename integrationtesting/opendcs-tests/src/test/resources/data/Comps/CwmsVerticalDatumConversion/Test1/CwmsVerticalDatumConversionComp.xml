@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="CwmsVerticalDatumConversion">
+    <Comment>
+      Convert vertical values between CWMS vertical datums using
+      cwms_loc.get_vertical_datum_offset, or explicitly convert STAGE to the
+      location native datum using CWMS_V_LOC.elevation and
+      CWMS_V_LOC.vertical_datum before optionally converting onward to
+      datum2. Typical use: stage/local datum to NAVD88 elevation.
+    </Comment>
+    <ExecClass>decodes.cwms.algo.CwmsVerticalDatumConversion</ExecClass>
+    <AlgoProperty name="datum1"></AlgoProperty>
+    <AlgoProperty name="datum2"></AlgoProperty>
+    <AlgoProperty name="officeId"></AlgoProperty>
+    <AlgoProperty name="effectiveDateMode">latestOnOrBefore</AlgoProperty>
+    <AlgoProperty name="conversionMode">cwmsDatumOffset</AlgoProperty>
+    <AlgoParm roleName="valueInDatum1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="valueInDatum2">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="Test1CwmsVerticalDatumConversion">
+    <Comment></Comment>
+    <Enabled>true</Enabled>
+    <AlgorithmName>CwmsVerticalDatumConversion</AlgorithmName>
+    <LastModified>2026-09-01 15:55:00 UTC</LastModified>
+    <ValidStart>2024-06-13 11:00:00 UTC</ValidStart>
+    <ValidEnd>2024-06-13 12:00:00 UTC</ValidEnd>
+    <CompProperty name="datum1">STAGE</CompProperty>
+    <CompProperty name="conversionMode">locationElevationOffset</CompProperty>
+    <CompProperty name="valueInDatum1_EU">ft</CompProperty>
+    <CompProperty name="valueInDatum2_EU">ft</CompProperty>
+    <CompParm roleName="valueInDatum1">
+      <SiteDataType>
+        <SiteName NameType="CWMS">VDTEST1</SiteName>
+        <DataType Standard="CWMS" code="Stage"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.vdatum-in</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="valueInDatum2">
+      <SiteDataType>
+        <SiteName NameType="CWMS">VDTEST1</SiteName>
+        <DataType Standard="CWMS" code="Elev"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.vdatum-out</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>
