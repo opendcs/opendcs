@@ -36,7 +36,12 @@ export const NetlistsTable: React.FC<NetlistsTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("netlists:header.Name"), type: "string" },
+      {
+        data: "name",
+        header: t("netlists:header.Name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       {
         data: "transportMediumType",
         header: t("netlists:header.MediumType"),

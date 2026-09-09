@@ -49,7 +49,12 @@ export const RoutingsTable: React.FC<RoutingsTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("routing:header.Name"), type: "string" },
+      {
+        data: "name",
+        header: t("routing:header.Name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       {
         data: "dataSourceName",
         header: t("routing:header.DataSource"),

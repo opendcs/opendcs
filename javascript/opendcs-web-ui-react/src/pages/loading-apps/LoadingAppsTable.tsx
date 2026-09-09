@@ -55,7 +55,12 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         defaultContent: "new",
         type: "num",
       },
-      { data: "appName", header: t("loadingapps:app_name"), type: "string" },
+      {
+        data: "appName",
+        header: t("loadingapps:app_name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       { data: "appType", header: t("loadingapps:app_type"), type: "string" },
       { data: "comment", header: t("loadingapps:comment"), type: "string" },
       {

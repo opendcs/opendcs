@@ -47,7 +47,12 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("schedule:header.Name"), type: "string" },
+      {
+        data: "name",
+        header: t("schedule:header.Name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       {
         data: "appName",
         header: t("schedule:header.LoadingApp"),

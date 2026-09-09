@@ -39,7 +39,12 @@ export const ConfigsTable: React.FC<ConfigsTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("configs:header.Name"), type: "string" },
+      {
+        data: "name",
+        header: t("configs:header.Name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       {
         data: "numPlatforms",
         header: t("configs:header.NumPlatforms"),

@@ -61,6 +61,7 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
         data: "name",
         header: t("platforms:header.Site"),
         type: "string",
+        defaultSort: "asc",
         render: (_data, _type, row) =>
           preferredPlatformName(
             row.sitenames,

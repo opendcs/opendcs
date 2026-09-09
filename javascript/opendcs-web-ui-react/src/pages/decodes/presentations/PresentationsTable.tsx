@@ -39,7 +39,12 @@ export const PresentationsTable: React.FC<PresentationsTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("presentations:header.Name"), type: "string" },
+      {
+        data: "name",
+        header: t("presentations:header.Name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       {
         data: "inheritsFrom",
         header: t("presentations:header.InheritsFrom"),

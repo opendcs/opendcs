@@ -58,7 +58,12 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "algorithmName", header: t("algorithms:header.Name"), type: "string" },
+      {
+        data: "algorithmName",
+        header: t("algorithms:header.Name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       { data: "execClass", header: t("algorithms:header.ExecClass"), type: "string" },
       {
         data: "numCompsUsing",

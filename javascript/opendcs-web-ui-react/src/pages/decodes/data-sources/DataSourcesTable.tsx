@@ -36,7 +36,12 @@ export const DataSourcesTable: React.FC<DataSourcesTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("datasources:header.Name"), type: "string" },
+      {
+        data: "name",
+        header: t("datasources:header.Name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       {
         data: "type",
         header: t("datasources:header.Type"),

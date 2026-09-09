@@ -107,7 +107,12 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "name", header: t("computations:header.Name"), type: "string" },
+      {
+        data: "name",
+        header: t("computations:header.Name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       {
         data: "algorithmName",
         header: t("computations:header.Algorithm"),
