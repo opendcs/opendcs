@@ -12,27 +12,31 @@ import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.TrustManager;
 
-import org.apache.hc.client5.http.classic.HttpClient;
-import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee11.servlet.ServletHandler;
+import org.eclipse.jetty.ee11.servlet.ServletHolder;
+import org.eclipse.jetty.server.Server;
+import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.jersey.servlet.ServletContainer;
+import org.glassfish.jersey.servlet.ServletProperties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,6 +48,7 @@ import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.lrgs.http.LrgsHttpInput;
 import org.opendcs.lrgs.webhook.dadds.DaddsDataMessage;
+import org.opendcs.lrgs.webhook.dadds.DaddsWebHookResource;
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
@@ -58,10 +63,9 @@ import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.lrgsmain.LrgsInputInterface;
 import nl.altindag.ssl.SSLFactory;
-import software.amazon.awssdk.http.SdkHttpConfigurationOption;
-import software.amazon.awssdk.messagemanager.sns.model.SnsMessage;
-import software.amazon.awssdk.messagemanager.sns.model.SnsMessageType;
-import software.amazon.awssdk.utils.AttributeMap;
+import software.amazon.awssdk.http.apache5.Apache5HttpClient;
+import software.amazon.awssdk.messagemanager.sns.SnsMessageManager;
+import software.amazon.awssdk.regions.Region;
 
 @ExtendWith(LrgsTestExtension.class)
 @LrgsConfig("""
@@ -190,9 +194,26 @@ final class DdsHttpTest
     @Test
     void test_webhook(LrgsTestInstance lrgs) throws Exception
     {
-        
-        var messages = createMessages();               
         final String topicArn = "arn:aws:sns:us-east-1:000000000000:dadds-webhooks-messages-new";
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("x-amz-sns-message-type", "Notification")
+            .header("x-amz-sns-topic-arn",topicArn)
+            .body("I don't matter.")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("webhook/dadds/{hookId}", "badHook")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
+        ;
+
+
+        var messages = createMessages();               
+        
         final var keyStorePassword = "awsmock".toCharArray(); // NOSONAR
         final var keyAlias = "awssigning";
         var keyStore = KeyStore.getInstance("JKS");
@@ -220,13 +241,14 @@ final class DdsHttpTest
                               .withTrustMaterial(keyStore)
                               .withInflatableTrustMaterial(Path.of("test.jks"), keyStorePassword, "PKCS12",
                                 c ->
-                            {
-                                System.out.println("Host is: " + c.getHostname().orElse("No name?"));
-                                return true;
-                            } )
+                                {
+                                     System.out.println("Host is: " + c.getHostname().orElse("No name?"));
+                                    return true;
+                                })
                               .build();
         
-        SdkHttpConfigurationOption.TLS_TRUST_MANAGERS_PROVIDER = null;
+        hackTrustIntoHandler(lrgs, trust.getTrustManagerFactory().orElseThrow().getTrustManagers());
+
         SSLContext.setDefault(trust.getSslContext());
 
         var sslContext = SSLContext.getInstance("TLS");
@@ -266,22 +288,7 @@ final class DdsHttpTest
             .assertThat()
                 .statusCode(is(Response.Status.OK.getStatusCode()))
             ;
-        }
-
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .header("x-amz-sns-message-type", "Notification")
-            .header("x-amz-sns-topic-arn",topicArn)
-            .body("I don't matter.")
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("webhook/dadds/{hookId}", "badHook")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(Response.Status.NOT_FOUND.getStatusCode()))
-        ;
+        }        
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -297,6 +304,47 @@ final class DdsHttpTest
         .assertThat()
             .statusCode(is(Response.Status.OK.getStatusCode()))
         ;
+    }
+
+    /**
+     * Yes, this is extreme. the AWS has done a really good job of making sure
+     * it's difficult to override the trust settings. So we dig into our own code
+     * and manually tweak the SnsMessageManager to use our local trust managers.
+     * @param lrgs
+     * @param trustManagers
+     */
+    @SuppressWarnings("unchecked")
+    private void hackTrustIntoHandler(LrgsTestInstance lrgs, TrustManager[] trustManagers) throws Exception
+    {
+        var httpInput = lrgs.getLrgsInputs().stream().filter(LrgsHttpInput.class::isInstance).findFirst().orElseThrow();
+        var serverField = httpInput.getClass().getDeclaredField("server");
+        serverField.setAccessible(true);
+
+        var server = (Server)serverField.get(httpInput);
+        var sch = (ServletContextHandler)server.getHandler();
+        var servletHandler = sch.getServletHandler();
+        var servlet = (ServletContainer)servletHandler.getServlets(ServletContainer.class).getFirst().getServlet();
+        var app = servlet.getApplicationHandler();
+        var instances = app.getConfiguration().getInstances();
+
+        var ddsHandler = instances.stream()
+                                  .filter(DaddsWebHookResource.class::isInstance)
+                                  .map(DaddsWebHookResource.class::cast)
+                                  .findFirst()
+                                  .orElseThrow();
+        var snsManagersField = DaddsWebHookResource.class.getDeclaredField("snsManagers");
+        snsManagersField.setAccessible(true);
+        var snsManagers = (HashMap<Region,SnsMessageManager>)snsManagersField.get(ddsHandler);
+        
+        snsManagers.put(
+            Region.US_EAST_1,
+            SnsMessageManager.builder()
+                             .httpClient(
+                                Apache5HttpClient.builder()
+                                                 .tlsTrustManagersProvider(() -> trustManagers).build()
+                             )
+                             .build()                             
+            );
     }
 
     List<DaddsDataMessage> createMessages()
