@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { RESTReferenceListsApi, type ApiRefList } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { refListKeys } from "./keys";
+import { REFERENCE_DATA_CACHE } from "./cachePolicy";
 
 // Ref lists are a per-org map (e.g. SiteNameType, TransportMediumType). Loaded
 // once per org and shared across every consumer via the shared QueryClient
@@ -14,6 +15,6 @@ export const useRefListsQuery = () => {
     queryKey: refListKeys.list(api.org),
     queryFn: () => refListApi.getRefLists(api.org),
     // Reference lists rarely change within a session; keep them in cache long.
-    staleTime: 60 * 60_000,
+    ...REFERENCE_DATA_CACHE,
   });
 };

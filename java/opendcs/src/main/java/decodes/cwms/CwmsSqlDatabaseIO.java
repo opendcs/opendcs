@@ -59,8 +59,8 @@ public class CwmsSqlDatabaseIO extends SqlDatabaseIO
 		this.dbOfficeId = settings.CwmsOfficeId;
         writeDateFmt = new SimpleDateFormat(
 			"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
-		DecodesSettings.instance().sqlTimeZone = "GMT";
-        writeDateFmt.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone));
+		settings.sqlTimeZone = "GMT";
+        writeDateFmt.setTimeZone(TimeZone.getTimeZone(settings.sqlTimeZone));
 
 		/* 
 		 * Oracle does not require a COMMIT after each block of nested SELECTs.

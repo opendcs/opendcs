@@ -22,6 +22,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
+import org.opendcs.database.api.TransactionContext;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.database.dai.EquipmentModelDao;
 import org.opendcs.database.dai.PlatformDao;
@@ -53,6 +54,7 @@ import decodes.db.Site;
 import decodes.db.TransportMedium;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
+import decodes.util.DecodesSettings;
 
 
 @ServiceProviders({
@@ -65,6 +67,8 @@ public class PlatformDaoImpl implements PlatformDao
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private static final String SELECT = "select";
+    private static final String PREFERRED_TYPE = "preferredType";
+    private static final String DEFAULT_PREFERRED_TYPE = "CWMS";
     private static final String MERGE = "platformMerge";
     private static final String DELETE_PLATFORM = "deletePlatform";
     private static final String DELETE_PROPERTIES = "deleteProperties";
@@ -156,6 +160,7 @@ public class PlatformDaoImpl implements PlatformDao
         try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, allData)))
         {
             registerMappers(select, allData);
+            bindPreferredType(select, ctx, allData);
             return select.bind(PlatformMapper.Columns.ID.column(), id)
                          .reduceRows(new PlatformReducer(allData.platformMapper, allData.siteReducer(),
                                                          allData.platformSensorReducer()))
@@ -213,6 +218,7 @@ public class PlatformDaoImpl implements PlatformDao
         {
             registerMappers(select, allData);
 
+            bindPreferredType(select, ctx, allData);
             return select.bind("mediumtype", mediumType)
                          .bind("mediumid", mediumId)
                          .reduceRows(new PlatformReducer(allData.platformMapper, allData.siteReducer(),
@@ -257,6 +263,26 @@ public class PlatformDaoImpl implements PlatformDao
             ;
         }
         return select;
+    }
+
+    /**
+     * The site name rows joined onto each platform have no inherent order, so without an explicit
+     * sort the database is free to hand them back differently from one execution to the next. Both
+     * {@link decodes.db.Site#getPreferredName()} and the web UI fall back to the <em>first</em> name
+     * when the preferred type isn't defined for a site, so an unordered join makes the displayed
+     * platform name flip between name types. Mirrors {@code OpenDcsSiteDaoImpl}, which sorts the
+     * preferred type first and then by name type.
+     */
+    private static void bindPreferredType(Query select, TransactionContext ctx, Mappers mappers)
+    {
+        // Mirrors the template's <if(site_name_columns)> guard on the order-by clause. JDBI
+        // rejects a binding the statement never references, so the two must stay in step.
+        if (mappers.siteMapper() != null)
+        {
+            select.bind(PREFERRED_TYPE, ctx.getSettings(DecodesSettings.class)
+                                           .map(ds -> ds.siteNameTypePreference)
+                                           .orElse(DEFAULT_PREFERRED_TYPE));
+        }
     }
 
     private static String setDefines(ST select, DatabaseEngine dbEngine, Mappers mappers)
@@ -490,6 +516,7 @@ public class PlatformDaoImpl implements PlatformDao
         try (var select = handle.createQuery(setDefines(selectTemplate, dbEngine, mappers)))
         {
             registerMappers(select, mappers);
+            bindPreferredType(select, ctx, mappers);
             if (mediumType != null && !mediumType.isBlank())
             {
                 select.bind("mediumtype", mediumType);
