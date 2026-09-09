@@ -14,6 +14,7 @@ import { Presentations } from "./pages/decodes/presentations";
 import { Schedules } from "./pages/schedule";
 import { Algorithms } from "./pages/computations/algorithms";
 import { Computations } from "./pages/computations/computations";
+import { TsGroups } from "./pages/computations/tsgroups";
 import { SitesPage } from "./pages/sites";
 import { LoadingAppsPage } from "./pages/loading-apps";
 import { EquipmentPage } from "./pages/equipment";
@@ -53,6 +54,7 @@ function App() {
               <Route path="/sites" element={<SitesPage />} />
               <Route path="/computations" element={<Computations />} />
               <Route path="/algorithms" element={<Algorithms />} />
+              <Route path="/tsgroups" element={<TsGroups />} />
               <Route path="/loading-apps" element={<LoadingAppsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/user/profile" element={<UserProfilePage />} />

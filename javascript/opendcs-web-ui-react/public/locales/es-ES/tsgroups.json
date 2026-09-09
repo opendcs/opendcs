@@ -1,0 +1,101 @@
+{
+  "title": "Grupos de series temporales",
+  "header": {
+    "Id": "ID de grupo",
+    "Name": "Nombre",
+    "Type": "Tipo",
+    "Description": "Descripción"
+  },
+  "groupName": "Nombre del grupo",
+  "groupName_hint": "Evite los espacios: los nombres de grupo se usan en la línea de comandos.",
+  "groupType": "Tipo de grupo",
+  "add_group": "Añadir grupo de series temporales",
+  "edit_group": "Editar el grupo de series temporales {{id}}",
+  "delete_for": "Eliminar el grupo de series temporales {{id}}",
+  "save_group": "Guardar el grupo de series temporales {{id}}",
+  "cancel_for": "Cancelar la edición del grupo de series temporales {{id}}",
+  "members": {
+    "title": "Miembros del grupo de series temporales",
+    "header": {
+      "Key": "Clave",
+      "TimeSeries": "Serie temporal",
+      "Location": "Ubicación",
+      "Param": "Parámetro",
+      "ParamType": "Tipo de parámetro",
+      "Interval": "Intervalo",
+      "Duration": "Duración",
+      "Version": "Versión",
+      "Description": "Descripción"
+    },
+    "add": "Añadir series temporales",
+    "add_none": "No hay series temporales disponibles para añadir.",
+    "add_selected": "Añadir {{count}} seleccionadas",
+    "select_all": "Seleccionar todas las series temporales",
+    "select": "Seleccionar la serie temporal {{name}}",
+    "remove": "Quitar la serie temporal {{name}} del grupo"
+  },
+  "subgroups": {
+    "title": "Miembros de subgrupos",
+    "combine": "Combinación",
+    "combine_include": "Añadir",
+    "combine_exclude": "Restar",
+    "combine_intersect": "Intersecar",
+    "button_include": "Añadir subgrupo",
+    "button_exclude": "Restar subgrupo",
+    "button_intersect": "Intersecar subgrupo",
+    "add_include": "Añadir a este grupo los miembros de otro grupo",
+    "add_exclude": "Restar de este grupo los miembros de otro grupo",
+    "add_intersect": "Intersecar este grupo con otro grupo",
+    "add_none": "No hay otros grupos disponibles.",
+    "add_selected": "Añadir {{count}} seleccionados",
+    "select_all": "Seleccionar todos los grupos",
+    "select": "Seleccionar el grupo {{name}}",
+    "remove": "Quitar el subgrupo {{name}}"
+  },
+  "criteria": {
+    "title": "Seleccionar por sitio, tipo de dato, intervalo o código estadístico",
+    "header": {
+      "TsidPart": "Parte del TSID",
+      "Value": "Valor",
+      "Location": "Ubicación",
+      "Param": "Parámetro",
+      "Standard": "Estándar",
+      "DisplayName": "Nombre visible",
+      "BasePart": "Parte base",
+      "SubPart": "Subparte",
+      "Description": "Descripción"
+    },
+    "part": {
+      "Location": "Ubicación",
+      "BaseLocation": "Ubicación base",
+      "SubLocation": "Sububicación",
+      "Param": "Parámetro",
+      "BaseParam": "Parámetro base",
+      "SubParam": "Subparámetro",
+      "ParamType": "Tipo de parámetro",
+      "Interval": "Intervalo",
+      "Duration": "Duración",
+      "Version": "Versión",
+      "BaseVersion": "Versión base",
+      "SubVersion": "Subversión"
+    },
+    "add_title": "Añadir criterio de {{part}}",
+    "add_confirm": "Añadir",
+    "scope": "Coincidencia",
+    "scope_full": "{{part}} completa",
+    "scope_base": "{{part}} base",
+    "scope_sub": "Sub{{part}}",
+    "wildcard_hint": "Use '*' como comodín; coincide con cualquier carácter excepto el guion.",
+    "result": "Resultado",
+    "remove": "Quitar el criterio {{part}} = {{value}}",
+    "full_locked_hint": "Lo determina la fila que seleccione arriba."
+  },
+  "evaluate": {
+    "button": "Evaluar",
+    "button_for": "Evaluar el grupo {{name}}",
+    "title": "Miembros de {{name}}",
+    "count": "Miembros expandidos ({{count}})",
+    "unsaved": "Se muestra el grupo tal como se guardó por última vez. Guarde los cambios para evaluarlos.",
+    "failed": "No se pudo expandir el grupo."
+  }
+}
