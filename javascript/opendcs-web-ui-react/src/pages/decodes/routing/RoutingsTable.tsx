@@ -11,6 +11,9 @@ import type { UiRouting } from "./RoutingReducer";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
 import {
   AppDataTable,
+  dateColumn,
+  idColumn,
+  textColumn,
   type ColumnDef,
   type RowAction,
 } from "../../../components/data-table";
@@ -42,43 +45,16 @@ export const RoutingsTable: React.FC<RoutingsTableProperties> = ({
 
   const columns = useMemo<ColumnDef<TableRoutingRef>[]>(
     () => [
-      {
-        data: "routingId",
-        header: t("routing:header.Id"),
-        defaultContent: "new",
-        className: "dt-left",
-        type: "num",
-      },
+      idColumn("routingId", t("routing:header.Id")),
       {
         data: "name",
         header: t("routing:header.Name"),
         type: "string",
         defaultSort: "asc",
       },
-      {
-        data: "dataSourceName",
-        header: t("routing:header.DataSource"),
-        defaultContent: "",
-        type: "string",
-      },
-      {
-        data: "destination",
-        header: t("routing:header.Consumer"),
-        defaultContent: "",
-        type: "string",
-      },
-      {
-        data: "lastModified",
-        header: t("routing:header.LastModified"),
-        defaultContent: "",
-        type: "date",
-        render: (data: unknown, type: string) => {
-          if (type !== "display") return data;
-          if (!data) return "";
-          const d = data instanceof Date ? data : new Date(data as string);
-          return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
-        },
-      },
+      textColumn("dataSourceName", t("routing:header.DataSource")),
+      textColumn("destination", t("routing:header.Consumer")),
+      dateColumn("lastModified", t("routing:header.LastModified")),
     ],
     [t],
   );

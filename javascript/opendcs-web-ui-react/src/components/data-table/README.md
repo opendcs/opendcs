@@ -371,6 +371,43 @@ Passed straight to the rendered table. `tableClassName` defaults to a sensible
 `table table-hover table-striped w-100 border` (plus `tablerow-cursor` when
 row expansion is enabled).
 
+### Column helpers
+
+Most list tables repeat the same few column shapes, so they come from
+`idColumn`/`textColumn`/`dateColumn` instead of being spelled out per table:
+
+```tsx
+import { dateColumn, idColumn, textColumn } from "../../components/data-table";
+
+const columns: ColumnDef<TableRoutingRef>[] = [
+  idColumn("routingId", t("routing:header.Id")),
+  {
+    data: "name",
+    header: t("routing:header.Name"),
+    type: "string",
+    defaultSort: "asc",
+  },
+  textColumn("dataSourceName", t("routing:header.DataSource")),
+  dateColumn("lastModified", t("routing:header.LastModified")),
+];
+```
+
+- **`idColumn(data, header)`** — numeric id, left aligned (DataTables right
+  aligns `num` columns), showing `"new"` for an unsaved row's synthetic id.
+- **`textColumn(data, header)`** — string column with `defaultContent: ""`, so
+  a row missing the field doesn't trip the DataTables "Requested unknown
+  parameter" error.
+- **`dateColumn(data, header)`** — date column formatted with
+  `toLocaleString()` on the `"display"` pass only, so DataTables still sorts
+  and filters on the raw value. A missing or unparseable date renders blank
+  instead of "Invalid Date".
+
+Anything beyond those three shapes — a `render`, a `className`, a different
+`defaultContent` — stays a plain `ColumnDef` object. Keeping the repeated
+shapes in one place also keeps the near-identical column arrays from tripping
+Sonar's copy-paste detector, which normalizes string literals and so reads
+these tables as duplicates of each other.
+
 ### Initial sort order
 
 Set `defaultSort: "asc" | "desc"` on the column the table should sort by when
@@ -493,8 +530,9 @@ Both component files are <150 lines — the wrapper absorbs the rest.
 
 ## Related exports
 
-| Export               | Use                                                                                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DetailFade`         | Component that wraps a detail with a skeleton→content fade. Used inside the Algorithm detail card; not needed at the table level.                 |
-| `TableCaption`       | The caption row (title + toolbar buttons) as a standalone component, for raw `<DataTable>`s that aren't using the wrapper.                        |
-| `useTableProcessing` | Low-level hook the wrapper uses internally. Exported for any custom DataTable that needs to drive the `processing` overlay from a `loading` flag. |
+| Export                                 | Use                                                                                                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DetailFade`                           | Component that wraps a detail with a skeleton→content fade. Used inside the Algorithm detail card; not needed at the table level.                 |
+| `TableCaption`                         | The caption row (title + toolbar buttons) as a standalone component, for raw `<DataTable>`s that aren't using the wrapper.                        |
+| `idColumn`, `textColumn`, `dateColumn` | Factories for the column shapes every list table repeats — see [Column helpers](#column-helpers).                                                 |
+| `useTableProcessing`                   | Low-level hook the wrapper uses internally. Exported for any custom DataTable that needs to drive the `processing` overlay from a `loading` flag. |
