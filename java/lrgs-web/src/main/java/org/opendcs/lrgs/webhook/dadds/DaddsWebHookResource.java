@@ -16,15 +16,8 @@
 package org.opendcs.lrgs.webhook.dadds;
 
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 
 import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -36,18 +29,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import jakarta.inject.Singleton;
 import jakarta.servlet.ServletContext;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import software.amazon.awssdk.core.exception.SdkClientException;
-import software.amazon.awssdk.http.apache5.Apache5HttpClient;
 import software.amazon.awssdk.messagemanager.sns.SnsMessageManager;
 import software.amazon.awssdk.messagemanager.sns.model.SnsMessage;
 import software.amazon.awssdk.messagemanager.sns.model.SnsSubscriptionConfirmation;
@@ -55,6 +47,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
 
 @Path("/webhook/dadds")
+@Singleton 
 public class DaddsWebHookResource
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
