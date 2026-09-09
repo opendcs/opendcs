@@ -132,14 +132,14 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                     RestAssured.port = tomcatInstance.getPort();
                     RestAssured.basePath = "odcsapi";
                     healthCheck();
-                    TomcatServer.setupTestUser(configuration.getOpenDcsDatabase());
+                    TomcatServer.setupTestUser(configuration.getOpenDcsDatabase(), configuration);
                 }
             }
             catch(Throwable t)
             {
                 log.atError()
-                      .setCause(t)
-                      .log("Unable to initialize configuration.");
+                   .setCause(t)
+                   .log("Unable to initialize configuration.");
                 configError = true;
                 throw new Exception(t);
             }

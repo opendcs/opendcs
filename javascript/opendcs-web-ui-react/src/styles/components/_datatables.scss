@@ -16,6 +16,92 @@
   color: var(--odcs-text-primary);
 }
 
+// -----------------------------------------------------------------------------
+// Table caption bar
+//
+// The caption holds the table title and the table's own toolbar buttons
+// ("Add", "Import…"), so those controls read as belonging to this table
+// instead of floating in a toolbar row above the length/search controls.
+// -----------------------------------------------------------------------------
+.dt-caption {
+  caption-side: top;
+  width: auto;
+  padding: 0 0 0.3125rem;
+  color: var(--odcs-text-primary);
+}
+
+.dt-caption__bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.25rem;
+}
+
+.dt-caption__title {
+  grid-column: 2;
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.dt-caption__actions {
+  grid-column: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
+.dt-caption__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+// The same buttons, when injected into the DataTables top-end toolbar cell
+// (inline with the search box) instead of the caption row.
+.dt-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
+// Narrow viewports: let the buttons drop under the title rather than
+// squeezing it out of the row.
+@media (max-width: 575.98px) {
+  .dt-caption__bar {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-caption__title,
+  .dt-caption__actions {
+    grid-column: 1;
+  }
+
+  .dt-caption__actions {
+    justify-content: center;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Table panel
+//
+// Outlines each table together with its own toolbar and paging controls, so
+// pages showing several tables side by side make it obvious which controls
+// belong to which table.
+// -----------------------------------------------------------------------------
+.dt-panel {
+  border: 1px solid var(--odcs-border);
+  border-radius: 0.5rem;
+  background-color: var(--odcs-bg-surface);
+  padding: 0.75rem;
+  // Keeps stacked tables from sharing an edge, so each panel reads as one unit.
+  margin-bottom: 0.75rem;
+}
+
 .table thead th {
   background-color: var(--odcs-table-header-bg);
   color: var(--odcs-table-header-color);
@@ -23,6 +109,28 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   border-bottom-width: 2px;
+}
+
+// -----------------------------------------------------------------------------
+// Scrollable table body with a sticky header
+//
+// Cap each table's body height so a long list scrolls inside the panel instead
+// of pushing the paging controls off-screen, and pin the header while it does.
+// This lets larger "entries per page" sizes stay usable. `.dt-layout-table` is
+// the DataTables layout row that wraps the <table> (the toolbar rows are
+// separate siblings, so only the table body scrolls).
+// -----------------------------------------------------------------------------
+.dt-panel .dt-layout-table {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.dt-panel .dt-layout-table thead th {
+  position: sticky;
+  top: 0;
+  // Sit above the (non-sticky) body cells and any inline-edit form controls
+  // that scroll underneath.
+  z-index: 2;
 }
 
 .dataTable td {

@@ -23,6 +23,7 @@
   "save": "Speichern",
   "save_failed": "Änderungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
   "delete": "Löschen",
+  "add": "Hinzufügen",
   "confirm_delete_title": "Löschen bestätigen",
   "confirm_delete_message": "Sind Sie sicher, dass Sie dies löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
   "select": "Auswählen",

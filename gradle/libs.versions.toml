@@ -16,7 +16,7 @@ jsch="0.1.55"
 aspectj="1.8.10"
 json="20251224"
 slf4j-api= { strictly = "2.0.17" }
-logback = "1.5.32" 
+logback = "1.5.34" 
 jetty = "12.1.12"
 jersey = "4.0.2"
 servlet-api = "6.1.0"
@@ -50,7 +50,7 @@ swagger = "2.2.52"
 swagger-ui = "5.18.3"
 swagger-parser = "2.1.45"
 rs-api = "4.0.0"
-jackson = "2.22.1"
+jackson = "2.22.2"
 jackson-annotations = "2.22"
 selenium = "4.47.0"
 nimbus = "10.7"
@@ -222,7 +222,7 @@ testcontainers-oracle = { module = "org.testcontainers:testcontainers-oracle-fre
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
 
 selenium = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
-web-driver-manager = { module = "io.github.bonigarcia:webdrivermanager", version = "6.3.3" }
+web-driver-manager = { module = "io.github.bonigarcia:webdrivermanager", version = "6.3.4" }
 nimbus = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 jwt = { module = "com.auth0:java-jwt", version.ref = "jwt" }
 

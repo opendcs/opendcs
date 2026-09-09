@@ -16,6 +16,9 @@
 package org.opendcs.odcsapi.sec;
 
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Map.Entry;
+
 import jakarta.ws.rs.core.SecurityContext;
 
 public final class OpenDcsSecurityContext implements SecurityContext
@@ -38,17 +41,32 @@ public final class OpenDcsSecurityContext implements SecurityContext
 		return principal;
 	}
 
+	/**
+	 * More robust version below should be used.
+	 */
 	@Override
-	public boolean isUserInRole(String role)
+	public boolean isUserInRole(String orgAndRole)
 	{
-		return principal.getRoles()
-				.stream()
-				.anyMatch(e ->
-				{
-					final String r = e.getRole();
-					return r.equals(role);
-				});
+		return false;
 	}
+
+	public boolean isUserInRole(String org, String role)
+	{
+		var roles = principal.getRoles()
+							 .entrySet()
+							 .stream()
+							 .filter(s -> s.getKey().name().equals(org))
+							 .map(Entry::getValue)
+							 .findFirst()
+							 .orElseGet(() -> new ArrayList<>());
+		return roles.stream()
+					.anyMatch(e ->
+					{
+						final String r = e.getRole();
+						return r.equals(role);
+					});
+	}
+
 
 	@Override
 	public boolean isSecure()
