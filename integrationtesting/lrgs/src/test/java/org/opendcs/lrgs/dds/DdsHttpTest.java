@@ -11,32 +11,24 @@ import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFram
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee11.servlet.ServletHandler;
-import org.eclipse.jetty.ee11.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
-import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.jersey.servlet.ServletContainer;
-import org.glassfish.jersey.servlet.ServletProperties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,9 +39,8 @@ import org.opendcs.fixtures.inet.InterceptingInetAddressResolver;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.lrgs.http.LrgsHttpInput;
+import org.opendcs.lrgs.webhook.dadds.AwsContextResolver.AwsContext;
 import org.opendcs.lrgs.webhook.dadds.DaddsDataMessage;
-import org.opendcs.lrgs.webhook.dadds.DaddsWebHookResource;
-
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 
@@ -57,6 +48,7 @@ import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.http.Cookies;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Providers;
 import lrgs.archive.XmlMsgArchive;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
@@ -224,27 +216,22 @@ final class DdsHttpTest
         assertTrue(keyStore.containsAlias("awssigning"));
         var privateKey = (PrivateKey)keyStore.getKey(keyAlias, keyStorePassword);
         assertNotNull(privateKey);
-        var publicKey = keyStore.getCertificate(keyAlias).getPublicKey();
+        var publicCert = keyStore.getCertificate(keyAlias);
 
-        byte[] publicBytes = publicKey.getEncoded();
+        byte[] publicBytes = publicCert.getEncoded();
         
         // Encode the bytes into Base64 format
         var encoder = Base64.getMimeEncoder(64, new byte[]{'\n'});
         String base64Encoded = encoder.encodeToString(publicBytes);
         
         // Wrap with standard X.509 Public Key headers and footers
-        var publicKeyPem = "-----BEGIN PUBLIC KEY-----\n" + base64Encoded + "\n-----END PUBLIC KEY-----";
+        var publicKeyPem = "-----BEGIN CERTIFICATE-----\n" + base64Encoded + "\n-----END CERTIFICATE-----\n";
 
         var trust = SSLFactory.builder()
                               .withDefaultTrustMaterial()
                               .withSystemTrustMaterial()
                               .withTrustMaterial(keyStore)
-                              .withInflatableTrustMaterial(Path.of("test.jks"), keyStorePassword, "PKCS12",
-                                c ->
-                                {
-                                     System.out.println("Host is: " + c.getHostname().orElse("No name?"));
-                                    return true;
-                                })
+                              //.withHostnameVerifierEnhancer(new IgnorePortVerifier())
                               .build();
         
         hackTrustIntoHandler(lrgs, trust.getTrustManagerFactory().orElseThrow().getTrustManagers());
@@ -258,14 +245,17 @@ final class DdsHttpTest
 
         HttpsServer server = HttpsServer.create(new InetSocketAddress(63543), 0);
         var conf = new HttpsConfigurator(sslContext);
+        
         server.setHttpsConfigurator(conf);
         server.setExecutor(null);
         server.createContext("/cert.pem", ctx ->
         {
-            System.out.println("got here");
-            var bytes = publicKeyPem.getBytes();
+            var bytes = publicKeyPem.getBytes(StandardCharsets.UTF_8);
             ctx.sendResponseHeaders(200, bytes.length);
-            ctx.getResponseBody().write(bytes);
+            ctx.getResponseHeaders().add("Content-Type", "text/plain");
+            var responseBody = ctx.getResponseBody();
+            responseBody.write(bytes);
+            responseBody.close();
         });
         server.start();
         final int snsPort = server.getAddress().getPort();
@@ -294,7 +284,7 @@ final class DdsHttpTest
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("x-amz-sns-message-type", "Notification")
             .header("x-amz-sns-topic-arn", topicArn)
-            .body(SnsMessageCreator.createDaddsNotification(messages.getFirst(), null, topicArn, snsPort))
+            .body(SnsMessageCreator.createDaddsNotification(messages.getFirst(), privateKey, topicArn, snsPort))
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -313,7 +303,6 @@ final class DdsHttpTest
      * @param lrgs
      * @param trustManagers
      */
-    @SuppressWarnings("unchecked")
     private void hackTrustIntoHandler(LrgsTestInstance lrgs, TrustManager[] trustManagers) throws Exception
     {
         var httpInput = lrgs.getLrgsInputs().stream().filter(LrgsHttpInput.class::isInstance).findFirst().orElseThrow();
@@ -325,16 +314,12 @@ final class DdsHttpTest
         var servletHandler = sch.getServletHandler();
         var servlet = (ServletContainer)servletHandler.getServlets(ServletContainer.class).getFirst().getServlet();
         var app = servlet.getApplicationHandler();
-        var instances = app.getConfiguration().getInstances();
-
-        var ddsHandler = instances.stream()
-                                  .filter(DaddsWebHookResource.class::isInstance)
-                                  .map(DaddsWebHookResource.class::cast)
-                                  .findFirst()
-                                  .orElseThrow();
-        var snsManagersField = DaddsWebHookResource.class.getDeclaredField("snsManagers");
-        snsManagersField.setAccessible(true);
-        var snsManagers = (HashMap<Region,SnsMessageManager>)snsManagersField.get(ddsHandler);
+        var providers = app.getInjectionManager().getInstance(Providers.class);
+        assertNotNull(providers, "Could not retrieve Providers instance from server.");
+        var awsContext = providers.getContextResolver(AwsContext.class, null)
+                                  .getContext(null);
+        assertNotNull(awsContext, "Could not retrieve the AwsContext from the server instance.");
+        var snsManagers = awsContext.snsMessageManagers();
         
         snsManagers.put(
             Region.US_EAST_1,
@@ -343,6 +328,7 @@ final class DdsHttpTest
                                 Apache5HttpClient.builder()
                                                  .tlsTrustManagersProvider(() -> trustManagers).build()
                              )
+                             .region(Region.US_EAST_1)
                              .build()                             
             );
     }

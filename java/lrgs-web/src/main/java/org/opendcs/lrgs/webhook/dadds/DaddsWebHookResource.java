@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.opendcs.lrgs.dao.MsgArchive;
+import org.opendcs.lrgs.webhook.dadds.AwsContextResolver.AwsContext;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -37,6 +38,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Providers;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -47,7 +49,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
 
 @Path("/webhook/dadds")
-@Singleton 
+@Singleton
 public class DaddsWebHookResource
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -56,10 +58,13 @@ public class DaddsWebHookResource
                                                              .addModule(new JavaTimeModule())
                                                              .build();
 
-    private final HashMap<Region, SnsMessageManager> snsManagers = new HashMap<>();
-    
     @Context
     ServletContext servletContext;
+
+    // This is pull from the providers manually so that the tests have a chance to hack in altered trust
+    // for full sequence testing.
+    @Context
+    Providers providers;
 
     // Dadds WebHooks are always SNS messages
     @POST
@@ -73,7 +78,7 @@ public class DaddsWebHookResource
         // validate subscription (if that's the message)
         // validate signature
         // process message
-        
+        var awsContext = providers.getContextResolver(AwsContext.class, null).getContext(null);
         var hook = valiateHookId(hookId);
 
         if (hook == null)
@@ -89,13 +94,13 @@ public class DaddsWebHookResource
             {
                 throw SdkClientException.create("Region could not be parsed from message topicArn");
             }
-            
-            var snsMessage = snsManagers.computeIfAbsent(
-                                    region,
-                                    r -> SnsMessageManager.builder()
-                                                          .region(region)
-                                                          .build())
-                                        .parseMessage(message);
+            var snsMessage = awsContext.snsMessageManagers()
+                                       .computeIfAbsent(
+                                            region,
+                                            r -> SnsMessageManager.builder()
+                                                                .region(region)
+                                                                .build())
+                                       .parseMessage(message);
             return switch (snsMessage.type())
             {
                 case SUBSCRIPTION_CONFIRMATION -> confirmSubscription((SnsSubscriptionConfirmation)snsMessage);
