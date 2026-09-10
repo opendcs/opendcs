@@ -265,43 +265,52 @@ export const SelectPlatformsAddsItems: Story = {
   },
 };
 
-// A manual add only needs the transport id: a blank one flags just that field,
-// and the name and description fill in from the matching platform.
-export const ManualAddFillsFromPlatform: Story = {
+// Items are only added through "Select platforms" (no manual add row), and
+// editing an item only exposes its description.
+export const ItemsAddedOnlyBySelectingPlatforms: Story = {
   parameters: { msw: { handlers: baseHandlers } },
-  play: async ({ mount, userEvent, parameters }) => {
+  play: async ({ mount, userEvent, parameters, canvasElement }) => {
     const canvas = await mount();
     const { i18n } = parameters;
     const editBtn = await canvas.findByRole("button", {
       name: i18n.t("netlists:edit_netlist", { id: 1 }),
     });
     await act(async () => userEvent.click(editBtn));
-    const addBtn = await canvas.findByRole("button", {
-      name: i18n.t("netlists:items.add"),
-    });
-    await act(async () => userEvent.click(addBtn));
+    expect(
+      await canvas.findByRole("button", {
+        name: i18n.t("netlists:items.select_platforms"),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      canvas.queryByRole("button", { name: i18n.t("translation:add") }),
+    ).not.toBeInTheDocument();
 
-    const transportInput = (await canvas.findByLabelText(
-      i18n.t("netlists:items.transportId_input", { name: "1" }),
-    )) as HTMLInputElement;
-    const nameInput = canvas.getByLabelText(
-      i18n.t("netlists:items.platformName_input", { name: "1" }),
+    const editItemBtn = await canvas.findByRole("button", {
+      name: i18n.t("netlists:items.edit", { transportId: "BFDBMD01" }),
+    });
+    await act(async () => userEvent.click(editItemBtn));
+    const descInput = await canvas.findByLabelText(
+      i18n.t("netlists:items.description_input", { name: "BFDBMD01" }),
     );
-    const saveBtn = canvas.getByRole("button", {
-      name: i18n.t("netlists:items.save_edit", { transportId: "1" }),
-    });
+    expect(
+      canvasElement.querySelector('#netlistItemsTable input[name="platformName"]'),
+    ).toBeNull();
+    expect(
+      canvasElement.querySelector('#netlistItemsTable input[name="transportId"]'),
+    ).toBeNull();
 
-    await act(async () => userEvent.click(saveBtn));
-    expect(transportInput).toHaveClass("border-warning");
-    expect(nameInput).not.toHaveClass("border-warning");
-
-    await act(async () => userEvent.type(transportInput, "ce31d030"));
-    await act(async () => userEvent.click(saveBtn));
-
+    await act(async () => userEvent.clear(descInput));
+    await act(async () => userEvent.type(descInput, "Buford headwater"));
+    await act(async () =>
+      userEvent.click(
+        canvas.getByRole("button", {
+          name: i18n.t("netlists:items.save_edit", { transportId: "BFDBMD01" }),
+        }),
+      ),
+    );
     await waitFor(() => {
-      expect(canvas.getByText("ce31d030")).toBeInTheDocument();
-      expect(canvas.getByText("ALLG1")).toBeInTheDocument();
-      expect(canvas.getByText("Allatoona Dam")).toBeInTheDocument();
+      expect(canvas.getByText("Buford headwater")).toBeInTheDocument();
+      expect(canvas.getByText("BFD")).toBeInTheDocument();
     });
   },
 };

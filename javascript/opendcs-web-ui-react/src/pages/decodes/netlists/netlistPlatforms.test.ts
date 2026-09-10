@@ -1,11 +1,10 @@
 import { describe, expect, test } from "vitest";
 import type { ApiPlatformRef } from "opendcs-api";
 import {
-  candidatesByTransportId,
   platformCandidates,
   platformNameFor,
+  toNetlistItem,
   transportIdFor,
-  withPlatformDefaults,
 } from "./netlistPlatforms";
 
 const GOES_PLATFORM: ApiPlatformRef = {
@@ -81,39 +80,13 @@ describe("platformCandidates", () => {
   });
 });
 
-describe("withPlatformDefaults", () => {
-  const byId = candidatesByTransportId(
-    platformCandidates([GOES_PLATFORM], "goes", "nwshb5"),
-  );
-
-  test("fills a blank name and description from the matching platform", () => {
-    expect(
-      withPlatformDefaults(
-        { transportId: "bfdbmd01", platformName: "", description: "" },
-        byId,
-      ),
-    ).toEqual({
-      transportId: "bfdbmd01",
+describe("toNetlistItem", () => {
+  test("builds the netlist item from a candidate", () => {
+    const [candidate] = platformCandidates([GOES_PLATFORM], "goes", "nwshb5");
+    expect(toNetlistItem(candidate)).toEqual({
+      transportId: "BFDBMD01",
       platformName: "BFD",
       description: "Buford Dam",
     });
-  });
-
-  test("keeps values the user typed", () => {
-    expect(
-      withPlatformDefaults(
-        { transportId: "BFDBMD01", platformName: "Mine", description: "" },
-        byId,
-      ),
-    ).toEqual({
-      transportId: "BFDBMD01",
-      platformName: "Mine",
-      description: "Buford Dam",
-    });
-  });
-
-  test("leaves an item with no matching platform unchanged", () => {
-    const item = { transportId: "UNKNOWN1", platformName: "", description: "" };
-    expect(withPlatformDefaults(item, byId)).toBe(item);
   });
 });

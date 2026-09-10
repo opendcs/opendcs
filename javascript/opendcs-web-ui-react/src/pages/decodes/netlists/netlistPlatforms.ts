@@ -86,28 +86,3 @@ export const toNetlistItem = (c: PlatformCandidate): ApiNetListItem => ({
   platformName: c.platformName,
   description: c.description,
 });
-
-/** Index candidates by uppercase transport id (the netlist item key). */
-export const candidatesByTransportId = (
-  candidates: PlatformCandidate[],
-): Map<string, PlatformCandidate> =>
-  new Map(candidates.map((c) => [c.transportId.toUpperCase(), c]));
-
-/**
- * Fill a manually entered item's blank name and description from the platform
- * with that transport id, so typing just the transport id is enough. Items with
- * no matching platform are kept as typed: netlists may list DCPs that are not
- * in the DECODES database.
- */
-export function withPlatformDefaults(
-  item: ApiNetListItem,
-  byTransportId: Map<string, PlatformCandidate>,
-): ApiNetListItem {
-  const match = byTransportId.get((item.transportId ?? "").toUpperCase());
-  if (!match) return item;
-  return {
-    ...item,
-    platformName: item.platformName?.trim() ? item.platformName : match.platformName,
-    description: item.description?.trim() ? item.description : match.description,
-  };
-}
