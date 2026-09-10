@@ -1,16 +1,37 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
-import type { ApiNetListItem } from "opendcs-api";
-import { AppDataTable, type ColumnDef } from "../../../components/data-table";
+import type { ApiNetListItem, ApiPlatformRef } from "opendcs-api";
+import {
+  AppDataTable,
+  type ColumnDef,
+  type HeaderButton,
+} from "../../../components/data-table";
+import {
+  candidatesByTransportId,
+  platformCandidates,
+  toNetlistItem,
+  withPlatformDefaults,
+  type PlatformCandidate,
+} from "./netlistPlatforms";
+import { NetlistPlatformsModal } from "./NetlistPlatformsModal";
 
 export interface NetlistItemsTableProperties {
   items: ApiNetListItem[];
   edit?: boolean;
+  /** All platforms, for the "Select platforms" chooser and manual-add fill-in. */
+  platforms?: ApiPlatformRef[];
+  platformsLoading?: boolean;
+  /** The netlist's transport medium type — decides each platform's transport id. */
+  transportMediumType?: string;
+  /** The netlist's preferred site name type — decides each item's platform name. */
+  siteNameTypePref?: string;
   onSave: (item: ApiNetListItem) => void;
   onRemove: (transportId: string) => void;
 }
+
+const NO_PLATFORMS: ApiPlatformRef[] = [];
 
 const ROW_ID = (item: ApiNetListItem) => item.transportId ?? "";
 
@@ -20,10 +41,46 @@ const itemDisplayName = (row: ApiNetListItem, rowId: string): string =>
 export const NetlistItemsTable: React.FC<NetlistItemsTableProperties> = ({
   items,
   edit = false,
+  platforms = NO_PLATFORMS,
+  platformsLoading = false,
+  transportMediumType,
+  siteNameTypePref,
   onSave,
   onRemove,
 }) => {
   const [t] = useTranslation(["netlists", "translation"]);
+  const [showSelect, setShowSelect] = useState(false);
+
+  const candidates = useMemo(
+    () => platformCandidates(platforms, transportMediumType, siteNameTypePref),
+    [platforms, transportMediumType, siteNameTypePref],
+  );
+  const byTransportId = useMemo(
+    () => candidatesByTransportId(candidates),
+    [candidates],
+  );
+  const existingTransportIds = useMemo(
+    () => items.map((i) => i.transportId ?? ""),
+    [items],
+  );
+
+  const addSelected = useCallback(
+    (selected: PlatformCandidate[]) =>
+      selected.forEach((c) => onSave(toNetlistItem(c))),
+    [onSave],
+  );
+
+  const extraHeaderButtons = useMemo<HeaderButton[]>(() => {
+    if (!edit) return [];
+    return [
+      {
+        text: t("netlists:items.select_platforms"),
+        ariaLabel: t("netlists:items.select_platforms"),
+        icon: "bi-list-check",
+        onClick: () => setShowSelect(true),
+      },
+    ];
+  }, [edit, t]);
 
   const columns = useMemo<ColumnDef<ApiNetListItem>[]>(
     () => [
@@ -98,71 +155,103 @@ export const NetlistItemsTable: React.FC<NetlistItemsTableProperties> = ({
     [t],
   );
 
+  // Only the transport id is required; name and description fill in from the
+  // matching platform when left blank.
+  const toItem = (row: ApiNetListItem, transportId: string) =>
+    withPlatformDefaults(
+      {
+        transportId,
+        platformName: row.platformName ?? "",
+        description: row.description ?? "",
+      },
+      byTransportId,
+    );
+
   return (
-    <AppDataTable<ApiNetListItem, string>
-      data={items}
-      getId={ROW_ID}
-      columns={columns}
-      caption={t("netlists:items.title")}
-      actionsLabel={t("translation:actions")}
-      inlineEdit={
-        edit
-          ? {
-              onSave: (_original, updated) => {
-                if (!updated.transportId?.trim()) return false;
-                onSave({
-                  transportId: updated.transportId.trim(),
-                  platformName: updated.platformName ?? "",
-                  description: updated.description ?? "",
-                });
-              },
-              onAdd: (created) => {
-                if (!created.transportId?.trim()) return false;
-                onSave({
-                  transportId: created.transportId.trim(),
-                  platformName: created.platformName ?? "",
-                  description: created.description ?? "",
-                });
-              },
-              onRemove: (row) => {
-                if (row.transportId) onRemove(row.transportId);
-              },
-              newTemplate: () => ({
-                transportId: "",
-                platformName: "",
-                description: "",
-              }),
-              labels: {
-                edit: (r, rowId) =>
-                  t("netlists:items.edit", {
-                    transportId: itemDisplayName(r, rowId),
-                  }),
-                remove: (r, rowId) =>
-                  t("netlists:items.remove", {
-                    transportId: itemDisplayName(r, rowId),
-                  }),
-                save: (r, rowId) =>
-                  t("netlists:items.save_edit", {
-                    transportId: itemDisplayName(r, rowId),
-                  }),
-                cancel: (r, rowId) =>
-                  rowId.startsWith("__appdt_new_")
-                    ? t("netlists:items.remove", {
-                        transportId: itemDisplayName(r, rowId),
-                      })
-                    : t("translation:cancel"),
-                add: t("netlists:items.add"),
-              },
-            }
-          : undefined
-      }
-      dataTableOptions={{
-        paging: false,
-        scrollY: "calc(10 * 2rem)",
-        scrollCollapse: true,
-      }}
-      tableId="netlistItemsTable"
-    />
+    <>
+      <AppDataTable<ApiNetListItem, string>
+        data={items}
+        getId={ROW_ID}
+        columns={columns}
+        caption={t("netlists:items.title")}
+        actionsLabel={t("translation:actions")}
+        extraHeaderButtons={extraHeaderButtons}
+        inlineEdit={
+          edit
+            ? {
+                onSave: (original, updated) => {
+                  const transportId = updated.transportId?.trim();
+                  if (!transportId) return false;
+                  // Items are keyed by transport id, so a changed id replaces
+                  // the old entry rather than adding a second one.
+                  if (
+                    original.transportId &&
+                    original.transportId.toUpperCase() !== transportId.toUpperCase()
+                  ) {
+                    onRemove(original.transportId);
+                  }
+                  onSave(toItem(updated, transportId));
+                },
+                onAdd: (created, rowEl) => {
+                  const transportId = created.transportId?.trim();
+                  if (!transportId) {
+                    // Flag just the required field, not every blank input.
+                    rowEl
+                      .querySelector('input[name="transportId"]')
+                      ?.classList.add("border-warning");
+                    return "marked";
+                  }
+                  onSave(toItem(created, transportId));
+                },
+                onRemove: (row) => {
+                  if (row.transportId) onRemove(row.transportId);
+                },
+                newTemplate: () => ({
+                  transportId: "",
+                  platformName: "",
+                  description: "",
+                }),
+                labels: {
+                  edit: (r, rowId) =>
+                    t("netlists:items.edit", {
+                      transportId: itemDisplayName(r, rowId),
+                    }),
+                  remove: (r, rowId) =>
+                    t("netlists:items.remove", {
+                      transportId: itemDisplayName(r, rowId),
+                    }),
+                  save: (r, rowId) =>
+                    t("netlists:items.save_edit", {
+                      transportId: itemDisplayName(r, rowId),
+                    }),
+                  cancel: (r, rowId) =>
+                    rowId.startsWith("__appdt_new_")
+                      ? t("netlists:items.remove", {
+                          transportId: itemDisplayName(r, rowId),
+                        })
+                      : t("translation:cancel"),
+                  add: t("netlists:items.add"),
+                },
+              }
+            : undefined
+        }
+        dataTableOptions={{
+          paging: false,
+          scrollY: "calc(10 * 2rem)",
+          scrollCollapse: true,
+        }}
+        tableId="netlistItemsTable"
+      />
+      <NetlistPlatformsModal
+        show={showSelect}
+        onHide={() => setShowSelect(false)}
+        candidates={candidates}
+        loading={platformsLoading}
+        mediumType={transportMediumType}
+        existingTransportIds={existingTransportIds}
+        onAdd={addSelected}
+      />
+    </>
   );
 };
 

@@ -5,9 +5,11 @@ import {
   useNetlistRefsQuery,
   useSaveNetlistMutation,
 } from "../../../queries/netlists";
+import { usePlatformsQuery } from "../../../queries/platforms";
 
 export const NetlistsPage: React.FC = () => {
   const { data: netlists = [], isFetching } = useNetlistRefsQuery();
+  const { data: platforms = [], isFetching: platformsFetching } = usePlatformsQuery();
   const fetchNetlist = useFetchNetlist();
   const saveNetlist = useSaveNetlistMutation();
   const deleteNetlist = useDeleteNetlistMutation();
@@ -16,6 +18,8 @@ export const NetlistsPage: React.FC = () => {
     <div className="content">
       <NetlistsTable
         netlists={netlists}
+        platforms={platforms}
+        platformsLoading={platformsFetching}
         loading={isFetching}
         getNetlist={fetchNetlist}
         actions={{

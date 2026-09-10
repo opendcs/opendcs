@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { act } from "react";
 import { http, HttpResponse } from "msw";
-import type { ApiNetList, ApiNetlistRef } from "opendcs-api";
+import type { ApiNetList, ApiNetlistRef, ApiPlatformRef } from "opendcs-api";
 import { expect, screen, waitFor } from "storybook/test";
 import { NetlistsPage } from "./NetlistsPage";
 
@@ -60,6 +60,34 @@ const FULL_NETLISTS: Record<number, ApiNetList> = {
   },
 };
 
+// BFD-goes is already on BFD-BMD and Ice-Station has no GOES medium, so only
+// ALLG1-goes is offered when selecting platforms for that GOES list.
+const PLATFORM_REFS: ApiPlatformRef[] = [
+  {
+    platformId: 10,
+    name: "BFD-goes",
+    agency: "CWMS",
+    config: "BFD-CFG",
+    description: "Buford Dam",
+    transportMedia: { "goes-self": "BFDBMD01" },
+    sitenames: { NWSHB5: "BFD" },
+  },
+  {
+    platformId: 11,
+    name: "ALLG1-goes",
+    agency: "CWMS",
+    config: "ALLG1-CFG",
+    description: "Allatoona Dam",
+    transportMedia: { "goes-self": "CE31D030" },
+    sitenames: { NWSHB5: "ALLG1" },
+  },
+  {
+    platformId: 12,
+    name: "Ice-Station",
+    transportMedia: { iridium: "300234010000000" },
+  },
+];
+
 const baseHandlers = {
   netlistRefs: http.get("/odcsapi/netlistrefs", () =>
     HttpResponse.json<ApiNetlistRef[]>(NETLIST_REFS),
@@ -73,6 +101,9 @@ const baseHandlers = {
     HttpResponse.json<ApiNetList>({}),
   ),
   deleteNetlist: http.delete("/odcsapi/netlist", () => HttpResponse.json({})),
+  platformRefs: http.get("/odcsapi/platformrefs", () =>
+    HttpResponse.json<ApiPlatformRef[]>(PLATFORM_REFS),
+  ),
 };
 
 const meta = {
@@ -193,6 +224,84 @@ export const AddNewNetlistRow: Story = {
       ) as HTMLInputElement;
       expect(nameInput.value).toEqual("");
       expect(nameInput.readOnly).toBe(false);
+    });
+  },
+};
+
+// "Select platforms" offers only platforms with a medium of the list's type
+// that aren't already on it, and adds the chosen ones with their transport id,
+// preferred site name and description filled in (issue #2029).
+export const SelectPlatformsAddsItems: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("netlists:edit_netlist", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    const selectBtn = await canvas.findByRole("button", {
+      name: i18n.t("netlists:items.select_platforms"),
+    });
+    await act(async () => userEvent.click(selectBtn));
+
+    const rowCheck = await screen.findByRole("checkbox", {
+      name: i18n.t("netlists:items.select_platform", { name: "ALLG1-goes" }),
+    });
+    expect(screen.queryByText("Ice-Station")).not.toBeInTheDocument();
+    expect(screen.queryByText("BFD-goes")).not.toBeInTheDocument();
+
+    await act(async () => userEvent.click(rowCheck));
+    const confirmBtn = await screen.findByRole("button", {
+      name: i18n.t("netlists:items.add_selected", { count: 1 }),
+    });
+    await act(async () => userEvent.click(confirmBtn));
+
+    await waitFor(() => {
+      expect(canvas.getByText("CE31D030")).toBeInTheDocument();
+      expect(canvas.getByText("ALLG1")).toBeInTheDocument();
+      expect(canvas.getByText("Allatoona Dam")).toBeInTheDocument();
+    });
+  },
+};
+
+// A manual add only needs the transport id: a blank one flags just that field,
+// and the name and description fill in from the matching platform.
+export const ManualAddFillsFromPlatform: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("netlists:edit_netlist", { id: 1 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("netlists:items.add"),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    const transportInput = (await canvas.findByLabelText(
+      i18n.t("netlists:items.transportId_input", { name: "1" }),
+    )) as HTMLInputElement;
+    const nameInput = canvas.getByLabelText(
+      i18n.t("netlists:items.platformName_input", { name: "1" }),
+    );
+    const saveBtn = canvas.getByRole("button", {
+      name: i18n.t("netlists:items.save_edit", { transportId: "1" }),
+    });
+
+    await act(async () => userEvent.click(saveBtn));
+    expect(transportInput).toHaveClass("border-warning");
+    expect(nameInput).not.toHaveClass("border-warning");
+
+    await act(async () => userEvent.type(transportInput, "ce31d030"));
+    await act(async () => userEvent.click(saveBtn));
+
+    await waitFor(() => {
+      expect(canvas.getByText("ce31d030")).toBeInTheDocument();
+      expect(canvas.getByText("ALLG1")).toBeInTheDocument();
+      expect(canvas.getByText("Allatoona Dam")).toBeInTheDocument();
     });
   },
 };

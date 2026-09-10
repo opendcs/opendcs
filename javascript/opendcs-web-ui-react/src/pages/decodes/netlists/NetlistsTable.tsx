@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { ApiNetList, ApiNetlistRef } from "opendcs-api";
+import type { ApiNetList, ApiNetlistRef, ApiPlatformRef } from "opendcs-api";
 import Netlist, { NetlistSkeleton, type NetlistDetails } from "./Netlist";
 import type { UiNetlist } from "./NetlistReducer";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
@@ -14,6 +14,9 @@ export type TableNetlistRef = Partial<ApiNetlistRef>;
 
 export interface NetlistsTableProperties {
   netlists: TableNetlistRef[];
+  /** All platforms, for selecting netlist items. */
+  platforms?: ApiPlatformRef[];
+  platformsLoading?: boolean;
   getNetlist?: (netlistId: number) => Promise<ApiNetList>;
   actions?: SaveAction<ApiNetList> & RemoveAction<number>;
   loading?: boolean;
@@ -21,6 +24,8 @@ export interface NetlistsTableProperties {
 
 export const NetlistsTable: React.FC<NetlistsTableProperties> = ({
   netlists,
+  platforms,
+  platformsLoading = false,
   getNetlist,
   actions = {},
   loading = false,
@@ -113,6 +118,8 @@ export const NetlistsTable: React.FC<NetlistsTableProperties> = ({
               cancel: () => detailActions.cancel(),
             }}
             edit={mode !== "show"}
+            platforms={platforms}
+            platformsLoading={platformsLoading}
           />
         );
       }}
