@@ -275,8 +275,9 @@ public class PlatformDaoImpl implements PlatformDao
      */
     private static void bindPreferredType(Query select, TransactionContext ctx, Mappers mappers)
     {
-        // Mirrors the template's <if(site_name_columns)> guard on the order-by clause. JDBI
-        // rejects a binding the statement never references, so the two must stay in step.
+        // Mirrors the <if(site_name_columns)> guard on the order-by clause in both this DAO's
+        // template and CwmsPlatformDaoImpl.sql.stg. JDBI rejects a binding the statement never
+        // references, so every select template used with this DAO must declare :preferredType.
         if (mappers.siteMapper() != null)
         {
             select.bind(PREFERRED_TYPE, ctx.getSettings(DecodesSettings.class)
