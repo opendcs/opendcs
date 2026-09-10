@@ -8,7 +8,10 @@ import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.opendcs.lrgs.webhook.dadds.DaddsDataMessage;
@@ -25,6 +28,10 @@ public final class SnsMessageCreator
                                                              .addModule(new JavaTimeModule())
                                                              .build();
 
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT).withZone(ZoneOffset.UTC);
+
+
     private SnsMessageCreator()
     {
         /* utility class */
@@ -36,7 +43,7 @@ public final class SnsMessageCreator
     {
         String messageBody = jsonMapper.writeValueAsString(message);
         String messageId = UUID.randomUUID().toString();
-        String timestamp = Instant.now().toString();
+        String timestamp = TIMESTAMP_FORMATTER.format(Instant.now());
 
         var root = jsonMapper.createObjectNode();
         root.put("Type", "Notification");
@@ -49,14 +56,13 @@ public final class SnsMessageCreator
 
         StringBuilder sb = new StringBuilder();
         sb.append("Message\n").append(messageBody).append("\n")
-          .append("MessageID\n").append(messageId).append("\n")
+          .append("MessageId\n").append(messageId).append("\n")
           .append("Timestamp\n").append(timestamp).append("\n")
           .append("TopicArn\n").append(arn).append("\n")
           .append("Type\n").append("Notification").append("\n")
         ;
 
         var signatureText = signTextV1(sb.toString(), key);
-        
         root.put("Signature", signatureText);
         return jsonMapper.writeValueAsString(root);
     }
