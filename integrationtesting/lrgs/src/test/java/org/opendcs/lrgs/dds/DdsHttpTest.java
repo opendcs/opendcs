@@ -21,6 +21,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -231,7 +232,12 @@ final class DdsHttpTest
                               .withDefaultTrustMaterial()
                               .withSystemTrustMaterial()
                               .withTrustMaterial(keyStore)
-                              //.withHostnameVerifierEnhancer(new IgnorePortVerifier())
+                              .withHostnameVerifierEnhancer(params ->
+                                {
+                                    System.out.println(String.format("checking %s -> %s", params.getHostname(), params.getSession().getPeerHost()));
+                                    return false;
+                                }
+                              )
                               .build();
         
         hackTrustIntoHandler(lrgs, trust.getTrustManagerFactory().orElseThrow().getTrustManagers());
@@ -257,10 +263,44 @@ final class DdsHttpTest
             responseBody.write(bytes);
             responseBody.close();
         });
+        final AtomicBoolean subscribed = new AtomicBoolean(false);
+        
+        server.createContext("/confirm", ctx ->
+        {
+            subscribed.set(true);
+            ctx.sendResponseHeaders(200, 0);
+            ctx.close();
+        });
+        
         server.start();
         final int snsPort = server.getAddress().getPort();
 
         InterceptingInetAddressResolver.registerIntercept("sns.us-east-1.amazonaws.com", Inet4Address.getLoopbackAddress());
+        final String confirmMessage = 
+            SnsMessageCreator.createDaddsConfirmationMessage(
+                privateKey,
+                topicArn,
+                snsPort,
+                "https://sns.us-east-1.amazonaws.com:" + snsPort + "/confirm"
+                );
+        
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("x-amz-sns-message-type", "SubscriptionConfirmation")
+            .header("x-amz-sns-topic-arn",topicArn)
+            .body(confirmMessage)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("webhook/dadds/{hookId}", "testHook")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(Response.Status.OK.getStatusCode()))
+        ;
+
+
+        assertTrue(subscribed.get(), "Failed to verify confirmation message was processed correctly.");
 
         for (var message: messages)
         {

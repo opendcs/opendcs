@@ -15,9 +15,14 @@
 */
 package org.opendcs.lrgs.webhook.dadds;
 
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.net.ssl.SSLContext;
 
 import org.opendcs.lrgs.dao.MsgArchive;
 import org.opendcs.lrgs.webhook.dadds.AwsContextResolver.AwsContext;
@@ -127,16 +132,21 @@ public class DaddsWebHookResource
 
     private Response confirmSubscription(SnsSubscriptionConfirmation snsMessage)
     {
-        try(var snsClient = SnsClient.create())
+        
+        try(HttpClient client = HttpClient.newBuilder().sslContext(SSLContext.getDefault()).build())
         {
-            snsClient.confirmSubscription(b -> b.token(snsMessage.message()).topicArn(snsMessage.topicArn()));
-            return Response.ok().build();
+            var response = client.send(HttpRequest.newBuilder(snsMessage.subscribeUrl()).build(), 
+                                       BodyHandlers.discarding());
+            if (response.statusCode() % 200 == 0)
+            {
+                return Response.ok().build();
+            }
         }
         catch (Exception ex) // NOSONAR
         {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            log.atError().setCause(ex).log("Unable to confirm Dadds WebHook subscription.");
         }
-        
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
     private Response processMessage(SnsMessage snsMessage, DaddsWebHookInput hookInput)
