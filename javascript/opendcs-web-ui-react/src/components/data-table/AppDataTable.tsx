@@ -50,6 +50,18 @@ export interface ColumnDef<T> {
   /** DataTables column `type` — skip the type auto-sniffer when set. */
   type?: "num" | "string" | "date" | "html" | "html-num" | "num-fmt";
   /**
+   * Sort the table by this column on initial load (issue #1662). Without it
+   * DataTables falls back to its own `[[0, "asc"]]` default, which sorts by
+   * whatever sits in the first column — usually the database id, so the rows
+   * read as unordered. Set this on the column a user would naturally scan
+   * (normally the name) to get a meaningful default instead.
+   *
+   * Only the first column that declares it is used. An explicit
+   * `dataTableOptions.order` still overrides it, and `stateSave` means a sort
+   * the user picked themselves wins on their next visit.
+   */
+  defaultSort?: "asc" | "desc";
+  /**
    * DataTables column `render` — returns the cell content for the given
    * render `type` (`"display"`, `"sort"`, `"filter"`, `"type"`). For custom
    * HTML inputs etc., use `renderToString(<Component />)` to stringify.
@@ -975,6 +987,15 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     return () => buttonsNode.removeEventListener("click", onClick);
   }, [buttonsNode]);
 
+  // --- Initial sort ---------------------------------------------------------
+  // Derived from the column that declares `defaultSort` rather than a hard
+  // coded index, so reordering columns can't silently point the sort at the
+  // wrong one. Falls through to the DataTables default when no column asks.
+  const defaultOrder = useMemo<[number, "asc" | "desc"][] | undefined>(() => {
+    const idx = columns.findIndex((c) => c.defaultSort);
+    return idx === -1 ? undefined : [[idx, columns[idx].defaultSort!]];
+  }, [columns]);
+
   // --- DataTable options ----------------------------------------------------
   const options: DataTableProps["options"] = {
     paging: true,
@@ -983,6 +1004,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     processing: true,
     deferRender: true,
     language: dtLangs.get(i18n.language),
+    ...(defaultOrder ? { order: defaultOrder } : {}),
     ...dataTableOptions,
 
     layout: {

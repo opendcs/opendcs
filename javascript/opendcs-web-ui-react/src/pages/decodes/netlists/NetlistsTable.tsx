@@ -6,6 +6,9 @@ import type { UiNetlist } from "./NetlistReducer";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
 import {
   AppDataTable,
+  dateColumn,
+  idColumn,
+  textColumn,
   type ColumnDef,
   type RowAction,
 } from "../../../components/data-table";
@@ -29,20 +32,14 @@ export const NetlistsTable: React.FC<NetlistsTableProperties> = ({
 
   const columns = useMemo<ColumnDef<TableNetlistRef>[]>(
     () => [
+      idColumn("netlistId", t("netlists:header.Id")),
       {
-        data: "netlistId",
-        header: t("netlists:header.Id"),
-        defaultContent: "new",
-        className: "dt-left",
-        type: "num",
-      },
-      { data: "name", header: t("netlists:header.Name"), type: "string" },
-      {
-        data: "transportMediumType",
-        header: t("netlists:header.MediumType"),
-        defaultContent: "",
+        data: "name",
+        header: t("netlists:header.Name"),
         type: "string",
+        defaultSort: "asc",
       },
+      textColumn("transportMediumType", t("netlists:header.MediumType")),
       {
         data: "numPlatforms",
         header: t("netlists:header.NumPlatforms"),
@@ -50,18 +47,7 @@ export const NetlistsTable: React.FC<NetlistsTableProperties> = ({
         className: "dt-center",
         type: "num",
       },
-      {
-        data: "lastModifyTime",
-        header: t("netlists:header.LastModified"),
-        defaultContent: "",
-        type: "date",
-        render: (data: unknown, type: string) => {
-          if (type !== "display") return data;
-          if (!data) return "";
-          const d = data instanceof Date ? data : new Date(data as string);
-          return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
-        },
-      },
+      dateColumn("lastModifyTime", t("netlists:header.LastModified")),
     ],
     [t],
   );

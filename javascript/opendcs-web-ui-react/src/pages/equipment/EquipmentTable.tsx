@@ -34,7 +34,7 @@ export const EquipmentTable: React.FC<EquipmentTableProperties> = ({
         defaultContent: "new",
         type: "num",
       },
-      { data: "name", header: t("equipment:name"), type: "string" },
+      { data: "name", header: t("equipment:name"), type: "string", defaultSort: "asc" },
       {
         data: "equipmentType",
         header: t("equipment:equipment_type"),

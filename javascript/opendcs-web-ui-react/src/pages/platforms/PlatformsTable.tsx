@@ -15,6 +15,8 @@ import Platform, {
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
   AppDataTable,
+  idColumn,
+  textColumn,
   type ColumnDef,
   type RowAction,
 } from "../../components/data-table";
@@ -50,17 +52,12 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
 
   const columns = useMemo<ColumnDef<TablePlatformRef>[]>(
     () => [
-      {
-        data: "platformId",
-        header: t("platforms:header.Id"),
-        defaultContent: "new",
-        className: "dt-left",
-        type: "num",
-      },
+      idColumn("platformId", t("platforms:header.Id")),
       {
         data: "name",
         header: t("platforms:header.Site"),
         type: "string",
+        defaultSort: "asc",
         render: (_data, _type, row) =>
           preferredPlatformName(
             row.sitenames,
@@ -69,12 +66,7 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
             row.name,
           ),
       },
-      {
-        data: "agency",
-        header: t("platforms:header.Agency"),
-        defaultContent: "",
-        type: "string",
-      },
+      textColumn("agency", t("platforms:header.Agency")),
       {
         data: null,
         header: t("platforms:header.TransportId"),
@@ -82,18 +74,8 @@ export const PlatformsTable: React.FC<PlatformsTableProperties> = ({
         render: (_data, _type, row) =>
           row.transportMedia ? Object.values(row.transportMedia).join(", ") : "",
       },
-      {
-        data: "config",
-        header: t("platforms:header.Config"),
-        defaultContent: "",
-        type: "string",
-      },
-      {
-        data: "description",
-        header: t("platforms:header.Description"),
-        defaultContent: "",
-        type: "string",
-      },
+      textColumn("config", t("platforms:header.Config")),
+      textColumn("description", t("platforms:header.Description")),
     ],
     [t, siteNameType.preferredType],
   );
