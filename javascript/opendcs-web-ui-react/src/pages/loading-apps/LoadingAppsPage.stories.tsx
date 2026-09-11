@@ -220,3 +220,126 @@ export const EditThenSaveShowsEdit: Story = {
     );
   },
 };
+
+// The create counterpart to EditThenSaveShowsEdit. This keeps its own store
+// rather than reusing `storedApps`, which EditThenSaveShowsEdit mutates — the
+// assertions below need a known starting row and a known assigned id.
+const NEW_APP_ID = 42;
+
+const createStore: StoredApp[] = [];
+
+// Captures what the editor actually POSTs, so the assertions can check the
+// request body rather than only the resulting UI state.
+const createdApps: ApiLoadingApp[] = [];
+
+const resetCreateStore = () => {
+  createdApps.length = 0;
+  createStore.length = 0;
+  createStore.push({
+    appId: 1,
+    appName: "compproc",
+    comment: "Main computation process",
+    manualEditingApp: false,
+    properties: { appType: "computationprocess" },
+  });
+};
+
+const createHandlers = {
+  appStat: http.get("/odcsapi/appstat", async () => {
+    await delay(25);
+    return HttpResponse.json<ApiAppStatus[]>([]);
+  }),
+  appRefs: http.get("/odcsapi/apprefs", async () => {
+    await delay(25);
+    return HttpResponse.json<ApiAppRef[]>(
+      createStore.map((app) => ({
+        appId: app.appId,
+        appName: app.appName,
+        appType: app.properties.appType ?? "",
+        comment: app.comment,
+      })),
+    );
+  }),
+  getApp: http.get("/odcsapi/app", async ({ request }) => {
+    await delay(25);
+    const id = Number(new URL(request.url).searchParams.get("appid"));
+    const app = createStore.find((a) => a.appId === id);
+    return app
+      ? HttpResponse.json(toApiApp(app))
+      : new HttpResponse(null, { status: 404 });
+  }),
+  postApp: http.post("/odcsapi/app", async ({ request }) => {
+    await delay(25);
+    const body = (await request.json()) as ApiLoadingApp;
+    createdApps.push(body);
+    // Stand in for the server assigning the id on insert.
+    const saved: StoredApp = {
+      appId: NEW_APP_ID,
+      appName: body.appName,
+      comment: body.comment,
+      manualEditingApp: body.manualEditingApp,
+      properties: { appType: body.appType ?? "" },
+    };
+    createStore.push(saved);
+    return HttpResponse.json(toApiApp(saved), { status: 201 });
+  }),
+};
+
+// Adding a row and saving it. The new row is held locally with a synthetic
+// negative appId, which has to be normalized away so the server assigns the
+// real one, and the created app has to show without a manual refresh.
+export const AddThenSave: Story = {
+  parameters: { msw: { handlers: createHandlers } },
+  play: async ({ mount, parameters, userEvent }) => {
+    resetCreateStore();
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    // Let the initial refs load before adding, otherwise the redraw closes the
+    // new row's child row before it can be filled in.
+    await canvas.findByText("compproc");
+
+    const addBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("loadingapps:add_app") },
+      { timeout: 15000 },
+    );
+    await userEvent.click(addBtn);
+
+    // DetailFade keeps the real content `visibility: hidden` until its enter
+    // animation starts, and a hidden input cannot be focused or typed into.
+    await waitFor(
+      () => {
+        expect(appNameInput()).toBeInTheDocument();
+        expect(document.querySelector(".detail-appear__layer--hidden")).toBeNull();
+      },
+      { timeout: 15000 },
+    );
+    await userEvent.type(appNameInput(), "brand-new-app");
+
+    const saveBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("loadingapps:save_app", { id: -1 }) },
+      { timeout: 15000 },
+    );
+    await userEvent.click(saveBtn);
+
+    // The POST has to carry the typed name and no id — sending the synthetic -1
+    // would make the server treat the create as an update of a missing row.
+    await waitFor(() => expect(createdApps).toHaveLength(1), { timeout: 5000 });
+    expect(createdApps[0].appId).toBeUndefined();
+    expect(createdApps[0].appName).toBe("brand-new-app");
+
+    // And the created app shows without a refresh. The row is rendered purely
+    // from the refetched app refs, so it cannot be satisfied by typed text
+    // lingering in the old DOM node.
+    await waitFor(
+      () => {
+        const cells = [...document.querySelectorAll("td")].map((c) => c.textContent);
+        expect(cells).toContain("brand-new-app");
+        expect(cells).toContain(String(NEW_APP_ID));
+      },
+      { timeout: 15000 },
+    );
+  },
+};
