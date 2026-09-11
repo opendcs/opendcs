@@ -232,12 +232,6 @@ final class DdsHttpTest
                               .withDefaultTrustMaterial()
                               .withSystemTrustMaterial()
                               .withTrustMaterial(keyStore)
-                              .withHostnameVerifierEnhancer(params ->
-                                {
-                                    System.out.println(String.format("checking %s -> %s", params.getHostname(), params.getSession().getPeerHost()));
-                                    return false;
-                                }
-                              )
                               .build();
         
         hackTrustIntoHandler(lrgs, trust.getTrustManagerFactory().orElseThrow().getTrustManagers());
