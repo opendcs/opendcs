@@ -1,0 +1,46 @@
+plugins {
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'opendcs.sonar-conventions'
+    id 'antlr'
+}
+
+dependencies {
+    // Should not depend on OpenDCS
+    // OpenDCS API is... debatable.
+    implementation(libs.org.slf4j.api)
+    antlr(libs.org.antlr.antlr4)
+
+    api(libs.org.antlr.antlr4.runtime)
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "${project.buildDir}/generated/sources/antlr/main"
+        }
+    }
+}
+
+generateGrammarSource {
+    arguments += ["-visitor","-long-messages","-package","org.opendcs.decodes.parser"]
+    outputDirectory = file("${project.buildDir}/generated/sources/antlr/main/org/opendcs/decodes/parser")
+}
+
+sourcesJar.dependsOn generateGrammarSource
+
+task grun(type: JavaExec) {
+    dependsOn compileJava
+    dependsOn generateGrammarSource
+    classpath += sourceSets.main.runtimeClasspath
+    classpath += fileTree(sourceSets.main.output.classesDirs.getAsPath())
+    classpath += configurations.antlr
+    mainClass = "org.antlr.v4.gui.TestRig"
+    args += "org.opendcs.decodes.parser.decodes"
+    args += "decodesScript"
+    args += "-tokens"
+    args += "-trace"
+    args += "-diagnostics"
+    args += "-gui"
+    args += project.findProperty("shefFile") ?: "src/test/resources/basic_test.script"
+}

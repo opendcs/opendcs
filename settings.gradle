@@ -25,6 +25,9 @@ project(":lrgs-web").projectDir=file("java/lrgs-web")
 include ":opendcs"
 project(":opendcs").projectDir=file("java/opendcs")
 
+include ":decodes-lang"
+project(":decodes-lang").projectDir=file("java/decodes-lang")
+
 include ":opendcs-implementation"
 project(":opendcs-implementation").projectDir=file("java/opendcs-implementation")
 
