@@ -5,7 +5,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.json.bind.annotation.JsonbDateFormat;
 
 /**
  * A record to hold the extracted Message from the Dadds WebHook notification
@@ -53,6 +56,7 @@ public record DaddsDataMessage(
     @JsonProperty("Address")
     String address,
     @JsonProperty("Time")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
     LocalDateTime time,
     @JsonProperty("InfoCd")
     String infoCode,
@@ -65,6 +69,7 @@ public record DaddsDataMessage(
     @JsonProperty("ArmCodes")
     List<String> armCodes,
     @JsonProperty("LockTime")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
     LocalDateTime lockTime,
     @JsonProperty("Baud")
     int baud,
@@ -101,6 +106,7 @@ public record DaddsDataMessage(
     @JsonProperty("AddressRecv")
     String AddressReceived,
     @JsonProperty("SyncTime")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
     LocalDateTime syncTime, 
     @JsonProperty("Snr")
     float signalToNoiseRatio,
