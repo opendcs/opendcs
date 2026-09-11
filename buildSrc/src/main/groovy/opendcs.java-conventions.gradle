@@ -69,7 +69,7 @@ checkstyle {
 plugins.apply('com.github.spotbugs')
 spotbugs {
     ignoreFailures = true
-    toolVersion = '4.9.1'
+    toolVersion = '4.10.4'
     reportsDir = file("$buildDir/reports/spotbugs")
     effort = com.github.spotbugs.snom.Effort.MAX
     excludeFilter = file("${rootDir}/spotbugs-filter.xml")
