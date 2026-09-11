@@ -51,7 +51,8 @@ with platforms(id, agency, isproduction, description, lastmodifytime, configid, 
     <if(platform_sensor_join)><platform_sensor_join><endif>
     <if(platform_sensor_props_join)><platform_sensor_props_join><endif>
 
-    order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc<if(site_name_columns)>,
+    order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
+    <if(site_name_columns)>,
         case
             when lower(sn.nametype) = lower(:preferredType) then 0
             else 1
