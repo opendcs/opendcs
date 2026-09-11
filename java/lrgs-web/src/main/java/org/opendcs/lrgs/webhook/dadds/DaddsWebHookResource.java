@@ -21,6 +21,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,6 +51,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Providers;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
+import lrgs.common.DcpMsgFlag;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.messagemanager.sns.SnsMessageManager;
 import software.amazon.awssdk.messagemanager.sns.model.SnsMessage;
@@ -93,7 +97,7 @@ public class DaddsWebHookResource
             log.warn("Attempt to post to hookId that doesn't exist.");
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        
+
         try
         {
             var region = parseRegion(topicArn);
@@ -125,7 +129,7 @@ public class DaddsWebHookResource
             return Response.status(Response.Status.NOT_FOUND).build();
         }
     }
-    
+
     private Region parseRegion(String topicArn)
     {
         String[] parts = topicArn != null ? topicArn.split(":") : new String[0];
@@ -138,10 +142,10 @@ public class DaddsWebHookResource
 
     private Response confirmSubscription(SnsSubscriptionConfirmation snsMessage) throws InterruptedException
     {
-        
+
         try(HttpClient client = HttpClient.newBuilder().sslContext(SSLContext.getDefault()).build())
         {
-            var response = client.send(HttpRequest.newBuilder(snsMessage.subscribeUrl()).build(), 
+            var response = client.send(HttpRequest.newBuilder(snsMessage.subscribeUrl()).build(),
                                        BodyHandlers.discarding());
             if (response.statusCode() % 200 == 0)
             {
@@ -161,10 +165,26 @@ public class DaddsWebHookResource
         {
             log.trace("Received: {}", snsMessage.message());
             var message = jsonMapper.readValue(snsMessage.message(), DaddsDataMessage.class);
+
             var archive = (MsgArchive)servletContext.getAttribute("archive");
             var dcpMessage = new DcpMsg();
-            dcpMessage.setDcpAddress(new DcpAddress(message.address()));
+            dcpMessage.setFlagbits(DcpMsgFlag.MSG_TYPE_OTHER);
+            var addr = new DcpAddress(message.address());
+            dcpMessage.setDcpAddress(addr);
+
+            dcpMessage.setXmitTime(new Date(message.time().toInstant(ZoneOffset.UTC).toEpochMilli()));
+            dcpMessage.setDomsatTime(new Date(message.time().toInstant(ZoneOffset.UTC).toEpochMilli()));
+            dcpMessage.setOrigAddress(new DcpAddress(message.AddressReceived()));
+            dcpMessage.setBaud(message.baud());
+            dcpMessage.setGoesFreqOffset(message.frequencyDeviationStart());
+            dcpMessage.setGoesGoodPhasePct(message.goodPhase());
+            dcpMessage.setGoesPhaseNoise(message.phaseNoise());
+            dcpMessage.setLocalReceiveTime(new Date());
+            dcpMessage.setMsgLength(message.length());
+            dcpMessage.setFailureCode(message.quality().charAt(0));
+
             dcpMessage.setData(message.data().getBytes(StandardCharsets.US_ASCII));
+            dcpMessage.setHeaderLength(0);
             archive.archiveMsg(dcpMessage, hookInput);
             return Response.ok().build();
         }

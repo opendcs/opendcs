@@ -50,10 +50,16 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.http.Cookies;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Providers;
+import lrgs.apistatus.AttachedProcess;
 import lrgs.archive.XmlMsgArchive;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
+import lrgs.common.DcpMsgIndex;
+import lrgs.common.DcpNameMapper;
+import lrgs.common.EndOfArchiveException;
+import lrgs.common.SearchCriteria;
+import lrgs.ddsserver.MessageArchiveRetriever;
 import lrgs.lrgsmain.LrgsInputInterface;
 import nl.altindag.ssl.SSLFactory;
 import software.amazon.awssdk.http.apache5.Apache5HttpClient;
@@ -107,7 +113,7 @@ final class DdsHttpTest
     @Test
     void test_next(LrgsTestInstance lrgs) throws Exception
     {
-        
+
         final AtomicReference<Cookies> session = new AtomicReference<>(null);
         assertResultWithinTimeFrame(value ->
         {
@@ -152,7 +158,7 @@ final class DdsHttpTest
             .redirects().follow(true)
             .redirects().max(3)
             .get("dds/data/query")
-            
+
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -205,8 +211,8 @@ final class DdsHttpTest
         ;
 
 
-        var messages = createMessages();               
-        
+        var messages = createMessages();
+
         final var keyStorePassword = "awsmock".toCharArray(); // NOSONAR
         final var keyAlias = "awssigning";
         var keyStore = KeyStore.getInstance("JKS");
@@ -220,11 +226,11 @@ final class DdsHttpTest
         var publicCert = keyStore.getCertificate(keyAlias);
 
         byte[] publicBytes = publicCert.getEncoded();
-        
+
         // Encode the bytes into Base64 format
         var encoder = Base64.getMimeEncoder(64, new byte[]{'\n'});
         String base64Encoded = encoder.encodeToString(publicBytes);
-        
+
         // Wrap with standard X.509 Public Key headers and footers
         var publicKeyPem = "-----BEGIN CERTIFICATE-----\n" + base64Encoded + "\n-----END CERTIFICATE-----\n";
 
@@ -233,7 +239,7 @@ final class DdsHttpTest
                               .withSystemTrustMaterial()
                               .withTrustMaterial(keyStore)
                               .build();
-        
+
         hackTrustIntoHandler(lrgs, trust.getTrustManagerFactory().orElseThrow().getTrustManagers());
 
         SSLContext.setDefault(trust.getSslContext());
@@ -245,7 +251,7 @@ final class DdsHttpTest
 
         HttpsServer server = HttpsServer.create(new InetSocketAddress(63543), 0);
         var conf = new HttpsConfigurator(sslContext);
-        
+
         server.setHttpsConfigurator(conf);
         server.setExecutor(null);
         server.createContext("/cert.pem", ctx ->
@@ -258,26 +264,26 @@ final class DdsHttpTest
             responseBody.close();
         });
         final AtomicBoolean subscribed = new AtomicBoolean(false);
-        
+
         server.createContext("/confirm", ctx ->
         {
             subscribed.set(true);
             ctx.sendResponseHeaders(200, 0);
             ctx.close();
         });
-        
+
         server.start();
         final int snsPort = server.getAddress().getPort();
 
         InterceptingInetAddressResolver.registerIntercept("sns.us-east-1.amazonaws.com", Inet4Address.getLoopbackAddress());
-        final String confirmMessage = 
+        final String confirmMessage =
             SnsMessageCreator.createDaddsConfirmationMessage(
                 privateKey,
                 topicArn,
                 snsPort,
                 "https://sns.us-east-1.amazonaws.com:" + snsPort + "/confirm"
                 );
-        
+
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("x-amz-sns-message-type", "SubscriptionConfirmation")
@@ -312,7 +318,21 @@ final class DdsHttpTest
             .assertThat()
                 .statusCode(is(Response.Status.OK.getStatusCode()))
             ;
-        }        
+        }
+
+        AttachedProcess ap = new AttachedProcess(1, "test", "test", "tester", 0, 0, 0, "running", (short)0);
+        final MessageArchiveRetriever mar = new MessageArchiveRetriever((XmlMsgArchive)lrgs.getArchive(), ap);
+        SearchCriteria sc = new SearchCriteria();
+        sc.addDcpName("TEST");
+        sc.setLrgsSince("now - 30 days");
+        sc.setLrgsUntil("now + 1 day");
+        mar.setDcpNameMapper(DcpAddress::new);
+        for (var message: messages)
+        {
+            sc.DcpNames.clear();
+            sc.addDcpName(message.address());
+            assertMessageStored(message, sc, mar);
+        }
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -328,6 +348,39 @@ final class DdsHttpTest
         .assertThat()
             .statusCode(is(Response.Status.OK.getStatusCode()))
         ;
+    }
+
+    void assertMessageStored(DaddsDataMessage message, SearchCriteria sc, MessageArchiveRetriever mar) throws Exception
+    {
+        mar.setSearchCriteria(sc);
+        mar.init();
+        final DcpMsgIndex dmi = new DcpMsgIndex();
+        assertResultWithinTimeFrame(value ->
+        {
+            try
+            {
+                int idx = mar.getNextPassingIndex(dmi, System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+                if (idx == -1)
+                {
+                    return false;
+                }
+                final DcpMsg msgOut = dmi.getDcpMsg();
+                if (msgOut != null)
+                {
+                    return message.data().equals(msgOut.getDataStr());
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (EndOfArchiveException ex)
+            {
+                return false;
+            }
+        }, 5, TimeUnit.SECONDS, 1, TimeUnit.SECONDS,
+        "Saved message " + message.address() + " was not found in the allotted time frame.");
+
     }
 
     /**
@@ -354,7 +407,7 @@ final class DdsHttpTest
                                   .getContext(null);
         assertNotNull(awsContext, "Could not retrieve the AwsContext from the server instance.");
         var snsManagers = awsContext.snsMessageManagers();
-        
+
         snsManagers.put(
             Region.US_EAST_1,
             SnsMessageManager.builder()
@@ -363,20 +416,20 @@ final class DdsHttpTest
                                                  .tlsTrustManagersProvider(() -> trustManagers).build()
                              )
                              .region(Region.US_EAST_1)
-                             .build()                             
+                             .build()
             );
     }
 
     List<DaddsDataMessage> createMessages()
     {
         ArrayList<DaddsDataMessage> ret = new ArrayList<>();
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 20; i++)
         {
             String data = "This is test data";
             String addr = String.format("%8s", HexFormat.of().toHexDigits(i)).replace(' ', '0');
             ret.add(new DaddsDataMessage(
                 UUID.randomUUID(),
-                addr, LocalDateTime.now(), "G", "Test", data, null,
+                addr, LocalDateTime.now().minusSeconds(4), "G", "Test", data, null,
                 List.of(), LocalDateTime.now(), 300, 100.0f, 0.5f,
                 .5f, 0.0f, 100, 88, "w", "W", false, 0, null, false, null, i,
                 i, addr, LocalDateTime.now(), 35.4f, data.length(), "G", i, i, 1.3f, "R", "V", i)
