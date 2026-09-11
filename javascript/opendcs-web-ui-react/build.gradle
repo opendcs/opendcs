@@ -111,7 +111,7 @@ build.dependsOn buildUi
 
 def runUiDev = tasks.register("runUiDev", NpxTask) {
     group 'application'
-    description 'Runs npm run dev to begin UI development. Assumes an OpenDCS Api instances in available on localhost:7000/odcsapi'
+    description 'Runs npm run dev to begin UI development. Assumes an OpenDCS Api instances in available on localhost:7000/api'
     dependsOn npmInstall
     dependsOn configurations.api  
     command = "npm"

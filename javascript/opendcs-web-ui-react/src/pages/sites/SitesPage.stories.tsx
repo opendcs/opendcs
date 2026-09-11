@@ -22,7 +22,7 @@ export const Default: Story = {
   parameters: {
     msw: {
       handlers: {
-        sites: http.get("/odcsapi/siterefs", () => {
+        sites: http.get("/api/siterefs", () => {
           return HttpResponse.json<ApiSiteRef[]>([
             {
               siteId: 1,
@@ -32,7 +32,7 @@ export const Default: Story = {
             { siteId: 2, sitenames: { cwms: "test" }, publicName: "test" },
           ]);
         }),
-        site: http.get("/odcsapi/site", ({ request }) => {
+        site: http.get("/api/site", ({ request }) => {
           const url = new URL(request.url);
           return HttpResponse.json<ApiSite>({
             siteId: Number.parseInt(url.searchParams.get("siteid") || "-2"),
@@ -59,13 +59,13 @@ export const Default: Story = {
 };
 
 const sharedMswHandlers = {
-  sites: http.get("/odcsapi/siterefs", () => {
+  sites: http.get("/api/siterefs", () => {
     return HttpResponse.json<ApiSiteRef[]>([
       { siteId: 1, sitenames: { cwms: "Alder Springs" } },
       { siteId: 2, sitenames: { cwms: "test" } },
     ]);
   }),
-  site: http.get("/odcsapi/site", ({ request }) => {
+  site: http.get("/api/site", ({ request }) => {
     const url = new URL(request.url);
     return HttpResponse.json<ApiSite>({
       siteId: parseInt(url.searchParams.get("siteid") || "-2"),
@@ -76,7 +76,7 @@ const sharedMswHandlers = {
       active: true,
     });
   }),
-  saveSite: http.post("/odcsapi/site", () => {
+  saveSite: http.post("/api/site", () => {
     return HttpResponse.json<ApiSite>({
       siteId: 1,
       sitenames: { cwms: "Alder Springs" },

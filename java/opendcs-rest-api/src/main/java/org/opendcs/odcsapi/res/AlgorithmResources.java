@@ -75,7 +75,7 @@ public final class AlgorithmResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve all algorithm references",
-			description = "Example: \n\n    http://localhost:8080/odcsapi/algorithmrefs",
+			description = "Example: \n\n    http://localhost:8080/api/algorithmrefs",
 			operationId = "getalgorithmrefs",
 			tags = {"REST - Algorithm Methods"},
 			responses = {
@@ -116,7 +116,7 @@ public final class AlgorithmResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve an algorithm by its ID",
-			description = "Example: \n\n    http://localhost:8080/odcsapi/algorithm?algorithmid=4",
+			description = "Example: \n\n    http://localhost:8080/api/algorithm?algorithmid=4",
 			operationId = "getalgorithm",
 			tags = {"REST - Algorithm Methods"},
 			responses = {

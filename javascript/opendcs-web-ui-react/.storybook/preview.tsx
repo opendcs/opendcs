@@ -24,7 +24,7 @@ initialize(
     onUnhandledRequest(request, print) {
       const url = new URL(request.url);
       // Ignore warnings for specific URLs (e.g., /api/health)
-      if (!url.pathname.startsWith("/odcsapi")) {
+      if (!url.pathname.startsWith("/api")) {
         return;
       }
       // For all other unhandled requests, print the warning

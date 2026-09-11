@@ -16,7 +16,7 @@ insert into identity_provider(name,type,config) values
  ('oidc-pkce-federation', 'OpenIdConnect',
   '{"clientId": "opendcs-public", "wellKnown": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration", "redirectUri": "http://localhost:7000/oidc-callback", "queryParameters" : {"kc_idp_hint": ["federated-provider-1", "federated-provider-2"]}}'::json
  ),
- ('oidc-secret', 'OpenIdConnect', '{"clientId": "opendcs", "clientSecret": "test-secret-value","wellKnown": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration", "redirectUri": "http://localhost:7000/odcsapi/oidc-callback"}'::json)
+ ('oidc-secret', 'OpenIdConnect', '{"clientId": "opendcs", "clientSecret": "test-secret-value","wellKnown": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration", "redirectUri": "http://localhost:7000/api/oidc-callback"}'::json)
 on conflict(name) do update set type=excluded.type, config=excluded.config;
 ;
 

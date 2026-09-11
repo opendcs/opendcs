@@ -125,6 +125,7 @@ resolve {
     outputFileName = fileName
     outputFormat = format
     prettyPrint = 'TRUE'
+    openApiFile = file("src/main/openapi/base.json")
     resourcePackages = ['org.opendcs.odcsapi.res', 'org.opendcs.odcsapi.beans', 'org.opendcs.odcsapi.sec']
     outputDir = file('build/swagger/')
 }

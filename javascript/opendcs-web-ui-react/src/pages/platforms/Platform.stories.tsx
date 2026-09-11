@@ -54,7 +54,7 @@ const mockConfigRefs: ApiConfigRef[] = [
   { configId: 202, name: "Backup CFG", description: "Backup config" },
 ];
 
-const configRefsHandler = http.get("/odcsapi/configrefs", () =>
+const configRefsHandler = http.get("/api/configrefs", () =>
   HttpResponse.json<ApiConfigRef[]>(mockConfigRefs),
 );
 
@@ -65,7 +65,7 @@ const mockSiteRefs: ApiSiteRef[] = [
   { publicName: "Orphan Site", description: "Missing id" },
 ];
 
-const siteRefsHandler = http.get("/odcsapi/siterefs", () =>
+const siteRefsHandler = http.get("/api/siterefs", () =>
   HttpResponse.json<ApiSiteRef[]>(mockSiteRefs),
 );
 
@@ -117,7 +117,7 @@ export const SelectConfigWithSensors: Story = {
     msw: {
       handlers: {
         configRefs: configRefsHandler,
-        config: http.get("/odcsapi/config", () =>
+        config: http.get("/api/config", () =>
           HttpResponse.json<ApiPlatformConfig>({
             configId: 202,
             name: "Backup CFG",
@@ -162,7 +162,7 @@ export const SelectConfigWithoutSensors: Story = {
     msw: {
       handlers: {
         configRefs: configRefsHandler,
-        config: http.get("/odcsapi/config", () =>
+        config: http.get("/api/config", () =>
           HttpResponse.json<ApiPlatformConfig>({
             configId: 202,
             name: "Backup CFG",
@@ -206,7 +206,7 @@ export const SelectConfigFetchError: Story = {
     msw: {
       handlers: {
         configRefs: configRefsHandler,
-        config: http.get("/odcsapi/config", () => HttpResponse.error()),
+        config: http.get("/api/config", () => HttpResponse.error()),
       },
     },
   },

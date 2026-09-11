@@ -286,7 +286,7 @@ export const EditFieldsAndToggleEnabled: Story = {
   },
 };
 
-const algorithmRefsHandler = http.get("/odcsapi/algorithmrefs", () =>
+const algorithmRefsHandler = http.get("/api/algorithmrefs", () =>
   HttpResponse.json<ApiAlgorithmRef[]>([
     {
       algorithmId: 11,

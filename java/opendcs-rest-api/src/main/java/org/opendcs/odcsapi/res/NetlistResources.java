@@ -76,8 +76,8 @@ public final class NetlistResources extends OpenDcsResource
             summary = "The GET netlistrefs method returns references to network lists",
             description = "The GET netlistrefs method is intended to populate a pick list of network lists and"
                     + " does not contain all of the list elements.\n\nExamples:\n\n"
-                    + "    http://localhost:8080/odcsapi/netlistrefs\n\n"
-                    + "    http://localhost:8080/odcsapi/netlistrefs?tmtype=goes\n\nWith no arguments,"
+                    + "    http://localhost:8080/api/netlistrefs\n\n"
+                    + "    http://localhost:8080/api/netlistrefs?tmtype=goes\n\nWith no arguments,"
                     + " a list of network lists in the database is returned. The format is as follows:"
                     + "\n```\n[\n  {\n    \"lastModifyTime\": \"2020-08-22T14:36:55.705Z[UTC]\",\n"
                     + "    \"name\": \"BFD-BMD\",\n    \"netlistId\": 1,\n    \"numPlatforms\": 3,\n"
@@ -152,7 +152,7 @@ public final class NetlistResources extends OpenDcsResource
     @RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
     @Operation(
             summary = "The ‘netlists’ GET method will return a specific network list in its entirety.",
-            description = "Example:\n\n    http://localhost:8080/odcsapi/netlist?netlistid=1",
+            description = "Example:\n\n    http://localhost:8080/api/netlist?netlistid=1",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Success",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON,

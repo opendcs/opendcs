@@ -75,7 +75,7 @@ public final class OwaspZap
 	{
 		Path reportDir = Paths.get("./build/test-results/owasp_zap").toAbsolutePath().normalize();
 		setupPermissions(reportDir);
-		String restApiUrl = "http://host.testcontainers.internal:" + tomcat.getPort() + "/odcsapi";
+		String restApiUrl = "http://host.testcontainers.internal:" + tomcat.getPort() + "/api";
 		String exec = String.format("zap-api-scan.py -I -t %s/open_api.json -f openapi -r zap_report.html -w zap_report.md"
 				+ " -O %s -f openapi -r zap_report.html -w zap_report.md", restApiUrl, restApiUrl);
 		// Start a GenericContainer for OWASP ZAP

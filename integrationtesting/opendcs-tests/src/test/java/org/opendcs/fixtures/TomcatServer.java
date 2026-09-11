@@ -108,7 +108,7 @@ public final class TomcatServer implements AutoCloseable
 		tomcatInstance.setPort(port);
 		tomcatInstance.setSilent(false);
 		tomcatInstance.enableNaming();
-		StandardContext restApiContext = (StandardContext) tomcatInstance.addWebapp("/odcsapi", restWar);
+		StandardContext restApiContext = (StandardContext) tomcatInstance.addWebapp("/api", restWar);
 		restApiContext.setDelegate(true);
 		restApiContext.setParentClassLoader(TomcatServer.class.getClassLoader());
 		restApiContext.setReloadable(true);

@@ -22,7 +22,7 @@ const sseTranscript = [
 
 const handlers = {
   runComputation: http.get(
-    "/odcsapi/runcomputation",
+    "/api/runcomputation",
     () =>
       new HttpResponse(sseTranscript, {
         headers: { "Content-Type": "text/event-stream" },

@@ -27,11 +27,11 @@ const meta = {
   parameters: {
     msw: {
       handlers: {
-        get: http.get("/odcsapi/algorithmcatalog", () =>
+        get: http.get("/api/algorithmcatalog", () =>
           HttpResponse.json<CatalogAlgorithm[]>(CATALOG),
         ),
         post: http.post(
-          "/odcsapi/algorithmcatalog",
+          "/api/algorithmcatalog",
           () => new HttpResponse(null, { status: 200 }),
         ),
       },
@@ -47,7 +47,7 @@ export const NoneAvailable: Story = {
   parameters: {
     msw: {
       handlers: {
-        get: http.get("/odcsapi/algorithmcatalog", () =>
+        get: http.get("/api/algorithmcatalog", () =>
           HttpResponse.json<CatalogAlgorithm[]>([
             { name: "X", execClass: "x.X", description: "", alreadyImported: true },
           ]),
@@ -100,7 +100,7 @@ export const CatalogFetchError: Story = {
     msw: {
       handlers: {
         get: http.get(
-          "/odcsapi/algorithmcatalog",
+          "/api/algorithmcatalog",
           () => new HttpResponse(null, { status: 500 }),
         ),
       },
@@ -117,11 +117,11 @@ export const ImportError: Story = {
   parameters: {
     msw: {
       handlers: {
-        get: http.get("/odcsapi/algorithmcatalog", () =>
+        get: http.get("/api/algorithmcatalog", () =>
           HttpResponse.json<CatalogAlgorithm[]>(CATALOG),
         ),
         post: http.post(
-          "/odcsapi/algorithmcatalog",
+          "/api/algorithmcatalog",
           () => new HttpResponse(null, { status: 500 }),
         ),
       },

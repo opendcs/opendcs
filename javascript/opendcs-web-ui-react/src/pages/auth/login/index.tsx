@@ -122,7 +122,7 @@ export default function Login() {
                               globalThis.location.origin,
                             ).toString(),
                           };
-                          document.cookie = `oidcInfo=${encodeURIComponent(JSON.stringify(oidcSessionInfo))}; path=/odcsapi; max-age=300; SameSite=Lax`;
+                          document.cookie = `oidcInfo=${encodeURIComponent(JSON.stringify(oidcSessionInfo))}; path=/api; max-age=300; SameSite=Lax`;
 
                           globalThis.location.href = r.url;
                         });
