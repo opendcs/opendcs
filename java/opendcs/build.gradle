@@ -41,6 +41,11 @@ dependencies {
     implementation(libs.jython.standalone)
 
     implementation(libs.scijava.jep) 
+    implementation(libs.org.xerial.sqlite.jdbc)
+
+    implementation("com.zaxxer:HikariCP:4.0.3")
+
+    implementation(libs.jama)
     implementation(libs.dropwizard.metrics.core)
     implementation(libs.passay)
     implementation(libs.sun.mailapi)

@@ -16,18 +16,12 @@
 package opendcs.opentsdb;
 
 import ilex.util.TextUtil;
-import ilex.var.TimedVariable;
-
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Properties;
-
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -50,21 +44,15 @@ import decodes.db.DatabaseException;
 import decodes.db.PresentationGroup;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
-import decodes.tsdb.BadConnectException;
 import decodes.tsdb.BadTimeSeriesException;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ConstraintException;
-import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.GroupHelper;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.RecordRangeHandle;
-import decodes.tsdb.TasklistRec;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbDatabaseVersion;
-import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
 
 public class OpenTsdb extends TimeSeriesDb
@@ -77,7 +65,6 @@ public class OpenTsdb extends TimeSeriesDb
 	public static final char TABLE_TYPE_STRING = 'S';
 
 	String getMinStmtQuery = null, getTaskListStmtQuery = null;
-
 
 	public OpenTsdb(String appName, javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
@@ -541,6 +528,4 @@ public class OpenTsdb extends TimeSeriesDb
 
 		return ret;
 	}
-
-
 }

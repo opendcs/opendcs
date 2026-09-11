@@ -173,7 +173,13 @@ public class DaoBase implements DaiBase
         }
 
 
-        return new WrappedConnection(myCon, c -> {}, SqlSettings.TRACE_CONNECTIONS);
+        return new WrappedConnection(myCon, c ->
+        {
+            if (!this.conSetManually)
+            {
+                c.getRealConnection().close();
+            }
+        }, SqlSettings.TRACE_CONNECTIONS);
     }
 
     /**
@@ -367,7 +373,7 @@ public class DaoBase implements DaiBase
 
     public DbKey getKey(String tableName) throws DbIoException
     {
-        try (Connection conn = getConnection())
+        try (Connection conn = this.getConnection())
         {
             return db.getKeyGenerator().getKey(tableName, conn);
         }
@@ -429,18 +435,10 @@ public class DaoBase implements DaiBase
      */
     public void withConnection(ConnectionConsumer consumer) throws SQLException
     {
-        Connection conn = null;
-        try
+        
+        try (Connection conn = this.getConnection())
         {
-            conn = this.getConnection();
             consumer.accept(conn);
-        }
-        finally
-        {
-            if(conn != null && !this.conSetManually)
-            {
-                conn.close();
-            }
         }
     }
 
@@ -817,7 +815,7 @@ public class DaoBase implements DaiBase
      */
     public void inTransaction(DaoConsumer consumer) throws Exception
     {
-        Connection c = getConnection();
+        Connection c = db.getConnection();
         boolean autoCommit = c.getAutoCommit();
         c.setAutoCommit(false);
         try (DaoBase dao = new DaoHelper(this.db,"transaction",new ConnectionInTransaction(c));)
@@ -827,12 +825,18 @@ public class DaoBase implements DaiBase
         }
         catch (Exception ex)
         {
-            c.rollback();
+            if (c.isValid(100))
+            {
+                c.rollback();
+            }
             throw ex;
         }
         finally
         {
-            c.setAutoCommit(autoCommit);
+            if (c.isValid(100))
+            {
+                c.setAutoCommit(autoCommit);
+            }
             c.close();
         }
     }
