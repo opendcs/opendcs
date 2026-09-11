@@ -9,6 +9,9 @@ import type { UiPresentation } from "./PresentationReducer";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
 import {
   AppDataTable,
+  dateColumn,
+  idColumn,
+  textColumn,
   type ColumnDef,
   type RowAction,
 } from "../../../components/data-table";
@@ -32,20 +35,14 @@ export const PresentationsTable: React.FC<PresentationsTableProperties> = ({
 
   const columns = useMemo<ColumnDef<TablePresentationRef>[]>(
     () => [
+      idColumn("groupId", t("presentations:header.Id")),
       {
-        data: "groupId",
-        header: t("presentations:header.Id"),
-        defaultContent: "new",
-        className: "dt-left",
-        type: "num",
-      },
-      { data: "name", header: t("presentations:header.Name"), type: "string" },
-      {
-        data: "inheritsFrom",
-        header: t("presentations:header.InheritsFrom"),
-        defaultContent: "",
+        data: "name",
+        header: t("presentations:header.Name"),
         type: "string",
+        defaultSort: "asc",
       },
+      textColumn("inheritsFrom", t("presentations:header.InheritsFrom")),
       {
         data: "production",
         header: t("presentations:header.Production"),
@@ -58,18 +55,7 @@ export const PresentationsTable: React.FC<PresentationsTableProperties> = ({
           return production ? "✓" : "";
         },
       },
-      {
-        data: "lastModified",
-        header: t("presentations:header.LastModified"),
-        defaultContent: "",
-        type: "date",
-        render: (data: unknown, type: string) => {
-          if (type !== "display") return data;
-          if (!data) return "";
-          const d = data instanceof Date ? data : new Date(data as string);
-          return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
-        },
-      },
+      dateColumn("lastModified", t("presentations:header.LastModified")),
     ],
     [t],
   );

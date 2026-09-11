@@ -12,6 +12,7 @@ import Computation, { ComputationSkeleton, type UiComputation } from "./Computat
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
 import {
   AppDataTable,
+  idColumn,
   type AppDataTableHandle,
   type ColumnDef,
   type RowAction,
@@ -100,14 +101,13 @@ export const ComputationsTable: React.FC<ComputationsTableProperties> = ({
 
   const columns = useMemo<ColumnDef<TableComputationRef>[]>(
     () => [
+      idColumn("computationId", t("computations:header.Id")),
       {
-        data: "computationId",
-        header: t("computations:header.Id"),
-        defaultContent: "new",
-        className: "dt-left",
-        type: "num",
+        data: "name",
+        header: t("computations:header.Name"),
+        type: "string",
+        defaultSort: "asc",
       },
-      { data: "name", header: t("computations:header.Name"), type: "string" },
       {
         data: "algorithmName",
         header: t("computations:header.Algorithm"),

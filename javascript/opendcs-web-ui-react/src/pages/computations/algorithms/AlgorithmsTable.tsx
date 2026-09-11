@@ -7,6 +7,7 @@ import { CheckForNewModal } from "./CheckForNewModal";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
 import {
   AppDataTable,
+  idColumn,
   type AppDataTableHandle,
   type ColumnDef,
   type RowAction,
@@ -51,14 +52,13 @@ export const AlgorithmsTable: React.FC<AlgorithmsTableProperties> = ({
 
   const columns = useMemo<ColumnDef<TableAlgorithmRef>[]>(
     () => [
+      idColumn("algorithmId", t("algorithms:header.Id")),
       {
-        data: "algorithmId",
-        header: t("algorithms:header.Id"),
-        defaultContent: "new",
-        className: "dt-left",
-        type: "num",
+        data: "algorithmName",
+        header: t("algorithms:header.Name"),
+        type: "string",
+        defaultSort: "asc",
       },
-      { data: "algorithmName", header: t("algorithms:header.Name"), type: "string" },
       { data: "execClass", header: t("algorithms:header.ExecClass"), type: "string" },
       {
         data: "numCompsUsing",

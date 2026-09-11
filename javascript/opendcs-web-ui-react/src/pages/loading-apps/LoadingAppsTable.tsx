@@ -5,6 +5,7 @@ import LoadingApp, { LoadingAppSkeleton, type UiLoadingApp } from "./LoadingApp"
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
   AppDataTable,
+  dateColumn,
   type AppDataTableHandle,
   type ColumnDef,
   type RowAction,
@@ -55,20 +56,15 @@ export const LoadingAppsTable: React.FC<LoadingAppsTableProperties> = ({
         defaultContent: "new",
         type: "num",
       },
-      { data: "appName", header: t("loadingapps:app_name"), type: "string" },
+      {
+        data: "appName",
+        header: t("loadingapps:app_name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       { data: "appType", header: t("loadingapps:app_type"), type: "string" },
       { data: "comment", header: t("loadingapps:comment"), type: "string" },
-      {
-        data: "lastModified",
-        header: t("loadingapps:last_modified"),
-        type: "date",
-        render: (data: unknown, type: string) => {
-          if (type !== "display") return data;
-          if (!data) return "";
-          const d = data instanceof Date ? data : new Date(data as string);
-          return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
-        },
-      },
+      dateColumn("lastModified", t("loadingapps:last_modified")),
       {
         data: "_pid",
         header: t("loadingapps:status"),
