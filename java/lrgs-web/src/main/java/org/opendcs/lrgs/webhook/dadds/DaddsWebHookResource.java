@@ -15,10 +15,12 @@
 */
 package org.opendcs.lrgs.webhook.dadds;
 
+import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -113,9 +115,13 @@ public class DaddsWebHookResource
                 default -> Response.status(Response.Status.NOT_FOUND).build();
             };
         }
-        catch (SdkClientException ex)
+        catch (InterruptedException | SdkClientException ex)
         {
             log.atError().setCause(ex).log("Invalid message sent");
+            if (ex instanceof InterruptedException)
+            {
+                Thread.currentThread().interrupt();
+            }
             return Response.status(Response.Status.NOT_FOUND).build();
         }
     }
@@ -130,7 +136,7 @@ public class DaddsWebHookResource
         return Region.of(parts[3]);
     }
 
-    private Response confirmSubscription(SnsSubscriptionConfirmation snsMessage)
+    private Response confirmSubscription(SnsSubscriptionConfirmation snsMessage) throws InterruptedException
     {
         
         try(HttpClient client = HttpClient.newBuilder().sslContext(SSLContext.getDefault()).build())
@@ -142,7 +148,7 @@ public class DaddsWebHookResource
                 return Response.ok().build();
             }
         }
-        catch (Exception ex) // NOSONAR
+        catch (IOException | NoSuchAlgorithmException ex)
         {
             log.atError().setCause(ex).log("Unable to confirm Dadds WebHook subscription.");
         }
