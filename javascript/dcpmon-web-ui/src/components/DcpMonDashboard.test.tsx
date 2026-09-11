@@ -1,8 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { HttpResponse, http } from "msw";
+import { afterEach, describe, expect, it } from "vitest";
+import { DCPMON_API_BASE_URL } from "../constants";
 import { DcpMonDashboard } from "./DcpMonDashboard";
+import { DcpMonTopBar } from "./DcpMonTopBar";
+import { DisplaySettingsProvider } from "../DisplaySettingsContext";
+import { server } from "../mocks/server";
 
 function renderDashboard() {
   const queryClient = new QueryClient({
@@ -15,30 +20,164 @@ function renderDashboard() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <DcpMonDashboard />
+      <DisplaySettingsProvider>
+        <DcpMonDashboard />
+      </DisplaySettingsProvider>
     </QueryClientProvider>,
   );
 }
 
+afterEach(() => {
+  localStorage.clear();
+  document.documentElement.removeAttribute("data-bs-theme");
+  document.documentElement.style.colorScheme = "";
+});
+
 describe("DcpMonDashboard", () => {
+  it("uses the OpenDCS application header", () => {
+    render(
+      <DisplaySettingsProvider>
+        <DcpMonTopBar />
+      </DisplaySettingsProvider>,
+    );
+
+    expect(screen.getByText("OpenDCS")).toBeVisible();
+    expect(screen.getByText("DCP Monitor")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+  });
+
+  it("uses system appearance by default and toggles an explicit theme", async () => {
+    const user = userEvent.setup();
+    render(
+      <DisplaySettingsProvider>
+        <DcpMonTopBar />
+      </DisplaySettingsProvider>,
+    );
+
+    expect(document.documentElement).toHaveAttribute("data-bs-theme", "light");
+    await user.click(screen.getByRole("button", { name: "Switch to dark mode" }));
+    expect(document.documentElement).toHaveAttribute("data-bs-theme", "dark");
+    expect(localStorage.getItem("opendcs.dcpmon.display-settings")).toContain(
+      '"theme":"dark"',
+    );
+    expect(screen.getByRole("button", { name: "Switch to light mode" })).toBeVisible();
+  });
+
   it("renders the mocked status summary and stations", async () => {
     renderDashboard();
 
-    expect(await screen.findByRole("heading", { name: "DCPMon" })).toBeVisible();
-    expect(screen.getByText("Group SWT for the last 24 hours")).toBeVisible();
-    expect(screen.getByText("CE1F40D4")).toBeVisible();
-    expect(screen.getByText("BMRA4")).toBeVisible();
-    expect(screen.getByText("Low battery: CE1F40D4")).toBeVisible();
+    expect(await screen.findByText(/Group SWT for the last 24 hours/)).toBeVisible();
+    expect(screen.getByRole("searchbox", { name: "Search locations" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Complete data/ })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /Unknown schedule/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Low battery.*1 locations/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /GPS sync issues.*1 locations/ })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Status legend" })).toBeVisible();
+    expect(
+      screen.getByText("All expected transmissions received with no parity failures."),
+    ).toBeVisible();
   });
 
   it("loads mocked GOES messages when a station opens", async () => {
     const user = userEvent.setup();
     renderDashboard();
 
+    await screen.findByText(/Group SWT for the last 24 hours/);
+    const search = await screen.findByRole("searchbox", { name: "Search locations" });
+    await user.type(search, "NIMB");
     await user.click(await screen.findByRole("button", { name: /CE1F40D4/ }));
 
     const table = await screen.findByRole("table");
     expect(within(table).getAllByText("162W")).toHaveLength(2);
     expect(within(table).getAllByText(/749\.73/).length).toBeGreaterThan(0);
+    expect(within(table).getByText("Missing transmission")).toBeVisible();
+    expect(within(table).getByText("Transmit Time (GMT)")).toBeVisible();
+  });
+
+  it("changes timestamp display settings and labels the alternate timezone", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await screen.findByText(/Group SWT for the last 24 hours/);
+    const firstTimestamp = document.querySelector("time");
+    expect(firstTimestamp).not.toBeNull();
+    await user.hover(firstTimestamp!);
+    expect(await screen.findByText(/Local time \(/)).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    const timeZone = screen.getByRole("combobox", { name: "Display timezone" });
+    await user.clear(timeZone);
+    await user.type(timeZone, "America/New_York");
+    await user.click(screen.getByRole("button", { name: "Save settings" }));
+
+    expect(localStorage.getItem("opendcs.dcpmon.display-settings")).toContain(
+      "America/New_York",
+    );
+    await user.hover(document.querySelector("time")!);
+    expect(await screen.findByText("GMT")).toBeVisible();
+  });
+
+  it("searches by configured identifiers", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await screen.findByText(/Group SWT for the last 24 hours/);
+    const search = await screen.findByRole("searchbox", { name: "Search locations" });
+    await user.type(search, "BMRA4");
+
+    expect(await screen.findByRole("heading", { name: "Search results" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /CE1F2532/ })).toBeVisible();
+  });
+
+  it("discovers and switches configured DCP groups", async () => {
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await screen.findByText(/Group SWT for the last 24 hours/);
+    const groupSelect = await screen.findByRole("combobox", { name: "Group" });
+    expect(groupSelect).toHaveValue("SWT");
+    expect(within(groupSelect).getByRole("option", { name: "New England District" })).toBeVisible();
+
+    await user.selectOptions(groupSelect, "NAE");
+    expect(await screen.findByText(/Group NAE for the last 24 hours/)).toBeVisible();
+  });
+
+  it("keeps the dashboard structure visible during the first load", () => {
+    renderDashboard();
+
+    expect(screen.getByRole("heading", { name: "DCPMon" })).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading DCP status");
+    expect(screen.getByRole("button", { name: /Missing data.*— locations/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Complete data.*— locations/ })).toBeVisible();
+    expect(screen.getByRole("searchbox", { name: "Search locations" })).toBeDisabled();
+  });
+
+  it("keeps the dashboard heading and offers recovery when groups fail", async () => {
+    server.use(
+      http.get(`${DCPMON_API_BASE_URL}/groups`, () =>
+        HttpResponse.text("Unavailable", { status: 503 }),
+      ),
+    );
+    renderDashboard();
+
+    expect(await screen.findByText("Unable to load DCPMon groups.")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "DCPMon" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+  });
+
+  it("keeps group controls available when a summary call fails", async () => {
+    server.use(
+      http.get(`${DCPMON_API_BASE_URL}/data/summary`, () =>
+        HttpResponse.text("Unavailable", { status: 503 }),
+      ),
+    );
+    renderDashboard();
+
+    expect(
+      await screen.findByText("Unable to load DCPMon status summary."),
+    ).toBeVisible();
+    const groupSelect = screen.getByRole("combobox", { name: "Group" });
+    await waitFor(() => expect(groupSelect).toHaveValue("SWT"));
+    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
   });
 });

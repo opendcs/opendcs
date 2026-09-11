@@ -25,6 +25,19 @@ components:
           schema:
             type: string
   schemas:
+    dataGroup:
+      description: A configured network-list group available for DCP status reporting.
+      type: object
+      properties:
+        id:
+          type: string
+          description: Canonical network-list name used in DDS requests.
+        displayName:
+          type: string
+          description: Human-readable label for the group.
+      required:
+        - id
+        - displayName
     dataSource:
       description: Source of data that this system retrieves messages from.
                   A given source has a name and type and may provide additional properties as appropriate.
@@ -95,6 +108,16 @@ components:
       description: Represents a single message received from a DCP (Data Collection Platform),
         including metadata about signal quality, source, and encoded data.
       properties:
+        messageType:
+          type: string
+          enum: [GOES]
+        dcpAddress:
+          type: string
+          description: Primary NESDIS DCP address
+        transmitTime:
+          type: string
+          format: date-time
+          description: Timestamp encoded by the DCP for the transmission (in UTC).
         receiveTime:
           type: string
           format: date-time
@@ -131,11 +154,20 @@ components:
         data:
           type: string
           description: Raw DCP data payload in plain text format.
+      required:
+        - messageType
+        - dcpAddress
+        - transmitTime
+        - receiveTime
+        - dataSource
 
     iridiumMessage:
       type: object
       description: Message received via Iridium satellite including transmission metadata and DCP payload.
       properties:
+        messageType:
+          type: string
+          enum: [Iridium]
         receiveTime:
           type: string
           format: date-time
@@ -177,13 +209,17 @@ components:
         data:
           type: string
           description: DCP data content that follows the header.
+      required:
+        - messageType
+        - receiveTime
+        - dataSource
 
     dcpMessage:
       oneOf:
         - $ref: '#/components/schemas/goesMessage'
         - $ref: '#/components/schemas/iridiumMessage'
       discriminator:
-        propertyName: dataSource.type
+        propertyName: messageType
         mapping:
           GOES: '#/components/schemas/goesMessage'
           Iridium: '#/components/schemas/iridiumMessage'
@@ -200,6 +236,11 @@ components:
             $ref: '#/components/schemas/dcpMessage'
         dataSource:
           $ref: '#/components/schemas/dataSource'
+        transmissionSlots:
+          type: array
+          description: PDT-derived expected self-timed transmission windows for a single-address query.
+          items:
+            $ref: '#/components/schemas/dcpTransmission'
         groupingKey:
           $ref: '#/components/schemas/groupingKey'
         knownSourceTypes:
@@ -208,6 +249,26 @@ components:
           $ref: '#/components/schemas/customSourceType'
         dataSourceType:
           $ref: '#/components/schemas/dataSourceType'
+      required:
+        - total
+        - messages
+
+    dcpTransmission:
+      type: object
+      description: An expected self-timed transmission window and the message received in that window, if any.
+      properties:
+        expectedTime:
+          type: string
+          format: date-time
+          description: Start of the expected PDT transmission window (in UTC).
+        status:
+          type: string
+          enum: [received, missing]
+        message:
+          $ref: '#/components/schemas/goesMessage'
+      required:
+        - expectedTime
+        - status
 
     statusGroupSummary:
       type: object
@@ -232,11 +293,28 @@ components:
               type: integer
             complete:
               type: integer
+            unknown:
+              type: integer
+            gps:
+              type: integer
+              description: Number of DCPs whose newest decodable self-timed message reports GPS out of sync
+          required:
+            - missing
+            - partial
+            - parity
+            - complete
+            - unknown
+            - gps
         dcpSummaries:
           type: object
           description: Map of DCPs (by Address) and their summary information
           additionalProperties:
             $ref: '#/components/schemas/dcpSummary'
+      required:
+        - timestamp
+        - durationHours
+        - counts
+        - dcpSummaries
     dcpSummary:
       type: object
       additionalProperties: true
@@ -250,21 +328,31 @@ components:
             $ref: '#/components/schemas/dcpIdentifier'
         status:
           type: string
-          enum: [missing, partial, parity, complete]
+          enum: [missing, partial, parity, complete, unknown]
         messageTotal:
           type: integer
           description: Number of messages received
+        expectedMessageTotal:
+          type: integer
+          nullable: true
+          description: Number of self-timed transmissions expected from the PDT schedule, or null when no schedule is available
         parityCount:
           type: integer
           description: Number of parity message issues
         lowBattery:
           description: If this DCP is in  low battery status
           type: boolean
+        gpsSync:
+          description: Whether the newest decodable self-timed message reports GPS synchronization; null when it cannot be determined
+          type: boolean
+          nullable: true
       required:
         - status
         - messageTotal
+        - expectedMessageTotal
         - parityCount
         - lowBattery
+        - gpsSync
     dcpIdentifier:
       type: object
       properties:
@@ -345,6 +433,21 @@ paths:
           $ref: '#/components/responses/500'
       tags:
         - sources
+  /groups:
+    get:
+      summary: List configured DCP status groups
+      description: Returns the LRGS network lists available for status summary requests.
+      responses:
+        '200':
+          description: Configured groups successfully returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/dataGroup'
+        '503':
+          $ref: '#/components/responses/503'
   /data/query:
     get:
       summary: Query DCP messages on the fly

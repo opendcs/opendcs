@@ -8,19 +8,22 @@ describe("DCPMon mock API", () => {
   it("returns the SWT status group summary through the DCPMon API client", async () => {
     const summary = await getStatusGroupSummary("swt");
 
-    expect(summary.group).toBe("SWT");
-    expect(summary.locations).toHaveLength(3);
-    expect(summary.locations[0]).toMatchObject({
-      stationId: "NMBA4",
-      dcpAddress: "CE1F40D4",
+    expect(summary.counts).toMatchObject({
+      complete: 515,
+      partial: 15,
     });
+    expect(summary.dcpSummaries?.CE1F40D4).toMatchObject({
+      messageTotal: 23,
+      lowBattery: true,
+    });
+    expect(summary.timestamp).toBeInstanceOf(Date);
   });
 
   it("returns GOES messages through the DCPMon API client", async () => {
     const messages = await getDcpMessages("CE1F40D4");
 
-    expect(messages.total).toBe(2);
-    expect(messages.messages[0]).toMatchObject({
+    expect(messages?.total).toBe(2);
+    expect(messages?.messages?.[0]).toMatchObject({
       channel: "162W",
       quality: "N",
     });

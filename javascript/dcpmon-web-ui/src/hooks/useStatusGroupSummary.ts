@@ -5,5 +5,6 @@ export function useStatusGroupSummary(group: string) {
   return useQuery({
     queryKey: ["dcpmon", "status-group-summary", group],
     queryFn: () => getStatusGroupSummary(group),
+    enabled: group.length > 0,
   });
 }

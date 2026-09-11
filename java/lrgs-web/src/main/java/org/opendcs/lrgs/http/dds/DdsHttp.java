@@ -1,7 +1,12 @@
 package org.opendcs.lrgs.http.dds;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.function.BiFunction;
 
@@ -19,6 +24,10 @@ import jakarta.ws.rs.core.Response;
 
 import org.opendcs.data.goes.SpaceCraft;
 import org.opendcs.lrgs.dds.DdsSession;
+import org.opendcs.lrgs.http.dto.DataSource;
+import org.opendcs.lrgs.http.dto.DcpMessages;
+import org.opendcs.lrgs.http.dto.DcpTransmission;
+import org.opendcs.lrgs.http.dto.GoesMessage;
 import org.opendcs.lrgs.messages.MessageRetrieval;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -34,27 +43,23 @@ import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
+import ilex.util.IDateFormat;
+import decodes.util.Pdt;
+import decodes.util.PdtEntry;
 
-/**
- * Handle basic DDS-over-HTTP requirements.
- * Specification is available here https://github.com/opendcs/dcs_standards/blob/main/source/dds-http.yaml
- *
- * DdsHttp
- */
+/** DDS-over-HTTP resources served by an LRGS. */
 @Path("/dds")
 @UseDdsSession
 public class DdsHttp
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-
-
     private static final String MESSAGE_RETRIEVE_FAILED = "\"Failed to get messages\"";
     private static final String INACTIVE = "\"Inactive\"";
 
-    private static final BiFunction<List<org.opendcs.lrgs.http.dto.DcpMsg>, Exception, Response> handleArchiveError =
-        (messages, ex) -> messages.isEmpty() ?
-                          Response.noContent().header("reason", ex.getMessage()).header("Retry-After", "10").build() :
-                          Response.ok().entity(messages).build();
+    private static final BiFunction<List<GoesMessage>, Exception, Response> handleArchiveError =
+        (messages, ex) -> messages.isEmpty()
+            ? Response.noContent().header("reason", ex.getMessage()).header("Retry-After", "10").build()
+            : Response.ok().entity(envelope(messages)).build();
 
     @Context
     ServletContext servletContext;
@@ -69,115 +74,237 @@ public class DdsHttp
         DdsSession ddsSession = (DdsSession)session.getAttribute(UseDdsSession.KEY);
         try (MDCCloseable diagId = MDC.putCloseable("trace-id", UUID.randomUUID().toString()))
         {
-            var mar = ddsSession.msgRetriever();
-            if (mar != null)
+            var retriever = ddsSession.msgRetriever();
+            if (retriever == null)
+                return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE).entity(INACTIVE).build();
+            var result = MessageRetrieval.getMessages(retriever, lrgs, 1000);
+            return switch (result.ex())
             {
-                var result = MessageRetrieval.getMessages(mar, lrgs, 1000);
-                return switch (result.ex())
-                {
-                    case UntilReachedException ur -> handleArchiveError.apply(result.messages(), result.ex());
-                    case SearchTimeoutException st -> handleArchiveError.apply(result.messages(), result.ex());
-                    case EndOfArchiveException ea ->  handleArchiveError.apply(result.messages(), result.ex());
-                    case null -> Response.ok().entity(result.messages()).build();
-                    default -> Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                                .entity(MESSAGE_RETRIEVE_FAILED)
-                                .build();
-                };
-            }
-            else
-            {
-                return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                            .entity(INACTIVE)
-                            .build();
-            }
+                case UntilReachedException ur -> handleArchiveError.apply(result.messages(), ur);
+                case SearchTimeoutException st -> handleArchiveError.apply(result.messages(), st);
+                case EndOfArchiveException ea -> handleArchiveError.apply(result.messages(), ea);
+                case null -> Response.ok().entity(envelope(result.messages())).build();
+                default -> Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
+                    .entity(MESSAGE_RETRIEVE_FAILED).build();
+            };
         }
     }
 
     @GET
     @Path("/data/query")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response queryData(@Context HttpServletRequest request,
                               @QueryParam("dcpName") List<String> dcpNames,
                               @QueryParam("dcpAddress") List<String> dcpAddresses,
-                              @QueryParam("since") String since, @QueryParam("until") String until,
-                              @QueryParam("ascending") boolean ascending, @QueryParam("spacecraft") SpaceCraft spaceCraft,
-                              @QueryParam("source") List<String> sources, @QueryParam("single") boolean single
-                              )
+                              @QueryParam("since") String since,
+                              @QueryParam("until") String until,
+                              @QueryParam("ascending") boolean ascending,
+                              @QueryParam("spacecraft") SpaceCraft spaceCraft,
+                              @QueryParam("source") List<String> sources,
+                              @QueryParam("single") boolean single)
     {
         LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
-        var session = request.getSession(false);
-        log.info("Addresses {}", dcpAddresses.getFirst());
         try
         {
-            var ddsSession = (DdsSession)session.getAttribute(UseDdsSession.KEY);
-            var mar = ddsSession.msgRetriever();
-            final var sc = new SearchCriteria();
-            sc.clear();
-            sc.DcpNames.addAll(dcpNames);
-            sc.ExplicitDcpAddrs.addAll(dcpAddresses.stream().map(DcpAddress::new).toList());
-            sc.setAscendingTimeOnly(ascending);
-            sc.single = single;
-            sc.setLrgsUntil(until);
-            sc.setLrgsSince(since);
+            DdsSession ddsSession = (DdsSession)request.getSession().getAttribute(UseDdsSession.KEY);
+            var retriever = ddsSession.msgRetriever();
+            SearchCriteria criteria = new SearchCriteria();
+            criteria.clear();
+            criteria.DcpNames.addAll(dcpNames == null ? List.of() : dcpNames);
+            criteria.ExplicitDcpAddrs.addAll((dcpAddresses == null ? List.<String>of() : dcpAddresses)
+                .stream().map(DcpAddress::new).toList());
+            criteria.setAscendingTimeOnly(ascending);
+            criteria.single = single;
+            criteria.setLrgsUntil(normalizeDateTime(until));
+            criteria.setLrgsSince(normalizeDateTime(since));
             if (spaceCraft != null)
-            {
-                sc.spacecraft = spaceCraft.toChar();
-            }
-            mar.setSearchCriteria(sc);
-            mar.init();
-            sources.forEach(
-                s -> lrgs.getInputs()
-                         .stream()
-                         .filter(input -> input.getInputName().equals(s))
-                         .map(i -> i.getSlot())
-                         .forEach(sc::addSource)
-            );
+                criteria.spacecraft = spaceCraft.toChar();
+            retriever.setSearchCriteria(criteria);
 
-            var result = MessageRetrieval.getMessages(mar, lrgs, Integer.MAX_VALUE);
+            var result = MessageRetrieval.getMessages(retriever, lrgs, Integer.MAX_VALUE);
             if (result.ex() != null)
-            {
-                // Just do it again. This is bit rediculous but for some reason the message archive retriever
-                // won't return any data on the initial request. Appears to be something to do with timing; however,
-                // this initial change is not the place to fix it.
-                result = MessageRetrieval.getMessages(mar, lrgs, Integer.MAX_VALUE);
-            }
+                result = MessageRetrieval.getMessages(retriever, lrgs, Integer.MAX_VALUE);
+            List<GoesMessage> filtered = filterSources(result.messages(), sources);
+            List<DcpTransmission> transmissionSlots = transmissionSlots(
+                filtered, dcpAddresses, since, until);
             return switch (result.ex())
             {
-                case UntilReachedException ur -> handleArchiveError.apply(result.messages(), result.ex());
-                case SearchTimeoutException st -> handleArchiveError.apply(result.messages(), result.ex());
-                case EndOfArchiveException ea ->  handleArchiveError.apply(result.messages(), result.ex());
-                case null -> Response.ok().entity(result.messages()).build();
+                case UntilReachedException ur -> queryArchiveResult(filtered, transmissionSlots, ur);
+                case SearchTimeoutException st -> queryArchiveResult(filtered, transmissionSlots, st);
+                case EndOfArchiveException ea -> queryArchiveResult(filtered, transmissionSlots, ea);
+                case null -> filtered.isEmpty() && transmissionSlots.isEmpty()
+                    ? Response.noContent().build()
+                    : Response.ok().entity(envelope(filtered, transmissionSlots)).build();
                 default -> Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                            .entity(MESSAGE_RETRIEVE_FAILED)
-                            .build();
+                    .entity(MESSAGE_RETRIEVE_FAILED).build();
             };
-            //return Response.ok().entity(result.messages()).build();
         }
         catch (IOException | SearchSyntaxException | ArchiveUnavailableException ex)
         {
-            log.error("can't get messages.", ex);
+            log.error("Cannot get messages", ex);
             return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                        .entity(MESSAGE_RETRIEVE_FAILED)
-                        .build();
+                .entity(MESSAGE_RETRIEVE_FAILED).build();
+        }
+    }
+
+    private static String normalizeDateTime(String value)
+    {
+        if (value == null || value.isBlank() || !value.contains("T"))
+            return value;
+        return IDateFormat.toString(Date.from(Instant.parse(value)), false);
+    }
+
+    @GET
+    @Path("/data/summary")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getSummary(@Context HttpServletRequest request,
+                               @QueryParam("data-group") String dataGroup)
+    {
+        if (dataGroup == null || dataGroup.isBlank())
+            return Response.status(Response.Status.BAD_REQUEST).entity("\"Missing data-group\"").build();
+        LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
+        DdsSession session = (DdsSession)request.getSession().getAttribute(UseDdsSession.KEY);
+        try
+        {
+            return Response.ok(DdsSummaryService.summarize(session.msgRetriever(), lrgs, dataGroup)).build();
+        }
+        catch (IOException ex)
+        {
+            return Response.status(ex.getMessage().startsWith("No such")
+                    ? Response.Status.NOT_FOUND : Response.Status.BAD_REQUEST)
+                .entity("\"" + ex.getMessage() + "\"").build();
+        }
+        catch (SearchSyntaxException | ArchiveUnavailableException ex)
+        {
+            log.error("Cannot summarize data group {}", dataGroup, ex);
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(MESSAGE_RETRIEVE_FAILED).build();
+        }
+    }
+
+    @GET
+    @Path("/groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getGroups()
+    {
+        try
+        {
+            return Response.ok(DdsSummaryService.listGroups()).build();
+        }
+        catch (IOException ex)
+        {
+            log.error("Cannot list DDS data groups", ex);
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(MESSAGE_RETRIEVE_FAILED).build();
         }
     }
 
     @GET
     @Path("/sources")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getSources(@Context HttpServletRequest request)
+    public Response getSources()
     {
         LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
-        var sources = lrgs.getInputs()
-                          .stream()
-                          .filter(i -> i != null)
-                          .filter(i -> i.getStatusCode() != LrgsInputInterface.DL_DISABLED)
-                          .map(i -> i.getInputName())
-                          .toList();
+        var sources = lrgs.getInputs().stream()
+            .filter(input -> input != null && input.getStatusCode() != LrgsInputInterface.DL_DISABLED)
+            .map(input -> new DataSource(input.getInputName(), sourceType(input.getInputName())))
+            .toList();
         return Response.ok().entity(sources).build();
     }
 
-    public static class Message
+    private static DcpMessages envelope(List<GoesMessage> messages)
     {
-        public List<String> messages;
+        return envelope(messages, List.of());
+    }
+
+    private static Response queryArchiveResult(
+        List<GoesMessage> messages, List<DcpTransmission> transmissionSlots, Exception exception)
+    {
+        return messages.isEmpty() && transmissionSlots.isEmpty()
+            ? Response.noContent().header("reason", exception.getMessage())
+                .header("Retry-After", "10").build()
+            : Response.ok().entity(envelope(messages, transmissionSlots)).build();
+    }
+
+    private static DcpMessages envelope(
+        List<GoesMessage> messages, List<DcpTransmission> transmissionSlots)
+    {
+        DataSource source = messages.isEmpty() ? null : messages.getFirst().dataSource();
+        return new DcpMessages(messages.size(), messages, source, transmissionSlots);
+    }
+
+    private static List<DcpTransmission> transmissionSlots(
+        List<GoesMessage> messages, List<String> addresses, String since, String until)
+    {
+        if (addresses == null || addresses.size() != 1)
+            return List.of();
+
+        PdtEntry schedule = Pdt.instance().find(new DcpAddress(addresses.getFirst()));
+        if (schedule == null || schedule.st_xmit_interval <= 0)
+            return List.of();
+
+        Date end = queryTime(until, new Date());
+        Date start = queryTime(since, new Date(end.getTime() - 24L * 60L * 60L * 1000L));
+        long startSeconds = start.getTime() / 1000L;
+        long endSeconds = end.getTime() / 1000L;
+        long dayStart = Math.floorDiv(startSeconds, 24L * 60L * 60L) * 24L * 60L * 60L;
+        long expected = dayStart + schedule.st_first_xmit_sod;
+        if (expected < startSeconds)
+        {
+            long intervals = Math.floorDiv(
+                startSeconds - expected + schedule.st_xmit_interval - 1,
+                schedule.st_xmit_interval);
+            expected += intervals * schedule.st_xmit_interval;
+        }
+
+        List<GoesMessage> unmatched = new ArrayList<>(messages.stream()
+            .filter(message -> "g-s-t".equals(message.cType()))
+            .toList());
+        List<DcpTransmission> slots = new ArrayList<>();
+        int window = Math.max(schedule.st_xmit_window, 10);
+        for (; expected <= endSeconds; expected += schedule.st_xmit_interval)
+        {
+            GoesMessage match = null;
+            for (GoesMessage message : unmatched)
+            {
+                long transmitted = Instant.parse(message.transmitTime()).getEpochSecond();
+                if (transmitted >= expected - 10 && transmitted <= expected + window)
+                {
+                    match = message;
+                    break;
+                }
+            }
+            if (match != null)
+                unmatched.remove(match);
+            slots.add(new DcpTransmission(
+                DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochSecond(expected)),
+                match == null ? "missing" : "received",
+                match));
+        }
+        return slots;
+    }
+
+    private static Date queryTime(String value, Date defaultValue)
+    {
+        return value == null || value.isBlank()
+            ? defaultValue : IDateFormat.parse(normalizeDateTime(value));
+    }
+
+    private static List<GoesMessage> filterSources(List<GoesMessage> messages, List<String> sources)
+    {
+        if (sources == null || sources.isEmpty())
+            return messages;
+        return messages.stream().filter(message -> sources.stream().anyMatch(source ->
+            source.equalsIgnoreCase(message.messageType())
+                || source.equalsIgnoreCase(message.dataSource().getName()))).toList();
+    }
+
+    private static String sourceType(String inputName)
+    {
+        String name = inputName.toUpperCase(Locale.ROOT);
+        if (name.contains("HRIT")) return "HRIT";
+        if (name.contains("DRGS")) return "DRGS";
+        if (name.contains("DDS")) return "LRGS";
+        if (name.contains("NOAAPORT")) return "NOAPORT";
+        if (name.contains("HTTP")) return "WEB";
+        return "GOES";
     }
 }
