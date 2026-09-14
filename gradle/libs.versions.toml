@@ -35,7 +35,7 @@ sun-mailapi="2.0.2"
 ayza = "10.0.0"
 auto-service = "1.1.1"
 password4j = "1.8.4"
-netty = "4.2.16.Final"
+netty = "4.2.17.Final"
 
 opentelemetry = "1.63.0"
 opentelemetry-java = "2.29.0"
@@ -60,7 +60,7 @@ jaxb = "4.0.0"
 swagger-codegen = "3.0.61"
 jakarta-annotation-api = "3.0.0"
 jsr305 = "3.0.2"
-openapitools-databind-nullable = "0.2.10"
+openapitools-databind-nullable = "0.2.11"
 
 #test deps
 junit = "6.0.2"
