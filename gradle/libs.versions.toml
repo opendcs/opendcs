@@ -60,7 +60,7 @@ jaxb = "4.0.0"
 swagger-codegen = "3.0.61"
 jakarta-annotation-api = "3.0.0"
 jsr305 = "3.0.2"
-openapitools-databind-nullable = "0.2.10"
+openapitools-databind-nullable = "0.2.11"
 
 #test deps
 junit = "6.0.2"
