@@ -2181,7 +2181,7 @@ if TLS is required.
 
 To enable add the following elements to your lrgs.conf file
 
-   LrgsInput.httpStatus.class=org.opendcs.lrgs.http.LrgsHttpInterface
+   LrgsInput.httpStatus.class=org.opendcs.lrgs.http.LrgsHttpInput
    LrgsInput.httpStatus.enabled=true
    LrgsInput.httpStatus.port=7000
 
@@ -2202,6 +2202,43 @@ The following paths are provided:
 
 Future work will include authentication, authorization, and other DDS operations
 once that protocol is designed.
+
+Dadds WebHooks
+~~~~~~~~~~~~~~
+
+If the above LrgsHttpInput interface is enabled you can set your LRGS to recieve webhook messages
+with the following additional configuration
+
+   LrgsInput.httpStatus.web.daddsWebHook_0=81db31f4-02c2-43a2-8e38-92cbe02c6264
+   # if additional hooks are required increase the value after the _
+   # LrgsInput.httpStatus.web.daddsWebHook_1=6dbe5e5e-175d-48cf-9b72-ec3b7ad97702
+
+In the Dadds interface create the webhook and target 
+`https://<your host>/webhook/dadds/81db31f4-02c2-43a2-8e38-92cbe02c6264`
+
+Please note that `81db31f4-02c2-43a2-8e38-92cbe02c6264` and `6dbe5e5e-175d-48cf-9b72-ec3b7ad97702` were a UUIDs
+generated for this example. **DO NOT** use this UUID in your environment. Create your own random string of simple
+characters for each webhook, any online UUID generator will suffice. While OpenDCS does validate that the messages are
+correctly signed from the source (Amazon Web Services), there is no other authentication possible for this particular
+endpoint, should the full URL leak, or even just your choosen ID, it may become the target of attackers. While we are
+confident in the data handling of the endpoint, Denial of Service attackers are not something we can protect from at the
+application level.
+
+.. WARN::
+   
+   At this time is that the LRGS Web Interface does not directly support HTTPS. To use
+   HTTP you will need place an appropriate TLS proxy in front of the LRGS instance. The Amazon Simple Notification Service
+   web hook subscription *MAY* support sending data to plain HTTP; however, it is unlikely your IT department would
+   approve of.
+
+.. WARN::
+
+   The data over the webhook does not contain the traditional standardized "37-byte ASCII header", more
+   advanced information is presented and in a friendlier way. Due to the existing behavior several key elements
+   excepting GOES messages to have this header, the DADDS derived message are explicitly **NOT** stored
+   as 'GOES' messages so far as the Message Archive and Search Criteria are concerned. We wanted to get
+   this support setup quickly, updates to the subsystems to better support multiple message types will be
+   handled in follow up work.
 
 DDS Implementation
 ==================
