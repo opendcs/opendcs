@@ -538,7 +538,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
      * The implementation may use information contained in the collection's
      * opaque handle.
      * @param dc the data collection to be released.
-     * @param tsDao TimeSeries Dao object for this session
+     * @param tsDAO TimeSeries Dao object for this session
      * @param batchSize max number of records to delete in a single batch.
      */
     public void releaseNewData(DataCollection dc, TimeSeriesDAI tsDAO, int batchSize)
