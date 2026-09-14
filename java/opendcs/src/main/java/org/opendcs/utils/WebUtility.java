@@ -103,7 +103,7 @@ public class WebUtility
     /**
      * Open and return the input stream of a given URL using the default TLS Trust (System, Java, and $DCSTOOL_USERDIR/local_trust.p12)
      * and user specified timeout.
-     * @param requestUrl
+     * @param requestURL
      * @param timeoutMilliseconds
      * @return the input stream ready for reading.
      * @throws IOException
@@ -116,7 +116,7 @@ public class WebUtility
     /**
      * Open and return the input stream of a given URL using the default TLS Trust (System, Java, and $DCSTOOL_USERDIR/local_trust.p12)
      * and user specified timeout.
-     * @param requestUrl
+     * @param requestURL
      * @param timeoutMilliseconds
      * @return the input stream ready for reading.
      * @throws IOException

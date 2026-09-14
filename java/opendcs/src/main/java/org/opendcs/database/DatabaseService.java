@@ -145,7 +145,7 @@ public class DatabaseService
      * @param <T> Type of Setttings
      * @param dataSource
      * @param settings settings instance on which to load data
-     * @param props previously loaded properties that may be required
+     * @param existingProps previously loaded properties that may be required
      * @return the passed in settings object
      */
     public static <T extends PropertiesOwner & OpenDcsSettings> T loadSettingsFromProperties(DataSource dataSource, T settings, Properties existingProps) throws DatabaseException
