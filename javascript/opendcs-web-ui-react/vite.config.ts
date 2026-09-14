@@ -55,7 +55,7 @@ export default defineConfig({
     alias: {
       "opendcs-api": resolve(
         __dirname,
-        "../../java/api-clients/api-client-typescript/build/generated/openApi",
+        "../../java/api-clients/api-client-typescript/build/generated/openApi/index.ts",
       ),
     },
   },
