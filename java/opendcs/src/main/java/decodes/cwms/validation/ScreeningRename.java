@@ -3,7 +3,6 @@ package decodes.cwms.validation;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.sql.DbKey;
 import decodes.tsdb.TsdbAppTemplate;
@@ -29,9 +28,13 @@ public class ScreeningRename extends TsdbAppTemplate
 			System.err.println("Usage: ScreeningRename oldName newName");
 			System.exit(1);
 		}
-		CwmsTimeSeriesDb cwmsTsdb = (CwmsTimeSeriesDb)theDb;
-		ScreeningDAI screeningDAO = cwmsTsdb.makeScreeningDAO();
-		
+		ScreeningDAI screeningDAO = theDb.makeScreeningDAO();
+		if (screeningDAO == null)
+		{
+			System.err.println("Screenings are not supported by this database implementation.");
+			System.exit(1);
+		}
+
 		String oldName = screeningIdArg.getValue(0);
 		String newName = screeningIdArg.getValue(1);
 		screeningDAO.renameScreening(oldName, newName);

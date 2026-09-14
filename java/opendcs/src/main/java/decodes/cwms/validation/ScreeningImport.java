@@ -33,7 +33,6 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import lrgs.gui.DecodesInterface;
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
@@ -88,7 +87,13 @@ public class ScreeningImport extends TsdbAppTemplate
 	protected void runApp() throws Exception
 	{
 		timeSeriesDAO = theDb.makeTimeSeriesDAO();
-		
+		ScreeningDAI screeningDAO = theDb.makeScreeningDAO();
+		if (screeningDAO == null)
+		{
+			System.err.println("Screenings are not supported by this database implementation.");
+			System.exit(1);
+		}
+
 		for(int idx=0; idx < fileNameToken.NumberOfValues(); idx++)
 		{
 			curFile = fileNameToken.getValue(idx);
@@ -125,7 +130,6 @@ public class ScreeningImport extends TsdbAppTemplate
 				System.exit(1);
 		}
 		
-		ScreeningDAI screeningDAO = ((CwmsTimeSeriesDb)theDb).makeScreeningDAO();
 		// Write the screenings
 		for(Screening screening : screenings)
 		{

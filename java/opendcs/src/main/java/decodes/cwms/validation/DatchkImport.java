@@ -28,7 +28,6 @@ import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.Base64;
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.TsidScreeningAssignment;
@@ -57,6 +56,13 @@ public class DatchkImport extends TsdbAppTemplate
 	protected void runApp() 
 		throws Exception
 	{
+		ScreeningDAI screeningDAO = theDb.makeScreeningDAO();
+		if (screeningDAO == null)
+		{
+			System.err.println("Screenings are not supported by this database implementation.");
+			System.exit(1);
+		}
+
 		DatchkReader reader = new DatchkReader(configFile.getValue());
 		
 		System.out.println("Loading screenings specified in " + configFile.getValue());
@@ -119,9 +125,7 @@ public class DatchkImport extends TsdbAppTemplate
 		if (answer == null || answer.trim().length() == 0 || !answer.trim().toUpperCase().startsWith("Y"))
 			System.exit(0);
 		
-		CwmsTimeSeriesDb cwmsDb = (CwmsTimeSeriesDb)theDb;
 		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-		ScreeningDAI screeningDAO = cwmsDb.makeScreeningDAO();
 		for (TsidScreeningAssignment tsa : importAssignments)
 		{
 			if (confirmEach.getValue())
