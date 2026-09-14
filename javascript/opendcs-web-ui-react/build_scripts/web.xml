@@ -12,6 +12,20 @@
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
 
+    <!-- Stop browsers caching index.html -->
+    <filter>
+        <filter-name>ExpiresFilter</filter-name>
+        <filter-class>org.apache.catalina.filters.ExpiresFilter</filter-class>
+        <init-param>
+            <param-name>ExpiresByType text/html</param-name>
+            <param-value>access plus 0 seconds</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>ExpiresFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <error-page>
         <error-code>404</error-code>
         <location>/index.html</location>
