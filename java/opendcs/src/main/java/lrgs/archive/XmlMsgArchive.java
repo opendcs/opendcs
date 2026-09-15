@@ -376,7 +376,6 @@ public class XmlMsgArchive implements org.opendcs.lrgs.dao.MsgArchive
 	 * Archive a DCP message.
 	 * @param msg the message.
 	 * @param src the input device that generated the msg.
-	 * @return true if message was archived, false if it was discarded.
 	 */
 	@Override
 	public synchronized void archiveMsg( DcpMsg msg, LrgsInputInterface src)

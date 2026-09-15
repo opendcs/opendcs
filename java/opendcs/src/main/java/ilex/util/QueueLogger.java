@@ -46,10 +46,8 @@ public class QueueLogger
 	public static final int QUEUE_INCREMENT = 100;
 
 	/**
-	* Construct with a process name.
-	* If you don't want to use the process name string, pass the
-	* empty string (i.e. "").
-	* @param procName the process name
+	* Construct a logger that queues events from the passed publisher.
+	* @param logBuffer publisher of the logging events to queue
 	*/
 	public QueueLogger(Publisher<LoggingEvent> logBuffer)
 	{
