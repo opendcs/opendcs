@@ -101,7 +101,7 @@ public abstract class BasicServer
 	* @param port port to listen on
 	* @param bindaddr used if you have multiple NICs and only want to listen
 	* on one.
-	* @param socketFactory used to allow setup of SSL for those servers that need it.
+	* @param socketFactories used to allow setup of SSL for those servers that need it.
 	*/
 	public BasicServer( int port, InetAddress bindaddr, Pair<ServerSocketFactory,SSLSocketFactory> socketFactories)
 		throws IOException
