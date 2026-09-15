@@ -105,6 +105,8 @@ export default defineConfig({
           // The cache (see .github/workflows/build.yml) covers the broad
           // case; this retry handles the residual single-file flake.
           retry: 1,
+          // take it easy on macOS. github provides 3 vCPUs (and often fails)
+          fileParallelism: process.platform !== "darwin",
           browser: {
             enabled: true,
             headless: true,
