@@ -210,3 +210,23 @@ export const SuccessfulLogin_HiddenOrganizations: Story = {
     });
   },
 };
+
+// The mock org list is deliberately unsorted (SPK, HQ, LRL, SWT, MVP) and is
+// supplied straight to OrganizationsContext, so this covers the sort applied
+// on read by useOrganizations rather than anything the query does.
+export const OrganizationsAreSortedAlphabetically: Story = {
+  args: {
+    organization: undefined,
+  },
+  decorators: [authDecorator],
+  play: async ({ mount }) => {
+    const canvas = await mount();
+
+    const select = await canvas.findByRole("combobox", { name: "Organization" });
+    const options = within(select)
+      .getAllByRole("option")
+      .map((o) => o.textContent);
+
+    expect(options).toEqual(["HQ", "LRL", "MVP", "SPK", "SWT"]);
+  },
+};

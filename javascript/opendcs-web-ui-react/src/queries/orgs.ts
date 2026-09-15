@@ -19,6 +19,8 @@ export const useOrganizationsQuery = () => {
     queryKey: orgKeys.list(),
     queryFn: async () => {
       const res = await authApi.getOrganizationsWithHttpInfo("");
+      // Not sorted here — useOrganizations() sorts on read so directly
+      // supplied context values are alphabetized too.
       return res.data as ApiOrganization[];
     },
     staleTime: 60 * 60_000,
