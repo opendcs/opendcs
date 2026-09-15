@@ -23,6 +23,13 @@ Reasons that screening may be used include the following:
 How do I launch the Screening Editor?
 =====================================
 
+.. note::
+
+   The Screening Editor and its ``screeningEdit`` script have been removed along with the
+   rest of the Java Swing user interface (see https://github.com/opendcs/opendcs/issues/2096).
+   Screenings can still be managed with the ``screeningImport``, ``screeningExport``, and
+   ``datchkImport`` scripts. The rest of this page describes the editor as it was.
+
 Unlike the computation processor or DECODES Database Editor the 
 Screening Editor is not launched from the Main Menu. 
 
