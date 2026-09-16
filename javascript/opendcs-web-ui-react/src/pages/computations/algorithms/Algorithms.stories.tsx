@@ -183,3 +183,71 @@ export const AddAndCancel: Story = {
     });
   },
 };
+
+// Captures what the editor actually POSTs, so the assertions can check the
+// request body rather than only the resulting UI state.
+const savedAlgorithms: ApiAlgorithm[] = [];
+
+// The counterpart to AddAndCancel: adding a row and *saving* it. The new row is
+// held locally with a synthetic negative algorithmId, which has to be normalized
+// away so the server assigns the real one.
+export const AddAndSave: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: {
+        ...algorithmHandlers,
+        saveAlgorithm: http.post("/odcsapi/algorithm", async ({ request }) => {
+          const body = (await request.json()) as ApiAlgorithm;
+          savedAlgorithms.push(body);
+          return HttpResponse.json({ ...body, algorithmId: 99 }, { status: 201 });
+        }),
+      },
+    },
+  },
+  play: async ({ mount, parameters, userEvent }) => {
+    savedAlgorithms.length = 0;
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    // Wait for the refs to load before clicking "+", so the fetch's draw()
+    // doesn't close the new row's child row (see AddAndCancel).
+    await canvas.findByText("CopyAlgorithm");
+
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("algorithms:add_algorithm"),
+    });
+    await act(async () => userEvent.click(addBtn));
+
+    const nameInput = await canvas.findByRole(
+      "textbox",
+      { name: i18n.t("algorithms:editor.name") },
+      { timeout: 5000 },
+    );
+    await act(async () => userEvent.type(nameInput, "MyNewAlgo"));
+
+    const execInput = await canvas.findByRole("textbox", {
+      name: i18n.t("algorithms:editor.execClass"),
+    });
+    await act(async () => userEvent.type(execInput, "decodes.comp.MyNewAlgo"));
+
+    const saveBtn = await canvas.findByRole(
+      "button",
+      { name: i18n.t("algorithms:editor.save_for", { id: -1 }) },
+      { timeout: 5000 },
+    );
+    await act(async () => userEvent.click(saveBtn));
+
+    // The POST has to carry the typed fields and no id — sending the synthetic
+    // -1 would make the server treat the create as an update of a missing row.
+    await waitFor(() => expect(savedAlgorithms).toHaveLength(1), { timeout: 5000 });
+    expect(savedAlgorithms[0].algorithmId).toBeUndefined();
+    expect(savedAlgorithms[0].name).toBe("MyNewAlgo");
+    expect(savedAlgorithms[0].execClass).toBe("decodes.comp.MyNewAlgo");
+
+    // And the transient row is dropped once the list refetches.
+    await waitFor(() => {
+      expect(canvas.queryByText("-1")).not.toBeInTheDocument();
+    });
+  },
+};

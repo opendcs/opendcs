@@ -35,6 +35,7 @@ with platforms(id, agency, isproduction, description, lastmodifytime, configid, 
 
     order by p.mediumtype <collate> asc, p.mediumid <collate> asc, p.platformdesignator <collate> asc
     <if(site_name_columns)>,
+
         case
             when lower(sn.nametype) = lower(:preferredType) then 0
             else 1

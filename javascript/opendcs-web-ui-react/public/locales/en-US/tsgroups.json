@@ -1,0 +1,101 @@
+{
+  "title": "Time Series Groups",
+  "header": {
+    "Id": "Group Id",
+    "Name": "Name",
+    "Type": "Type",
+    "Description": "Description"
+  },
+  "groupName": "Group Name",
+  "groupName_hint": "Avoid spaces — group names are used on command lines.",
+  "groupType": "Group Type",
+  "add_group": "Add time series group",
+  "edit_group": "Edit time series group {{id}}",
+  "delete_for": "Delete time series group {{id}}",
+  "save_group": "Save time series group {{id}}",
+  "cancel_for": "Cancel editing time series group {{id}}",
+  "members": {
+    "title": "Time Series Group Members",
+    "header": {
+      "Key": "Key",
+      "TimeSeries": "Time Series",
+      "Location": "Location",
+      "Param": "Param",
+      "ParamType": "Param Type",
+      "Interval": "Interval",
+      "Duration": "Duration",
+      "Version": "Version",
+      "Description": "Description"
+    },
+    "add": "Add time series members",
+    "add_none": "No time series available to add.",
+    "add_selected": "Add {{count}} selected",
+    "select_all": "Select all time series",
+    "select": "Select time series {{name}}",
+    "remove": "Remove time series {{name}} from group"
+  },
+  "subgroups": {
+    "title": "Sub-Group Members",
+    "combine": "Combine",
+    "combine_include": "Add",
+    "combine_exclude": "Subtract",
+    "combine_intersect": "Intersect",
+    "button_include": "Add SubGroup",
+    "button_exclude": "Subtract SubGroup",
+    "button_intersect": "Intersect SubGroup",
+    "add_include": "Add the members of another group to this group",
+    "add_exclude": "Subtract the members of another group from this group",
+    "add_intersect": "Intersect this group with another group",
+    "add_none": "No other groups available.",
+    "add_selected": "Add {{count}} selected",
+    "select_all": "Select all groups",
+    "select": "Select group {{name}}",
+    "remove": "Remove sub-group {{name}}"
+  },
+  "criteria": {
+    "title": "Select by site, data-type, interval, or statistics-code",
+    "header": {
+      "TsidPart": "TSID Part",
+      "Value": "Value",
+      "Location": "Location",
+      "Param": "Param",
+      "Standard": "Standard",
+      "DisplayName": "Display Name",
+      "BasePart": "Base Part",
+      "SubPart": "Sub Part",
+      "Description": "Description"
+    },
+    "part": {
+      "Location": "Location",
+      "BaseLocation": "Base Location",
+      "SubLocation": "Sub Location",
+      "Param": "Param",
+      "BaseParam": "Base Param",
+      "SubParam": "Sub Param",
+      "ParamType": "Param Type",
+      "Interval": "Interval",
+      "Duration": "Duration",
+      "Version": "Version",
+      "BaseVersion": "Base Version",
+      "SubVersion": "Sub Version"
+    },
+    "add_title": "Add {{part}} criterion",
+    "add_confirm": "Add",
+    "scope": "Match",
+    "scope_full": "Full {{part}}",
+    "scope_base": "Base {{part}}",
+    "scope_sub": "Sub {{part}}",
+    "wildcard_hint": "Use '*' as a wildcard; it matches any character except a hyphen.",
+    "result": "Result",
+    "remove": "Remove criterion {{part}} = {{value}}",
+    "full_locked_hint": "Set by the row you pick above."
+  },
+  "evaluate": {
+    "button": "Evaluate",
+    "button_for": "Evaluate group {{name}}",
+    "title": "Members of {{name}}",
+    "count": "Expanded members ({{count}})",
+    "unsaved": "This shows the group as last saved. Save your changes to evaluate them.",
+    "failed": "Failed to expand the group."
+  }
+}

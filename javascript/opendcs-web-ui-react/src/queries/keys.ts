@@ -76,6 +76,18 @@ export const appKeys = {
 export const tsGroupKeys = {
   all: (org: string) => ["tsGroups", org] as const,
   list: (org: string) => [...tsGroupKeys.all(org), "list"] as const,
+  detail: (org: string, groupId: number) =>
+    [...tsGroupKeys.all(org), "detail", groupId] as const,
+  // Expansion reflects the *saved* definition, so it is keyed by group id and
+  // dropped whenever that group is re-saved.
+  expand: (org: string, groupId: number) =>
+    [...tsGroupKeys.all(org), "expand", groupId] as const,
+};
+
+export const timeSeriesKeys = {
+  all: (org: string) => ["timeSeries", org] as const,
+  refs: (org: string, active: boolean) =>
+    [...timeSeriesKeys.all(org), "refs", active] as const,
 };
 
 export const refListKeys = {

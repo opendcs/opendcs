@@ -34,6 +34,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import ilex.var.NoConversionException;
+import jakarta.ws.rs.core.Response;
 import ilex.var.TimedVariable;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -46,9 +47,11 @@ import org.opendcs.odcsapi.beans.ApiTimeSeriesSpec;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesValue;
 import org.opendcs.odcsapi.beans.ApiTsGroup;
 import org.opendcs.odcsapi.beans.ApiTsGroupRef;
+import org.opendcs.odcsapi.errorhandling.WebAppException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -325,6 +328,97 @@ final class TimeSeriesResourcesTest
 		assertEquals(apiTsGroup.getGroupName(), tsGroup.getGroupName());
 		assertEquals(apiTsGroup.getGroupType(), tsGroup.getGroupType());
 		assertEquals(apiTsGroup.getDescription(), tsGroup.getDescription());
+	}
+
+	@Test
+	void testTSGroupMapIncludesOtherMembersAsGroupAttrs()
+	{
+		TsGroup tsGroup = new TsGroup();
+		tsGroup.setGroupId(DbKey.createDbKey(1234L));
+		tsGroup.setGroupName("GateOpening");
+		tsGroup.setGroupType("basin");
+		tsGroup.addOtherMember("ParamType", "Inst");
+		tsGroup.addOtherMember("Interval", "1Hour");
+		tsGroup.addOtherMember("SubLocation", "Spillway*-Gate*");
+
+		ApiTsGroup apiTsGroup = map(tsGroup);
+
+		assertNotNull(apiTsGroup);
+		assertEquals(3, apiTsGroup.getGroupAttrs().size());
+		assertTrue(apiTsGroup.getGroupAttrs().contains("ParamType=Inst"));
+		assertTrue(apiTsGroup.getGroupAttrs().contains("Interval=1Hour"));
+		assertTrue(apiTsGroup.getGroupAttrs().contains("SubLocation=Spillway*-Gate*"));
+	}
+
+	@Test
+	void testApiTSGroupMapParsesGroupAttrs() throws Exception
+	{
+		ApiTsGroup apiTsGroup = new ApiTsGroup();
+		apiTsGroup.setGroupName("GateOpening");
+		apiTsGroup.setGroupType("basin");
+		apiTsGroup.getGroupAttrs().add("ParamType=Inst");
+		apiTsGroup.getGroupAttrs().add("BaseLocation=TESTSITE");
+
+		TsGroup tsGroup = map(apiTsGroup);
+
+		assertNotNull(tsGroup);
+		assertEquals(2, tsGroup.getOtherMembers().size());
+		assertEquals("Inst", tsGroup.getOtherMembers("ParamType").get(0));
+		assertEquals("TESTSITE", tsGroup.getOtherMembers("BaseLocation").get(0));
+	}
+
+	@Test
+	void testGroupAttrValueMayContainEqualsSign() throws Exception
+	{
+		ApiTsGroup apiTsGroup = new ApiTsGroup();
+		apiTsGroup.setGroupName("Odd");
+		apiTsGroup.setGroupType("basin");
+		// Only the first '=' separates name from value.
+		apiTsGroup.getGroupAttrs().add("Version=a=b");
+
+		TsGroup tsGroup = map(apiTsGroup);
+
+		assertEquals("a=b", tsGroup.getOtherMembers("Version").get(0));
+	}
+
+	@Test
+	void testGroupAttrsRoundTrip() throws Exception
+	{
+		ApiTsGroup original = new ApiTsGroup();
+		original.setGroupName("GateOpening");
+		original.setGroupType("basin");
+		original.getGroupAttrs().add("ParamType=Inst");
+		original.getGroupAttrs().add("Version=manual-raw");
+
+		ApiTsGroup roundTripped = map(map(original));
+
+		assertEquals(original.getGroupAttrs().size(), roundTripped.getGroupAttrs().size());
+		assertTrue(roundTripped.getGroupAttrs().containsAll(original.getGroupAttrs()));
+	}
+
+	@Test
+	void testMalformedGroupAttrIsRejected()
+	{
+		ApiTsGroup apiTsGroup = new ApiTsGroup();
+		apiTsGroup.setGroupName("Bad");
+		apiTsGroup.setGroupType("basin");
+		apiTsGroup.getGroupAttrs().add("NoSeparator");
+
+		WebAppException ex = assertThrows(WebAppException.class, () -> map(apiTsGroup));
+		assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), ex.getStatus());
+	}
+
+	@Test
+	void testBlankGroupAttrIsIgnored() throws Exception
+	{
+		ApiTsGroup apiTsGroup = new ApiTsGroup();
+		apiTsGroup.setGroupName("Blank");
+		apiTsGroup.setGroupType("basin");
+		apiTsGroup.getGroupAttrs().add("   ");
+
+		TsGroup tsGroup = map(apiTsGroup);
+
+		assertTrue(tsGroup.getOtherMembers().isEmpty());
 	}
 
 	@Test

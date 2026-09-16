@@ -77,7 +77,7 @@ public class X509CertificateVerifierDialog extends JDialog
 	}	
 
 	/**
-	 * Primarily used in calls to {@link WebUtility.socketFactory} to allow GUI used to accept a certficate chain
+	 * Primarily used in calls to {@link org.opendcs.utils.WebUtility#socketFactory(java.util.function.Predicate)} to allow GUI used to accept a certficate chain
 	 * not already trusted.
 	 * @param certChain
 	 * @param parent JFrame derived parent
@@ -90,7 +90,7 @@ public class X509CertificateVerifierDialog extends JDialog
 	}
 
 	/**
-	 * Primarily used in calls to {@link WebUtility.socketFactory} to allow GUI used to accept a certficate chain
+	 * Primarily used in calls to {@link org.opendcs.utils.WebUtility#socketFactory(java.util.function.Predicate)} to allow GUI used to accept a certficate chain
 	 * not already trusted.
 	 * @param certChain
 	 * @param parent JDialog derived parent
