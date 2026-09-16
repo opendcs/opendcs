@@ -2,7 +2,11 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within, waitFor, fn } from "storybook/test";
 import Login from "./index";
 import { http, HttpResponse } from "msw";
-import { WithOrganization } from "../../../../.storybook/mock/WithOrganization";
+import {
+  MOCK_ORG_HIERARCHY,
+  WithOrganization,
+} from "../../../../.storybook/mock/WithOrganization";
+import { ApiOrganization } from "opendcs-api";
 import { AuthContext } from "../../../contexts/app/AuthContext";
 import {
   ApiContext,
@@ -21,7 +25,7 @@ function PlatformsPage() {
   return <div data-testid="platforms-page">Platforms Page</div>;
 }
 
-const meta: Meta<typeof Login & { organizations: string[] }> = {
+const meta: Meta<typeof Login & { organizations: ApiOrganization[] }> = {
   component: Login,
   decorators: [WithOrganization],
   parameters: {
@@ -228,5 +232,41 @@ export const OrganizationsAreSortedAlphabetically: Story = {
       .map((o) => o.textContent);
 
     expect(options).toEqual(["HQ", "LRL", "MVP", "SPK", "SWT"]);
+  },
+};
+
+// MOCK_ORG_HIERARCHY wires the same offices up the way CWMS reports them, so
+// this covers the nesting rather than the plain alphabetical run above.
+export const OrganizationsAreNestedUnderTheirParents: Story = {
+  args: {
+    organization: undefined,
+    organizations: MOCK_ORG_HIERARCHY,
+  },
+  decorators: [authDecorator],
+  play: async ({ mount }) => {
+    const canvas = await mount();
+
+    const select = await canvas.findByRole("combobox", { name: "Organization" });
+    const options = within(select)
+      .getAllByRole("option")
+      .map((o) => o.textContent ?? "");
+
+    // Non-breaking space, built from its code point so the indentation
+    // characters stay visible in source.
+    const NBSP = String.fromCharCode(160);
+
+    expect(options.map((o) => o.replaceAll(NBSP, ""))).toEqual([
+      "HQ",
+      "MVD",
+      "MVP",
+      "SPD",
+      "SPK",
+      "SWD",
+      "SWT",
+    ]);
+    // Indentation tracks depth: divisions one level in, districts two.
+    expect(options.map((o) => (o.split(NBSP).length - 1) / 4)).toEqual([
+      0, 1, 2, 1, 2, 1, 2,
+    ]);
   },
 };
