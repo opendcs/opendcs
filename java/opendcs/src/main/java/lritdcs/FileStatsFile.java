@@ -44,7 +44,6 @@ public class FileStatsFile
 
 	/**
 	 * Constructor.
-	 * @param filename the file name
 	 */
 	public FileStatsFile()
 	{

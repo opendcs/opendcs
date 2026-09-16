@@ -55,7 +55,7 @@ export default defineConfig({
     alias: {
       "opendcs-api": resolve(
         __dirname,
-        "../../java/api-clients/api-client-typescript/build/generated/openApi",
+        "../../java/api-clients/api-client-typescript/build/generated/openApi/index.ts",
       ),
     },
   },
@@ -105,6 +105,8 @@ export default defineConfig({
           // The cache (see .github/workflows/build.yml) covers the broad
           // case; this retry handles the residual single-file flake.
           retry: 1,
+          // take it easy on macOS. github provides 3 vCPUs (and often fails)
+          fileParallelism: process.platform !== "darwin",
           browser: {
             enabled: true,
             headless: true,

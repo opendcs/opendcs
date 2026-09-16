@@ -23,7 +23,6 @@ package ilex.jni;
 
 /**
 Abstract class for implementing a UNIX signal handler in Java.
-@see SignalTrapper
 */
 public abstract interface SignalHandler
 {
