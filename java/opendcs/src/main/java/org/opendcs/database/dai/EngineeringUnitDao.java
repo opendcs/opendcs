@@ -17,7 +17,7 @@ public interface EngineeringUnitDao extends OpenDcsDao
 	/**
      * Write/Update specific EngineeringUnit.
      * @param tx active transaction
-     * @param EngineeringUnit EngineeringUnit to write
+     * @param unit EngineeringUnit to write
      * @throws OpenDcsDataException
      */
 	EngineeringUnit save(DataTransaction tx, EngineeringUnit unit) throws OpenDcsDataException;
@@ -25,7 +25,7 @@ public interface EngineeringUnitDao extends OpenDcsDao
     /**
      * Remove a specific EngineeringUnit .
      * @param tx active transaction
-     * @param unitAbberviation short name of the EngineeringUnit to delete.
+     * @param unitAbbreviation short name of the EngineeringUnit to delete.
      * @throws OpenDcsDataException
      */
     void delete(DataTransaction tx, String unitAbbreviation) throws OpenDcsDataException;

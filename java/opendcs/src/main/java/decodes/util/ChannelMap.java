@@ -98,10 +98,9 @@ public class ChannelMap
 	}
 
 	/**
-	 * Loads the channel map from the passed input stream.
-	 * The stream will be closed after the map is loaded.
-	 * @param istrm the input stream
-	 * @param name the name of the stream for any error messages.
+	 * Loads the channel map from the passed file.
+	 * @param file the channel map file.
+	 * @return true if the map was loaded successfully.
 	 */
 	public boolean load(File file)
 	{

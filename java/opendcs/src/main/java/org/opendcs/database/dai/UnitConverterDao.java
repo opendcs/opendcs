@@ -25,7 +25,7 @@ public interface UnitConverterDao extends OpenDcsDao
 	/**
      * Write/Update specific Unit converter.
      * @param tx active transaction
-     * @param UnitConverterDb UnitConverterDb to write
+     * @param unitConverter UnitConverterDb to write
      * @throws OpenDcsDataException
      */
 	UnitConverterDb save(DataTransaction tx, UnitConverterDb unitConverter) throws OpenDcsDataException;
@@ -41,7 +41,8 @@ public interface UnitConverterDao extends OpenDcsDao
 	/**
      * Given a UnitConverterDb Code attempt to find a matching Unit converter. {@see UnitConverterDb for more information}
      * @param tx active transaction
-     * @param UnitConverterDbCode Unit converter code to search for.
+     * @param fromAbbr abbreviation of the unit to convert from.
+     * @param toAbbr abbreviation of the unit to convert to.
      * @return
      * @throws OpenDcsDataException
      */
@@ -50,7 +51,8 @@ public interface UnitConverterDao extends OpenDcsDao
     /**
      * Given a UnitConverterDb Code attempt to find a matching Unit converter. {@see UnitConverterDb for more information}
      * @param tx active transaction
-     * @param UnitConverterDbCode Unit converter code to search for.
+     * @param from unit to convert from.
+     * @param to unit to convert to.
      * @return
      * @throws OpenDcsDataException
      */
