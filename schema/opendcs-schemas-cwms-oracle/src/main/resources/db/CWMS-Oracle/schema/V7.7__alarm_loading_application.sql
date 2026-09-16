@@ -65,7 +65,7 @@ end;
 -- A site/datatype may have different screenings for different loading applications.
 alter table ${CCP_SCHEMA}.alarm_screening drop constraint as_sdi_start_unique;
 alter table ${CCP_SCHEMA}.alarm_screening add constraint as_sdi_start_unique
-    unique (site_id, datatype_id, start_date_time, loading_application_id);
+    unique (db_office_code, site_id, datatype_id, start_date_time, loading_application_id);
 alter table ${CCP_SCHEMA}.alarm_screening add constraint as_app_fk
     foreign key (loading_application_id)
     references ${CCP_SCHEMA}.hdb_loading_application (loading_application_id);
