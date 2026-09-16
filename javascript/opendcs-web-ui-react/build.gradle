@@ -26,7 +26,7 @@ dependencies {
     api(project(path: ":api-client-typescript", configuration: "lib"))
 }
 
-//npmSetup.dependsOn configurations.api
+npmInstall.dependsOn configurations.api
 
 def buildUi = tasks.register("buildUi", NpxTask) {
     dependsOn npmInstall
