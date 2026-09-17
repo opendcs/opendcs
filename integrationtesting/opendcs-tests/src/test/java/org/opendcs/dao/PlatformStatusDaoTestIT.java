@@ -1,7 +1,6 @@
 package org.opendcs.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -24,6 +23,7 @@ import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
+import decodes.db.Constants;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
 import decodes.db.Platform;
@@ -97,7 +97,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
             var list = new NetworkList("test-list");
             list.addEntry(new NetworkListEntry(null, MEDIUM_ID));
             list.transportMediumType = "goes";
-            list.siteNameTypePref = "cwms";
+            list.siteNameTypePref = Constants.snt_CWMS;
 
             var listOut = networkListDao.save(tx, list);
             
@@ -127,7 +127,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
         final int MAX_COUNT = 100;
         try (var tx = db.newTransaction())
         {
-            createPlatforms(tx, statusDao, platformDao, siteDao, MAX_COUNT);
+            createPlatforms(tx, statusDao, platformDao, siteDao, MAX_COUNT, 0);
             
             var statuses = statusDao.getAll(tx, 100, -1);
             assertEquals(MAX_COUNT, statuses.size());
@@ -157,6 +157,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
 
 
         final int MAX_COUNT = 100;
+        final int OFFSET = 1000;
         try (var tx = db.newTransaction())
         {
             var se = new ScheduleEntry("test-status");
@@ -169,7 +170,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
             var seOut = entryDao.save(tx, se);
 
 
-            var platforms = createPlatforms(tx, statusDao, platformDao, siteDao, MAX_COUNT);
+            var platforms = createPlatforms(tx, statusDao, platformDao, siteDao, MAX_COUNT, OFFSET);
 
             var allBeforeEntry = statusDao.getAll(tx, -1, -1)
                                           .stream()
@@ -205,20 +206,33 @@ class PlatformStatusDaoTestIT extends AppTestBase
             assertEquals(se.getRoutingSpecName(), allAfterEntry.getFirst().getLastRoutingSpecName());
             // getSiteName is not yet tested. Actually implementing that will take some coordination with the
             // appropriate SiteDao and the SiteNameMapper due to the complexity of setting the site names.
-            assertEquals("Designator-0", allAfterEntry.getFirst().getDesignator());
+            assertEquals("Designator-" + OFFSET, allAfterEntry.getFirst().getDesignator());
             assertEquals("From entry", allAfterEntry.getLast().getAnnotation());
 
             tx.rollback();
         }
     }
 
-    private List<DbKey> createPlatforms(DataTransaction tx, PlatformStatusDao statusDao, PlatformDao platformDao, SiteDao siteDao, int count) throws OpenDcsDataException
+    /**
+     * Generate a list of Platforms for further testing.
+     * @param tx
+     * @param statusDao
+     * @param platformDao
+     * @param siteDao
+     * @param count how many platforms to create
+     * @param offset where to start the count. NOTE: this is due to what is likely a bug in the CWMS Site Code.
+     *  it appears that the tx.rollback is not sufficiently removing the Site but not letting the new one get looked up
+     *  either. While that needs to be investigated and fixed, it is beyond the scope of this DAO implementation.
+     * @return
+     * @throws OpenDcsDataException
+     */
+    private List<DbKey> createPlatforms(DataTransaction tx, PlatformStatusDao statusDao, PlatformDao platformDao, SiteDao siteDao, int count, int offset) throws OpenDcsDataException
     {
         var ret = new ArrayList<DbKey>(count);
-        for (int i = 0; i < count; i++)
+        for (int i = offset; i < count+offset; i++)
         {
             var site = new Site();
-            site.addName("cwms", "TestPlatformSite-" + i);
+            site.addName(Constants.snt_CWMS, "TestPlatformSite-" + i);
             var siteOut = siteDao.save(tx, site);
             var platform = new Platform();
             platform.setSite(siteOut);

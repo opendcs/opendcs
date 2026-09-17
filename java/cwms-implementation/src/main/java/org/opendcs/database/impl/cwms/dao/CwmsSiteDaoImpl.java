@@ -99,10 +99,10 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
     @Override
     public Optional<Site> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-    if (id == null)
-    {
-      return Optional.empty();
-    }
+        if (DbKey.isNull(id))
+        {
+            return Optional.empty();
+        }
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
@@ -321,7 +321,6 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             });
             insertProps.execute();
 
-            // we don't directly get the ID so we'll just look up by the well defined CWMS name instead.
             return getById(tx, idOut).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve site we just saved."));
         }
     }
