@@ -19,7 +19,7 @@ public interface PlatformStatusDao extends OpenDcsDao
      * @param tx active transaction for this request
 	 * @param platformId the platform ID
 	 * @return the PlatformStatus record, or empty if none currently stored
-	 * @throws OpenDcsDataException on any database error error
+	 * @throws OpenDcsDataException on any database error
      * @throws OpenDcsDataRuntimeException on any runtime database error
 	 */
 	Optional<PlatformStatus> getByPlatformId(DataTransaction tx, DbKey platformId) throws OpenDcsDataException;
@@ -28,7 +28,7 @@ public interface PlatformStatusDao extends OpenDcsDao
 	 * Write a platform status record.
      * @param tx active transaction for this request
 	 * @param platformStatus the record to write
-	 * @throws OpenDcsDataException on any database error error
+	 * @throws OpenDcsDataException on any database error
      * @throws OpenDcsDataRuntimeException on any runtime database error
 	 */
 	PlatformStatus updatePlatformStatus(DataTransaction tx, PlatformStatus platformStatus) throws OpenDcsDataException;
@@ -48,7 +48,7 @@ public interface PlatformStatusDao extends OpenDcsDao
      * @param limit max number to return in this request
      * @param offset starting point in list to return for this request
 	 * @return an array list with all current platform status records
-	 * @throws OpenDcsDataException on any database error error
+	 * @throws OpenDcsDataException on any database error
      * @throws OpenDcsDataRuntimeException on any runtime database error
 	 */
 	List<PlatformStatus> getAll(DataTransaction tx, int limit, int offset) throws OpenDcsDataException;
@@ -59,7 +59,7 @@ public interface PlatformStatusDao extends OpenDcsDao
      * @param limit max number to return in this request
      * @param offset starting point in list to return for this request
 	 * @return the PlatformStatus records, or null if none currently stored
-     * @throws OpenDcsDataException on any database error error
+     * @throws OpenDcsDataException on any database error
      * @throws OpenDcsDataRuntimeException on any runtime database error* @throws DbIoException on any I/O error
 	 */
 	List<PlatformStatus> getPlatformStatusForNetList(DataTransaction tx, DbKey netlistId, int limit, int offset) throws OpenDcsDataException;
