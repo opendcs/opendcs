@@ -679,6 +679,7 @@ final class PlatformResourcesIT extends BaseApiIT
 				found = true;
 			}
 		}
-		assertTrue(found);
+		final var forLog = response;
+		assertTrue(found, forLog::asPrettyString);
 	}
 }
