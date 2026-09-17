@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { RESTDataTypeMethodsApi, type ApiDataType } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { dataTypeKeys } from "./keys";
+import { REFERENCE_DATA_CACHE } from "./cachePolicy";
 
 const useDataTypesApi = () => {
   const api = useApi();
@@ -15,6 +16,6 @@ export const useDataTypeListQuery = () => {
   return useQuery<ApiDataType[]>({
     queryKey: dataTypeKeys.list(org),
     queryFn: () => dataTypesApi.getDataTypeList(org),
-    staleTime: 60 * 60_000,
+    ...REFERENCE_DATA_CACHE,
   });
 };

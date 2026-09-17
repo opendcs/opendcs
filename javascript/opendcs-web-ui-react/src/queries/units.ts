@@ -7,6 +7,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { unitKeys } from "./keys";
+import { REFERENCE_DATA_CACHE } from "./cachePolicy";
 
 const useUnitsApi = () => {
   const api = useApi();
@@ -22,7 +23,7 @@ export const useUnitListQuery = () => {
   return useQuery<Record<number, ApiUnit>>({
     queryKey: unitKeys.list(org),
     queryFn: () => unitsApi.getUnitList(org),
-    staleTime: 60 * 60_000,
+    ...REFERENCE_DATA_CACHE,
   });
 };
 
@@ -31,6 +32,6 @@ export const useUnitConversionsQuery = () => {
   return useQuery<ApiUnitConverter[]>({
     queryKey: unitKeys.conversions(org),
     queryFn: () => unitsApi.getUnitConvList(org),
-    staleTime: 60 * 60_000,
+    ...REFERENCE_DATA_CACHE,
   });
 };
