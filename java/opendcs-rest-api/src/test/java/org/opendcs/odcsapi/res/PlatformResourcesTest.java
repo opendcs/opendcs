@@ -46,7 +46,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.PlatformResources.map;
 import static org.opendcs.odcsapi.res.PlatformResources.mapRef;
-import static org.opendcs.odcsapi.res.PlatformResources.statusListMap;
+import static org.opendcs.odcsapi.res.PlatformResources.mapPlatformStatus;
 
 @ExtendWith(MockitoExtension.class)
 final class PlatformResourcesTest
@@ -519,7 +519,7 @@ final class PlatformResourcesTest
 
 		statuses.add(status);
 
-		List<ApiPlatformStatus> apiStatus = statusListMap(dbIo, statuses);
+		var apiStatus = statuses.stream().map(PlatformResources::mapPlatformStatus).toList();
 
 		assertNotNull(apiStatus);
 		assertFalse(apiStatus.isEmpty());
@@ -554,7 +554,7 @@ final class PlatformResourcesTest
 
 		statuses.add(status);
 
-		apiStatus = statusListMap(dbIo, statuses);
+		apiStatus = statuses.stream().map(PlatformResources::mapPlatformStatus).toList();
 
 		assertNotNull(apiStatus);
 		assertFalse(apiStatus.isEmpty());
