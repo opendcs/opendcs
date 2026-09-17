@@ -63,25 +63,26 @@ end;
 /
 
 -- A site/datatype may have different screenings for different loading applications.
-alter table ${CCP_SCHEMA}.alarm_screening drop constraint as_sdi_start_unique;
-alter table ${CCP_SCHEMA}.alarm_screening add constraint as_sdi_start_unique
+-- The new constraint is added before the old one is dropped, so it needs a different name.
+alter table ${CCP_SCHEMA}.alarm_screening add constraint as_sdi_start_app_unique
     unique (db_office_code, site_id, datatype_id, start_date_time, loading_application_id);
+alter table ${CCP_SCHEMA}.alarm_screening drop constraint as_sdi_start_unique;
 alter table ${CCP_SCHEMA}.alarm_screening add constraint as_app_fk
     foreign key (loading_application_id)
     references ${CCP_SCHEMA}.hdb_loading_application (loading_application_id);
 
 -- ALARM_CURRENT was unique on TS_ID alone, allowing only one loading application's alarm per time series.
 -- UNIQUE rather than PRIMARY KEY (as in OpenDCS-Oracle) because existing rows have no loading application.
-alter table ${CCP_SCHEMA}.alarm_current drop unique (ts_id);
 alter table ${CCP_SCHEMA}.alarm_current add constraint alarm_current_ts_app_unique
     unique (ts_id, loading_application_id);
+alter table ${CCP_SCHEMA}.alarm_current drop unique (ts_id);
 alter table ${CCP_SCHEMA}.alarm_current add constraint alarm_current_fkappid
     foreign key (loading_application_id)
     references ${CCP_SCHEMA}.hdb_loading_application (loading_application_id);
 
-alter table ${CCP_SCHEMA}.alarm_history drop primary key;
 alter table ${CCP_SCHEMA}.alarm_history add constraint alarm_history_ts_app_unique
     unique (ts_id, limit_set_id, assert_time, loading_application_id);
+alter table ${CCP_SCHEMA}.alarm_history drop primary key;
 alter table ${CCP_SCHEMA}.alarm_history add constraint alarm_history_fkappid
     foreign key (loading_application_id)
     references ${CCP_SCHEMA}.hdb_loading_application (loading_application_id);
