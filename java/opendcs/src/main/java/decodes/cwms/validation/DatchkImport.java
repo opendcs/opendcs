@@ -59,8 +59,7 @@ public class DatchkImport extends TsdbAppTemplate
 		ScreeningDAI screeningDAO = theDb.makeScreeningDAO();
 		if (screeningDAO == null)
 		{
-			System.err.println("Screenings are not supported by this database implementation.");
-			System.exit(1);
+			throw new UnsupportedOperationException("Screenings are not supported by this database implementation.");
 		}
 
 		DatchkReader reader = new DatchkReader(configFile.getValue());
