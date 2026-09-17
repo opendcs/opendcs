@@ -106,7 +106,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
 
             var status = new PlatformStatus(platform.getId());
             status.setAnnotation("From list");
-            status.setLastContactTime(new Date(126, 7, 12, 35, 0, 0));
+            status.setLastContactTime(new Date(126, 7, 12, 13, 35, 0));
             statusDao.updatePlatformStatus(tx, status);
 
             statuses = statusDao.getPlatformStatusForNetList(tx, listOut.getId(), -1, -1);
