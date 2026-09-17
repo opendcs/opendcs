@@ -56,7 +56,6 @@ import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.DcpMsgIndex;
-import lrgs.common.DcpNameMapper;
 import lrgs.common.EndOfArchiveException;
 import lrgs.common.SearchCriteria;
 import lrgs.ddsserver.MessageArchiveRetriever;

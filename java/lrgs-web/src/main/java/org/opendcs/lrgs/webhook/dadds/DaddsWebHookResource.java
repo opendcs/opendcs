@@ -22,9 +22,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
@@ -57,7 +55,6 @@ import software.amazon.awssdk.messagemanager.sns.SnsMessageManager;
 import software.amazon.awssdk.messagemanager.sns.model.SnsMessage;
 import software.amazon.awssdk.messagemanager.sns.model.SnsSubscriptionConfirmation;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.sns.SnsClient;
 
 @Path("/webhook/dadds")
 @Singleton
