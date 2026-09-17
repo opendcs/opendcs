@@ -17,4 +17,6 @@ export const useVersionQuery = () =>
     queryKey: versionKeys.all(),
     queryFn: fetchVersion,
     staleTime: Infinity,
+    // Never evict: the deployed build can't change without a page reload.
+    gcTime: Infinity,
   });
