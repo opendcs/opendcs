@@ -26,6 +26,7 @@ public class InterceptingInetAddressResolver extends InetAddressResolverProvider
     private static final HashMap<String, byte[]> addresses = new HashMap<>();
    
     @Override
+    @SuppressWarnings("java:S1188") // the inner functionally is basically everything
     public InetAddressResolver get(Configuration configuration)
     {
         return new InetAddressResolver()
