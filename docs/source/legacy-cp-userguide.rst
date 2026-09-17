@@ -6645,6 +6645,13 @@ read:
 CWMS Screening Editor
 ---------------------
 
+.. note::
+
+   The Screening Editor and its ``screeningEdit`` script have been removed along with the
+   rest of the Java Swing user interface (see https://github.com/opendcs/opendcs/issues/2096).
+   Screenings can still be managed with the ``screeningImport``, ``screeningExport``, and
+   ``datchkImport`` scripts.
+
 As of OpenDCS 6.1 RC15, the package includes a GUI Editor for CWMS
 Screening Records. The GUI is not yet integrated with the Launcher
 Button bar. To start it, use the script:
