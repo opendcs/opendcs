@@ -77,6 +77,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
 
             statusDao.deletePlatformStatus(tx, platform.getId());
             assertTrue(statusDao.getByPlatformId(tx, platform.getId()).isEmpty());
+            tx.rollback();
         }
     }
 

@@ -97,8 +97,14 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
-        var mergeTemplate = queries.getInstanceOf(MERGE)
-                                   .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+        var mergeTemplate = queries.getInstanceOf(MERGE);
+
+        if (mergeTemplate == null)
+        {
+            throw new OpenDcsDataException("Could not find template");
+        }
+        mergeTemplate.add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+
         
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
@@ -129,6 +135,10 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var deleteTemplate = queries.getInstanceOf(DELETE);
+        if (deleteTemplate == null)
+        {
+            throw new OpenDcsDataException("Could not find template");
+        }
         try (var delete = handle.createUpdate(deleteTemplate.render()))
         {
             delete.bind(PlatformStatusMapper.Columns.PLATFORM_ID.column(), platformId).execute();
@@ -195,7 +205,7 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
                         where ps.platform_id in (
                             select tm.platformid from
                                 networklistentry nle
-                            left outer join transportmedium tm on tm.mediumid = nle.transportid
+                            left outer join transportmedium tm on lower(tm.mediumid) = lower(nle.transportid)
                             where nle.networklistid = :netlistid)       
                         """;
 
