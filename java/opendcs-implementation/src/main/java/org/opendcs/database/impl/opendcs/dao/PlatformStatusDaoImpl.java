@@ -30,11 +30,9 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.PlatformStatusDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformStatusMapper;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
-import org.slf4j.Logger;
 import org.stringtemplate.v4.STGroup;
 
 import decodes.db.PlatformStatus;
@@ -43,8 +41,6 @@ import decodes.sql.DbKey;
 @ServiceProvider(service = PlatformStatusDao.class)
 public class PlatformStatusDaoImpl implements PlatformStatusDao
 {
-    private static final Logger log = OpenDcsLoggerFactory.getLogger();
-
     private static final String SELECT = "select";
     private static final String DELETE = "delete";
     private static final String MERGE = "merge";
