@@ -87,7 +87,7 @@ public class DaddsWebHookResource
         // validate signature
         // process message
         var awsContext = providers.getContextResolver(AwsContext.class, null).getContext(null);
-        var hook = valiateHookId(hookId);
+        var hook = validateHookId(hookId);
 
         if (hook == null)
         {
@@ -193,7 +193,7 @@ public class DaddsWebHookResource
     }
 
     @SuppressWarnings("unchecked")
-    private DaddsWebHookInput valiateHookId(String hookId)
+    private DaddsWebHookInput validateHookId(String hookId)
     {
         var hooks = (Map<String,DaddsWebHookInput>)servletContext.getAttribute("hooks");
         return hooks.get(hookId);

@@ -96,7 +96,7 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
                 callback.succeeded();
             }
         });
-        // We could just let the fact that the hookId provide wouldn't match anything
+        // We could just let the fact that the hookId provided wouldn't match anything
         // but if we don't have any hooks, we should leave it off as defense-in-depth.
         StringBuilder sb = new StringBuilder("org.opendcs.lrgs.http");
         if (!daddsWebHooks.isEmpty())
