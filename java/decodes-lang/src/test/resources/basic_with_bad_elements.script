@@ -1,0 +1,9 @@
+HG: /,2x,4f(s,a, 5D' ', 1),
+HG: ,2x > VB
+VB: /,f(s, a, 5D' ', 2)
+special: 2\,5P, 5(x,f(s,a,5D' ', 3)),
+special: 5C(S, HG)
+# This is a comment
+# /
+# the next line is a jumbo of bad code
+VB /,5f(S,A,5d3,a) # what happens

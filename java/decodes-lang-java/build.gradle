@@ -1,0 +1,18 @@
+plugins {
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'opendcs.sonar-conventions'
+}
+
+dependencies {
+    // Should not depend on OpenDCS
+    // OpenDCS API is... debatable.
+    api(project(":decodes-lang"))
+}
+
+
+tasks.register("run", JavaExec) {
+    mainClass = "org.opendcs.decodes.ScriptCompiler"
+    classpath += sourceSets.main.runtimeClasspath
+    args += "${rootDir}/java/decodes-lang/src/test/resources/basic_test.script"
+}
