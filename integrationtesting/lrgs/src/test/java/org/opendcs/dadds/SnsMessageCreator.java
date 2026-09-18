@@ -63,7 +63,7 @@ public final class SnsMessageCreator
         root.put("Message", messageBody);
         root.put("Timestamp", timestamp);
         root.put("SignatureVersion", "1");
-        root.put("SigningCertURL", US_EAST_1_URL + port + "/cert.pem");
+        root.put("SigningCertURL", US_EAST_1_URL + ":" + port + "/cert.pem");
 
         StringBuilder sb = new StringBuilder();
         sb.append("Message\n").append(messageBody).append("\n")
@@ -97,7 +97,7 @@ public final class SnsMessageCreator
         root.put("Timestamp", timestamp);
         root.put("SignatureVersion", "1");
         root.put("SubscribeURL", subscribeUrl);
-        root.put("SigningCertURL", US_EAST_1_URL + port + "/cert.pem");
+        root.put("SigningCertURL", US_EAST_1_URL + ":" + port + "/cert.pem");
 
         var sb = new StringBuilder();
         sb.append("Message\n").append(message).append("\n")
