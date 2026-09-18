@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *  Copyright 2025-2026 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -24,17 +24,13 @@ import java.util.Properties;
 import java.util.Vector;
 
 import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
 import decodes.db.PlatformSensor;
 import decodes.db.PlatformStatus;
-import decodes.db.RoutingSpec;
-import decodes.db.ScheduleEntry;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
 import decodes.sql.DbKey;
-import decodes.tsdb.DbIoException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -55,17 +51,14 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import opendcs.dai.PlatformStatusDAI;
-import opendcs.dai.ScheduleEntryDAI;
-
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.PlatformDao;
+import org.opendcs.database.dai.PlatformStatusDao;
 import org.opendcs.odcsapi.beans.ApiPlatform;
 import org.opendcs.odcsapi.beans.ApiPlatformRef;
 import org.opendcs.odcsapi.beans.ApiPlatformSensor;
 import org.opendcs.odcsapi.beans.ApiPlatformStatus;
 import org.opendcs.odcsapi.beans.ApiTransportMedium;
-import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -76,7 +69,12 @@ import static java.util.stream.Collectors.toList;
 @Path("/")
 public final class PlatformResources extends OpenDcsResource
 {
-	public static final WebAppException NO_PLATFORM_DAO = new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "No Platform DAO available.");
+	public static final WebAppException NO_PLATFORM_DAO = 
+		new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+							"No Platform DAO available.");
+	public static final WebAppException NO_PLATFORM_STATUS_DAO = 
+		new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+							"No Platform Status DAO available.");
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -629,104 +627,58 @@ public final class PlatformResources extends OpenDcsResource
 	public Response getPlatformStats(@Parameter(description = "Only return platforms that have a transport medium "
 			+ "in the referenced network list.", schema = @Schema(implementation = Long.class, example = "1001"))
 		@QueryParam("netlistid") Long netlistId)
-			throws DbException
+			throws WebAppException
 	{
-		DatabaseIO dbIo = getLegacyDatabase();
-		try (PlatformStatusDAI dao = dbIo.makePlatformStatusDAO())
+
+
+		var db = createDb();
+		var dao = db.getDao(PlatformStatusDao.class).orElseThrow(() -> NO_PLATFORM_STATUS_DAO);
+
+		try (var tx = db.newTransaction())
 		{
-			List<PlatformStatus> statuses;
-			if (netlistId != null)
+			return tx.wrapErrors(() ->
 			{
-				statuses = dao.readPlatformStatusList(DbKey.createDbKey(netlistId));
-			}
-			else
-			{
-				statuses = dao.readPlatformStatusList(null);
-			}
-			return Response.ok().entity(statusListMap(dbIo, statuses)).build();
+				var statuses = dao.getPlatformStatusForNetList(tx,
+															   netlistId == null ? null : DbKey.createDbKey(netlistId),
+															   -1, -1)
+								  .stream()
+								  .map(PlatformResources::mapPlatformStatus)
+								  .toList();
+				
+				return Response.ok()
+						.entity(statuses)
+						.build();
+			});
 		}
-		catch (DbIoException | DatabaseException ex)
+		catch (OpenDcsDataException ex)
 		{
-			throw new DbException(String.format("Unable to retrieve platform status with ID: %s", netlistId), ex);
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), 
+									  String.format("Unable to retrieve platform status with ID: %s", netlistId),
+									  ex);
 		}
-		finally
-		{
-			dbIo.close();
-		}
+
 	}
 
-	static List<ApiPlatformStatus> statusListMap(DatabaseIO dbIo, List<PlatformStatus> statuses) throws DatabaseException
+	static ApiPlatformStatus mapPlatformStatus(PlatformStatus status)
 	{
-		if(statuses == null)
+		ApiPlatformStatus ps = new ApiPlatformStatus();
+		if(status.getPlatformId() != null)
 		{
-			return new ArrayList<>();
+			ps.setPlatformId(status.getPlatformId().getValue());
 		}
-		List<ApiPlatformStatus> ret = new ArrayList<>();
-		for(PlatformStatus status : statuses)
+		else
 		{
-			ApiPlatformStatus ps = new ApiPlatformStatus();
-			if(status.getPlatformId() != null)
-			{
-				ps.setPlatformId(status.getPlatformId().getValue());
-			}
-			else
-			{
-				ps.setPlatformId(DbKey.NullKey.getValue());
-			}
-			ps.setAnnotation(status.getAnnotation());
-			ps.setLastContact(status.getLastContactTime());
-			ps.setLastError(status.getLastErrorTime());
-			ps.setLastMessage(status.getLastMessageTime());
-			if (!status.getLastScheduleEntryStatusId().isNull()
-					&& (status.getLastRoutingSpecName() == null || status.getLastRoutingSpecName().isEmpty()))
-			{
-				try (ScheduleEntryDAI dai = dbIo.makeScheduleEntryDAO())
-				{
-					ScheduleEntry scheduleEntry = dai.readScheduleEntryByStatusId(status.getLastScheduleEntryStatusId());
-					if(scheduleEntry != null && scheduleEntry.getRoutingSpecId() != null)
-					{
-						long routingId = scheduleEntry.getRoutingSpecId().getValue();
-						RoutingSpec rs = new RoutingSpec();
-						rs.setId(DbKey.createDbKey(routingId));
-						dbIo.readRoutingSpec(rs);
-						ps.setRoutingSpecName(rs.getName());
-					}
-				}
-				catch (DbIoException ex)
-				{
-					throw new DatabaseException("Unable to retrieve routing spec for platform status", ex);
-				}
-			}
-			else
-			{
-				ps.setRoutingSpecName(status.getLastRoutingSpecName());
-			}
-			ps.setLastRoutingExecId(status.getLastScheduleEntryStatusId().getValue());
-			if (status.getPlatformId() != null)
-			{
-				Platform pl = new Platform();
-				pl.setId(status.getPlatformId());
-				dbIo.readPlatform(pl);
-				if (pl.getSite() != null && pl.getSite().getId() != null)
-				{
-					ps.setSiteId(pl.getSite().getId().getValue());
-				}
-				if (pl.getSite() != null && pl.getSite().getUniqueName() != null
-						&& !pl.getSite().getUniqueName().isEmpty())
-				{
-					if (status.getDesignator() != null && !status.getDesignator().isEmpty())
-					{
-						ps.setPlatformName(pl.getSite().getUniqueName() + "-" + status.getDesignator());
-					}
-					else
-					{
-						ps.setPlatformName(pl.getSite().getUniqueName());
-					}
-				}
-			}
-			ret.add(ps);
+			ps.setPlatformId(DbKey.NullKey.getValue());
 		}
-		return ret;
+		ps.setAnnotation(status.getAnnotation());
+		ps.setLastContact(status.getLastContactTime());
+		ps.setLastError(status.getLastErrorTime());
+		ps.setLastMessage(status.getLastMessageTime());
+		ps.setRoutingSpecName(status.getLastRoutingSpecName());
+		ps.setLastRoutingExecId(status.getLastScheduleEntryStatusId().getValue());
+		ps.setPlatformName(status.getPlatformName());
+		ps.setSiteName(status.getSiteName());
+		return ps;
 	}
 
 }
