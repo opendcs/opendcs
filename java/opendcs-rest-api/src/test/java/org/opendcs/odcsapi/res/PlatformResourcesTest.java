@@ -30,7 +30,6 @@ import decodes.db.Platform;
 import decodes.db.PlatformConfig;
 import decodes.db.PlatformSensor;
 import decodes.db.PlatformStatus;
-import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScriptSensor;
 import decodes.db.Site;
@@ -55,12 +54,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.PlatformResources.map;
 import static org.opendcs.odcsapi.res.PlatformResources.mapRef;
-import static org.opendcs.odcsapi.res.PlatformResources.mapPlatformStatus;
 
 @ExtendWith(MockitoExtension.class)
 final class PlatformResourcesTest
@@ -512,13 +507,6 @@ final class PlatformResourcesTest
 		ScheduleEntry entry = new ScheduleEntry("Test Entry");
 		entry.setRoutingSpecId(routingSpecId);
 
-		doAnswer(invocation -> {
-			Platform p = invocation.getArgument(0);
-			assertEquals(platformId, p.getId());
-			p.setSite(site);
-			return null;
-		}).when(dbIo).readPlatform(any(Platform.class));
-
 		List<PlatformStatus> statuses = new ArrayList<>();
 		PlatformStatus status = new PlatformStatus(platformId);
 		status.setDesignator("Platform Designator");
@@ -545,16 +533,6 @@ final class PlatformResourcesTest
 		assertEquals(status.getLastRoutingSpecName(), apiStat.getRoutingSpecName());
 		assertEquals(status.getLastScheduleEntryStatusId().getValue(), apiStat.getLastRoutingExecId());
 
-		// Test with dbIo mocked to return a ScheduleEntry
-		when(dbIo.makeScheduleEntryDAO()).thenReturn(scheduleEntryDAO);
-		when(scheduleEntryDAO.readScheduleEntryByStatusId(scheduleEntryStatusId)).thenReturn(entry);
-		doAnswer(invocation -> {
-			RoutingSpec rs = invocation.getArgument(0);
-			assertEquals(routingSpecId, rs.getId());
-			rs.setName(routingSpecName);
-			return null;
-		}).when(dbIo).readRoutingSpec(any(RoutingSpec.class));
-
 		statuses = new ArrayList<>();
 		status = new PlatformStatus(platformId);
 		status.setDesignator("Platform Designator");
@@ -562,6 +540,7 @@ final class PlatformResourcesTest
 		status.setChecked(true);
 		status.setLastContactTime(Date.from(Instant.parse("2021-07-02T12:00:00Z")));
 		status.setSiteName(siteName);
+		status.setLastRoutingSpecName(routingSpecName);
 		status.setLastFailureCodes("System Failure 2");
 		status.setLastErrorTime(Date.from(Instant.parse("2021-07-01T12:00:00Z")));
 		status.setLastScheduleEntryStatusId(scheduleEntryStatusId);
@@ -581,7 +560,6 @@ final class PlatformResourcesTest
 		assertEquals(status.getLastScheduleEntryStatusId().getValue(), apiStat.getLastRoutingExecId());
 		assertEquals(status.getPlatformName(), apiStat.getPlatformName());
 		assertEquals(status.getPlatformId().getValue(), apiStat.getPlatformId());
-		assertEquals(siteId.getValue(), apiStat.getSiteId());
 	}
 
 	private static int iterSize(Iterator<?> it)

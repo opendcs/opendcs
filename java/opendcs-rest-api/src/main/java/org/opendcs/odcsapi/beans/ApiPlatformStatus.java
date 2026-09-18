@@ -27,9 +27,6 @@ public final class ApiPlatformStatus
 	@Schema(description = "The name of the platform.", example = "Platform A")
 	private String platformName = null;
 
-	@Schema(description = "The unique numeric identifier of the site where the platform is located.", example = "5678")
-	private Long siteId = null;
-
 	@Schema(description = "The primary name of this Site.", example = "Alder Springs")
 	private String siteName = null;
 
@@ -75,16 +72,6 @@ public final class ApiPlatformStatus
 	public void setPlatformName(String platformName)
 	{
 		this.platformName = platformName;
-	}
-
-	public Long getSiteId()
-	{
-		return siteId;
-	}
-
-	public void setSiteId(Long siteId)
-	{
-		this.siteId = siteId;
 	}
 
 	public void setSiteName(String siteName)
