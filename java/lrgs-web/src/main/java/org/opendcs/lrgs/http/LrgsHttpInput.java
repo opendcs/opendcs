@@ -43,7 +43,8 @@ import lrgs.lrgsmain.LrgsMain;
 public class LrgsHttpInput implements LoadableLrgsInputInterface
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-    private static final String TYPE = "HTTP";
+    public static final String TYPE = "HTTP";
+    public static final int LRGS_HTTP_INPUT_SOURCE_ID = 2000;
 
     private org.eclipse.jetty.server.Server server = null;
     private ServerConnector connector = null;
@@ -181,7 +182,7 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
     @Override
     public int getDataSourceId()
     {
-        return 2000;
+        return LRGS_HTTP_INPUT_SOURCE_ID;
     }
 
     @Override

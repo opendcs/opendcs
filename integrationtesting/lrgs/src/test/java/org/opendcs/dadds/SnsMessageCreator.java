@@ -22,6 +22,9 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sns.SnsClient;
+
 public final class SnsMessageCreator
 {
 
@@ -29,6 +32,10 @@ public final class SnsMessageCreator
                                                              .enable(MapperFeature.REQUIRE_HANDLERS_FOR_JAVA8_TIMES)
                                                              .addModule(new JavaTimeModule())
                                                              .build();
+
+    public static final String US_EAST_1_URL = SnsClient.serviceMetadata()
+                                                         .endpointFor(Region.AP_EAST_1)
+                                                         .toASCIIString();
 
     private static final SecureRandom random = new SecureRandom();
 
@@ -56,7 +63,7 @@ public final class SnsMessageCreator
         root.put("Message", messageBody);
         root.put("Timestamp", timestamp);
         root.put("SignatureVersion", "1");
-        root.put("SigningCertURL", "https://sns.us-east-1.amazonaws.com:" + port + "/cert.pem");
+        root.put("SigningCertURL", US_EAST_1_URL + port + "/cert.pem");
 
         StringBuilder sb = new StringBuilder();
         sb.append("Message\n").append(messageBody).append("\n")
@@ -90,7 +97,7 @@ public final class SnsMessageCreator
         root.put("Timestamp", timestamp);
         root.put("SignatureVersion", "1");
         root.put("SubscribeURL", subscribeUrl);
-        root.put("SigningCertURL", "https://sns.us-east-1.amazonaws.com:" + port + "/cert.pem");
+        root.put("SigningCertURL", US_EAST_1_URL + port + "/cert.pem");
 
         var sb = new StringBuilder();
         sb.append("Message\n").append(message).append("\n")
