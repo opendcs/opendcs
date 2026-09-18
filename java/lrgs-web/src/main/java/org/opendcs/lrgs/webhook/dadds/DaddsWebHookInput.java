@@ -27,6 +27,7 @@ import lrgs.lrgsmain.LrgsInputInterface;
 
 public class DaddsWebHookInput implements LoadableLrgsInputInterface
 {
+    public static final int DADDS_WEBHOOK_SOURCE_ID = 2001;
     private final String hookId;
     private final String hookIdHash; // we don't want to render the actual ID
     private boolean enabled;
@@ -61,7 +62,7 @@ public class DaddsWebHookInput implements LoadableLrgsInputInterface
     @Override
     public int getDataSourceId()
     {
-        return 2001;
+        return DADDS_WEBHOOK_SOURCE_ID;
     }
 
     @Override

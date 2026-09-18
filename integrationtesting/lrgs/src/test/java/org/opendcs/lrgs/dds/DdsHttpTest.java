@@ -274,7 +274,7 @@ final class DdsHttpTest
         server.start();
         final int snsPort = server.getAddress().getPort();
 
-        InterceptingInetAddressResolver.registerIntercept("sns.us-east-1.amazonaws.com", Inet4Address.getLoopbackAddress());
+        InterceptingInetAddressResolver.registerIntercept(SnsMessageCreator.US_EAST_1_URL, Inet4Address.getLoopbackAddress());
         final String confirmMessage =
             SnsMessageCreator.createDaddsConfirmationMessage(
                 privateKey,
@@ -386,8 +386,8 @@ final class DdsHttpTest
      * Yes, this is extreme. the AWS has done a really good job of making sure
      * it's difficult to override the trust settings. So we dig into our own code
      * and manually tweak the SnsMessageManager to use our local trust managers.
-     * @param lrgs
-     * @param trustManagers
+     * @param lrgs current LRGS instance
+     * @param trustManagers Created TrustStore to use to establish connection.
      */
     private void hackTrustIntoHandler(LrgsTestInstance lrgs, TrustManager[] trustManagers) throws Exception
     {
@@ -400,8 +400,11 @@ final class DdsHttpTest
         var servletHandler = sch.getServletHandler();
         var servlet = (ServletContainer)servletHandler.getServlets(ServletContainer.class).getFirst().getServlet();
         var app = servlet.getApplicationHandler();
+        @SuppressWarnings ("null") // given this is test code we're okay if these fail badly, it'll still correctly
+                                   // point to here that something is wrong.
         var providers = app.getInjectionManager().getInstance(Providers.class);
         assertNotNull(providers, "Could not retrieve Providers instance from server.");
+        @SuppressWarnings("null")
         var awsContext = providers.getContextResolver(AwsContext.class, null)
                                   .getContext(null);
         assertNotNull(awsContext, "Could not retrieve the AwsContext from the server instance.");
