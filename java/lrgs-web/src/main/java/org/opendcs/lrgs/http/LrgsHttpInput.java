@@ -16,7 +16,7 @@
 package org.opendcs.lrgs.http;
 
 import java.io.IOException;
-
+import java.util.HashMap;
 import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
@@ -25,6 +25,8 @@ import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.util.Callback;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.opendcs.lrgs.dao.MsgArchive;
+import org.opendcs.lrgs.webhook.dadds.DaddsWebHookInput;
+import org.opendcs.lrgs.webhook.dadds.DaddsWebHookResource;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -41,7 +43,8 @@ import lrgs.lrgsmain.LrgsMain;
 public class LrgsHttpInput implements LoadableLrgsInputInterface
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-    private static final String TYPE = "HTTP";
+    public static final String TYPE = "HTTP";
+    public static final int LRGS_HTTP_INPUT_SOURCE_ID = 2000;
 
     private org.eclipse.jetty.server.Server server = null;
     private ServerConnector connector = null;
@@ -51,6 +54,7 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
     private String interfaceName;
     private MsgArchive archive;
     private LrgsMain lrgs;
+    private HashMap<String, DaddsWebHookInput> daddsWebHooks = new HashMap<>();
 
     @Override
     public int getType()
@@ -80,8 +84,7 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
     public void initLrgsInput() throws LrgsInputException
     {
         server = new org.eclipse.jetty.server.Server();
-		ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
-		ctx.setContextPath("/");
+		ctx = new ServletContextHandler("/", ServletContextHandler.SESSIONS);
 		server.setHandler(ctx);
         var serHol = ctx.addServlet(ServletContainer.class, "/*");
 		serHol.setInitOrder(1);
@@ -94,10 +97,22 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
                 callback.succeeded();
             }
         });
-        serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        // We could just let the fact that the hookId provided wouldn't match anything
+        // but if we don't have any hooks, we should leave it off as defense-in-depth.
+        StringBuilder sb = new StringBuilder("org.opendcs.lrgs.http");
+        if (!daddsWebHooks.isEmpty())
+        {
+            sb.append(",").append(DaddsWebHookResource.class.getPackageName());
+            for (var hook: daddsWebHooks.values())
+            {
+                this.lrgs.addInput(hook);
+            }
+        }
+        serHol.setInitParameter("jersey.config.server.provider.packages", sb.toString());
         serHol.setInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true");
         ctx.setAttribute("lrgs", this.lrgs);
         ctx.setAttribute("archive", this.archive);
+        ctx.setAttribute("hooks", daddsWebHooks);
 
         connector = new ServerConnector(server);
         connector.setPort(this.port);
@@ -167,7 +182,7 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
     @Override
     public int getDataSourceId()
     {
-        return 2000;
+        return LRGS_HTTP_INPUT_SOURCE_ID;
     }
 
     @Override
@@ -194,6 +209,11 @@ public class LrgsHttpInput implements LoadableLrgsInputInterface
         if("port".equalsIgnoreCase(name))
         {
             this.port = Integer.valueOf(value);
+        }
+        else if(name.toLowerCase().startsWith("daddswebhook"))
+        {
+            log.info("Adding Dadds Web Hook {}.", value);
+            this.daddsWebHooks.put(value, new DaddsWebHookInput(value));
         }
     }
 
