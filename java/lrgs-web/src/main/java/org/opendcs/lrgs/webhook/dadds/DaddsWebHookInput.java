@@ -139,13 +139,13 @@ public class DaddsWebHookInput implements LoadableLrgsInputInterface
     @Override
     public void setConfigParam(String name, String value)
     {
-        /* not parameters yet */
+        /* no parameters yet */
     }
 
     @Override
     public void setInterfaceName(String ignored)
     {
-        /* no nothing */
+        /* do nothing */
     }
 
     @Override

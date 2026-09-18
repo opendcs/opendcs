@@ -2206,7 +2206,7 @@ once that protocol is designed.
 Dadds WebHooks
 ~~~~~~~~~~~~~~
 
-If the above LrgsHttpInput interface is enabled you can set your LRGS to recieve webhook messages
+If the above LrgsHttpInput interface is enabled you can set your LRGS to receive webhook messages
 with the following additional configuration
 
    LrgsInput.httpStatus.web.daddsWebHook_0=81db31f4-02c2-43a2-8e38-92cbe02c6264
@@ -2226,7 +2226,7 @@ application level.
 
 .. WARN::
    
-   At this time is that the LRGS Web Interface does not directly support HTTPS. To use
+   Currently the LRGS Web Interface does not directly support HTTPS. To use
    HTTP you will need place an appropriate TLS proxy in front of the LRGS instance. The Amazon Simple Notification Service
    web hook subscription *MAY* support sending data to plain HTTP; however, it is unlikely your IT department would
    approve of.

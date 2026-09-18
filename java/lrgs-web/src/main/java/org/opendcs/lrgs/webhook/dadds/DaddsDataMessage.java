@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * DaddsDataMessage
  * @param id WebHook Message ID
  * @param address DCP Address
- * @param time time recieved.
+ * @param time time received.
  * @param infoCode
  * @param groupCode
  * @param data
