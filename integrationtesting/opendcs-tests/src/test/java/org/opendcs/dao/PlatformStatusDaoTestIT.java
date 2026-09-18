@@ -1,6 +1,8 @@
 package org.opendcs.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -49,7 +51,6 @@ class PlatformStatusDaoTestIT extends AppTestBase
 
     @ConfiguredField
     OpenDcsDatabase db;
-   
 
     @Test
     void test_basic_operations() throws Exception
@@ -88,7 +89,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
         var platformDao = db.getDao(PlatformDao.class).orElseThrow();
         var networkListDao = db.getDao(NetworkListDao.class).orElseThrow();
 
-        
+
         try (var tx = db.newTransaction())
         {
             var platform = platformDao.getByMediumId(tx, "goes-self-timed", MEDIUM_ID)
@@ -100,7 +101,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
             list.siteNameTypePref = Constants.snt_CWMS;
 
             var listOut = networkListDao.save(tx, list);
-            
+
             var statuses = statusDao.getPlatformStatusForNetList(tx, listOut.getId(), -1, -1);
             assertTrue(statuses.isEmpty());
 
@@ -128,7 +129,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
         try (var tx = db.newTransaction())
         {
             createPlatforms(tx, statusDao, platformDao, siteDao, MAX_COUNT, 0);
-            
+
             var statuses = statusDao.getAll(tx, 100, -1);
             assertEquals(MAX_COUNT, statuses.size());
 
@@ -142,7 +143,7 @@ class PlatformStatusDaoTestIT extends AppTestBase
 
 
             tx.rollback();
-        }        
+        }
     }
 
     @Test
@@ -203,9 +204,9 @@ class PlatformStatusDaoTestIT extends AppTestBase
                                          .toList();
             assertTrue(allAfterEntry.stream()
                                      .allMatch(e -> statusOut.getId().equals(e.getLastScheduleEntryStatusId())));
-            assertEquals(se.getRoutingSpecName(), allAfterEntry.getFirst().getLastRoutingSpecName());
-            // getSiteName is not yet tested. Actually implementing that will take some coordination with the
-            // appropriate SiteDao and the SiteNameMapper due to the complexity of setting the site names.
+            var first = allAfterEntry.getFirst();
+            assertEquals(se.getRoutingSpecName(), first.getLastRoutingSpecName());
+            assertEquals("TestPlatformSite-"+OFFSET, first.getSiteName());
             assertEquals("Designator-" + OFFSET, allAfterEntry.getFirst().getDesignator());
             assertEquals("From entry", allAfterEntry.getLast().getAnnotation());
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *  Copyright 2025-2026 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -677,7 +677,7 @@ public final class PlatformResources extends OpenDcsResource
 		ps.setRoutingSpecName(status.getLastRoutingSpecName());
 		ps.setLastRoutingExecId(status.getLastScheduleEntryStatusId().getValue());
 		ps.setPlatformName(status.getPlatformName());
-	
+		ps.setSiteName(status.getSiteName());
 		return ps;
 	}
 

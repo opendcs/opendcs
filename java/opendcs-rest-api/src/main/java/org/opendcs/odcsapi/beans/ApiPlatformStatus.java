@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *  Copyright 2025-2026 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
@@ -30,6 +29,9 @@ public final class ApiPlatformStatus
 
 	@Schema(description = "The unique numeric identifier of the site where the platform is located.", example = "5678")
 	private Long siteId = null;
+
+	@Schema(description = "The primary name of this Site.", example = "Alder Springs")
+	private String siteName = null;
 
 	@Schema(description = "The date and time of the platform's last successful contact.",
 			example = "2025-01-01T12:00:00.000[UTC]")
@@ -83,6 +85,16 @@ public final class ApiPlatformStatus
 	public void setSiteId(Long siteId)
 	{
 		this.siteId = siteId;
+	}
+
+	public void setSiteName(String siteName)
+	{
+		this.siteName = siteName;
+	}
+
+	public String getSiteName()
+	{
+		return this.siteName;
 	}
 
 	public Date getLastContact()
