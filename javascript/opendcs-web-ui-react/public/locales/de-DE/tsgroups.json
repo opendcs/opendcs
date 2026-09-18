@@ -1,0 +1,101 @@
+{
+  "title": "Zeitreihengruppen",
+  "header": {
+    "Id": "Gruppen-ID",
+    "Name": "Name",
+    "Type": "Typ",
+    "Description": "Beschreibung"
+  },
+  "groupName": "Gruppenname",
+  "groupName_hint": "Leerzeichen vermeiden — Gruppennamen werden in Befehlszeilen verwendet.",
+  "groupType": "Gruppentyp",
+  "add_group": "Zeitreihengruppe hinzufügen",
+  "edit_group": "Zeitreihengruppe {{id}} bearbeiten",
+  "delete_for": "Zeitreihengruppe {{id}} löschen",
+  "save_group": "Zeitreihengruppe {{id}} speichern",
+  "cancel_for": "Bearbeitung der Zeitreihengruppe {{id}} abbrechen",
+  "members": {
+    "title": "Mitglieder der Zeitreihengruppe",
+    "header": {
+      "Key": "Schlüssel",
+      "TimeSeries": "Zeitreihe",
+      "Location": "Ort",
+      "Param": "Parameter",
+      "ParamType": "Parametertyp",
+      "Interval": "Intervall",
+      "Duration": "Dauer",
+      "Version": "Version",
+      "Description": "Beschreibung"
+    },
+    "add": "Zeitreihen hinzufügen",
+    "add_none": "Keine Zeitreihen zum Hinzufügen verfügbar.",
+    "add_selected": "{{count}} ausgewählte hinzufügen",
+    "select_all": "Alle Zeitreihen auswählen",
+    "select": "Zeitreihe {{name}} auswählen",
+    "remove": "Zeitreihe {{name}} aus der Gruppe entfernen"
+  },
+  "subgroups": {
+    "title": "Untergruppen-Mitglieder",
+    "combine": "Verknüpfung",
+    "combine_include": "Hinzufügen",
+    "combine_exclude": "Abziehen",
+    "combine_intersect": "Schnittmenge",
+    "button_include": "Untergruppe hinzufügen",
+    "button_exclude": "Untergruppe abziehen",
+    "button_intersect": "Untergruppe schneiden",
+    "add_include": "Mitglieder einer anderen Gruppe zu dieser Gruppe hinzufügen",
+    "add_exclude": "Mitglieder einer anderen Gruppe von dieser Gruppe abziehen",
+    "add_intersect": "Diese Gruppe mit einer anderen Gruppe schneiden",
+    "add_none": "Keine weiteren Gruppen verfügbar.",
+    "add_selected": "{{count}} ausgewählte hinzufügen",
+    "select_all": "Alle Gruppen auswählen",
+    "select": "Gruppe {{name}} auswählen",
+    "remove": "Untergruppe {{name}} entfernen"
+  },
+  "criteria": {
+    "title": "Auswahl nach Ort, Datentyp, Intervall oder Statistikcode",
+    "header": {
+      "TsidPart": "TSID-Teil",
+      "Value": "Wert",
+      "Location": "Ort",
+      "Param": "Parameter",
+      "Standard": "Standard",
+      "DisplayName": "Anzeigename",
+      "BasePart": "Basisteil",
+      "SubPart": "Unterteil",
+      "Description": "Beschreibung"
+    },
+    "part": {
+      "Location": "Ort",
+      "BaseLocation": "Basisort",
+      "SubLocation": "Unterort",
+      "Param": "Parameter",
+      "BaseParam": "Basisparameter",
+      "SubParam": "Unterparameter",
+      "ParamType": "Parametertyp",
+      "Interval": "Intervall",
+      "Duration": "Dauer",
+      "Version": "Version",
+      "BaseVersion": "Basisversion",
+      "SubVersion": "Unterversion"
+    },
+    "add_title": "Kriterium {{part}} hinzufügen",
+    "add_confirm": "Hinzufügen",
+    "scope": "Treffer",
+    "scope_full": "Vollständig: {{part}}",
+    "scope_base": "Basis: {{part}}",
+    "scope_sub": "Unter: {{part}}",
+    "wildcard_hint": "'*' als Platzhalter verwenden; es passt auf jedes Zeichen außer einem Bindestrich.",
+    "result": "Ergebnis",
+    "remove": "Kriterium {{part}} = {{value}} entfernen",
+    "full_locked_hint": "Wird durch die oben ausgewählte Zeile bestimmt."
+  },
+  "evaluate": {
+    "button": "Auswerten",
+    "button_for": "Gruppe {{name}} auswerten",
+    "title": "Mitglieder von {{name}}",
+    "count": "Aufgelöste Mitglieder ({{count}})",
+    "unsaved": "Angezeigt wird die zuletzt gespeicherte Gruppe. Speichern Sie Ihre Änderungen, um sie auszuwerten.",
+    "failed": "Die Gruppe konnte nicht aufgelöst werden."
+  }
+}

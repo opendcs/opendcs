@@ -50,6 +50,18 @@ export interface ColumnDef<T> {
   /** DataTables column `type` — skip the type auto-sniffer when set. */
   type?: "num" | "string" | "date" | "html" | "html-num" | "num-fmt";
   /**
+   * Sort the table by this column on initial load (issue #1662). Without it
+   * DataTables falls back to its own `[[0, "asc"]]` default, which sorts by
+   * whatever sits in the first column — usually the database id, so the rows
+   * read as unordered. Set this on the column a user would naturally scan
+   * (normally the name) to get a meaningful default instead.
+   *
+   * Only the first column that declares it is used. An explicit
+   * `dataTableOptions.order` still overrides it, and `stateSave` means a sort
+   * the user picked themselves wins on their next visit.
+   */
+  defaultSort?: "asc" | "desc";
+  /**
    * DataTables column `render` — returns the cell content for the given
    * render `type` (`"display"`, `"sort"`, `"filter"`, `"type"`). For custom
    * HTML inputs etc., use `renderToString(<Component />)` to stringify.
@@ -326,33 +338,39 @@ type DtRowApi = {
 
 /** Build the DataTables `render` function for a column, accounting for the
  *  mode-aware edit swap. Returns `undefined` if the column needs no custom
- *  render. */
+ *  render.
+ *
+ *  The returned closure looks its column up through `columnsRef` on every call
+ *  rather than capturing it. DataTables keeps the render functions it was given
+ *  at init, so a captured `col` would freeze the markup a cell was first built
+ *  with - including the degraded markup an `edit.render` emits while its
+ *  reference data is still loading (issue #2052). Reading through the ref means
+ *  a redraw picks up whatever the caller has rebuilt `columns` into. */
 function makeColumnRender<T>(
-  col: ColumnDef<T>,
+  index: number,
+  columnsRef: { readonly current: ColumnDef<T>[] },
   hasInlineEdit: boolean,
   idOf: (row: T) => string,
   rowStateRef: { readonly current: Record<string, RowMode> },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ((data: any, type: string, row: T, meta: any) => any) | undefined {
-  const baseRender = col.render;
-  const editRender = col.edit?.render;
-  const needsWrapper = Boolean(baseRender || (hasInlineEdit && editRender));
+  const initial = columnsRef.current[index];
+  const needsWrapper = Boolean(
+    initial.render || (hasInlineEdit && initial.edit?.render),
+  );
   if (!needsWrapper) return undefined;
-  const fallback = (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any,
-    type: string,
-    row: T,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    meta: any,
-  ) => (baseRender ? baseRender(data, type, row, meta) : (data ?? ""));
   return (data, type, row, meta) => {
-    if (type !== "display") return fallback(data, type, row, meta);
+    const col = columnsRef.current[index] ?? initial;
+    const baseRender = col.render;
+    const fallback = () =>
+      baseRender ? baseRender(data, type, row, meta) : (data ?? "");
+    if (type !== "display") return fallback();
+    const editRender = col.edit?.render;
     if (hasInlineEdit && editRender) {
       const mode = rowStateRef.current[idOf(row)];
       if (mode === "edit" || mode === "new") return editRender(row, idOf(row));
     }
-    return fallback(data, type, row, meta);
+    return fallback();
   };
 }
 
@@ -817,15 +835,22 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   const hasInlineEdit = Boolean(inlineEdit);
 
+  // Stable ref so the render closures handed to DataTables at init always see
+  // the caller's latest column definitions. Assigned during render rather than
+  // in an effect because the `dtColumns` memo below reads it synchronously.
+  const columnsRef = useRef(columns);
+  // eslint-disable-next-line react-hooks/refs
+  columnsRef.current = columns;
+
   // --- DataTable column definitions (+ optional Actions column) ------------
   // When inlineEdit is enabled, wrap each column's render to swap to the
   // `edit.render` output when the row is in "edit" / "new" mode.
   const dtColumns = useMemo(() => {
-    // makeColumnRender stores rowStateRef in the returned render closure,
-    // which DataTables invokes later during its own cell rendering, not
-    // synchronously here.
+    // makeColumnRender stores rowStateRef / columnsRef in the returned render
+    // closure, which DataTables invokes later during its own cell rendering,
+    // not synchronously here.
     // eslint-disable-next-line react-hooks/refs
-    const cols = columns.map((c) => ({
+    const cols = columns.map((c, i) => ({
       data: c.data,
       defaultContent: c.defaultContent ?? "",
       className: c.className,
@@ -833,7 +858,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       orderable: c.orderable,
       searchable: c.searchable,
       type: c.type,
-      render: makeColumnRender(c, hasInlineEdit, idOf, rowStateRef),
+      render: makeColumnRender(i, columnsRef, hasInlineEdit, idOf, rowStateRef),
     }));
     if (hasActionsCol) {
       cols.push({
@@ -962,6 +987,15 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     return () => buttonsNode.removeEventListener("click", onClick);
   }, [buttonsNode]);
 
+  // --- Initial sort ---------------------------------------------------------
+  // Derived from the column that declares `defaultSort` rather than a hard
+  // coded index, so reordering columns can't silently point the sort at the
+  // wrong one. Falls through to the DataTables default when no column asks.
+  const defaultOrder = useMemo<[number, "asc" | "desc"][] | undefined>(() => {
+    const idx = columns.findIndex((c) => c.defaultSort);
+    return idx === -1 ? undefined : [[idx, columns[idx].defaultSort!]];
+  }, [columns]);
+
   // --- DataTable options ----------------------------------------------------
   const options: DataTableProps["options"] = {
     paging: true,
@@ -970,6 +1004,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     processing: true,
     deferRender: true,
     language: dtLangs.get(i18n.language),
+    ...(defaultOrder ? { order: defaultOrder } : {}),
     ...dataTableOptions,
 
     layout: {
@@ -1096,6 +1131,29 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     }
     dt.draw(false);
   }, [rowState, hasInlineEdit]);
+
+  // --- Re-render open edit cells when the column definitions change ---------
+  // `edit.render` produces a one-shot HTML string, so a cell built while its
+  // reference data was still loading keeps the degraded markup it was given
+  // (a text box instead of a dropdown, a dropdown missing most of its
+  // options). Callers rebuild `columns` when that data arrives; invalidate and
+  // redraw so open rows pick the new markup up instead of staying stale until
+  // the user cancels and re-opens the row (issue #2052). Read-only tables are
+  // excluded, since they have no edit markup to refresh.
+  const columnsInitRef = useRef(false);
+  useEffect(() => {
+    if (!hasInlineEdit) return;
+    if (!columnsInitRef.current) {
+      columnsInitRef.current = true;
+      return; // first draw already used the current columns
+    }
+    const dt = table.current?.dt();
+    if (!dt) return;
+    (dt as unknown as { rows: () => { invalidate: () => unknown } })
+      .rows()
+      .invalidate();
+    dt.draw(false);
+  }, [dtColumns, hasInlineEdit]);
 
   // --- Confirmation dialog for `confirm`-flagged row actions ----------------
   const handleConfirmAccept = useCallback(() => {

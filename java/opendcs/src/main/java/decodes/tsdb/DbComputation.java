@@ -609,7 +609,7 @@ public class DbComputation implements CompMetaData, CachableHasProperties
 	}
 
 	/**
-	 * Sets the Time Series Group used to determine input & output param components.
+	 * Sets the Time Series Group used to determine input and output param components.
 	 * @param group the group
 	 */
 	public void setGroup(TsGroup group)
@@ -627,7 +627,7 @@ public class DbComputation implements CompMetaData, CachableHasProperties
 		}
 	}
 
-	/** @return the time series group to use for inputs & outputs */
+	/** @return the time series group to use for inputs and outputs */
 	public TsGroup getGroup() { return group; }
 
 	/**

@@ -158,7 +158,7 @@ public class OpenDcsPgProvider implements MigrationProvider
         rolesDao.addRole(tx, new Role(null, "ODCS_API_USER", null, null));
         rolesDao.addRole(tx, new Role(null, "ODCS_API_ADMIN", null, null));
 
-        var newProvider = new BuiltInIdentityProvider(DbKey.NullKey, "builttin", null, Map.of());
+        var newProvider = new BuiltInIdentityProvider(DbKey.NullKey, "builtin", null, Map.of());
 
         idpDao.addIdentityProvider(tx, newProvider);
     }

@@ -20,13 +20,17 @@
     "transportId": "Transport-ID",
     "platformName": "Plattformname",
     "description": "Beschreibung",
-    "transportId_input": "Transport-ID für {{name}}",
-    "platformName_input": "Plattformname für {{name}}",
     "description_input": "Beschreibung für {{name}}",
-    "add": "Eintrag hinzufügen",
     "edit": "Eintrag {{transportId}} bearbeiten",
     "remove": "Eintrag {{transportId}} entfernen",
     "save_edit": "Eintrag {{transportId}} speichern",
-    "cancel_edit": "Bearbeitung des Eintrags {{transportId}} abbrechen"
+    "cancel_edit": "Bearbeitung des Eintrags {{transportId}} abbrechen",
+    "select_platforms": "Plattformen auswählen",
+    "select_platforms_title": "Hinzuzufügende Plattformen auswählen",
+    "select_platforms_none": "Keine weiteren Plattformen mit dem Transportmedium {{type}} zum Hinzufügen verfügbar.",
+    "select_platforms_no_type": "Wählen Sie einen Transportmedientyp für diese Netzwerkliste aus, bevor Sie Plattformen auswählen.",
+    "select_all_platforms": "Alle Plattformen auswählen",
+    "select_platform": "Plattform {{name}} auswählen",
+    "add_selected": "{{count}} Plattform(en) hinzufügen"
   }
 }
