@@ -25,9 +25,12 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
+import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
+import org.opendcs.database.dai.PlatformDao;
 import org.opendcs.database.dai.PlatformStatusDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.platforms.PlatformStatusMapper;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -48,6 +51,9 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
     private final STGroup queries;
 
     private final PlatformStatusMapper statusMapper = PlatformStatusMapper.withPrefix("ps");
+
+    @InjectDao
+    PlatformDao platformDao;
 
     public PlatformStatusDaoImpl()
     {
@@ -78,7 +84,38 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
             return select.bind(PlatformStatusMapper.Columns.PLATFORM_ID.column(), platformId)
                          .registerRowMapper(statusMapper)
                          .mapTo(PlatformStatus.class)
+                         .map(p -> mapSite(tx, p))
                          .findOne();
+        }
+    }
+
+    /**
+     * While it would be better to include this in the query itself, however the site name
+     * question for any given user can be rather complex, so given the smaller scale of this
+     * data, in general, we're excepting the tradeoff. Followon work should consider having
+     * the DAOs, or some element of the system, build the appropriate table clauses for consumption
+     * directly in places such as this.
+     * @param tx the active transaction
+     * @param status current platform status
+     * @return The platform, with the relavent site name set. Or a message indicating the removal of the site.
+     *         This is unlikely; though may be possible in certain situtations.
+     * @throws OpenDcsDataRuntimeException any errors requesting data.
+     */
+    private PlatformStatus mapSite(DataTransaction tx, PlatformStatus status)
+    {
+        try
+        {
+            var siteName = platformDao.getById(tx, status.getPlatformId())
+                            .map(p -> p.getSiteName(false))
+                            .orElseGet(() -> "Platform with ID " + status.getPlatformId() +
+                                             ", name = " + status.getPlatformName() +
+                                             " no longer exists. Cannot lookup site.");
+            status.setSiteName(siteName);
+            return status;
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new OpenDcsDataRuntimeException(ex);
         }
     }
 
@@ -101,7 +138,7 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
         }
         mergeTemplate.add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
 
-        
+
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
             merge.bind(PlatformStatusMapper.Columns.PLATFORM_ID.column(), platformStatus.getPlatformId())
@@ -119,7 +156,7 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
                              platformStatus.getLastMessageTime(),
                              Date.class)
                  .execute();
-  
+
             return getByPlatformId(tx, platformStatus.getPlatformId())
                     .orElseThrow(() -> new OpenDcsDataException(("Unable to retrieve platform status we just created.")));
         }
@@ -184,6 +221,7 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
             }
             return select.registerRowMapper(statusMapper)
                          .mapTo(PlatformStatus.class)
+                         .map(p -> mapSite(tx, p))
                          .list();
         }
     }
@@ -191,7 +229,7 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
 
     @Override
     public List<PlatformStatus> getPlatformStatusForNetList(DataTransaction tx, DbKey netlistId, int limit, int offset)
-            throws OpenDcsDataException 
+            throws OpenDcsDataException
     {
         if (DbKey.isNull(netlistId))
         {
@@ -202,7 +240,7 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
                             select tm.platformid from
                                 networklistentry nle
                             left outer join transportmedium tm on lower(tm.mediumid) = lower(nle.transportid)
-                            where nle.networklistid = :netlistid)       
+                            where nle.networklistid = :netlistid)
                         """;
 
         return getAll(tx, limit, offset, where, "netlistid", netlistId);
