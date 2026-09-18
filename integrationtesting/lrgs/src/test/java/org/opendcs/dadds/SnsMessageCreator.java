@@ -1,3 +1,17 @@
+/*
+ *  Copyright 2026 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.opendcs.dadds;
 
 import java.io.IOException;
@@ -34,7 +48,7 @@ public final class SnsMessageCreator
                                                              .build();
 
     public static final String US_EAST_1_URL = SnsClient.serviceMetadata()
-                                                         .endpointFor(Region.AP_EAST_1)
+                                                         .endpointFor(Region.US_EAST_1)
                                                          .toASCIIString();
 
     private static final SecureRandom random = new SecureRandom();
@@ -63,7 +77,7 @@ public final class SnsMessageCreator
         root.put("Message", messageBody);
         root.put("Timestamp", timestamp);
         root.put("SignatureVersion", "1");
-        root.put("SigningCertURL", US_EAST_1_URL + ":" + port + "/cert.pem");
+        root.put("SigningCertURL", "https://" + US_EAST_1_URL + ":" + port + "/cert.pem");
 
         StringBuilder sb = new StringBuilder();
         sb.append("Message\n").append(messageBody).append("\n")
@@ -80,7 +94,7 @@ public final class SnsMessageCreator
 
     public static String createDaddsConfirmationMessage(PrivateKey key, String arn, int port, String subscribeUrl)
         throws IOException, InvalidKeyException, NoSuchAlgorithmException, SignatureException
-    {        
+    {
         byte[] tokenBytes = new byte[256];
         random.nextBytes(tokenBytes);
         String token = HexFormat.of().formatHex(tokenBytes);
@@ -97,7 +111,7 @@ public final class SnsMessageCreator
         root.put("Timestamp", timestamp);
         root.put("SignatureVersion", "1");
         root.put("SubscribeURL", subscribeUrl);
-        root.put("SigningCertURL", US_EAST_1_URL + ":" + port + "/cert.pem");
+        root.put("SigningCertURL", "https://" + US_EAST_1_URL + ":" + port + "/cert.pem");
 
         var sb = new StringBuilder();
         sb.append("Message\n").append(message).append("\n")
@@ -113,7 +127,7 @@ public final class SnsMessageCreator
         root.put("Signature", signature);
         return jsonMapper.writeValueAsString(root);
     }
-    
+
     public static String signTextV1(String text, PrivateKey key)
         throws InvalidKeyException, NoSuchAlgorithmException, SignatureException
     {
