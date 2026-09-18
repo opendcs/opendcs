@@ -144,7 +144,8 @@ public class DaddsWebHookResource
         {
             var response = client.send(HttpRequest.newBuilder(snsMessage.subscribeUrl()).build(),
                                        BodyHandlers.discarding());
-            if (response.statusCode() % 200 == 0)
+            int code = response.statusCode();
+            if (code >= 200 && code < 300) // E.G. any success variant.
             {
                 return Response.ok().build();
             }
