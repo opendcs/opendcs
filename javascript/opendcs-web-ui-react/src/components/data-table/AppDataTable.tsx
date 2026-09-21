@@ -563,16 +563,21 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   // Stringify a row's id, preferring a synthetic id if the row is a pending
   // inline-edit new row. Used for every rowState / cache lookup internally.
-  const idOf = useCallback(
-    (row: T): string => {
-      const synthetic =
-        typeof row === "object" && row !== null
-          ? newRowIdsRef.current.get(row as object)
-          : undefined;
-      return synthetic ?? String(getId(row));
-    },
-    [getId],
-  );
+  //
+  // `getId` is nearly always passed as an inline arrow, so depending on it
+  // directly would hand `idOf` - and every memo derived from it, `dtColumns`
+  // included - a fresh identity on each render. Reading it through a ref keeps
+  // `idOf` stable so those memos only change when their real inputs do.
+  const getIdRef = useRef(getId);
+  // eslint-disable-next-line react-hooks/refs
+  getIdRef.current = getId;
+  const idOf = useCallback((row: T): string => {
+    const synthetic =
+      typeof row === "object" && row !== null
+        ? newRowIdsRef.current.get(row as object)
+        : undefined;
+    return synthetic ?? String(getIdRef.current(row));
+  }, []);
 
   // Per-row data lookup for click handlers, keyed on the <tr> element.
   const rowDataRef = useRef<WeakMap<HTMLTableRowElement, T>>(new WeakMap());
@@ -1140,6 +1145,14 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   // redraw so open rows pick the new markup up instead of staying stale until
   // the user cancels and re-opens the row (issue #2052). Read-only tables are
   // excluded, since they have no edit markup to refresh.
+  //
+  // This redraw rebuilds every cell in the table, the action buttons included,
+  // so it has to stay rare: a button replaced underneath a click in progress
+  // swallows that click, and a row re-rendered mid-edit reverts to the values
+  // it was opened with. Two things keep it that way - keying off `columns`
+  // (which callers memoise) rather than the derived `dtColumns`, and skipping
+  // the redraw entirely when no row is open, since a row opened later renders
+  // from `columnsRef.current` and is never stale to begin with.
   const columnsInitRef = useRef(false);
   useEffect(() => {
     if (!hasInlineEdit) return;
@@ -1147,13 +1160,17 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       columnsInitRef.current = true;
       return; // first draw already used the current columns
     }
+    const anyRowOpen = Object.values(rowStateRef.current).some(
+      (m) => m === "edit" || m === "new",
+    );
+    if (!anyRowOpen) return;
     const dt = table.current?.dt();
     if (!dt) return;
     (dt as unknown as { rows: () => { invalidate: () => unknown } })
       .rows()
       .invalidate();
     dt.draw(false);
-  }, [dtColumns, hasInlineEdit]);
+  }, [columns, hasInlineEdit]);
 
   // --- Confirmation dialog for `confirm`-flagged row actions ----------------
   const handleConfirmAccept = useCallback(() => {
