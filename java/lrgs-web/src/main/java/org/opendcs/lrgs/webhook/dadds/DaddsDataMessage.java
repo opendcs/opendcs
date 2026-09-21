@@ -1,0 +1,142 @@
+/*
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
+package org.opendcs.lrgs.webhook.dadds;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * A record to hold the extracted Message from the Dadds WebHook notification
+ * DaddsDataMessage
+ * @param id WebHook Message ID
+ * @param address DCP Address
+ * @param time time received.
+ * @param infoCode
+ * @param groupCode
+ * @param data
+ * @param dataHex
+ * @param armCodes
+ * @param lockTime
+ * @param baud
+ * @param signalStrength
+ * @param frequencyDeviationStart
+ * @param frequencyDeviationEnd
+ * @param phaseNoise
+ * @param goodPhase
+ * @param channelId
+ * @param satelliteLocation
+ * @param source
+ * @param noEot
+ * @param parity
+ * @param nwsDescriptor
+ * @param isNws
+ * @param nwsCenter
+ * @param pdtId
+ * @param groupId
+ * @param AddressReceived
+ * @param syncTime
+ * @param signalToNoiseRatio
+ * @param length
+ * @param quality
+ * @param satId
+ * @param priority
+ * @param duration
+ * @param frameSync
+ * @param addressCode
+ * @param bitErrorRate
+ */
+public record DaddsDataMessage(
+    @JsonProperty("Id")
+    UUID id,
+    @JsonProperty("Address")
+    String address,
+    @JsonProperty("Time")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
+    LocalDateTime time,
+    @JsonProperty("InfoCd")
+    String infoCode,
+    @JsonProperty("GroupCd")
+    String groupCode,
+    @JsonProperty("Data")
+    String data,
+    @JsonProperty("DataHex")
+    String dataHex,
+    @JsonProperty("ArmCodes")
+    List<String> armCodes,
+    @JsonProperty("LockTime")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
+    LocalDateTime lockTime,
+    @JsonProperty("Baud")
+    int baud,
+    @JsonProperty("SigStrength")
+    float signalStrength,
+    @JsonProperty("FreqDevStart")
+    float frequencyDeviationStart,
+    @JsonProperty("FreqDevEnd")
+    float frequencyDeviationEnd,
+    @JsonProperty("PhaseNoise")
+    float phaseNoise,
+    @JsonProperty("GoodPhase")
+    int goodPhase,
+    @JsonProperty("ChannelId")
+    int channelId,
+    @JsonProperty("SatLocation")
+    String satelliteLocation,
+    @JsonProperty("Source")
+    String source,
+    @JsonProperty("NoEot")
+    boolean noEot,
+    @JsonProperty("Par")
+    int parity,
+    @JsonProperty("NwsDescriptor")
+    String nwsDescriptor,
+    @JsonProperty("IsNws")
+    boolean isNws, 
+    @JsonProperty("NwsCenter")
+    String nwsCenter,
+    @JsonProperty("PdtId")
+    int pdtId,
+    @JsonProperty("GroupId")
+    int groupId,
+    @JsonProperty("AddressRecv")
+    String AddressReceived,
+    @JsonProperty("SyncTime")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
+    LocalDateTime syncTime, 
+    @JsonProperty("Snr")
+    float signalToNoiseRatio,
+    @JsonProperty("Length")
+    int length,
+    @JsonProperty("Quality")
+    String quality,
+    @JsonProperty("SatId")
+    int satId,
+    @JsonProperty("Priority")
+    int priority,
+    @JsonProperty("Duration")
+    float duration,
+    @JsonProperty("FrameSync")
+    String frameSync,
+    @JsonProperty("AddressCode")
+    String addressCode,
+    @JsonProperty("Ber")
+    int bitErrorRate)
+{
+}
