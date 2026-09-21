@@ -11,13 +11,28 @@ operations: OPERATION_SEPARATOR? (redirect | operation (',' operation)* redirect
 redirect: SWITCH_FORMAT IDENTIFIER;
 
 
+operation: repeat? op;
 
-operation: repeat=NUMBER? identifier=SKIP_LINE_FORWARD  # position
-		 | repeat=NUMBER? identifier=SKIP_LINE_BACKWARD  # position
-		 | repeat=NUMBER? identifier=IDENTIFIER  # position
-		 | repeat=NUMBER? identifier=IDENTIFIER LEFT_PAREN (argument (',' argument)*?)? RIGHT_PAREN # function
-		 | repeat=NUMBER? LEFT_PAREN (operation (OPERATION_SEPARATOR operation)*)+ RIGHT_PAREN # group
-		 ;
+op: identifier=SKIP_LINE_FORWARD  # position
+  | identifier=SKIP_LINE_BACKWARD  # position
+  | identifier=CHECK LEFT_PAREN argument ',' argument RIGHT_PAREN # check
+  | identifier=IDENTIFIER LEFT_PAREN (argument (',' argument)*?)? RIGHT_PAREN # function
+  | identifier=IDENTIFIER  # position
+  | LEFT_PAREN (operation (OPERATION_SEPARATOR operation)*) RIGHT_PAREN # group
+;
+
+repeat: NUMBER;
+
+
+// operation: repeat=repeatVal? identifier=SKIP_LINE_FORWARD  # position
+// 		 | repeat=repeatVal? identifier=SKIP_LINE_BACKWARD  # position
+// 		 | repeat=repeatVal? identifier=CHECK LEFT_PAREN argument ',' argument RIGHT_PAREN # check
+// 		 | repeat=repeatVal? identifier=IDENTIFIER LEFT_PAREN (argument (',' argument)*?)? RIGHT_PAREN # function
+// 		 | repeat=repeatVal? identifier=IDENTIFIER  # position
+// 		 | repeat=repeatVal? LEFT_PAREN (operation (OPERATION_SEPARATOR operation)*) RIGHT_PAREN # group
+// 		 ;
+
+// repeatVal: NUMBER;
 
 argument:  (IDENTIFIER | NUMBER | STRING | NUMBER_FORMAT);
 

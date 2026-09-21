@@ -1,5 +1,7 @@
 package org.opendcs.decodes.operations;
 
+import org.opendcs.decodes.exec.DecodesExecutionContext;
+
 public abstract class AbstractDecodesOperation implements DecodesOperation
 {
     final int repeat;
@@ -29,4 +31,7 @@ public abstract class AbstractDecodesOperation implements DecodesOperation
     {
         return String.format("%d -> %s", repeat, name);
     }
+
+    @Override 
+    public abstract void execute(DecodesExecutionContext<?> context);
 }

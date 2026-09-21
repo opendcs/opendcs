@@ -3,6 +3,8 @@ package org.opendcs.decodes.operations;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.opendcs.decodes.exec.DecodesExecutionContext;
+
 public class GroupDecodesOperation extends AbstractDecodesOperation
 {
     public static final String OPERATION_NAME = "group";
@@ -33,5 +35,14 @@ public class GroupDecodesOperation extends AbstractDecodesOperation
         sb.append(String.join(",", operations.stream().map(op -> op.toString()).toList()));
         sb.append("}");
         return sb.toString();
+    }
+
+    @Override
+    public void execute(DecodesExecutionContext<?> context)
+    {
+        for (int i = 0; i < repeat; i++)
+        {
+            operations.forEach(op -> op.execute(context));
+        }
     }
 }
