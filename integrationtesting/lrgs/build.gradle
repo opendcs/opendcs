@@ -25,6 +25,10 @@ dependencies {
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.io.netty)
     testImplementation(libs.rest.assured)
+    testImplementation(platform(libs.com.amazon.sdk.bom))
+    testImplementation(libs.com.amazon.sdk.sns)
+    testImplementation(libs.com.amazon.sdk.sns.message.manager)
+    testImplementation(libs.com.amazon.sdk.apache.client)
 }
 
 test {
