@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button, Dropdown, Modal } from "react-bootstrap";
 import { t } from "i18next";
 import {
@@ -8,6 +8,7 @@ import {
 } from "opendcs-api";
 import { type ApiContextType, useApi } from "../../../contexts/app/ApiContext.ts";
 import { useTranslation } from "react-i18next";
+import { organizationTree } from "../../../util/orgHierarchy";
 
 interface ToggleProperties {
   org: ApiOrganization;
@@ -39,6 +40,11 @@ function hasRoles(org: string, user?: User): boolean {
     return false;
   }
 }
+
+// Bootstrap already pads a dropdown entry by 1rem; each level of office
+// nesting adds to that. Depth is unbounded, so this can't be a fixed set of
+// CSS classes.
+const indentFor = (depth: number) => `${1 + depth * 1.25}rem`;
 
 export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
   org,
@@ -73,6 +79,15 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
   const changeOrgFunc =
     changeOrg || ((org: ApiOrganization) => changeOrgFn(org, api, auth));
 
+  // Only offices the user holds a role in can be switched to, and those are
+  // usually leaves — so the tree is pruned to branches containing one, and the
+  // parent offices along the way come back as inert labels. Without them the
+  // surviving districts would render as orphans with nothing to nest under.
+  const orgEntries = useMemo(
+    () => organizationTree(orgs, (candidate) => hasRoles(candidate.name!, user)),
+    [orgs, user],
+  );
+
   return (
     <>
       <Dropdown drop="start">
@@ -82,16 +97,21 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
           org={org}
         />
         <Dropdown.Menu style={{ maxHeight: "300px", overflowY: "auto" }}>
-          {orgs
-            .filter((org) => hasRoles(org.name!, user)) // only show what the user has permissions for.
-            .map((org) => (
+          {orgEntries.map(({ org, depth, selectable }) =>
+            selectable ? (
               <Dropdown.Item
                 key={org.name}
+                style={{ paddingLeft: indentFor(depth) }}
                 onClick={() => changeOrgFunc(org, api, auth)}
               >
                 {org.name}
               </Dropdown.Item>
-            ))}
+            ) : (
+              <Dropdown.Header key={org.name} style={{ paddingLeft: indentFor(depth) }}>
+                {org.name}
+              </Dropdown.Header>
+            ),
+          )}
         </Dropdown.Menu>
       </Dropdown>
 
