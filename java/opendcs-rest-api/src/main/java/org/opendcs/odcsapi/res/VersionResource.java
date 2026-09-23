@@ -62,7 +62,7 @@ public final class VersionResource extends OpenDcsResource
 											.map(DecodesSettings::getShowVersionNonAuthenticated)
 											.orElse(false);
 		ApiVersion version = null;
-		if (httpRequest.getUserPrincipal() == null && Boolean.TRUE.equals(!showVersionNonAuthenticated))
+		if (httpRequest.getUserPrincipal() == null && Boolean.FALSE.equals(showVersionNonAuthenticated))
 		{
 			version = new ApiVersion("","");
 		}
