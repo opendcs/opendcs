@@ -37,6 +37,7 @@ dependencies {
     implementation(libs.dom4j)
     implementation(libs.ganymed.ssh)
     implementation(libs.apache.poi)
+    implementation(libs.org.apache.logging.log4j.api)
     implementation(libs.jcalendar)
     implementation(libs.jython.standalone)
 
