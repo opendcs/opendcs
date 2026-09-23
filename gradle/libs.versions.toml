@@ -16,6 +16,7 @@ jsch="0.1.55"
 aspectj="1.8.10"
 json="20251224"
 slf4j-api= { strictly = "2.0.17" }
+log4j-api = "2.26.1"
 logback = "1.5.34" 
 jetty = "12.1.12"
 jersey = "4.0.2"
@@ -107,6 +108,8 @@ org-aspectj-aspectjrt = { module = "org.aspectj:aspectjrt", version.ref="aspectj
 org-json-json = { module = "org.json:json", version.ref="json" }
 org-slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-api" }
 ch-qos-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+# Apache POI (5.1+) requires log4j-api at runtime; pin root version to fix CVE-2026-49844
+org-apache-logging-log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j-api" }
 # jetty (lrgs-web)
 org-eclipse-jetty-jsp = { module = "org.eclipse.jetty.ee11:jetty-ee11-apache-jsp", version.ref="jetty" }
 org-eclipse-jetty-annotations = { module = "org.eclipse.jetty.ee11:jetty-ee11-annotations", version.ref="jetty" }
