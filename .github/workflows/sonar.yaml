@@ -133,6 +133,9 @@ jobs:
           repository: ${{ steps.ctx.outputs.head_repo_full }}
           ref: ${{ steps.ctx.outputs.head_sha }}
           fetch-depth: 0
+          # we operate on the pulled code in a very specific way, and external contributors have to 
+          # have runs approved first.
+          allow-unsafe-pr-checkout: true
     # perform the analaysis now
       - name: Cache SonarCloud packages
         uses: actions/cache@v6.1.0
