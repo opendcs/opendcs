@@ -38,3 +38,31 @@ select(where, limit, site_columns, site_name_columns, collate) ::= <<
 
     order by tsi.unique_string <collate> asc
 >>
+
+merge(dual) ::= <<
+merge into ts_spec
+    using (select
+        :id id, :active_flag active_flag, :allow_dst_offset_variation allow_dst_offset, :site_id site_id,
+        :datatype_id datatype_id, :statistics_code statistics_code, :interval_id interval_id, :duration_id duration_id,
+        :version version, :storage_units storage_units, :storage_table storage_table, :storage_type storage_type,
+        :modify_time modify_time, :description description, :utc_offset utc_offset,
+        :offset_error_action offset_error_action
+    <dual>) input
+    on (ts_spec.ts_id = input.id)
+    when matched then
+        update set
+            ts_id = input.id, active_flag = input.active_flag, allow_dst_offset_variation = input.allow_dst_offset, site_id = input.site_id,
+            datatype_id = input.datatype_id, statistics_code = input.statistics_code, interval_id = input.interval_id, duration_id = input.duration_id,
+            ts_version = input.version, storage_units = input.storage_units, storage_table = input.storage_table, storage_type = input.storage_type,
+            modify_time = input.modify_time, description = input.description, utc_offset = input.utc_offset,
+            offset_error_action = input.offset_error_action
+    when not matched then
+        insert(
+            ts_id, active_flag, allow_dst_offset_variation, site_id, datatype_id, statistics_code, interval_id, duration_id,
+            ts_version, storage_units, storage_table, storage_type, modify_time, description, utc_offset, offset_error_action)
+        values(
+            input.id, input.active_flag, input.allow_dst_offset, input.site_id, input.datatype_id, input.statistics_code, input.interval_id,
+            input.duration_id, input.version, input.storage_units, input.storage_table, input.storage_type, input.modify_time,
+            input.description, input.utc_offset, input.offset_error_action
+        )
+>>
