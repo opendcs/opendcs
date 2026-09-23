@@ -43,7 +43,7 @@ public final class VersionResource extends OpenDcsResource
 {
 
 	@Context 
-	HttpServletRequest request;
+	HttpServletRequest httpRequest;
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -62,7 +62,7 @@ public final class VersionResource extends OpenDcsResource
 											.map(DecodesSettings::getShowVersionNonAuthenticated)
 											.orElse(false);
 		ApiVersion version = null;
-		if (!showVersionNonAuthenticated && request.getUserPrincipal() == null)
+		if (Boolean.TRUE.equals(!showVersionNonAuthenticated) && httpRequest.getUserPrincipal() == null)
 		{
 			version = new ApiVersion("","");
 		}
