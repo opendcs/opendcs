@@ -65,6 +65,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private static final String SELECT = "select";
+    private static final String MERGE = "merge";
 
     @InjectDao
     SiteDao siteDao;
@@ -94,7 +95,6 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
     public TimeSeriesIdentifierDaoImpl()
     {
-        STGroup.verbose = true;
         queries = StringTemplateSqlLocator.findStringTemplateGroup(TimeSeriesIdentifierDaoImpl.class);
     }
 
@@ -124,7 +124,6 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
             try (var query = handle.createQuery(selectQuery.render()))
             {
-                query.setSqlLogger(new DetailSqlLogger(log));
                 return Result.success(
                     query.bind(whereBind,  bindVal)
                          .registerRowMapper(mappers.tsiMapper)
@@ -188,7 +187,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
 
         var toSave = cwmsTsId;
-        if (existing != cwmsTsId) // some field should not be updated
+        if (!existing.equals(cwmsTsId)) // some field should not be updated
         {
             validateChanges(existing, cwmsTsId);
         }
@@ -198,35 +197,12 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         }
 
 
-        final String MERGE_SQL = """
-            merge into ts_spec
-            using (select
-                :id id, :active_flag active_flag, :allow_dst_offset_variation allow_dst_offset, :site_id site_id,
-                :datatype_id datatype_id, :statistics_code statistics_code, :interval_id interval_id, :duration_id duration_id,
-                :version version, :storage_units storage_units, :storage_table storage_table, :storage_type storage_type,
-                :modify_time modify_time, :description description, :utc_offset utc_offset,
-                :offset_error_action offset_error_action
-            <dual>) input
-            on (ts_spec.ts_id = input.id)
-            when matched then
-                update set
-                    ts_id = input.id, active_flag = input.active_flag, allow_dst_offset_variation = input.allow_dst_offset, site_id = input.site_id,
-                    datatype_id = input.datatype_id, statistics_code = input.statistics_code, interval_id = input.interval_id, duration_id = input.duration_id,
-                    ts_version = input.version, storage_units = input.storage_units, storage_table = input.storage_table, storage_type = input.storage_type,
-                    modify_time = input.modify_time, description = input.description, utc_offset = input.utc_offset,
-                    offset_error_action = input.offset_error_action
-            when not matched then
-                insert(
-                    ts_id, active_flag, allow_dst_offset_variation, site_id, datatype_id, statistics_code, interval_id, duration_id,
-                    ts_version, storage_units, storage_table, storage_type, modify_time, description, utc_offset, offset_error_action)
-                values(
-                    input.id, input.active_flag, input.allow_dst_offset, input.site_id, input.datatype_id, input.statistics_code, input.interval_id,
-                    input.duration_id, input.version, input.storage_units, input.storage_table, input.storage_type, input.modify_time,
-                    input.description, input.utc_offset, input.offset_error_action
-                )
-                """;
+        final var mergeTemplate = queries.getInstanceOf(MERGE);
 
-        try (var merge = handle.createUpdate(MERGE_SQL))
+        try (var merge = handle.createUpdate(
+                                mergeTemplate.add(SqlQueries.DUAL,
+                                                  SqlQueries.dualFor(ctx.getDatabaseEngine()))
+                                             .render()))
         {
             DbKey id = toSave.getKey();
 
@@ -449,8 +425,10 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         var selectQuery = selectTemplate.add(LIMIT_CLAUSE, addLimitOffset(limit, offset))
                                             .add(WHERE_CLAUSE, "")
                                             .add(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                                            .add(OpenDcsSiteDaoImpl.SITE_COLUMN_KEY, OpenDcsSiteDaoImpl.SITE_COLUMNS)
-                                            .add(OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS_KEY, OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS)
+                                            .add(OpenDcsSiteDaoImpl.SITE_COLUMN_KEY,
+                                                 mappers.siteMapper.columnsForSelect())
+                                            .add(OpenDcsSiteDaoImpl.SITE_NAME_COLUMNS_KEY,
+                                                 mappers.siteNameMapper.columnsForSelect())
                                             ;
 
         try (var query = handle.createQuery(selectQuery.render()))
@@ -464,6 +442,8 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
             {
                 query.bind(SqlKeywords.OFFSET, offset);
             }
+            
+            query.setSqlLogger(new DetailSqlLogger(log));
             return
                 query.registerRowMapper(mappers.tsiMapper)
                      .registerRowMapper(mappers.dtMapper)
@@ -490,8 +470,10 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                            .orElseThrow(() -> new OpenDcsDataException("Required settings instance is not available."));
         var pgGroupName = dbSettings.storagePresentationGroup;
 
-        var presentationGroup = presentationGroupDao.getByName(tx, pgGroupName)
-                                                    .orElseThrow(() -> new OpenDcsDataException("No presentation grouped named '" + pgGroupName + "' is available in this database."));
+        var presentationGroup =
+             presentationGroupDao.getByName(tx, pgGroupName)
+                                 .orElseThrow(() -> new OpenDcsDataException(
+                                    "No presentation grouped named '" + pgGroupName + "' is available in this database."));
 
         var presentation = presentationGroup.findDataPresentation(dataType);
         if (presentation != null)
