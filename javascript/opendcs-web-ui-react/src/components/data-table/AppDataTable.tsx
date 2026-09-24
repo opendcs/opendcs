@@ -338,33 +338,39 @@ type DtRowApi = {
 
 /** Build the DataTables `render` function for a column, accounting for the
  *  mode-aware edit swap. Returns `undefined` if the column needs no custom
- *  render. */
+ *  render.
+ *
+ *  The returned closure looks its column up through `columnsRef` on every call
+ *  rather than capturing it. DataTables keeps the render functions it was given
+ *  at init, so a captured `col` would freeze the markup a cell was first built
+ *  with - including the degraded markup an `edit.render` emits while its
+ *  reference data is still loading (issue #2052). Reading through the ref means
+ *  a redraw picks up whatever the caller has rebuilt `columns` into. */
 function makeColumnRender<T>(
-  col: ColumnDef<T>,
+  index: number,
+  columnsRef: { readonly current: ColumnDef<T>[] },
   hasInlineEdit: boolean,
   idOf: (row: T) => string,
   rowStateRef: { readonly current: Record<string, RowMode> },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ((data: any, type: string, row: T, meta: any) => any) | undefined {
-  const baseRender = col.render;
-  const editRender = col.edit?.render;
-  const needsWrapper = Boolean(baseRender || (hasInlineEdit && editRender));
+  const initial = columnsRef.current[index];
+  const needsWrapper = Boolean(
+    initial.render || (hasInlineEdit && initial.edit?.render),
+  );
   if (!needsWrapper) return undefined;
-  const fallback = (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any,
-    type: string,
-    row: T,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    meta: any,
-  ) => (baseRender ? baseRender(data, type, row, meta) : (data ?? ""));
   return (data, type, row, meta) => {
-    if (type !== "display") return fallback(data, type, row, meta);
+    const col = columnsRef.current[index] ?? initial;
+    const baseRender = col.render;
+    const fallback = () =>
+      baseRender ? baseRender(data, type, row, meta) : (data ?? "");
+    if (type !== "display") return fallback();
+    const editRender = col.edit?.render;
     if (hasInlineEdit && editRender) {
       const mode = rowStateRef.current[idOf(row)];
       if (mode === "edit" || mode === "new") return editRender(row, idOf(row));
     }
-    return fallback(data, type, row, meta);
+    return fallback();
   };
 }
 
@@ -557,16 +563,21 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   // Stringify a row's id, preferring a synthetic id if the row is a pending
   // inline-edit new row. Used for every rowState / cache lookup internally.
-  const idOf = useCallback(
-    (row: T): string => {
-      const synthetic =
-        typeof row === "object" && row !== null
-          ? newRowIdsRef.current.get(row as object)
-          : undefined;
-      return synthetic ?? String(getId(row));
-    },
-    [getId],
-  );
+  //
+  // `getId` is nearly always passed as an inline arrow, so depending on it
+  // directly would hand `idOf` - and every memo derived from it, `dtColumns`
+  // included - a fresh identity on each render. Reading it through a ref keeps
+  // `idOf` stable so those memos only change when their real inputs do.
+  const getIdRef = useRef(getId);
+  // eslint-disable-next-line react-hooks/refs
+  getIdRef.current = getId;
+  const idOf = useCallback((row: T): string => {
+    const synthetic =
+      typeof row === "object" && row !== null
+        ? newRowIdsRef.current.get(row as object)
+        : undefined;
+    return synthetic ?? String(getIdRef.current(row));
+  }, []);
 
   // Per-row data lookup for click handlers, keyed on the <tr> element.
   const rowDataRef = useRef<WeakMap<HTMLTableRowElement, T>>(new WeakMap());
@@ -829,15 +840,22 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   const hasInlineEdit = Boolean(inlineEdit);
 
+  // Stable ref so the render closures handed to DataTables at init always see
+  // the caller's latest column definitions. Assigned during render rather than
+  // in an effect because the `dtColumns` memo below reads it synchronously.
+  const columnsRef = useRef(columns);
+  // eslint-disable-next-line react-hooks/refs
+  columnsRef.current = columns;
+
   // --- DataTable column definitions (+ optional Actions column) ------------
   // When inlineEdit is enabled, wrap each column's render to swap to the
   // `edit.render` output when the row is in "edit" / "new" mode.
   const dtColumns = useMemo(() => {
-    // makeColumnRender stores rowStateRef in the returned render closure,
-    // which DataTables invokes later during its own cell rendering, not
-    // synchronously here.
+    // makeColumnRender stores rowStateRef / columnsRef in the returned render
+    // closure, which DataTables invokes later during its own cell rendering,
+    // not synchronously here.
     // eslint-disable-next-line react-hooks/refs
-    const cols = columns.map((c) => ({
+    const cols = columns.map((c, i) => ({
       data: c.data,
       defaultContent: c.defaultContent ?? "",
       className: c.className,
@@ -845,7 +863,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       orderable: c.orderable,
       searchable: c.searchable,
       type: c.type,
-      render: makeColumnRender(c, hasInlineEdit, idOf, rowStateRef),
+      render: makeColumnRender(i, columnsRef, hasInlineEdit, idOf, rowStateRef),
     }));
     if (hasActionsCol) {
       cols.push({
@@ -1118,6 +1136,41 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     }
     dt.draw(false);
   }, [rowState, hasInlineEdit]);
+
+  // --- Re-render open edit cells when the column definitions change ---------
+  // `edit.render` produces a one-shot HTML string, so a cell built while its
+  // reference data was still loading keeps the degraded markup it was given
+  // (a text box instead of a dropdown, a dropdown missing most of its
+  // options). Callers rebuild `columns` when that data arrives; invalidate and
+  // redraw so open rows pick the new markup up instead of staying stale until
+  // the user cancels and re-opens the row (issue #2052). Read-only tables are
+  // excluded, since they have no edit markup to refresh.
+  //
+  // This redraw rebuilds every cell in the table, the action buttons included,
+  // so it has to stay rare: a button replaced underneath a click in progress
+  // swallows that click, and a row re-rendered mid-edit reverts to the values
+  // it was opened with. Two things keep it that way - keying off `columns`
+  // (which callers memoise) rather than the derived `dtColumns`, and skipping
+  // the redraw entirely when no row is open, since a row opened later renders
+  // from `columnsRef.current` and is never stale to begin with.
+  const columnsInitRef = useRef(false);
+  useEffect(() => {
+    if (!hasInlineEdit) return;
+    if (!columnsInitRef.current) {
+      columnsInitRef.current = true;
+      return; // first draw already used the current columns
+    }
+    const anyRowOpen = Object.values(rowStateRef.current).some(
+      (m) => m === "edit" || m === "new",
+    );
+    if (!anyRowOpen) return;
+    const dt = table.current?.dt();
+    if (!dt) return;
+    (dt as unknown as { rows: () => { invalidate: () => unknown } })
+      .rows()
+      .invalidate();
+    dt.draw(false);
+  }, [columns, hasInlineEdit]);
 
   // --- Confirmation dialog for `confirm`-flagged row actions ----------------
   const handleConfirmAccept = useCallback(() => {

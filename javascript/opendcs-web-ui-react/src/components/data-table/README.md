@@ -56,6 +56,10 @@ table header/caption/thead markup.
   DataTables options (`defaultContent`, `className`, `name`, `orderable`,
   `searchable`, `render`) pass through. `defaultSort` picks the column the
   table sorts by on first load — see [Initial sort order](#initial-sort-order).
+  **Wrap this in `useMemo`.** With `inlineEdit`, a new array identity makes
+  the wrapper re-render any row that is open for editing so it picks up
+  fresh `edit.render` markup; rebuilding `columns` every render would throw
+  that row's in-progress input away repeatedly.
 
 ### 2. Row modes
 

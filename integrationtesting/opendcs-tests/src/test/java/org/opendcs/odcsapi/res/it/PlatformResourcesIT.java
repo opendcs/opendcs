@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *  Copyright 2025-2026 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.opendcs.odcsapi.filters.W3CTraceFilter;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -676,9 +675,11 @@ final class PlatformResourcesIT extends BaseApiIT
 				assertEquals(expectedItem.get("lastMessage"), entry.get("lastMessage"));
 				assertEquals(expectedItem.get("annotation"), entry.get("annotation"));
 				assertEquals(expectedItem.get("lastContact"), entry.get("lastContact"));
+				assertEquals(expectedItem.get("siteName"), entry.get("siteName"));
 				found = true;
 			}
 		}
-		assertTrue(found);
+		final var forLog = response;
+		assertTrue(found, forLog::asPrettyString);
 	}
 }

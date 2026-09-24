@@ -1,3 +1,17 @@
+/*
+ *  Copyright 2026 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.opendcs.database.impl.cwms.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
@@ -99,10 +113,10 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
     @Override
     public Optional<Site> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-    if (id == null)
-    {
-      return Optional.empty();
-    }
+        if (DbKey.isNull(id))
+        {
+            return Optional.empty();
+        }
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
@@ -321,7 +335,6 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             });
             insertProps.execute();
 
-            // we don't directly get the ID so we'll just look up by the well defined CWMS name instead.
             return getById(tx, idOut).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve site we just saved."));
         }
     }
