@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.exceptions.RequiredSiteNameMissingException;
@@ -198,7 +199,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
                             :state state, :region region, :timezone timezone, :country country,
                             :elevation elevation, :elevunitabbr elevunitabbr, :description description,
                             :active_flag active_flag, :location_type location_type, :modify_time modify_time,
-                            :public_name public_name
+                            :public_name public_name <dual>
                         ) input
                     on (site.id = input.id)
                     when matched then
@@ -219,7 +220,8 @@ public class OpenDcsSiteDaoImpl implements SiteDao
                                input.description, input.active_flag, input.location_type, input.modify_time,
                                input.public_name)
                 """;
-        try (var merge = handle.createUpdate(mergeSql);
+        try (var merge = handle.createUpdate(mergeSql)
+                               .define("dual", ctx.getDatabaseEngine() == DatabaseEngine.ORACLE ? "from dual" : "");
             var deleteProps = handle.createUpdate(DELETE_PROPS);
             var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);

@@ -19,6 +19,7 @@
   "delete_for": "Delete config with id {{id}}",
   "save_config": "Save config with id {{id}}",
   "cancel_for": "Cancel editing for config with id {{id}}",
+  "save_error": "Save failed. Please check your entries and try again.",
   "sensor_num": "Sensor #",
   "duplicate_sensor_number": "This sensor number is already used by another sensor in this config.",
   "sensor_name": "Name",
