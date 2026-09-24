@@ -51,7 +51,7 @@ merge into ts_spec
     on (ts_spec.ts_id = input.id)
     when matched then
         update set
-            ts_id = input.id, active_flag = input.active_flag, allow_dst_offset_variation = input.allow_dst_offset, site_id = input.site_id,
+            active_flag = input.active_flag, allow_dst_offset_variation = input.allow_dst_offset, site_id = input.site_id,
             datatype_id = input.datatype_id, statistics_code = input.statistics_code, interval_id = input.interval_id, duration_id = input.duration_id,
             ts_version = input.version, storage_units = input.storage_units, storage_table = input.storage_table, storage_type = input.storage_type,
             modify_time = input.modify_time, description = input.description, utc_offset = input.utc_offset,

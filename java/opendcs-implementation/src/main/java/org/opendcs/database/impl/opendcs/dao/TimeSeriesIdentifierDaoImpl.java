@@ -20,7 +20,6 @@ import org.opendcs.database.dai.IntervalDurationDao;
 import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.dai.TimeSeriesIdentifierDao;
-import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierMapper.Columns;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.OpenDcsTimeSeriesIdentifierReducer;
@@ -30,7 +29,6 @@ import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.operations.timeseries.TimeSeriesOperations;
 import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
@@ -442,8 +440,6 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
             {
                 query.bind(SqlKeywords.OFFSET, offset);
             }
-            
-            query.setSqlLogger(new DetailSqlLogger(log));
             return
                 query.registerRowMapper(mappers.tsiMapper)
                      .registerRowMapper(mappers.dtMapper)
