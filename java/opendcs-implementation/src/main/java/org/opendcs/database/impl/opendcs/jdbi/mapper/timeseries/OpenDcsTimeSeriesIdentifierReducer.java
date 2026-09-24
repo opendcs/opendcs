@@ -7,7 +7,6 @@ import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
 import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.database.impl.opendcs.dao.TimeSeriesIdentifierDaoImpl.Mappers;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
 
 import decodes.db.DataType;
 import decodes.db.Site;
