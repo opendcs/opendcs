@@ -2,6 +2,7 @@ package decodes.cwms.validation;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import org.junit.jupiter.api.Test;
@@ -13,8 +14,12 @@ import decodes.cwms.CwmsTsId;
 import decodes.tsdb.CTimeSeries;
 import ilex.var.TimedVariable;
 
+import decodes.cwms.validation.ScreeningCheck.Category;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Database-free checks of ScreeningCriteria.doChecks and Screening season selection.
@@ -219,6 +224,94 @@ final class ScreeningCriteriaTest
 		assertSame(winter, screening.findForDate(utcDate(2024, Calendar.MARCH, 15), utc));
 		assertSame(summer, screening.findForDate(utcDate(2024, Calendar.JUNE, 1), utc));
 		assertSame(summer, screening.findForDate(utcDate(2024, Calendar.DECEMBER, 31), utc));
+	}
+
+	@Test
+	void getChecksReturnsEveryCheckInCategoryOrder()
+	{
+		ScreeningCriteria crit = allChecks();
+
+		List<ScreeningCheck> checks = crit.getChecks();
+
+		assertEquals(4, checks.size());
+		assertEquals(Category.ABSOLUTE, checks.get(0).getCategory());
+		assertEquals(Category.CONSTANT, checks.get(1).getCategory());
+		assertEquals(Category.RATE_OF_CHANGE, checks.get(2).getCategory());
+		assertEquals(Category.DURATION_MAGNITUDE, checks.get(3).getCategory());
+	}
+
+	@Test
+	void getChecksReturnsACopy()
+	{
+		ScreeningCriteria crit = allChecks();
+
+		crit.getChecks().clear();
+
+		assertEquals(4, crit.getChecks().size(), "Clearing the returned list changed the criteria set.");
+	}
+
+	/**
+	 * doChecks sets the test bit from the check's category, so these have to stay in step with the
+	 * CwmsFlags constants the flags are actually built from.
+	 */
+	@Test
+	void categoryTestBitsMatchTheCwmsFlagsConstants()
+	{
+		assertEquals(CwmsFlags.TEST_ABSOLUTE_VALUE, Category.ABSOLUTE.getTestBit());
+		assertEquals(CwmsFlags.TEST_CONSTANT_VALUE, Category.CONSTANT.getTestBit());
+		assertEquals(CwmsFlags.TEST_RATE_OF_CHANGE, Category.RATE_OF_CHANGE.getTestBit());
+		assertEquals(CwmsFlags.TEST_DURATION_VALUE, Category.DURATION_MAGNITUDE.getTestBit());
+	}
+
+	/**
+	 * Category order decides which test bit survives when checks of different severities fail,
+	 * because setValidity drops a less severe result and its bit. Reordering would be silent.
+	 */
+	@Test
+	void categoryDeclarationOrderIsTheRunOrder()
+	{
+		assertEquals(
+			List.of(Category.ABSOLUTE, Category.CONSTANT, Category.RATE_OF_CHANGE, Category.DURATION_MAGNITUDE),
+			List.of(Category.values()));
+	}
+
+	@Test
+	void everyCategoryIsActiveWhenThereIsNoScreening()
+	{
+		ScreeningCriteria crit = allChecks();
+
+		for(Category category : Category.values())
+		{
+			assertTrue(crit.isCategoryActive(category), "Expected " + category + " to be active.");
+		}
+	}
+
+	@Test
+	void categoriesFollowTheScreeningActiveFlags()
+	{
+		ScreeningCriteria crit = allChecks();
+		Screening screening = new Screening();
+		screening.setRangeActive(true);
+		screening.setConstActive(false);
+		screening.setRocActive(true);
+		screening.setDurMagActive(false);
+		crit.setScreening(screening);
+
+		assertTrue(crit.isCategoryActive(Category.ABSOLUTE));
+		assertFalse(crit.isCategoryActive(Category.CONSTANT));
+		assertTrue(crit.isCategoryActive(Category.RATE_OF_CHANGE));
+		assertFalse(crit.isCategoryActive(Category.DURATION_MAGNITUDE));
+	}
+
+	/** One check of each category, added out of category order so getChecks has something to sort. */
+	private static ScreeningCriteria allChecks()
+	{
+		ScreeningCriteria crit = new ScreeningCriteria();
+		crit.addDurCheckPeriod(new DurCheckPeriod('R', "hour*3", 0.0, 2.0));
+		crit.addRocPerHourCheck(new RocPerHourCheck('Q', -5.0, 5.0));
+		crit.addAbsCheck(new AbsCheck('R', 0.0, 100.0));
+		crit.addConstCheck(new ConstCheck('Q', "hour*3", 0.0, 0.01, 0));
+		return crit;
 	}
 
 	private static ScreeningCriteria absoluteCriteria()
