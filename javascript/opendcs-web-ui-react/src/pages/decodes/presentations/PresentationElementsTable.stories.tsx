@@ -135,6 +135,20 @@ export const SaveEditedElement: Story = {
         }),
       ).toBeInTheDocument();
     });
+    // Wait for the data-type list to land before saving. Until it does the
+    // standard column renders its free-text fallback, and the swap to the
+    // <select> redraws the row - including the save button. Clicking during
+    // that redraw is what the user would have to do to lose the click, and
+    // what made this story flaky under load; waiting pins it to one state.
+    await waitFor(() => {
+      expect(
+        canvas
+          .getByLabelText(
+            i18n.t("presentations:elements.dataTypeStd_input", { name: "HG" }),
+          )
+          .tagName.toLowerCase(),
+      ).toBe("select");
+    });
     const saveBtn = canvas.getByRole("button", {
       name: i18n.t("presentations:elements.save_edit", { name: "HG" }),
     });
