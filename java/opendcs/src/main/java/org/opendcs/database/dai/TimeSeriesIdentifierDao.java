@@ -139,7 +139,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      * @param id
      * @throws OpenDcsDataException
      */
-    void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException;    
+    void delete(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
     /**
      * Retrieve all time series, given the limit and offset.
