@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.dai.TimeSeriesIdentifierDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -17,10 +18,12 @@ import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.cwms.CwmsTsId;
+import decodes.db.Constants;
+import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.TimeSeriesDb;
 
-@EnableIfTsDb({"OpenDCS-Postgres"})
+@EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
 @DecodesConfigurationRequired({
     "shared/test-sites.xml"
 })
@@ -74,23 +77,42 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
     @Test
     void test_pagination() throws Exception
     {
-        var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
+        var siteDao = db.getDao(SiteDao.class).orElseThrow();
+        var tsDao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
+
+        final String testSiteOne = "AAATSTest1";
+        final String testSiteTwo = "AAATSTest2";
+        final String[] SITES = new String[]{testSiteOne, testSiteTwo};
+
         try (var tx = db.newTransaction())
         {
+            var siteOne = new Site();
+            siteOne.addName(Constants.snt_CWMS, testSiteOne);
+            var siteTwo = new Site();
+            siteTwo.addName(Constants.snt_CWMS, testSiteTwo);
+            siteTwo.addName(Constants.snt_NWSHB5, "TSTEST2");
+
+            siteDao.save(tx, siteOne);
+            siteDao.save(tx, siteTwo);
+
             final int COUNT = 50;
             for (int i = 0; i < COUNT; i++)
             {
-                final var tsName = String.format("TESTSITE1.Precip.Total.1Hour.1Hour.test-%d", i);
-                var tsIdIn = dao.makeTsId(tx, tsName);
-                var tsIdOut = dao.save(tx, tsIdIn);
-                assertNotNull(tsIdOut, () -> String.format("Could not save %s", tsName));
+                for (int j = 0; j < SITES.length; j++)
+                {
+                    final var tsName = String.format("%s.Precip.Total.1Hour.1Hour.test-%d", SITES[j], i);
+                    var tsIdIn = tsDao.makeTsId(tx, tsName);
+                    var tsIdOut = tsDao.save(tx, tsIdIn);
+                    assertNotNull(tsIdOut, () -> String.format("Could not save %s", tsName));
+                }
             }
 
+            var all = tsDao.getAll(tx, -1, -1);
+            assertTrue(all.size() >= COUNT * SITES.length);
+            var first10 = tsDao.getAll(tx, 10, 0);
+            var second10 = tsDao.getAll(tx, 10, 10);
 
-            var all = dao.getAll(tx, -1, -1);
-            assertTrue(all.size() >= 50);
-            var first10 = dao.getAll(tx, 10, 0);
-            var second10 = dao.getAll(tx, 10, 10);
+            assertEquals(siteOne.getPreferredName().getNameValue(), first10.getFirst().getSiteName());
 
             assertEquals(all.subList(0, 10), first10);
             assertEquals(all.subList(10, 20), second10);
