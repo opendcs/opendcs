@@ -157,7 +157,7 @@ public class DecodedMessage implements IDataCollection, DataMessage
                    .addArgument(() -> platform.getDisplayName())
                    .addArgument(() -> platform.getConfigName())
                    .addArgument(() -> logTm != null ? logTm.getMediumId() : "unknown addr")
-                   .addArgument((() ->     new String(rawMessage.getHeader() + "'")))
+                   .addArgument((() ->     new String(rawMessage.getHeader())))
                    .log("Decoding failed - no config for platform '{}' configName={}, dcpaddr={}, Header: '{}'");
 
                 throw new UnknownPlatformException("The config must be saved before decoding. "
