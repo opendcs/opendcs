@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.CompDependsNotifyDao;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.dai.TimeSeriesIdentifierDao;
 import org.opendcs.fixtures.AppTestBase;
@@ -21,6 +22,7 @@ import decodes.cwms.CwmsTsId;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.sql.DbKey;
+import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.TimeSeriesDb;
 
 @EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
@@ -40,6 +42,7 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
     void test_basic_operations() throws Exception
     {
         var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
+        var notificationDao = db.getDao(CompDependsNotifyDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
             var tsIdIn = dao.makeTsId(tx, "TESTSITE1.Precip.Total.1Hour.1Hour.test");
@@ -61,8 +64,36 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
             var tsOutById = dao.getById(tx, tsi.getKey())
                                .orElseGet(() -> fail("TS ID not found."));
 
+            var tsModifiedRecord = notificationDao.getAllNotifyRecords(tx)
+                                                  .stream()
+                                                  .filter(cdn -> cdn.getKey().equals(tsIdOut.getKey()))
+                                                  .filter(cdn -> CpDependsNotify.TS_MODIFIED == cdn.getEventType())
+                                                  .findFirst()
+                                                  .orElseGet(() -> fail("Not compdepends modification record"))
+                                                  ;
+
+            notificationDao.deleteNotifyRecord(tx, tsModifiedRecord);
+
             assertEquals(tsi, tsOutByTsi);
             assertEquals(tsi, tsOutById);
+
+            var units = dao.getStorageUnitsFor(tx, tsIdOut);
+            assertTrue(units.isPresent());
+
+            final String description = "This is a changed description";
+            tsIdOut.setDescription(description);
+            var tsIdDesc = dao.save(tx, tsIdOut).getDescription();
+
+            assertEquals(description, tsIdDesc);
+
+            var tsModifiedRecord2 = notificationDao.getAllNotifyRecords(tx)
+                                                  .stream()
+                                                  .filter(cdn -> cdn.getKey().equals(tsIdOut.getKey()))
+                                                  .filter(cdn -> CpDependsNotify.TS_MODIFIED == cdn.getEventType())
+                                                  .findFirst()
+                                                  .orElseGet(() -> fail("Not compdepends modification record"))
+                                                  ;
+            notificationDao.deleteNotifyRecord(tx, tsModifiedRecord2);
 
 
             dao.delete(tx, tsIdOut.getKey());
