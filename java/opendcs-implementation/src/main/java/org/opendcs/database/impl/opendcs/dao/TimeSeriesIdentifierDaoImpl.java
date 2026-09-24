@@ -64,6 +64,8 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
     private static final String SELECT = "select";
     private static final String MERGE = "merge";
+    private static final String SELECT_STORAGE_TABLE = "selectStorageTable";
+    private static final String UPDATE_STORAGE_TABLE = "updateStorageTable";
 
     @InjectDao
     SiteDao siteDao;
@@ -103,7 +105,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         final var identifier = extractDisplayName(uniqueString);
         return findBy(tx, " where unique_string = :unique_string", "unique_string", identifier.first);
     }
-    
+
     public Result<Optional<TimeSeriesIdentifier>, OpenDcsDataException> findBy(DataTransaction tx, String whereClause, String whereBind, Object bindVal)
     {
         try
@@ -246,22 +248,22 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
 
     private CwmsTsId allocateTable(Handle handle, CwmsTsId inputTs) throws OpenDcsDataException
     {
+        var selectTableTemplate = queries.getInstanceOf(SELECT_STORAGE_TABLE);
+        var updateTableTemplate = queries.getInstanceOf(UPDATE_STORAGE_TABLE);
+
+        if (selectTableTemplate == null)
+        {
+            throw new OpenDcsDataException("No query defined to lookup storage table data");
+        }
+
+        if (updateTableTemplate == null)
+        {
+            throw new OpenDcsDataException("No query defined to update storage table data.");
+        }
+
         var ret = (CwmsTsId)inputTs.copyNoKey();
-        try (var selectTable = handle.createQuery("""
-            select table_num, storage_type, num_ts_present, est_annual_values
-            from storage_table_list
-            where storage_type = :storage_type
-            and est_annual_values = (select min(est_annual_values) from storage_table_list where storage_type = :storage_type)
-            order by table_num
-            for update
-        """);
-            var updateTable = handle.createUpdate("""
-                update storage_table_list set
-                    num_ts_present = :num_ts_present,
-                    est_annual_values = :est_annual_values
-                    where storage_Type = :storage_type
-                    and table_num = :table_num
-                    """))
+        try (var selectTable = handle.createQuery(selectTableTemplate.render());
+             var updateTable = handle.createUpdate(updateTableTemplate.render()))
         {
             var storageTable  =
                 selectTable.bind("storage_type", inputTs.getStorageType())
@@ -285,7 +287,6 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                        .bind("table_num", storageTable.getTableNum())
                        .execute();
         }
-
 
         return ret;
     }
@@ -318,7 +319,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         {
             throw new OpenDcsDataException("Cannot alter storage type of data.");
         }
-        if (existing.getUtcOffset() != input.getUtcOffset())
+        if (!existing.getUtcOffset().equals(input.getUtcOffset()))
         {
             throw new OpenDcsDataException("Cannot alter UTC offset using this method.");
         }
@@ -377,13 +378,19 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
     private DbKey getSiteId(DataTransaction tx, CwmsTsId cwmsTsId) throws OpenDcsDataException, BadTimeSeriesException
     {
         var site = cwmsTsId.getSite();
-        DbKey ret = site != null && DbKey.isNull(site.getId()) ? site.getId() : DbKey.NullKey;
+        if (site == null)
+        {
+            throw new OpenDcsDataException("Time Series Identifier '" +
+                                           cwmsTsId.displayName + "' does not have a site set");
+        }
+        DbKey ret = !DbKey.isNull(site.getId()) ? site.getId() : DbKey.NullKey;
         if (DbKey.isNull(ret)) // have to lookup the site
         {
             var siteLookup = siteDao.getByAnySiteName(tx, site.getNameArray());
             ret = siteLookup.map(s -> s.getId())
                             .orElseThrow(() -> new BadTimeSeriesException(
-                                "No such site '" + cwmsTsId.getSiteName() + "' for provided time series '" + cwmsTsId.getUniqueString() +"'"
+                                "No such site '" + cwmsTsId.getSiteName() +
+                                "' for provided time series '" + cwmsTsId.getUniqueString() +"'"
                             ));
         }
         return ret;
