@@ -3,6 +3,7 @@ package org.opendcs.odcsapi.util;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.IntFunction;
 
 import decodes.cwms.CwmsTsId;
 import decodes.db.DataType;
@@ -35,20 +36,32 @@ public final class DTOMappers
 
 	public static ApiTimeSeriesData dataMap(CTimeSeries cts, Date start, Date end)
 	{
+		return dataMap(cts, start, end, null);
+	}
+
+	public static ApiTimeSeriesData dataMap(CTimeSeries cts, Date start, Date end,
+			IntFunction<String> flagRenderer)
+	{
 		ApiTimeSeriesData ret = new ApiTimeSeriesData();
 		ret.setTsid(mapTsId(cts.getTimeSeriesIdentifier()));
-		ret.setValues(map(cts, start, end));
+		ret.setValues(map(cts, start, end, flagRenderer));
 		return ret;
 	}
 
 	public static List<ApiTimeSeriesValue> map(CTimeSeries cts, Date start, Date end)
+	{
+		return map(cts, start, end, null);
+	}
+
+	public static List<ApiTimeSeriesValue> map(CTimeSeries cts, Date start, Date end,
+			IntFunction<String> flagRenderer)
 	{
 		List<ApiTimeSeriesValue> ret = new ArrayList<>();
 		Date current = start;
 		TimedVariable tv = cts.findWithin(current, 5);
 		if (tv != null && !tv.getTime().before(current))
 		{
-			current = processSample(tv, current, end, ret);
+			current = processSample(tv, current, end, ret, flagRenderer);
 		}
 
 		while (current.before(end) || current.equals(end))
@@ -59,15 +72,33 @@ public final class DTOMappers
 			{
 				break;
 			}
-			current = processSample(value, current, end, ret);
+			current = processSample(value, current, end, ret, flagRenderer);
 		}
 		return ret;
 	}
 
 	public static Date processSample(TimedVariable value, Date current, Date end, List<ApiTimeSeriesValue> ret)
 	{
+		return processSample(value, current, end, ret, null);
+	}
+
+	/**
+	 * @param flagRenderer turns the raw flag word into something displayable. Only the database
+	 *                     implementation knows the encoding, so this comes from
+	 *                     {@code TimeSeriesDb::flags2display}; null to omit the rendering.
+	 */
+	public static Date processSample(TimedVariable value, Date current, Date end,
+			List<ApiTimeSeriesValue> ret, IntFunction<String> flagRenderer)
+	{
 		double val = Double.parseDouble(value.valueString());
 		ApiTimeSeriesValue apiValue = new ApiTimeSeriesValue(value.getTime(), val, value.getFlags());
+		if (flagRenderer != null)
+		{
+			String display = flagRenderer.apply(value.getFlags());
+			// Implementations return null (OpenTSDB, when unscreened) or "" (the base class) for
+			// a value with nothing worth showing -- normalise both to null.
+			apiValue.setFlagsDisplay(display == null || display.isEmpty() ? null : display);
+		}
 		ret.add(apiValue);
 		if (current.equals(end))
 		{
@@ -153,13 +184,24 @@ public final class DTOMappers
 		{
 			return null;
 		}
+		// The second constructor argument is the SITE_DATATYPE_ID -- the concrete time series
+		// this parm is bound to -- which the schema documents as "only for non-group comps where
+		// the TS is completely specified". It is NOT the data type. Passing the data type id here
+		// overwrites the parm's only pointer to its time series, after which a non-group
+		// computation can no longer resolve its input for a manual run (and, if the id happens to
+		// collide with a real ts_id, silently binds the wrong series). The API carries the correct
+		// value in tsKey.
 		DbCompParm ret = new DbCompParm(parm.getAlgoRoleName(),
-				parm.getDataTypeId() != null ? DbKey.createDbKey(parm.getDataTypeId()) : DbKey.NullKey,
+				parm.getTsKey() != null ? DbKey.createDbKey(parm.getTsKey()) : DbKey.NullKey,
 				parm.getInterval(), parm.getTableSelector(), parm.getDeltaT());
+		if (parm.getDataTypeId() != null)
+		{
+			ret.setDataTypeId(DbKey.createDbKey(parm.getDataTypeId()));
+		}
 		String dataTypeStr = parm.getDataType();
 		// dataTypeStr must be "standard:code" to build a DataType; a bare dataTypeId with
-		// no code text isn't enough to construct one, so only the parm's dataTypeId (set via
-		// the constructor above) carries through in that case.
+		// no code text isn't enough to construct one, so only the parm's dataTypeId (set
+		// above) carries through in that case.
 		if (dataTypeStr != null && !dataTypeStr.isEmpty())
 		{
 			String[] parts = dataTypeStr.split(":", 2);
@@ -270,6 +312,12 @@ public final class DTOMappers
 		else
 		{
 			ret.setSiteId(DbKey.NullKey.getValue());
+		}
+		// Round-trip the bound time series key. Without this the UI reads back a null tsKey and
+		// sends null on the next save, silently unbinding the parm from its time series.
+		if (parm.getSiteDataTypeId() != null && !parm.getSiteDataTypeId().isNull())
+		{
+			ret.setTsKey(parm.getSiteDataTypeId().getValue());
 		}
 		ret.setUnitsAbbr(parm.getUnitsAbbr());
 		ret.setAlgoParmType(parm.getAlgoParmType());

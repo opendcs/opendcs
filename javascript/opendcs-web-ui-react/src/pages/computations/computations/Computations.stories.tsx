@@ -480,17 +480,18 @@ const sseSuccessHandler = http.get(
       makeSseStream([
         "event: computation-status\ndata: Starting computation 1\n\n",
         "event: computation-status\ndata: Computation executed with 0 errors\n\n",
+        // The computed values ride along with the result: a manual run writes nothing, so
+        // there is no /tsdata to read them back from.
         `event: Results\ndata: ${JSON.stringify({
           tsIds: [{ uniqueString: "TESTSITE.Flow.Inst.1Hour.0.compproc", key: 42 }],
           startTime: "2025-01-01T00:00:00Z",
           endTime: "2025-01-02T00:00:00Z",
+          data: [mockTsData],
         })}\n\n`,
       ]),
       { headers: { "Content-Type": "text/event-stream" } },
     ),
 );
-
-const tsDataHandler = http.get("/odcsapi/tsdata", () => HttpResponse.json(mockTsData));
 
 export const RunComputationSuccess: Story = {
   args: {},
@@ -499,7 +500,6 @@ export const RunComputationSuccess: Story = {
       handlers: {
         ...orgScopedHandlers,
         runComputation: sseSuccessHandler,
-        tsData: tsDataHandler,
       },
     },
   },
