@@ -66,7 +66,7 @@ public class DecodedMessage implements IDataCollection, DataMessage
 	/** The Platform */
 	private Platform platform;
 	/** Vector of TimeSeries objects */
-	private ArrayList<TimeSeries> timeSeriesArray;
+	private final  ArrayList<TimeSeries> timeSeriesArray = new ArrayList<TimeSeries>();;
 
 	/** Extracted from message (or file) header. */
 	private Date messageTime;
@@ -121,8 +121,7 @@ public class DecodedMessage implements IDataCollection, DataMessage
 	 * @throws UnknownPlatformException
 	 *             if requirePlatform and no Platform found
 	 */
-	public DecodedMessage(RawMessage rawMessage, boolean requirePlatform)
-		throws UnknownPlatformException
+	public DecodedMessage(RawMessage rawMessage, boolean requirePlatform) throws UnknownPlatformException
 	{
 		loggerDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 		timeAdjustmentMadeToBeginTime = false;
@@ -131,7 +130,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 
 		messageTime = rawMessage.getTimeStamp();
 		if (messageTime == null)
+		{
 			messageTime = new Date();
+		}
 
 		TransportMedium tm = null;
 		if (requirePlatform)
@@ -140,20 +141,25 @@ public class DecodedMessage implements IDataCollection, DataMessage
 			this.platform = rawMessage.getTransportMedium().platform;
 		}
 		else
+		{
 			this.platform = null;
+		}
 
-		timeSeriesArray = new ArrayList<TimeSeries>();
-		if (this.platform != null)
+		
+		if (this.platform != null && tm != null)
 		{
 			// Construct time-series array for each sensor
 			PlatformConfig pc = platform.getConfig();
 			if (pc == null)
 			{
-				log.warn("Decoding failed - no config for platform '{}' configName={}, dcpaddr={}, Header: '{}'",
-					     platform.getDisplayName(),
-						 platform.getConfigName(),
-						 tm != null ? tm.getMediumId(): "unknown addr",
-						 new String(rawMessage.getHeader() + "'"));
+				final var logTm = tm;
+				log.atWarn()
+				   .addArgument(() -> platform.getDisplayName())
+				   .addArgument(() -> platform.getConfigName())
+				   .addArgument(() -> logTm != null ? logTm.getMediumId() : "unknown addr")
+				   .addArgument((() ->	 new String(rawMessage.getHeader() + "'")))
+				   .log("Decoding failed - no config for platform '{}' configName={}, dcpaddr={}, Header: '{}'");
+					     
 				throw new UnknownPlatformException("The config must be saved before decoding. "
 					+ "Please exit the 'Edit Decoding Script' dialog "
 					+ "and press Commit. Then re-enter "
@@ -174,9 +180,13 @@ public class DecodedMessage implements IDataCollection, DataMessage
 
 				// Set the time-interval for all fixed-interval sensors.
 				if (configSensor.recordingMode == Constants.recordingModeFixed)
+				{
 					ts.setTimeInterval(configSensor.recordingInterval);
+				}
 				else
+				{
 					ts.setTimeInterval(0);
+				}
 
 				/*
 				 * Data order can be controlled in several places, in the
@@ -207,9 +217,13 @@ public class DecodedMessage implements IDataCollection, DataMessage
 				{
 					s = PropertiesUtil.getIgnoreCase(em.properties, "DataOrder");
 					if (s == null)
+					{
 						s = PropertiesUtil.getIgnoreCase(em.properties, "TimeOrder");
+					}
 					if (s != null)
+					{
 						orderString = s;
+					}
 				}
 
 				// DecodesScript dataOrder value
@@ -227,29 +241,41 @@ public class DecodedMessage implements IDataCollection, DataMessage
 				// ConfigSensor property
 				if ((s = PropertiesUtil.getIgnoreCase(configSensor.getProperties(), "DataOrder")) != null
 					|| (s = PropertiesUtil.getIgnoreCase(configSensor.getProperties(), "TimeOrder")) != null)
+				{
 					orderString = s;
+				}
 
 				// PlatformSensor property
 				if (platformSensor != null
 					&& ((s = platformSensor.getProperty("DataOrder")) != null 
 						|| (s = platformSensor.getProperty("TimeOrder")) != null))
+				{
 					orderString = s;
+				}
 
 				if (orderString != null)
 				{
 					char c = orderString.charAt(0);
 					if (c == 'a' || c == 'A')
+					{
 						ts.setDataOrder(Constants.dataOrderAscending);
+					}
 					else if (c == 'd' || c == 'D')
+					{
 						ts.setDataOrder(Constants.dataOrderDescending);
+					}
 					else
+					{
 						ts.setDataOrder(Constants.dataOrderUndefined);
+					}
 				}
 			}
 
 			int ta = tm != null ? tm.getTimeAdjustment() : 0;
 			if (ta != 0)
+			{
 				messageTime = new Date(messageTime.getTime() + (ta * 1000));
+			}
 		}
 
 		/*
@@ -261,12 +287,16 @@ public class DecodedMessage implements IDataCollection, DataMessage
 		if (platform != null)
 		{
 			if (tm != null && tm.getTimeZone() != null)
+			{
 				tzName = tm.getTimeZone();
+			}
 			else
 			{
 				Site site = platform.getSite();
 				if (site != null && site.timeZoneAbbr != null && site.timeZoneAbbr.length() > 0)
+				{
 					tzName = site.timeZoneAbbr;
+				}
 			}
 		}
 		currentTime = new RecordedTimeStamp(tzName);
@@ -283,10 +313,10 @@ public class DecodedMessage implements IDataCollection, DataMessage
 				currentTime.setComplete(v.getDateValue());
 			}
 			catch (NoConversionException ex)
-			{ /* won't happen */
+			{
+				log.atError().setCause(ex).log("Error retrieving data from variable. This should not happen.");
 			}
 		}
-
 	}
 
 	/**
@@ -327,7 +357,10 @@ public class DecodedMessage implements IDataCollection, DataMessage
 	/**
 	 * @return number of time series herein.
 	 */
-	public int getNumTimeSeries() { return timeSeriesArray.size(); }
+	public int getNumTimeSeries()
+	{
+		return timeSeriesArray.size();
+	}
 
 	/**
 	 * Gets TimeSeries object by data-type. Returns the first time-series in the
@@ -343,7 +376,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 		{
 			TimeSeries ts = it.next();
 			if (ts.hasDataType(dataType))
+			{
 				return ts;
+			}
 		}
 		return null;
 	}
@@ -352,12 +387,10 @@ public class DecodedMessage implements IDataCollection, DataMessage
 	 * From IDataCollection interface, returns an iterator for all ITimeSeries
 	 * objects stored in this message.
 	 * 
-	 * @return Iterator to time series, or null if this message is empty.
+	 * @return Iterator to time series.
 	 */
 	public Iterator<TimeSeries> getAllTimeSeries()
 	{
-		if (timeSeriesArray == null)
-			return null;
 		return timeSeriesArray.iterator();
 	}
 
@@ -407,7 +440,6 @@ public class DecodedMessage implements IDataCollection, DataMessage
 		// Make a working calendar in right TZ to do the arithmetic.
 		GregorianCalendar cal = new GregorianCalendar(currentTime.getCalendar().getTimeZone());
 
-		// Logger.instance().info("upgradeStoredTimes current time = " + cal);
 		for (Iterator<TimeSeries> it = timeSeriesArray.iterator(); it.hasNext();)
 		{
 			int lastDOY = -1;
@@ -420,8 +452,7 @@ public class DecodedMessage implements IDataCollection, DataMessage
 			}
 
 			// Only upgrade time series with partial dates.
-			if (ts.timeStatus != RecordedTimeStamp.TIME_OF_DAY
-				&& ts.timeStatus != RecordedTimeStamp.TIME_OF_YEAR)
+			if (ts.timeStatus != RecordedTimeStamp.TIME_OF_DAY && ts.timeStatus != RecordedTimeStamp.TIME_OF_YEAR)
 			{
 				continue;
 			}
@@ -522,12 +553,16 @@ public class DecodedMessage implements IDataCollection, DataMessage
 				.getTimeZone());
 			Date endTime = new Date();
 			if (curStat == RecordedTimeStamp.NOTHING)
+			{
 				currentTime.getCalendar().setTime(endTime);
+			}
 			else
 			{
 				Variable v = rawMessage.getPM(EdlPMParser.END_TIME_STAMP);
 				if (v == null)
+				{
 					v = rawMessage.getPM(GoesPMParser.MESSAGE_TIME);
+				}
 				if (v != null)
 				{
 					try
@@ -544,7 +579,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 				calEnd.setTime(endTime);
 				calCurrent.set(Calendar.YEAR, calEnd.get(Calendar.YEAR));
 				if (curStat == RecordedTimeStamp.TIME_OF_DAY)
+				{
 					calCurrent.set(Calendar.DAY_OF_YEAR, calEnd.get(Calendar.DAY_OF_YEAR));
+				}
 				currentTime.getCalendar().setTime(calCurrent.getTime());
 			}
 			currentTime.setComplete();
@@ -582,7 +619,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 					TimeSeries ts = it.next();
 					int n = ts.size();
 					if (n == 0)
+					{
 						continue; // empty time series.
+					}
 					for (int i = 0; i < n; i++)
 					{
 						TimedVariable tv = ts.sampleAt(i);
@@ -616,7 +655,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 				tm = null;
 			}
 			if (tm != null)
+			{
 				tmOffset = tm.getTimeAdjustment();
+			}
 			if (tmOffset != 0)
 			{
 				/* Apply offset */
@@ -624,7 +665,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 				{
 					int n = ts.size();
 					if (n == 0)
+					{
 						continue; // empty time series.
+					}
 					ts.addTimeOffset(tmOffset);
 				}
 			}
@@ -634,13 +677,19 @@ public class DecodedMessage implements IDataCollection, DataMessage
 		for (TimeSeries ts : timeSeriesArray)
 		{
 			if (ts.size() == 0)
+			{
 				continue;
+			}
 			Sensor sensor = ts.getSensor();
 			if (sensor == null)
+			{
 				continue;
+			}
 			String tos = ts.getSensor().getProperty("TimeOffsetSec");
 			if (tos == null)
+			{
 				continue;
+			}
 			try
 			{
 				int to = Integer.parseInt(tos.trim());
@@ -691,7 +740,7 @@ public class DecodedMessage implements IDataCollection, DataMessage
 		TimeSeries ts = getTimeSeries(sensorNumber);
 		if (ts == null)
 		{
-			log.warn("In platform {} Cannot add sample -- no time series for sensor ",
+			log.warn("In platform {} Cannot add sample -- no time series for sensor {}",
 					 platform.makeFileName(), sensorNumber);
 			return null;
 		}
@@ -712,12 +761,13 @@ public class DecodedMessage implements IDataCollection, DataMessage
 			if (fixedInterval) // Fixed Interval Sensor?
 			{
 				if (ts.size() == 0) // This is first sample for this sensor?
+				{
 					sampTime = ts.timeOfLastSampleBefore(messageTime);
+				}
 				else if (!ts.isAscending())
 				{
 					// Descending, this time is last one minus interval.
-					sampTime = new Date(ts.timeOfLastSampleInSeries().getTime()
-						- (ts.getTimeInterval() * 1000L));
+					sampTime = new Date(ts.timeOfLastSampleInSeries().getTime() - (ts.getTimeInterval() * 1000L));
 				}
 				else
 				// Ascending
@@ -727,8 +777,10 @@ public class DecodedMessage implements IDataCollection, DataMessage
 				}
 			}
 			else
+			{
 				// Variable interval sensor
 				sampTime = messageTime;
+			}
 		}
 		else
 		// we have either TIME_OF_DAY, TIME_OF_YEAR, or COMPLETE time
@@ -756,11 +808,15 @@ public class DecodedMessage implements IDataCollection, DataMessage
 					long tls = lastSample.getTime();
 
 					if (ts.isAscending())
+					{
 						// Ascending, this time is last one minus interval.
 						sampTime = new Date(tls + sint * 1000L);
+					}
 					else
+					{
 						// Descending, this time is last one minus interval.
 						sampTime = new Date(tls - sint * 1000L);
+					}
 					
 					log.warn("Running Series: sint={} lastSampleTime={}, thisSampleTime={}",
 							 sint, lastSample,sampTime);
@@ -805,8 +861,7 @@ public class DecodedMessage implements IDataCollection, DataMessage
 					// && msec > ts.msecAtLastAdd
 					// && ts.msecAtLastAdd != Long.MIN_VALUE)
 					// ORIGINAL CODE:
-					else if (!ts.isAscending() && msec > ts.msecAtLastAdd
-						&& ts.msecAtLastAdd != Long.MIN_VALUE)
+					else if (!ts.isAscending() && msec > ts.msecAtLastAdd && ts.msecAtLastAdd != Long.MIN_VALUE)
 					{
 						// descending but time is after the previous: we wrapped
 
@@ -843,7 +898,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 		log.trace("Added sample for sensor {} at time {}, value={}", sensorNumber, sampTime, v.getStringValue());
 		ts.timeStatus = currentTime.getStatus();
 		if (firstSample == null)
+		{
 			firstSample = tv;
+		}
 		justAddedSample = true;
 		return tv;
 	}
@@ -859,11 +916,13 @@ public class DecodedMessage implements IDataCollection, DataMessage
 	public void addSampleWithTime(int sensorNumber, Variable v, Date hardTime, int lineNum)
 	{
 		if (sensorNumber < 0)
+		{
 			return;
+		}
 		TimeSeries ts = getTimeSeries(sensorNumber);
 		if (ts == null)
 		{
-			log.warn("In platform {} Cannot add sample -- no time series for sensor ",
+			log.warn("In platform {} Cannot add sample -- no time series for sensor {}",
 					 platform.makeFileName(), sensorNumber);
 			return;
 		}
@@ -886,7 +945,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 	{
 		TimeSeries ts = getTimeSeries(sensorNumber);
 		if (ts == null)
+		{
 			return;
+		}
 		ts.setTimeInterval(seconds);
 	}
 
@@ -916,7 +977,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 	 			 (pg == null ? "null" : pg.getDisplayName()),
 				 (timeSeriesArray==null ? "null" : timeSeriesArray.size()));
 		if (timeSeriesArray == null)
+		{
 			return;
+		}
 		Vector<TimeSeries> omit = new Vector<TimeSeries>();
 		for (TimeSeries ts : timeSeriesArray)
 		{
@@ -953,10 +1016,14 @@ public class DecodedMessage implements IDataCollection, DataMessage
 			log.trace(" No pg element for sensor {} with dt={}", sensor.getName(), sensor.getDataType());
 			Season ignoreSeason = sensor.getIgnoreSeason();
 			if (ignoreSeason == null)
+			{
 				ignoreSeason = platform.getIgnoreSeason();
+			}
 			Season processSeason = sensor.getProcessSeason();
 			if (processSeason == null)
+			{
 				processSeason = platform.getProcessSeason();
+			}
 			if (ignoreSeason != null || processSeason != null)
 			{
 				for(int idx = 0; idx < ts.size(); )
@@ -964,14 +1031,20 @@ public class DecodedMessage implements IDataCollection, DataMessage
 					Date d = ts.sampleAt(idx).getTime();
 					if ((ignoreSeason != null && ignoreSeason.isInSeason(d))
 					 || (processSeason != null && !processSeason.isInSeason(d)))
+					{
 						ts.deleteSampleAt(idx);
+					}
 					else
+					{
 						idx++;
+					}
 				}
 			}
 		}
 		for (Iterator<TimeSeries> it = omit.iterator(); it.hasNext();)
+		{
 			timeSeriesArray.remove(it.next());
+		}
 		presentationGroupApplied = pg;
 	}
 
@@ -985,7 +1058,9 @@ public class DecodedMessage implements IDataCollection, DataMessage
 			TimeSeries ts = it.next();
 			Sensor sensor = ts.getSensor();
 			if (sensor == null)
+			{
 				continue;
+			}
 			String p = sensor.getProperty("preoffset");
 			if (p != null)
 			{
@@ -1055,33 +1130,39 @@ public class DecodedMessage implements IDataCollection, DataMessage
 	 * including the specified time-adjustment value. Then, discarding all
 	 * samples with time-stamps before this value.
 	 */
+	@SuppressWarnings("java:S1166") // we don't care why we didn't have a platform
 	public void removeRedundantData()
 	{
-		if (platform == null || timeSeriesArray == null || rawMessage == null || messageTime == null)
+		if (platform == null || timeSeriesArray.isEmpty() || rawMessage == null || messageTime == null)
+		{
 			return;
+		}
 		try
 		{
 			TransportMedium tm = rawMessage.getTransportMedium();
 			if (tm.transmitInterval <= 0)
+			{
 				return;
+			}
 
 			// Note: timeAdjustment already incorporated in messageTime.
 			long prevMsgMsec = messageTime.getTime() - (tm.transmitInterval * 1000L);
 			for (TimeSeries ts : timeSeriesArray)
+			{
 				ts.discardSamplesBefore(prevMsgMsec);
+			}
 		}
 		catch (UnknownPlatformException ex)
 		{
-			return;
+			/** no nothing */
 		}
 	}
 
-	/*
+	/**
 	 * From IDataCollection interface, creates a new time series in this
 	 * message.
-	 * 
+	 *
 	 * @param sensorId the sensor number uniquely identifying the time series.
-	 * 
 	 * @param name the sensor name (need not be unique)
 	 */
 	public ITimeSeries newTimeSeries(int sensorId, String name)
@@ -1095,6 +1176,10 @@ public class DecodedMessage implements IDataCollection, DataMessage
 		return ts;
 	}
 
+	/**
+	 * Add given time series to this DecodedMessage
+	 * @param ts
+	 */
 	public void addTimeSeries(TimeSeries ts)
 	{
 		timeSeriesArray.add(ts);
@@ -1153,16 +1238,22 @@ public class DecodedMessage implements IDataCollection, DataMessage
 		this.justGotFullDateTime = justGotFullDateTime;
 		justAddedSample = false;
 		for (TimeSeries ts : timeSeriesArray)
+		{
 			ts.setTimeJustSet();
+		}
 	}
 
 	/** Called when we parse a non-year time/date field */
 	public void justGotNonYearField()
 	{
 		if (justAddedSample)
+		{
 			justGotFullDateTime = false;
+		}
 		for (TimeSeries ts : timeSeriesArray)
+		{
 			ts.setTimeJustSet();
+		}
 	}
 
 	public ArrayList<TimeSeries> getTimeSeriesArray()
