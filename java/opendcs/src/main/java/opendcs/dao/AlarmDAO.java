@@ -1267,8 +1267,10 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 					// this means the ts key was invalid - no matching tsid.
 					log.atWarn()
 					   .setCause(ex)
-					   .log("getAllCurrentAlarms: {} - no mathing TSID: ", alarm.getTsidKey());
+					   .log("getAllCurrentAlarms: {} - no matching TSID. Skipped.", alarm.getTsidKey());
+					continue;
 				}
+				ret.add(alarm);
 			}
 
 			// Get all the limit sets that are used by current alarms.

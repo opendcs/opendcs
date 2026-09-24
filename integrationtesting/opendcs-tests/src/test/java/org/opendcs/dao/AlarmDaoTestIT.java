@@ -2,6 +2,7 @@ package org.opendcs.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -9,11 +10,13 @@ import java.util.Date;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.alarm.Alarm;
 import decodes.tsdb.alarm.AlarmEvent;
 import decodes.tsdb.alarm.AlarmGroup;
@@ -22,6 +25,7 @@ import decodes.tsdb.alarm.AlarmScreening;
 import decodes.tsdb.alarm.ProcessMonitor;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 
 /**
@@ -35,6 +39,9 @@ class AlarmDaoTestIT extends AppTestBase
     /** ALARM_SCREENING.DATATYPE_ID and the alarm TS_ID columns have no foreign keys, so fixed values are used. */
     private static final DbKey DATATYPE_ID = DbKey.createDbKey(485_001L);
     private static final DbKey TS_ID = DbKey.createDbKey(485_002L);
+
+    /** A real time series, needed by the getAllCurrentAlarms test. TESTSITE1 comes from shared/test-sites.xml. */
+    private static final String ALARM_TSID = "TESTSITE1.Stage.Inst.30Minutes.0.raw";
 
     @ConfiguredField
     private TimeSeriesDb tsDb;
@@ -117,6 +124,65 @@ class AlarmDaoTestIT extends AppTestBase
         }
     }
 
+    /**
+     * getAllCurrentAlarms built an Alarm for every row and then never added it to the list it
+     * returned, so it always came back empty and ShowAlarms always reported zero current alarms.
+     * The limit set lookup after the loop was dead for the same reason.
+     *
+     * <p>This needs a real time series, unlike the test above: the DAO skips any alarm whose TS_ID
+     * has no matching identifier, so a made up key would leave the list empty either way.</p>
+     */
+    @Test
+    @DecodesConfigurationRequired({"shared/test-sites.xml"})
+    void test_get_all_current_alarms_returns_each_alarm() throws Exception
+    {
+        try (LoadingAppDAI appDao = tsDb.makeLoadingAppDAO();
+             AlarmDAI alarmDao = tsDb.makeAlarmDAO();
+             TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO())
+        {
+            CompAppInfo app = null;
+            AlarmScreening screening = null;
+            try
+            {
+                final TimeSeriesIdentifier tsid = tsDb.makeEmptyTsId();
+                tsid.setUniqueString(ALARM_TSID);
+                final DbKey tsKey = tsDao.createTimeSeries(tsid);
+
+                app = writeApp(appDao, "alarm-current-it");
+                screening = writeScreening(alarmDao, "alarm-current-it", app, null);
+
+                final Alarm written = newAlarm(screening, app);
+                written.setTsidKey(tsKey);
+                alarmDao.writeToCurrent(written);
+
+                // Other tests may leave current alarms behind, so find ours rather than assert on the size.
+                final Alarm found = alarmDao.getAllCurrentAlarms()
+                    .stream()
+                    .filter(a -> tsKey.equals(a.getTsidKey()))
+                    .findFirst()
+                    .orElse(null);
+
+                assertNotNull(found, "getAllCurrentAlarms did not return the alarm that was just written.");
+                assertNotNull(found.getTsid(), "The alarm's time series identifier was not resolved.");
+                assertEquals(ALARM_TSID.toUpperCase(), found.getTsid().getUniqueString().toUpperCase());
+                assertEquals(150.0, found.getDataValue(), 1e-6);
+                assertNotNull(found.getLimitSet(), "The limit set was not assigned to the returned alarm.");
+                assertEquals(screening.getLimitSets().get(0).getLimitSetId(), found.getLimitSet().getLimitSetId());
+            }
+            finally
+            {
+                if (screening != null)
+                {
+                    alarmDao.deleteScreening(screening.getScreeningId());
+                }
+                if (app != null)
+                {
+                    appDao.deleteComputationApp(app);
+                }
+            }
+        }
+    }
+
     private static CompAppInfo writeApp(LoadingAppDAI appDao, String name) throws Exception
     {
         final CompAppInfo app = new CompAppInfo();
@@ -136,7 +202,11 @@ class AlarmDaoTestIT extends AppTestBase
         screening.setScreeningName(name);
         screening.setDatatypeId(DATATYPE_ID);
         screening.setAppId(app.getAppId());
-        screening.setAlarmGroupId(group.getAlarmGroupId());
+        // ALARM_SCREENING.ALARM_GROUP_ID is nullable - a screening only needs a group to send email.
+        if (group != null)
+        {
+            screening.setAlarmGroupId(group.getAlarmGroupId());
+        }
         screening.addLimitSet(limits);
         alarmDao.writeScreening(screening);
 

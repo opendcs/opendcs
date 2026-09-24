@@ -164,7 +164,7 @@ public class ShowAlarms	extends TsdbAppTemplate
 				AlarmScreening scrn =
 					al.getLimitSet() == null ? null : alarmDAO.getScreening(al.getLimitSet().getScreeningId());
 				
-				CompAppInfo appInfo = apps.get(scrn.getAppId());
+				CompAppInfo appInfo = scrn == null ? null : apps.get(scrn.getAppId());
 				
 				System.out.println(al.getTsid().getUniqueString() + ", "
 					+ (scrn == null ? "null" : scrn.getScreeningName()) + ", "
