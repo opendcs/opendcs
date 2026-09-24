@@ -469,10 +469,10 @@ public class ScreeningImport extends TsdbAppTemplate
 			return;
 		}
 		String desc = currentScreening.getScreeningDesc();
-		if (desc == null)
-			desc = "";
-		else
-			desc = desc + "\n" + line.substring(4).trim();
+		String text = line.substring(4).trim();
+		// Multiple DESC lines in one SCREENING block are joined into a multi-line description.
+		currentScreening.setScreeningDesc(
+			desc == null || desc.isEmpty() ? text : desc + "\n" + text);
 	}
 
 	private void screening_end()

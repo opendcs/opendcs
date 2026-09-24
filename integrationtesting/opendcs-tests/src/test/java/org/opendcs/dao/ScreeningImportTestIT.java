@@ -30,12 +30,14 @@ import decodes.tsdb.TimeSeriesDb;
  */
 class ScreeningImportTestIT extends AppTestBase
 {
-    /** CWMS screening ids are limited to 16 characters. */
-    private static final String SCREENING_NAME = "IMPORT-IT.Stage";
+    /** CWMS screening ids are limited to 16 characters. Upper case so id normalization cannot affect the compare. */
+    private static final String SCREENING_NAME = "IMPORT-IT.STAGE";
+
+    private static final String SCREENING_DESC = "Created by ScreeningImportTestIT";
 
     private static final String SCREENING_FILE = String.join("\n",
         "SCREENING " + SCREENING_NAME,
-        "DESC Created by ScreeningImportTestIT",
+        "DESC " + SCREENING_DESC,
         "PARAM Stage",
         "PARAMTYPE Inst",
         "DURATION 0",
@@ -76,6 +78,8 @@ class ScreeningImportTestIT extends AppTestBase
 
                 final Screening screening = screeningDao.getByKey(key);
                 assertEquals(SCREENING_NAME, screening.getScreeningName());
+                // DESC used to be parsed and discarded, so the description never reached the database.
+                assertEquals(SCREENING_DESC, screening.getScreeningDesc());
                 assertEquals("Stage", screening.getParamId());
                 assertTrue(screening.isRangeActive());
                 assertFalse(screening.isRocActive());
