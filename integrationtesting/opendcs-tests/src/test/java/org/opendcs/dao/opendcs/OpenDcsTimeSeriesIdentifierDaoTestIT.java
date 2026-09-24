@@ -113,7 +113,7 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
 
         final String testSiteOne = "AAATSTest1";
         final String testSiteTwo = "AAATSTest2";
-        final String[] SITES = new String[]{testSiteOne, testSiteTwo};
+        final String[] sites = new String[]{testSiteOne, testSiteTwo};
 
         try (var tx = db.newTransaction())
         {
@@ -129,9 +129,9 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
             final int COUNT = 50;
             for (int i = 0; i < COUNT; i++)
             {
-                for (int j = 0; j < SITES.length; j++)
+                for (int j = 0; j < sites.length; j++)
                 {
-                    final var tsName = String.format("%s.Precip.Total.1Hour.1Hour.test-%d", SITES[j], i);
+                    final var tsName = String.format("%s.Precip.Total.1Hour.1Hour.test-%d", sites[j], i);
                     var tsIdIn = tsDao.makeTsId(tx, tsName);
                     var tsIdOut = tsDao.save(tx, tsIdIn);
                     assertNotNull(tsIdOut, () -> String.format("Could not save %s", tsName));
@@ -139,7 +139,7 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
             }
 
             var all = tsDao.getAll(tx, -1, -1);
-            assertTrue(all.size() >= COUNT * SITES.length);
+            assertTrue(all.size() >= COUNT * sites.length);
             var first10 = tsDao.getAll(tx, 10, 0);
             var second10 = tsDao.getAll(tx, 10, 10);
 
