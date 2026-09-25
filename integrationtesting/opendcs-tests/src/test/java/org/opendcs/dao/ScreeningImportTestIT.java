@@ -35,24 +35,24 @@ class ScreeningImportTestIT extends AppTestBase
 
     private static final String SCREENING_DESC = "Created by ScreeningImportTestIT";
 
-    private static final String SCREENING_FILE = String.join("\n",
-        "SCREENING " + SCREENING_NAME,
-        "DESC " + SCREENING_DESC,
-        "PARAM Stage",
-        "PARAMTYPE Inst",
-        "DURATION 0",
-        "UNITS m",
-        "RANGE_ACTIVE true",
-        "ROC_ACTIVE false",
-        "CONST_ACTIVE false",
-        "DURMAG_ACTIVE false",
-        "",
-        "CRITERIA_SET",
-        "CRITERIA ABS R 0 45",
-        "CRITERIA ABS Q 2.6 16.4",
-        "CRITERIA_SET_END",
-        "SCREENING_END",
-        "");
+    private static final String SCREENING_FILE = String.format("""
+        SCREENING %s
+        DESC %s
+        PARAM Stage
+        PARAMTYPE Inst
+        DURATION 0
+        UNITS m
+        RANGE_ACTIVE true
+        ROC_ACTIVE false
+        CONST_ACTIVE false
+        DURMAG_ACTIVE false
+
+        CRITERIA_SET
+        CRITERIA ABS R 0 45
+        CRITERIA ABS Q 2.6 16.4
+        CRITERIA_SET_END
+        SCREENING_END
+        """, SCREENING_NAME, SCREENING_DESC);
 
     @ConfiguredField
     private TimeSeriesDb tsDb;
