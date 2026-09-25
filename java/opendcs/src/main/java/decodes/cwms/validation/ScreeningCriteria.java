@@ -134,15 +134,17 @@ public class ScreeningCriteria
 	public boolean isCategoryActive(Category category)
 	{
 		if (screening == null)
-			return true;
-		switch(category)
 		{
-		case ABSOLUTE: return screening.isRangeActive();
-		case CONSTANT: return screening.isConstActive();
-		case RATE_OF_CHANGE: return screening.isRocActive();
-		case DURATION_MAGNITUDE: return screening.isDurMagActive();
-		default: return true;
+			return true;
 		}
+		// No default: a new Category must be wired in here or this stops compiling.
+		return switch(category)
+		{
+			case ABSOLUTE -> screening.isRangeActive();
+			case CONSTANT -> screening.isConstActive();
+			case RATE_OF_CHANGE -> screening.isRocActive();
+			case DURATION_MAGNITUDE -> screening.isDurMagActive();
+		};
 	}
 
 	/**
