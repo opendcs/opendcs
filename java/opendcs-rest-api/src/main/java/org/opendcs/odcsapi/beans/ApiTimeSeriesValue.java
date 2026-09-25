@@ -31,6 +31,11 @@ public final class ApiTimeSeriesValue
 	@Schema(description = "Flags associated with the value, encoded as a long integer.", example = "1")
 	private long flags = 0;
 
+	@Schema(description = "The flags rendered for display, e.g. screening conditions. The encoding "
+			+ "differs between database implementations, so only the server can interpret the raw "
+			+ "flags; null or empty when the value carries nothing worth showing.", example = "S(R+)")
+	private String flagsDisplay = null;
+
 	public ApiTimeSeriesValue()
 	{
 	}
@@ -71,5 +76,15 @@ public final class ApiTimeSeriesValue
 	public void setFlags(long flags)
 	{
 		this.flags = flags;
+	}
+
+	public String getFlagsDisplay()
+	{
+		return flagsDisplay;
+	}
+
+	public void setFlagsDisplay(String flagsDisplay)
+	{
+		this.flagsDisplay = flagsDisplay;
 	}
 }
