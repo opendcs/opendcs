@@ -22,6 +22,26 @@ This will start an instance with "permanent" data. `--build` will be required if
 
 the vite.config.js current assumes localhost:7000, setup accordingly or improve the environment usage of the config.
 
+## Development server hosts
+
+Set `DEV_ALLOWED_HOSTS` in the environment that starts Vite to allow additional
+hostnames, such as a workspace hostname behind a reverse proxy. For a development
+Docker image, set:
+
+```dockerfile
+ENV DEV_ALLOWED_HOSTS=my-workspace.example.com
+```
+
+The value is a comma-separated list of hostnames without a scheme, port, or path.
+Whitespace and empty entries are ignored. A leading dot, such as `.example.com`,
+allows that domain and all its subdomains. Use only domains you control or trust.
+When unset or empty, Vite keeps its default host allowance.
+
+The variable is read from the process environment when Vite starts; setting it in
+`.env.local` alone does not configure the allowed hosts. Restart Vite after changing
+the value. It is not exposed to browser code and does not configure the production
+web server.
+
 ## Formatting
 
 `npm install` will setup a huksy pre-commit hook to run `lint-staged` on commit to ensure formatting remains consistent.
