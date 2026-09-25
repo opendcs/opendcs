@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Function;
 
@@ -31,6 +32,7 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import decodes.cwms.CwmsFlags;
+import decodes.cwms.validation.ScreeningCheck.Category;
 import decodes.db.UnitConverter;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DataCollection;
@@ -105,6 +107,44 @@ public class ScreeningCriteria
 	public void addDurCheckPeriod(DurCheckPeriod durCheckPeriod)
 	{
 		durCheckPeriods.add(durCheckPeriod);
+	}
+
+	/**
+	 * Every check in this criteria set as one collection, ordered by
+	 * {@link ScreeningCheck.Category}. See that enum for why the order is significant.
+	 * @return a new list. Adding to it does not change this criteria set; use the addXxx methods.
+	 */
+	public List<ScreeningCheck> getChecks()
+	{
+		ArrayList<ScreeningCheck> all = new ArrayList<ScreeningCheck>(absChecks.size()
+			+ constChecks.size() + rocPerHourChecks.size() + durCheckPeriods.size());
+		all.addAll(absChecks);
+		all.addAll(constChecks);
+		all.addAll(rocPerHourChecks);
+		all.addAll(durCheckPeriods);
+		return all;
+	}
+
+	/**
+	 * Whether checks of a given category should run. The owning Screening turns each category
+	 * on and off; a criteria set with no screening runs all of them.
+	 * @param category the category to test
+	 * @return true if checks of this category should be executed
+	 */
+	public boolean isCategoryActive(Category category)
+	{
+		if (screening == null)
+		{
+			return true;
+		}
+		// No default: a new Category must be wired in here or this stops compiling.
+		return switch(category)
+		{
+			case ABSOLUTE -> screening.isRangeActive();
+			case CONSTANT -> screening.isConstActive();
+			case RATE_OF_CHANGE -> screening.isRocActive();
+			case DURATION_MAGNITUDE -> screening.isDurMagActive();
+		};
 	}
 
 	/**
@@ -236,13 +276,13 @@ public class ScreeningCriteria
 			return CwmsFlags.VALIDITY_MISSING;
 		}
 		// ABS checks
-		if (screening == null || screening.isRangeActive())
+		if (isCategoryActive(Category.ABSOLUTE))
 			for(AbsCheck chk : absChecks)
 			{
 				log.debug(chk.toString());
 				if (compare(value, chk.getLow()) < 0 || compare(value,chk.getHigh()) > 0)
 				{
-					setValidity(chk.getFlag(), CwmsFlags.TEST_ABSOLUTE_VALUE);
+					setValidity(chk.getFlag(), chk.getCategory().getTestBit());
 					log.info("{} value {} at time {} failed {}",
 							 input.getTimeSeriesIdentifier().getUniqueString(),
 							 value, dataTime, chk.toString());
@@ -251,7 +291,7 @@ public class ScreeningCriteria
 		
 		// CONST checks
 		Calendar aggCal = alg.aggCal;
-		if (screening == null || screening.isConstActive())
+		if (isCategoryActive(Category.CONSTANT))
 		{
 		nextConstCheck:
 			for(ConstCheck chk : constChecks)
@@ -336,7 +376,7 @@ public class ScreeningCriteria
 					aggCal.add(durinc.getCalConstant(), durinc.getCount());
 					if (!lastTime.before(aggCal.getTime()))
 					{
-						setValidity(chk.getFlag(), CwmsFlags.TEST_CONSTANT_VALUE);
+						setValidity(chk.getFlag(), chk.getCategory().getTestBit());
 						log.info("{} value at time {} failed {} max={}, min ={}",
 								 input.getTimeSeriesIdentifier().getUniqueString(), value,
 								 dataTime, chk.toString(), maxvalue, minvalue);
@@ -345,12 +385,12 @@ public class ScreeningCriteria
 			}
 		}
 		
-		if (screening != null && !screening.isRocActive())
+		if (!isCategoryActive(Category.RATE_OF_CHANGE))
 		{
 			log.debug("Skipping ROC checks because ROC is not active.");
 		}
 		
-		if (screening == null || screening.isRocActive())
+		if (isCategoryActive(Category.RATE_OF_CHANGE))
 		{
 			// RATE checks
 			Date prevTime = rocPreviousTime(dataTime, tsinc, aggCal);
@@ -368,7 +408,7 @@ public class ScreeningCriteria
 						double delta = (value - prevtv.getDoubleValue()) / hoursElapsed;
 						if (compare(delta, chk.getFall()) < 0 || compare(delta,chk.getRise()) > 0)
 						{
-							setValidity(chk.getFlag(), CwmsFlags.TEST_RATE_OF_CHANGE);
+							setValidity(chk.getFlag(), chk.getCategory().getTestBit());
 							log.info("{} value at time {} failed {} prev={}, prevFlags=0x{}, delta={}",
 									 input.getTimeSeriesIdentifier().getUniqueString(), value, dataTime, chk.toString(),
 									 prevtv.getDoubleValue(), Integer.toHexString(prevtv.getFlags()), delta);
@@ -386,7 +426,7 @@ public class ScreeningCriteria
 				
 		}
 		
-		if (screening == null || screening.isDurMagActive())
+		if (isCategoryActive(Category.DURATION_MAGNITUDE))
 		{
 			// DUR checks
 			// For Duration-Magnitude tests, first figure out what kind of 
@@ -443,7 +483,7 @@ public class ScreeningCriteria
 				}
 				if (compare(tally,chk.getLow()) < 0 || compare(tally,chk.getHigh()) > 0)
 				{
-					setValidity(chk.getFlag(), CwmsFlags.TEST_DURATION_VALUE);
+					setValidity(chk.getFlag(), chk.getCategory().getTestBit());
 					log.info("{} value {} at time {} failed {}, tally={}, limits=({},{})",
 							 input.getTimeSeriesIdentifier().getUniqueString(), value, dataTime,
 							 chk.toString(), chk.getLow(), chk.getHigh());
