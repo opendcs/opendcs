@@ -19,9 +19,13 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import decodes.cwms.CwmsTimeSeriesDAO;
 import decodes.cwms.CwmsTsId;
@@ -30,6 +34,7 @@ import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.CompFilter;
 import decodes.tsdb.ComputationExecution;
 import decodes.tsdb.ConstraintException;
@@ -40,6 +45,7 @@ import decodes.tsdb.DbCompResolver;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ProgressListener;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -71,6 +77,7 @@ import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.odcsapi.beans.ApiCompResults;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
+import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
@@ -360,7 +367,9 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			DbComputation comp = dai.getComputationById(DbKey.createDbKey(computationId));
 
-			List<DbComputation> resolvedComps = resolveComputations(comp, computationId, tsId, tsDai, compDependsDai);
+			List<String> diagnostics = new ArrayList<>();
+			List<DbComputation> resolvedComps =
+					resolveComputations(comp, computationId, tsId, tsDai, compDependsDai, diagnostics);
 
 			String taskID = UUID.randomUUID().toString();
 
@@ -383,13 +392,21 @@ public final class ComputationResources extends OpenDcsResource
 			{
 				channel.sendText(String.format("Running computation with ID: %s", computationId));
 
+				// Anything the input resolution had to say -- a recovered binding, or the reason
+				// this run is expected to come back empty.
+				for(String diagnostic : diagnostics)
+				{
+					channel.sendText(diagnostic);
+				}
+
+				List<CTimeSeries> computed = List.of();
 				try
 				{
 					if (contextMap != null)
 					{
 						MDC.setContextMap(contextMap);
 					}
-					executeAndPublishResult(computationId, resolvedComps, startDate, endDate, channel);
+					computed = executeAndPublishResult(computationId, resolvedComps, startDate, endDate, channel);
 				}
 				catch (RuntimeException ex)
 				{
@@ -399,7 +416,7 @@ public final class ComputationResources extends OpenDcsResource
 				{
 					try
 					{
-						processOutput(outputList, channel, startTime, endTime);
+						processOutput(computed, outputList, channel, startTime, endTime);
 					}
 					catch (RuntimeException ex)
 					{
@@ -435,16 +452,18 @@ public final class ComputationResources extends OpenDcsResource
 
 	/**
 	 * Resolves the computation(s) that should actually be executed. Non-group computations
-	 * run as-is. Group computations are made concrete against either the single supplied
+	 * run as-is, unless their input binding is missing -- see {@link #resolveConcreteInputs}.
+	 * Group computations are made concrete against either the single supplied
 	 * tsid, or -- if none was supplied -- against every time series currently known to
 	 * trigger the computation, mirroring the expansion the thick-client comp-run tool performs.
 	 */
 	private List<DbComputation> resolveComputations(DbComputation comp, Long computationId, Long tsId,
-			TimeSeriesDAI tsDai, CompDependsDAI compDependsDai) throws DbIoException, NoSuchObjectException
+			TimeSeriesDAI tsDai, CompDependsDAI compDependsDai, List<String> diagnostics)
+			throws DbIoException, NoSuchObjectException
 	{
 		if (!comp.hasGroupInput())
 		{
-			return List.of(comp);
+			return List.of(resolveConcreteInputs(comp, computationId, tsDai, compDependsDai, diagnostics));
 		}
 
 		if (tsId != null)
@@ -474,6 +493,85 @@ public final class ComputationResources extends OpenDcsResource
 					String.format("No resolvable input time series found for group computation ID: %s", computationId));
 		}
 		return resolvedComps;
+	}
+
+	/**
+	 * A non-group computation carries its input binding in each parm's SITE_DATATYPE_ID. If that
+	 * is missing the computation cannot read its inputs, and a manual run quietly produces
+	 * nothing -- the automatic path never notices because it takes its inputs from the tasklist
+	 * with real identifiers already attached.
+	 *
+	 * <p>Recover by resolving the computation against the dependency table, which lists the
+	 * concrete time series that trigger it, exactly as the group path does. This repairs
+	 * computations whose stored binding was lost without needing a data migration. If the
+	 * dependencies cannot supply a binding either, run anyway but record why the run is
+	 * expected to come back empty, so the caller is told rather than left guessing.
+	 */
+	private DbComputation resolveConcreteInputs(DbComputation comp, Long computationId,
+			TimeSeriesDAI tsDai, CompDependsDAI compDependsDai, List<String> diagnostics)
+			throws DbIoException
+	{
+		List<String> unresolved = unresolvedInputRoles(comp);
+		if (unresolved.isEmpty())
+		{
+			return comp;
+		}
+		log.info("Computation ID {} has unbound input parm(s) {} -- attempting to resolve from "
+				+ "its dependencies.", computationId, unresolved);
+		for(TimeSeriesIdentifier trigger : compDependsDai.getTriggersFor(DbKey.createDbKey(computationId)))
+		{
+			try
+			{
+				DbComputation concrete = DbCompResolver.makeConcrete(getLegacyTimeseriesDB(), tsDai,
+						trigger, comp, true);
+				if (unresolvedInputRoles(concrete).isEmpty())
+				{
+					diagnostics.add(String.format(
+							"Input parm(s) %s had no time series bound; resolved from dependency '%s'.",
+							unresolved, trigger.getUniqueString()));
+					return concrete;
+				}
+			}
+			catch(NoSuchObjectException ex)
+			{
+				log.warn("Could not resolve computation ID {} against dependency '{}' -- {}",
+						computationId, trigger.getUniqueString(), ex.getMessage());
+			}
+		}
+		diagnostics.add(String.format(
+				"Input parm(s) %s have no time series bound and none could be recovered from this "
+				+ "computation's dependencies. Bind the parm to a time series and save the "
+				+ "computation; until then it can only run from the tasklist.", unresolved));
+		return comp;
+	}
+
+	/** Roles of the input parms that cannot currently be resolved to a stored time series. */
+	private List<String> unresolvedInputRoles(DbComputation comp)
+	{
+		TimeSeriesDb tsdb = getLegacyTimeseriesDB();
+		List<String> unresolved = new ArrayList<>();
+		for(DbCompParm parm : comp.getParmList())
+		{
+			if (!parm.isInput())
+			{
+				continue;
+			}
+			try
+			{
+				// expandSDI also fills the parm's site and data type, which is what the executive
+				// later needs; a null return means the parm has no usable binding.
+				if (tsdb.expandSDI(parm) == null)
+				{
+					unresolved.add(parm.getRoleName());
+				}
+			}
+			catch(DbIoException | NoSuchObjectException ex)
+			{
+				log.debug("Input parm '{}' does not resolve -- {}", parm.getRoleName(), ex.getMessage());
+				unresolved.add(parm.getRoleName());
+			}
+		}
+		return unresolved;
 	}
 
 	private List<TimeSeriesIdentifier> processOutputTsIds(DbComputation comp, TimeSeriesDAI tsDai, SiteDAI siteDai,
@@ -553,31 +651,128 @@ public final class ComputationResources extends OpenDcsResource
 		return outputList;
 	}
 
-	private void executeAndPublishResult(Long computationId, List<DbComputation> comps, Date startDate, Date endDate,
-			SseChannel channel)
+	/**
+	 * Runs the resolved computations and persists whatever they produced.
+	 *
+	 * <p>{@link ComputationExecution} only computes: the output time series come back in the
+	 * {@code afterComp} handler, and it is up to the caller what to do with them. A manual run
+	 * deliberately does NOT write them -- the operator has to see the numbers and decide before
+	 * anything reaches the database -- so they are collected here and returned to the caller for
+	 * delivery, while the automatic (tasklist driven) path in {@code ComputationApp} saves them.
+	 *
+	 * @return the computed output time series, in memory and not persisted
+	 */
+	private List<CTimeSeries> executeAndPublishResult(Long computationId, List<DbComputation> comps,
+			Date startDate, Date endDate, SseChannel channel)
 	{
-		try (ComputationExecution execution = new ComputationExecution(createDb(), executors.getComputationExecutor()))
+		SseProgressListener listener = new SseProgressListener(channel);
+		// Computations run in parallel on the shared pool, so afterComp can be called from several
+		// threads at once.
+		List<CTimeSeries> outputs = new CopyOnWriteArrayList<>();
+		try
 		{
-			SseProgressListener listener = new SseProgressListener(channel);
-			ComputationExecution.CompResults results = execution.execute(comps, new DataCollection(), startDate, endDate, listener);
+			ComputationExecution.CompResults results;
+			try (ComputationExecution execution = new ComputationExecution(createDb(), executors.getComputationExecutor()))
+			{
+				results = execution.execute(comps, new DataCollection(), startDate, endDate, listener, dc ->
+				{
+					outputs.addAll(dc.getAllTimeSeries());
+					return dc;
+				});
+			}
+
+			reportOutputs(outputs, listener);
 
 			channel.sendText(String.format("Computation executed with %d errors", results.numErrors()));
+			return outputs;
 		}
 		catch (RuntimeException ex)
 		{
 			log.error("Error during computation execution for computation ID: {}", computationId, ex);
-			channel.sendText(String.format("Computation failed: %s", ex.getMessage()));
+			// Reported as ERROR, not as a status line: this is a hard failure and the caller has to
+			// be able to tell it apart from ordinary trace output.
+			channel.send(channel.newEvent("ERROR")
+					.mediaType(MediaType.TEXT_PLAIN_TYPE)
+					.data(String.format("Computation failed: %s", describe(ex)))
+					.build());
+			return List.of();
 		}
 	}
 
-	private void processOutput(List<TimeSeriesIdentifier> outputList, SseChannel channel,
-			Instant startDate, Instant endDate)
+	/** Reports what the run computed, so the trace says what is about to be returned. */
+	private void reportOutputs(List<CTimeSeries> outputs, ProgressListener listener)
 	{
-		List<ApiTimeSeriesIdentifier> ids = APIStreamMapper.mapList(outputList, ApiTimeSeriesIdentifier.class);
+		if(outputs.isEmpty())
+		{
+			listener.onProgress("Computation produced no output time series.", Level.INFO, null);
+			return;
+		}
+		for(CTimeSeries cts : outputs)
+		{
+			TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
+			listener.onProgress(String.format("Computed %d values for '%s'", cts.size(),
+					tsid != null ? tsid.getUniqueString() : cts.getNameString()), Level.INFO, null);
+		}
+	}
+
+	/** Exception message plus its root cause, so a wrapped failure still says what went wrong. */
+	private static String describe(Throwable ex)
+	{
+		StringBuilder sb = new StringBuilder(ex.getMessage() != null ? ex.getMessage() : ex.toString());
+		Throwable cause = ex.getCause();
+		while(cause != null)
+		{
+			if(cause.getMessage() != null && sb.indexOf(cause.getMessage()) < 0)
+			{
+				sb.append(": ").append(cause.getMessage());
+			}
+			cause = cause.getCause();
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Publishes the run's results. The computed values travel inline: a manual run writes nothing,
+	 * so there is nothing for the caller to read back from {@code /tsdata} afterwards.
+	 *
+	 * @param computed the time series the run produced, empty if it produced none
+	 * @param intended parm-derived description of the outputs the computation was meant to write,
+	 *                 used to name them when the run produced nothing
+	 */
+	private void processOutput(List<CTimeSeries> computed, List<TimeSeriesIdentifier> intended,
+			SseChannel channel, Instant startDate, Instant endDate)
+	{
+		Date start = Date.from(startDate);
+		Date end = Date.from(endDate);
+		// A group computation resolves into one concrete computation per trigger and several of
+		// those can share an output series, so key by identifier to get one entry per output
+		// rather than one per resolved computation.
+		Map<String, CTimeSeries> distinct = new LinkedHashMap<>();
+		for(CTimeSeries cts : computed)
+		{
+			TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
+			distinct.putIfAbsent(tsid != null ? tsid.getUniqueString() : cts.getNameString(), cts);
+		}
+
+		List<TimeSeriesIdentifier> reported = distinct.values().stream()
+				.map(CTimeSeries::getTimeSeriesIdentifier)
+				.filter(Objects::nonNull)
+				.toList();
+
 		ApiCompResults results = new ApiCompResults();
 		results.setEndTime(endDate.toString());
 		results.setStartTime(startDate.toString());
-		results.setTsIds(ids);
+		// Name the intended outputs when the run produced nothing, so the caller can still say
+		// which series came back empty.
+		results.setTsIds(APIStreamMapper.mapList(
+				reported.isEmpty() ? intended : reported, ApiTimeSeriesIdentifier.class));
+		// Quality flags matter to whoever is reviewing a run -- screening results in particular --
+		// and only the database implementation knows how its flag word is encoded, so it renders
+		// them for display here rather than leaving the caller to guess.
+		TimeSeriesDb tsdb = getLegacyTimeseriesDB();
+		results.setData(distinct.values().stream()
+				.map(cts -> DTOMappers.dataMap(cts, start, end, tsdb::flags2display))
+				.toList());
 
 		channel.send(channel.newEvent("Results")
 				.mediaType(MediaType.APPLICATION_JSON_TYPE)
@@ -598,9 +793,13 @@ public final class ComputationResources extends OpenDcsResource
 		public void onProgress(String message, Level logLevel, Throwable cause)
 		{
 			logEvent(message, logLevel, cause);
+			// The cause carries the only useful detail for a failure ("Cannot initialize computation
+			// 'x'" says nothing on its own), so fold it into the streamed line -- the caller has no
+			// access to the server log.
+			String data = cause == null ? message : String.format("%s -- %s", message, describe(cause));
 			channel.send(channel.newEvent(channel.eventName())
 					.reconnectDelay(3000L)
-					.data(message)
+					.data(data)
 					.mediaType(MediaType.TEXT_PLAIN_TYPE)
 					.build());
 		}

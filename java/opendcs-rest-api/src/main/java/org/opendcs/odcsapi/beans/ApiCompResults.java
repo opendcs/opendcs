@@ -1,5 +1,6 @@
 package org.opendcs.odcsapi.beans;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,6 +15,11 @@ public final class ApiCompResults
 
 	@Schema(description = "End time for the results. Uses Instant for representation", example = "2025-01-01T00:00:00Z")
 	private String endTime;
+
+	@Schema(description = "The computed values, returned inline. A manual run does not write its "
+			+ "output to the database -- the operator reviews these values and decides -- so this "
+			+ "is the only place the results of the run exist.")
+	private List<ApiTimeSeriesData> data = new ArrayList<>();
 
 	public List<ApiTimeSeriesIdentifier> getTsIds()
 	{
@@ -43,5 +49,15 @@ public final class ApiCompResults
 	public void setTsIds(List<ApiTimeSeriesIdentifier> tsIds)
 	{
 		this.tsIds = tsIds;
+	}
+
+	public List<ApiTimeSeriesData> getData()
+	{
+		return data;
+	}
+
+	public void setData(List<ApiTimeSeriesData> data)
+	{
+		this.data = data;
 	}
 }
