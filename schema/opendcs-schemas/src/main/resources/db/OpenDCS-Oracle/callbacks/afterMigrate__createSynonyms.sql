@@ -4,7 +4,7 @@ BEGIN
   for rec in (
     select object_name,owner 
       from sys.all_objects
-     where owner = upper('${TSDB_ADM_SCHEMA}') and object_type in('TABLE', 'SEQUENCE')
+     where owner = upper('${TSDB_ADM_SCHEMA}') and object_type in('TABLE', 'SEQUENCE', 'VIEW')
      order by object_id asc
     )
   loop
