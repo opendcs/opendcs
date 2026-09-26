@@ -243,11 +243,11 @@ const resetCreateStore = () => {
 };
 
 const createHandlers = {
-  appStat: http.get("/odcsapi/appstat", async () => {
+  appStat: http.get("/api/appstat", async () => {
     await delay(25);
     return HttpResponse.json<ApiAppStatus[]>([]);
   }),
-  appRefs: http.get("/odcsapi/apprefs", async () => {
+  appRefs: http.get("/api/apprefs", async () => {
     await delay(25);
     return HttpResponse.json<ApiAppRef[]>(
       createStore.map((app) => ({
@@ -258,7 +258,7 @@ const createHandlers = {
       })),
     );
   }),
-  getApp: http.get("/odcsapi/app", async ({ request }) => {
+  getApp: http.get("/api/app", async ({ request }) => {
     await delay(25);
     const id = Number(new URL(request.url).searchParams.get("appid"));
     const app = createStore.find((a) => a.appId === id);
@@ -266,7 +266,7 @@ const createHandlers = {
       ? HttpResponse.json(toApiApp(app))
       : new HttpResponse(null, { status: 404 });
   }),
-  postApp: http.post("/odcsapi/app", async ({ request }) => {
+  postApp: http.post("/api/app", async ({ request }) => {
     await delay(25);
     const body = (await request.json()) as ApiLoadingApp;
     createdApps.push(body);

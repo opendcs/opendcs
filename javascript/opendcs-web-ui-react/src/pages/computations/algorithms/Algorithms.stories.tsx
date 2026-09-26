@@ -197,7 +197,7 @@ export const AddAndSave: Story = {
     msw: {
       handlers: {
         ...algorithmHandlers,
-        saveAlgorithm: http.post("/odcsapi/algorithm", async ({ request }) => {
+        saveAlgorithm: http.post("/api/algorithm", async ({ request }) => {
           const body = (await request.json()) as ApiAlgorithm;
           savedAlgorithms.push(body);
           return HttpResponse.json({ ...body, algorithmId: 99 }, { status: 201 });
