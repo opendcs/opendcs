@@ -152,8 +152,9 @@ export const RoutingPlatformsTable: React.FC<RoutingPlatformsTableProperties> = 
     if (!edit) return [];
     return [
       {
-        text: "+",
+        text: t("routing:add_platforms"),
         ariaLabel: t("routing:add_platforms"),
+        icon: "bi-plus-lg",
         onClick: () => setShowAddModal(true),
       },
     ];

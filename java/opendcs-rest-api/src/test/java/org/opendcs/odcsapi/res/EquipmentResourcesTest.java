@@ -40,7 +40,7 @@ final class EquipmentResourcesTest
 	}
 
 	@Test
-	void testMapRefNullId() throws Exception
+	void testMapRefNullId()
 	{
 		EquipmentModel em = new EquipmentModel();
 		em.name = "No-ID-Model";
@@ -81,7 +81,7 @@ final class EquipmentResourcesTest
 	}
 
 	@Test
-	void testMapFullNullId() throws Exception
+	void testMapFullNullId()
 	{
 		EquipmentModel em = new EquipmentModel();
 		em.name = "No-ID-Full";

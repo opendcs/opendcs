@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../../contexts/app/AuthContext";
 import { Button, Card, Container, Form, Modal } from "react-bootstrap";
 import { PersonCircle } from "react-bootstrap-icons";
 import { type Credentials, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
 import { useApi } from "../../../contexts/app/ApiContext";
 import { useOrganizations } from "../../../contexts/app/OrganizationsContext";
+import { organizationTree } from "../../../util/orgHierarchy";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import FormLogin from "./FormLogin";
@@ -17,12 +18,21 @@ import { oidcConfigToClient, type ParamMap } from "../../../util/login-providers
 import type { SigninRequest } from "oidc-client-ts";
 import { AppVersion } from "../../../components/AppVersion";
 
+// Indentation for nested offices in the organization select. Built from its
+// code point so the character stays visible in source.
+const NBSP = String.fromCharCode(160);
+const INDENT_WIDTH = 4;
+
 export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { loginSchemes, setUser } = useAuth();
   const { organizations } = useOrganizations();
+  // Nest each office under its parent (CWMS report_to_office) so the list
+  // reads ROOT -> division -> district instead of one flat run of names.
+  // Every office is offered here, so no parent is ever missing.
+  const orgOptions = useMemo(() => organizationTree(organizations), [organizations]);
   const api = useApi();
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -178,8 +188,11 @@ export default function Login() {
                     api.setOrg(JSON.parse(e.currentTarget.value));
                   }}
                 >
-                  {organizations.map((org) => (
+                  {orgOptions.map(({ org, depth }) => (
                     <option key={org.name} value={JSON.stringify(org)}>
+                      {/* Browsers ignore padding on <option> in the native
+                          dropdown, so the nesting has to be real characters. */}
+                      {NBSP.repeat(depth * INDENT_WIDTH)}
                       {org.name}
                     </option>
                   ))}

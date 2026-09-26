@@ -218,7 +218,7 @@ public class DcpMsgRetriever
 	  @throws UntilReachedException if specified until time was reached
 	  @throws SearchTimeoutException if stopSearchMsec reached and no msg rcv'd
 	   (this essentially means 'try again')
-	  @throws EndOfArchivException if all indexes have been checked with no
+	  @throws EndOfArchiveException if all indexes have been checked with no
 	   match.
 	*/
 	public int getNextPassingIndex(DcpMsgIndex idx, long stopSearchMsec)

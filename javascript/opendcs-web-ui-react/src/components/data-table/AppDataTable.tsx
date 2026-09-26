@@ -19,13 +19,15 @@ import { useTranslation } from "react-i18next";
 import { dtLangs } from "../../lang";
 import { unmountToDom, useContextWrapper } from "../../util/ContextWrapper";
 import { useTableProcessing } from "./useTableProcessing";
+import { TableCaption, type CaptionButton } from "./TableCaption";
 import { SaveErrorAlert } from "../forms";
 import { useSaveError } from "../../hooks/useSaveError";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
-// Buttons plugin — required because the wrapper uses `layout.top1Start` to
-// render `+` / extra header buttons via DataTables' Buttons feature.
+// Buttons plugin — the wrapper renders its own header buttons in the table
+// caption, but consumers can still ask for DataTables Buttons through the
+// `dataTableOptions.layout` escape hatch.
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(dtButtons);
 
@@ -47,6 +49,18 @@ export interface ColumnDef<T> {
   searchable?: boolean;
   /** DataTables column `type` — skip the type auto-sniffer when set. */
   type?: "num" | "string" | "date" | "html" | "html-num" | "num-fmt";
+  /**
+   * Sort the table by this column on initial load (issue #1662). Without it
+   * DataTables falls back to its own `[[0, "asc"]]` default, which sorts by
+   * whatever sits in the first column — usually the database id, so the rows
+   * read as unordered. Set this on the column a user would naturally scan
+   * (normally the name) to get a meaningful default instead.
+   *
+   * Only the first column that declares it is used. An explicit
+   * `dataTableOptions.order` still overrides it, and `stateSave` means a sort
+   * the user picked themselves wins on their next visit.
+   */
+  defaultSort?: "asc" | "desc";
   /**
    * DataTables column `render` — returns the cell content for the given
    * render `type` (`"display"`, `"sort"`, `"filter"`, `"type"`). For custom
@@ -115,10 +129,12 @@ export interface DetailActions<TSave> {
 }
 
 export interface HeaderButton {
-  /** Button label text (or icon character like `"+"`). */
+  /** Button label text. */
   text: string;
   /** Accessible label for screen readers. */
   ariaLabel: string;
+  /** Optional Bootstrap icon class shown before the text, e.g. `"bi-plus-lg"`. */
+  icon?: string;
   onClick: () => void;
 }
 
@@ -129,8 +145,11 @@ export interface AddNewConfig<T> {
    * server-side positive ids.
    */
   template: (nextId: number) => T;
+  /** Accessible label, e.g. `"Add Platform"`. */
   ariaLabel: string;
-  /** Defaults to `"+"`. */
+  /** Visible button label. Defaults to the translated `"Add"`. */
+  label?: string;
+  /** Bootstrap icon class. Defaults to `"bi-plus-lg"`. */
   icon?: string;
 }
 
@@ -272,6 +291,21 @@ function renderActionButtonHtml<T>(action: RowAction<T>, row: T): string {
   );
 }
 
+function renderCaptionButtonHtml(btn: CaptionButton): string {
+  const icon = btn.icon
+    ? `<i class="bi ${escapeHtml(btn.icon)}" aria-hidden="true"></i>`
+    : "";
+  const text = btn.text ? `<span>${escapeHtml(btn.text)}</span>` : "";
+  return (
+    `<button type="button"` +
+    ` class="btn btn-sm btn-${escapeHtml(btn.variant ?? "secondary")} dt-caption__button"` +
+    ` data-caption-action="${escapeHtml(btn.key)}"` +
+    ` aria-label="${escapeHtml(btn.ariaLabel)}">` +
+    `${icon}${text}` +
+    `</button>`
+  );
+}
+
 /**
  * Read edited cell values from a row's DOM and merge with the original row.
  * Only cells for columns with `edit.read` defined contribute values.
@@ -304,33 +338,39 @@ type DtRowApi = {
 
 /** Build the DataTables `render` function for a column, accounting for the
  *  mode-aware edit swap. Returns `undefined` if the column needs no custom
- *  render. */
+ *  render.
+ *
+ *  The returned closure looks its column up through `columnsRef` on every call
+ *  rather than capturing it. DataTables keeps the render functions it was given
+ *  at init, so a captured `col` would freeze the markup a cell was first built
+ *  with - including the degraded markup an `edit.render` emits while its
+ *  reference data is still loading (issue #2052). Reading through the ref means
+ *  a redraw picks up whatever the caller has rebuilt `columns` into. */
 function makeColumnRender<T>(
-  col: ColumnDef<T>,
+  index: number,
+  columnsRef: { readonly current: ColumnDef<T>[] },
   hasInlineEdit: boolean,
   idOf: (row: T) => string,
   rowStateRef: { readonly current: Record<string, RowMode> },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ((data: any, type: string, row: T, meta: any) => any) | undefined {
-  const baseRender = col.render;
-  const editRender = col.edit?.render;
-  const needsWrapper = Boolean(baseRender || (hasInlineEdit && editRender));
+  const initial = columnsRef.current[index];
+  const needsWrapper = Boolean(
+    initial.render || (hasInlineEdit && initial.edit?.render),
+  );
   if (!needsWrapper) return undefined;
-  const fallback = (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any,
-    type: string,
-    row: T,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    meta: any,
-  ) => (baseRender ? baseRender(data, type, row, meta) : (data ?? ""));
   return (data, type, row, meta) => {
-    if (type !== "display") return fallback(data, type, row, meta);
+    const col = columnsRef.current[index] ?? initial;
+    const baseRender = col.render;
+    const fallback = () =>
+      baseRender ? baseRender(data, type, row, meta) : (data ?? "");
+    if (type !== "display") return fallback();
+    const editRender = col.edit?.render;
     if (hasInlineEdit && editRender) {
       const mode = rowStateRef.current[idOf(row)];
       if (mode === "edit" || mode === "new") return editRender(row, idOf(row));
     }
-    return fallback(data, type, row, meta);
+    return fallback();
   };
 }
 
@@ -421,6 +461,8 @@ function withoutId<T>(items: T[], id: string, idOf: (r: T) => string): T[] {
 // =============================================================================
 
 const BASE_TABLE_CLASS = "table table-hover table-striped w-100 border";
+// Icon shown on every "add a row" button in a table caption.
+const ADD_ICON = "bi-plus-lg";
 // Applied only when row-click expand is enabled — signals clickability.
 const CLICKABLE_ROW_CLASS = "tablerow-cursor";
 
@@ -521,16 +563,21 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   // Stringify a row's id, preferring a synthetic id if the row is a pending
   // inline-edit new row. Used for every rowState / cache lookup internally.
-  const idOf = useCallback(
-    (row: T): string => {
-      const synthetic =
-        typeof row === "object" && row !== null
-          ? newRowIdsRef.current.get(row as object)
-          : undefined;
-      return synthetic ?? String(getId(row));
-    },
-    [getId],
-  );
+  //
+  // `getId` is nearly always passed as an inline arrow, so depending on it
+  // directly would hand `idOf` - and every memo derived from it, `dtColumns`
+  // included - a fresh identity on each render. Reading it through a ref keeps
+  // `idOf` stable so those memos only change when their real inputs do.
+  const getIdRef = useRef(getId);
+  // eslint-disable-next-line react-hooks/refs
+  getIdRef.current = getId;
+  const idOf = useCallback((row: T): string => {
+    const synthetic =
+      typeof row === "object" && row !== null
+        ? newRowIdsRef.current.get(row as object)
+        : undefined;
+    return synthetic ?? String(getIdRef.current(row));
+  }, []);
 
   // Per-row data lookup for click handlers, keyed on the <tr> element.
   const rowDataRef = useRef<WeakMap<HTMLTableRowElement, T>>(new WeakMap());
@@ -793,15 +840,22 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   const hasInlineEdit = Boolean(inlineEdit);
 
+  // Stable ref so the render closures handed to DataTables at init always see
+  // the caller's latest column definitions. Assigned during render rather than
+  // in an effect because the `dtColumns` memo below reads it synchronously.
+  const columnsRef = useRef(columns);
+  // eslint-disable-next-line react-hooks/refs
+  columnsRef.current = columns;
+
   // --- DataTable column definitions (+ optional Actions column) ------------
   // When inlineEdit is enabled, wrap each column's render to swap to the
   // `edit.render` output when the row is in "edit" / "new" mode.
   const dtColumns = useMemo(() => {
-    // makeColumnRender stores rowStateRef in the returned render closure,
-    // which DataTables invokes later during its own cell rendering, not
-    // synchronously here.
+    // makeColumnRender stores rowStateRef / columnsRef in the returned render
+    // closure, which DataTables invokes later during its own cell rendering,
+    // not synchronously here.
     // eslint-disable-next-line react-hooks/refs
-    const cols = columns.map((c) => ({
+    const cols = columns.map((c, i) => ({
       data: c.data,
       defaultContent: c.defaultContent ?? "",
       className: c.className,
@@ -809,7 +863,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
       orderable: c.orderable,
       searchable: c.searchable,
       type: c.type,
-      render: makeColumnRender(c, hasInlineEdit, idOf, rowStateRef),
+      render: makeColumnRender(i, columnsRef, hasInlineEdit, idOf, rowStateRef),
     }));
     if (hasActionsCol) {
       cols.push({
@@ -826,6 +880,127 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     return cols;
   }, [columns, hasActionsCol, hasInlineEdit, idOf]);
 
+  // --- Caption toolbar ------------------------------------------------------
+  // The add / extra buttons live in the table's <caption> rather than a
+  // DataTables toolbar row, so they sit directly against the table they act
+  // on instead of floating above the length + search controls (issue #2009).
+  const handleAddNew = useCallback(() => {
+    if (!addNew) return;
+    // Navigate to first page sorted ascending so the new row is visible.
+    const dt = table.current?.dt();
+    if (dt) {
+      const currentPage = dt.page();
+      const currentOrder = dt.order();
+      const needsNav =
+        currentPage !== 0 ||
+        currentOrder.length === 0 ||
+        currentOrder[0][0] !== 0 ||
+        currentOrder[0][1] !== "asc";
+      if (needsNav) {
+        dt.order([0, "asc"]).page("first").draw(false);
+      }
+    }
+    setLocalItems((prev) => {
+      const newItem = addNew.template(nextNumericId(prev));
+      const newId = String(getId(newItem));
+      setRowState((prevRS) => ({ ...prevRS, [newId]: "new" }));
+      return [...prev, newItem];
+    });
+    // nextNumericId is a module-level helper, not a value from this render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addNew, getId]);
+
+  const handleInlineAdd = useCallback(() => {
+    const newTemplate = inlineEdit?.newTemplate;
+    if (!newTemplate) return;
+    const newItem = newTemplate();
+    const synthId = `__appdt_new_${++newRowCounterRef.current}`;
+    if (typeof newItem === "object" && newItem !== null) {
+      newRowIdsRef.current.set(newItem as object, synthId);
+    }
+    setLocalItems((prev) => [...prev, newItem]);
+    setRowState((prevRS) => ({ ...prevRS, [synthId]: "new" }));
+  }, [inlineEdit]);
+
+  const hasCaptionButtons = Boolean(
+    addNew || inlineEdit?.newTemplate || extraHeaderButtons?.length,
+  );
+
+  const captionButtons: CaptionButton[] = [
+    ...(addNew
+      ? [
+          {
+            key: "add-new",
+            text: addNew.label ?? t("add"),
+            ariaLabel: addNew.ariaLabel,
+            icon: addNew.icon ?? ADD_ICON,
+            onClick: handleAddNew,
+          },
+        ]
+      : []),
+    ...(inlineEdit?.newTemplate
+      ? [
+          {
+            key: "inline-add",
+            text: t("add"),
+            ariaLabel: inlineEdit.labels?.add ?? t("add"),
+            icon: ADD_ICON,
+            onClick: handleInlineAdd,
+          },
+        ]
+      : []),
+    ...(extraHeaderButtons?.map((btn, idx) => ({
+      key: `extra-${idx}`,
+      text: btn.text,
+      ariaLabel: btn.ariaLabel,
+      icon: btn.icon,
+      onClick: btn.onClick,
+    })) ?? []),
+  ];
+
+  const captionButtonsRef = useRef(captionButtons);
+  useEffect(() => {
+    captionButtonsRef.current = captionButtons;
+  });
+
+  // eslint-disable-next-line react-hooks/refs
+  const captionButtonsSig = captionButtons
+    .map(
+      (b) =>
+        `${b.key}|${b.text ?? ""}|${b.ariaLabel}|${b.icon ?? ""}|${b.variant ?? ""}`,
+    )
+    .join(";");
+  const buttonsNode = useMemo(() => {
+    if (!hasCaptionButtons) return null;
+    const div = document.createElement("div");
+    div.className = "dt-caption__actions dt-toolbar-actions";
+    // eslint-disable-next-line react-hooks/refs
+    div.innerHTML = captionButtons.map(renderCaptionButtonHtml).join("");
+    return div;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [captionButtonsSig, hasCaptionButtons]);
+
+  useEffect(() => {
+    if (!buttonsNode) return;
+    const onClick = (e: MouseEvent) => {
+      const el = (e.target as Element | null)?.closest("[data-caption-action]");
+      if (!el) return;
+      const key = el.getAttribute("data-caption-action");
+      captionButtonsRef.current.find((b) => b.key === key)?.onClick();
+    };
+    buttonsNode.addEventListener("click", onClick);
+    return () => buttonsNode.removeEventListener("click", onClick);
+  }, [buttonsNode]);
+
+  // --- Initial sort ---------------------------------------------------------
+  // Derived from the column that declares `defaultSort` rather than a hard
+  // coded index, so reordering columns can't silently point the sort at the
+  // wrong one. Falls through to the DataTables default when no column asks.
+  const defaultOrder = useMemo<[number, "asc" | "desc"][] | undefined>(() => {
+    const idx = columns.findIndex((c) => c.defaultSort);
+    return idx === -1 ? undefined : [[idx, columns[idx].defaultSort!]];
+  }, [columns]);
+
   // --- DataTable options ----------------------------------------------------
   const options: DataTableProps["options"] = {
     paging: true,
@@ -834,7 +1009,16 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     processing: true,
     deferRender: true,
     language: dtLangs.get(i18n.language),
+    ...(defaultOrder ? { order: defaultOrder } : {}),
     ...dataTableOptions,
+
+    layout: {
+      topStart: "search",
+      topEnd: buttonsNode ?? null,
+      bottomStart: ["pageLength", "info"],
+      bottomEnd: "paging",
+      ...dataTableOptions?.layout,
+    },
     createdRow: (_row, _data, dataIndex) => {
       table.current?.dt()?.row(dataIndex).node().classList.add("child-toggle");
     },
@@ -868,77 +1052,6 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           );
         }
       });
-    },
-    layout: {
-      ...dataTableOptions?.layout,
-      top1Start: [
-        ...(addNew
-          ? [
-              {
-                buttons: [
-                  {
-                    text: addNew.icon ?? "+",
-                    action: () => {
-                      // Navigate to first page sorted ascending so the new row is visible.
-                      const dt = table.current?.dt();
-                      if (dt) {
-                        const currentPage = dt.page();
-                        const currentOrder = dt.order();
-                        const needsNav =
-                          currentPage !== 0 ||
-                          currentOrder.length === 0 ||
-                          currentOrder[0][0] !== 0 ||
-                          currentOrder[0][1] !== "asc";
-                        if (needsNav) {
-                          dt.order([0, "asc"]).page("first").draw(false);
-                        }
-                      }
-                      setLocalItems((prev) => {
-                        const newItem = addNew.template(nextNumericId(prev));
-                        const newId = String(getId(newItem));
-                        setRowState((prevRS) => ({ ...prevRS, [newId]: "new" }));
-                        return [...prev, newItem];
-                      });
-                    },
-                    attr: { "aria-label": addNew.ariaLabel },
-                  },
-                ],
-              },
-            ]
-          : []),
-        ...(inlineEdit?.newTemplate
-          ? [
-              {
-                buttons: [
-                  {
-                    text: "+",
-                    action: () => {
-                      const newItem = inlineEdit.newTemplate!();
-                      const synthId = `__appdt_new_${++newRowCounterRef.current}`;
-                      if (typeof newItem === "object" && newItem !== null) {
-                        newRowIdsRef.current.set(newItem as object, synthId);
-                      }
-                      setLocalItems((prev) => [...prev, newItem]);
-                      setRowState((prevRS) => ({ ...prevRS, [synthId]: "new" }));
-                    },
-                    attr: {
-                      "aria-label": inlineEdit.labels?.add ?? "Add",
-                    },
-                  },
-                ],
-              },
-            ]
-          : []),
-        ...(extraHeaderButtons?.map((btn) => ({
-          buttons: [
-            {
-              text: btn.text,
-              action: () => btn.onClick(),
-              attr: { "aria-label": btn.ariaLabel },
-            },
-          ],
-        })) ?? []),
-      ],
     },
   };
 
@@ -1024,6 +1137,41 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     dt.draw(false);
   }, [rowState, hasInlineEdit]);
 
+  // --- Re-render open edit cells when the column definitions change ---------
+  // `edit.render` produces a one-shot HTML string, so a cell built while its
+  // reference data was still loading keeps the degraded markup it was given
+  // (a text box instead of a dropdown, a dropdown missing most of its
+  // options). Callers rebuild `columns` when that data arrives; invalidate and
+  // redraw so open rows pick the new markup up instead of staying stale until
+  // the user cancels and re-opens the row (issue #2052). Read-only tables are
+  // excluded, since they have no edit markup to refresh.
+  //
+  // This redraw rebuilds every cell in the table, the action buttons included,
+  // so it has to stay rare: a button replaced underneath a click in progress
+  // swallows that click, and a row re-rendered mid-edit reverts to the values
+  // it was opened with. Two things keep it that way - keying off `columns`
+  // (which callers memoise) rather than the derived `dtColumns`, and skipping
+  // the redraw entirely when no row is open, since a row opened later renders
+  // from `columnsRef.current` and is never stale to begin with.
+  const columnsInitRef = useRef(false);
+  useEffect(() => {
+    if (!hasInlineEdit) return;
+    if (!columnsInitRef.current) {
+      columnsInitRef.current = true;
+      return; // first draw already used the current columns
+    }
+    const anyRowOpen = Object.values(rowStateRef.current).some(
+      (m) => m === "edit" || m === "new",
+    );
+    if (!anyRowOpen) return;
+    const dt = table.current?.dt();
+    if (!dt) return;
+    (dt as unknown as { rows: () => { invalidate: () => unknown } })
+      .rows()
+      .invalidate();
+    dt.draw(false);
+  }, [columns, hasInlineEdit]);
+
   // --- Confirmation dialog for `confirm`-flagged row actions ----------------
   const handleConfirmAccept = useCallback(() => {
     if (pendingConfirm) pendingConfirm.action.onClick(pendingConfirm.ctx);
@@ -1049,7 +1197,10 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
   }, [data]);
 
   return (
-    <div style={{ opacity: isInitialized ? undefined : 0 }}>
+    // `dt-panel` outlines the table together with its own toolbar / paging
+    // controls, so pages with several tables make it obvious which controls
+    // belong to which table.
+    <div className="dt-panel" style={{ opacity: isInitialized ? undefined : 0 }}>
       <SaveErrorAlert error={saveError} onClose={clearSaveError} className="" />
       <DataTable
         key={tableKey}
@@ -1063,7 +1214,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
           (hasDetail ? `${BASE_TABLE_CLASS} ${CLICKABLE_ROW_CLASS}` : BASE_TABLE_CLASS)
         }
       >
-        {caption && <caption className="caption-title-center">{caption}</caption>}
+        {caption && <TableCaption title={caption} />}
         <thead>
           <tr>
             {columns.map((c, i) => (

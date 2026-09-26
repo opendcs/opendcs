@@ -1,9 +1,14 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button, Dropdown, Modal } from "react-bootstrap";
 import { t } from "i18next";
-import { ApiOrganization, RESTAuthenticationAndAuthorizationApi } from "opendcs-api";
+import {
+  ApiOrganization,
+  RESTAuthenticationAndAuthorizationApi,
+  User,
+} from "opendcs-api";
 import { type ApiContextType, useApi } from "../../../contexts/app/ApiContext.ts";
 import { useTranslation } from "react-i18next";
+import { organizationTree } from "../../../util/orgHierarchy";
 
 interface ToggleProperties {
   org: ApiOrganization;
@@ -20,6 +25,7 @@ const OrgToggle: React.FC<ToggleProperties> = ({ org, ...args }) => {
 export interface ChangeOrgMenuProperties {
   org: ApiOrganization;
   orgs: ApiOrganization[];
+  user?: User;
   changeOrg?: (
     org: ApiOrganization,
     api: ApiContextType,
@@ -27,9 +33,23 @@ export interface ChangeOrgMenuProperties {
   ) => void;
 }
 
+function hasRoles(org: string, user?: User): boolean {
+  if (user) {
+    return user.roles?.[org] != undefined;
+  } else {
+    return false;
+  }
+}
+
+// Bootstrap already pads a dropdown entry by 1rem; each level of office
+// nesting adds to that. Depth is unbounded, so this can't be a fixed set of
+// CSS classes.
+const indentFor = (depth: number) => `${1 + depth * 1.25}rem`;
+
 export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
   org,
   orgs,
+  user,
   changeOrg,
 }) => {
   const [t] = useTranslation();
@@ -59,6 +79,15 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
   const changeOrgFunc =
     changeOrg || ((org: ApiOrganization) => changeOrgFn(org, api, auth));
 
+  // Only offices the user holds a role in can be switched to, and those are
+  // usually leaves — so the tree is pruned to branches containing one, and the
+  // parent offices along the way come back as inert labels. Without them the
+  // surviving districts would render as orphans with nothing to nest under.
+  const orgEntries = useMemo(
+    () => organizationTree(orgs, (candidate) => hasRoles(candidate.name!, user)),
+    [orgs, user],
+  );
+
   return (
     <>
       <Dropdown drop="start">
@@ -68,11 +97,21 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
           org={org}
         />
         <Dropdown.Menu style={{ maxHeight: "300px", overflowY: "auto" }}>
-          {orgs.map((org) => (
-            <Dropdown.Item key={org.name} onClick={() => changeOrgFunc(org, api, auth)}>
-              {org.name}
-            </Dropdown.Item>
-          ))}
+          {orgEntries.map(({ org, depth, selectable }) =>
+            selectable ? (
+              <Dropdown.Item
+                key={org.name}
+                style={{ paddingLeft: indentFor(depth) }}
+                onClick={() => changeOrgFunc(org, api, auth)}
+              >
+                {org.name}
+              </Dropdown.Item>
+            ) : (
+              <Dropdown.Header key={org.name} style={{ paddingLeft: indentFor(depth) }}>
+                {org.name}
+              </Dropdown.Header>
+            ),
+          )}
         </Dropdown.Menu>
       </Dropdown>
 

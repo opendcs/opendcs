@@ -43,6 +43,7 @@ export const SitesTable: React.FC<SiteTableProperties> = ({
       {
         data: null,
         header: t("sites:site_name"),
+        defaultSort: "asc",
         render: (_data, _type, row) =>
           row.sitenames
             ? Object.entries(row.sitenames)

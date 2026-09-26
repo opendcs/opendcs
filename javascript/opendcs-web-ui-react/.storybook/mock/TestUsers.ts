@@ -5,18 +5,48 @@ export const BasicUser: User = {
   email: "BasicUser@noreply.com",
   createdAt: new Date("2026-05-06T00:00:00Z"),
   updatedAt: new Date("2026-05-07T00:00:00Z"),
-  roles: [
-    {
-      id: { value: 1 },
-      name: "TestRole",
-      description: "A simple role to validate UI behavior",
-      updatedAt: new Date("2026-05-01T00:00:00Z"),
-    },
-  ],
+  roles: {
+    "": [
+      {
+        id: { value: 1 },
+        name: "TestRole",
+        description: "A simple role to validate UI behavior",
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+    ],
+  },
   identityProviders: [
     {
       provider: { id: { value: 1 }, name: "builtin", type: "BuiltIn" },
       subject: "BasicUser@noreply.com",
     },
   ],
+};
+
+export const CwmsUser: User = {
+  ...BasicUser,
+  roles: {
+    SPK: [
+      {
+        id: { value: 1 },
+        name: "User",
+        description: "User Role",
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+      {
+        id: { value: 2 },
+        name: "Admin",
+        description: "Admin Role",
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+    ],
+    SWT: [
+      {
+        id: { value: 1 },
+        name: "User",
+        description: "User Role",
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+    ],
+  },
 };

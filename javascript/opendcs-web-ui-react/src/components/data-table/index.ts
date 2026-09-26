@@ -15,6 +15,8 @@ export {
   type RowActionContext,
   type RowMode,
 } from "./AppDataTable";
+export { dateColumn, idColumn, textColumn } from "./columns";
+export { TableCaption, type CaptionButton } from "./TableCaption";
 export {
   ChooserTable,
   type ChooserColumnDef,

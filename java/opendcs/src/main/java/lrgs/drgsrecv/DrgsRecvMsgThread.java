@@ -131,9 +131,8 @@ public class DrgsRecvMsgThread extends BasicClient implements Runnable, LrgsInpu
 
 	/**
 	  Constructor.
-	  @param connection msgArchive the object that manages the archive.
-	  @param pdtSched the PDT Schedule object for validation.
-	  @param channelMap the CDT Map object for validation.
+	  @param msgArchive the object that manages the archive.
+	  @param lrgsMain the parent LrgsMain object.
 	*/
 	public DrgsRecvMsgThread(MsgArchive msgArchive, LrgsMain lrgsMain)
 	{
@@ -290,7 +289,7 @@ public class DrgsRecvMsgThread extends BasicClient implements Runnable, LrgsInpu
 
 	/**
 	  Called from parent when this connection has been reconfigured.
-	  @param the connection configuration for this DRGS
+	  @param cfg the connection configuration for this DRGS
 	*/
 	public void configure(DrgsConnectCfg cfg)
 	{

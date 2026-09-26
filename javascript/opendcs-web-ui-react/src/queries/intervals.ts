@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TimeSeriesMethodsIntervalMethodsApi, type ApiInterval } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { intervalKeys } from "./keys";
+import { REFERENCE_DATA_CACHE } from "./cachePolicy";
 
 const useIntervalsApi = () => {
   const api = useApi();
@@ -19,6 +20,6 @@ export const useIntervalsQuery = () => {
   return useQuery<ApiInterval[]>({
     queryKey: intervalKeys.list(org),
     queryFn: () => intervalApi.getIntervals(org),
-    staleTime: 60 * 60_000,
+    ...REFERENCE_DATA_CACHE,
   });
 };

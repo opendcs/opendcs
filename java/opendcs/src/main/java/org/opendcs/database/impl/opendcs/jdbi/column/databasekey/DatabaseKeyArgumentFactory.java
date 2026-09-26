@@ -23,6 +23,11 @@ import org.jdbi.v3.core.config.ConfigRegistry;
 
 import decodes.sql.DbKey;
 
+/**
+ * Map a DbKey instance to the appropriate column value.
+ * The {@see decodes.sql.DbKey#NullKey} is set as null.
+ * DatabaseKeyArgumentFactory
+ */
 public class DatabaseKeyArgumentFactory extends AbstractArgumentFactory<DbKey>
 {
 
@@ -34,6 +39,16 @@ public class DatabaseKeyArgumentFactory extends AbstractArgumentFactory<DbKey>
     @Override
     protected Argument build(DbKey value, ConfigRegistry config)
     {
-        return (position, statement, ctx) -> statement.setLong(position, value.getValue());
+        return (position, statement, ctx) ->
+        {
+            if (DbKey.isNull(value))
+            {
+                statement.setNull(position, Types.NUMERIC);
+            }
+            else
+            {
+                statement.setLong(position, value.getValue());
+            }
+        };
     }
 }

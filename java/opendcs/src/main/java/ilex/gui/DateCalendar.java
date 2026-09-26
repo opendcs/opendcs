@@ -67,7 +67,7 @@ public class DateCalendar extends JPanel
 	 *            Date default for DateCalendar
 	 * @param dateFmt
 	 *            String format for date
-	 * @param timezone object
+	 * @param tzObj timezone object
 	 */
 	public DateCalendar(String label, Date dateIn, String dateFmt, TimeZone tzObj)
 	{

@@ -11,6 +11,9 @@ import type { UiSchedule } from "./ScheduleReducer";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
 import {
   AppDataTable,
+  dateColumn,
+  idColumn,
+  textColumn,
   type ColumnDef,
   type RowAction,
 } from "../../components/data-table";
@@ -40,26 +43,15 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
 
   const columns = useMemo<ColumnDef<TableScheduleRef>[]>(
     () => [
+      idColumn("schedEntryId", t("schedule:header.Id")),
       {
-        data: "schedEntryId",
-        header: t("schedule:header.Id"),
-        defaultContent: "new",
-        className: "dt-left",
-        type: "num",
-      },
-      { data: "name", header: t("schedule:header.Name"), type: "string" },
-      {
-        data: "appName",
-        header: t("schedule:header.LoadingApp"),
-        defaultContent: "",
+        data: "name",
+        header: t("schedule:header.Name"),
         type: "string",
+        defaultSort: "asc",
       },
-      {
-        data: "routingSpecName",
-        header: t("schedule:header.RoutingSpec"),
-        defaultContent: "",
-        type: "string",
-      },
+      textColumn("appName", t("schedule:header.LoadingApp")),
+      textColumn("routingSpecName", t("schedule:header.RoutingSpec")),
       {
         data: "enabled",
         header: t("schedule:header.Enabled"),
@@ -72,18 +64,7 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
           return enabled ? "✓" : "";
         },
       },
-      {
-        data: "lastModified",
-        header: t("schedule:header.LastModified"),
-        defaultContent: "",
-        type: "date",
-        render: (data: unknown, type: string) => {
-          if (type !== "display") return data;
-          if (!data) return "";
-          const d = data instanceof Date ? data : new Date(data as string);
-          return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
-        },
-      },
+      dateColumn("lastModified", t("schedule:header.LastModified")),
     ],
     [t],
   );

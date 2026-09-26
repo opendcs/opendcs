@@ -21,6 +21,7 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
     "netlists",
     "presentations",
     "schedule",
+    "tsgroups",
   ]);
   const location = useLocation();
 
@@ -125,6 +126,14 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
             onClick={onClose}
           >
             {t("algorithms:algorithmsTitle")}
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/tsgroups"
+            active={location.pathname === "/tsgroups"}
+            onClick={onClose}
+          >
+            {t("tsgroups:title")}
           </Nav.Link>
           <Nav.Link
             as={Link}

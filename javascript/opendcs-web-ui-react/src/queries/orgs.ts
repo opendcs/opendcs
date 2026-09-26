@@ -6,6 +6,7 @@ import {
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
 import { orgKeys } from "./keys";
+import { REFERENCE_DATA_CACHE } from "./cachePolicy";
 
 // The org list is global (passes "" as the org header) — it's the input to
 // the org switcher itself, so it must not be scoped by current org.
@@ -19,8 +20,10 @@ export const useOrganizationsQuery = () => {
     queryKey: orgKeys.list(),
     queryFn: async () => {
       const res = await authApi.getOrganizationsWithHttpInfo("");
+      // Not sorted here — useOrganizations() sorts on read so directly
+      // supplied context values are alphabetized too.
       return res.data as ApiOrganization[];
     },
-    staleTime: 60 * 60_000,
+    ...REFERENCE_DATA_CACHE,
   });
 };

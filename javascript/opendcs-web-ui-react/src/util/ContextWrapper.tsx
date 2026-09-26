@@ -5,6 +5,7 @@ import { I18nextProvider, useTranslation } from "react-i18next";
 import { AuthContext } from "../contexts/app/AuthContext";
 import { ThemeContext } from "../contexts/app/ThemeContext";
 import { ApiContext } from "../contexts/app/ApiContext";
+import { SiteNameTypeContext } from "../contexts/app/SiteNameTypeContext";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 
 const rootsByContainer = new WeakMap<Node, Root>();
@@ -43,6 +44,7 @@ export function useContextWrapper(): Wrappers {
   const authContext = use(AuthContext);
   const themeContext = use(ThemeContext);
   const apiContext = use(ApiContext);
+  const siteNameTypeContext = use(SiteNameTypeContext);
   const queryClient = useQueryClient();
   const { i18n } = useTranslation();
 
@@ -61,9 +63,11 @@ export function useContextWrapper(): Wrappers {
             <ApiContext value={apiContext}>
               <AuthContext value={authContext}>
                 <RefListContext value={refContext}>
-                  <QueryClientProvider client={queryClient}>
-                    <Suspense fallback="Loading...">{children}</Suspense>
-                  </QueryClientProvider>
+                  <SiteNameTypeContext value={siteNameTypeContext}>
+                    <QueryClientProvider client={queryClient}>
+                      <Suspense fallback="Loading...">{children}</Suspense>
+                    </QueryClientProvider>
+                  </SiteNameTypeContext>
                 </RefListContext>
               </AuthContext>
             </ApiContext>
@@ -72,7 +76,15 @@ export function useContextWrapper(): Wrappers {
       );
       return container;
     },
-    [i18n, themeContext, apiContext, authContext, refContext, queryClient],
+    [
+      i18n,
+      themeContext,
+      apiContext,
+      authContext,
+      refContext,
+      siteNameTypeContext,
+      queryClient,
+    ],
   );
 
   return { toDom };

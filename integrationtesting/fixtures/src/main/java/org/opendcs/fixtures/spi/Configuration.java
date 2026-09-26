@@ -3,6 +3,7 @@ package org.opendcs.fixtures.spi;
 import java.io.File;
 import java.util.Map;
 
+import org.opendcs.data.Organization;
 import org.opendcs.database.api.OpenDcsDatabase;
 
 import decodes.db.Database;
@@ -111,5 +112,15 @@ public interface Configuration
     default boolean supportsRestApi()
     {
         return false;
+    }
+
+    /**
+     * Retrieve the appropriate default organization for this configuration.
+     * Default implementation returns {@link org.opendcs.data.Organization#NULL_ORG}
+     * @return
+     */
+    default Organization getDefaultOrganization()
+    {
+        return Organization.NULL_ORG;
     }
 }

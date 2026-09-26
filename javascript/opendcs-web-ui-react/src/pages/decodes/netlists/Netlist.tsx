@@ -1,7 +1,7 @@
 import { use, useCallback, useMemo, useReducer } from "react";
 import { Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import type { ApiNetList, ApiNetListItem } from "opendcs-api";
+import type { ApiNetList, ApiNetListItem, ApiPlatformRef } from "opendcs-api";
 import { DetailFade } from "../../../components/data-table";
 import {
   CancelButton,
@@ -81,12 +81,17 @@ export interface NetlistProperties {
   details: Promise<NetlistDetails> | NetlistDetails;
   actions?: SaveAction<ApiNetList> & CancelAction<number>;
   edit?: boolean;
+  /** All platforms, for selecting netlist items. */
+  platforms?: ApiPlatformRef[];
+  platformsLoading?: boolean;
 }
 
 export const Netlist: React.FC<NetlistProperties> = ({
   details,
   actions = {},
   edit = false,
+  platforms,
+  platformsLoading = false,
 }) => {
   const [t] = useTranslation(["netlists", "translation"]);
   const resolved = details instanceof Promise ? use(details) : details;
@@ -186,6 +191,10 @@ export const Netlist: React.FC<NetlistProperties> = ({
               <NetlistItemsTable
                 items={itemsList}
                 edit={edit}
+                platforms={platforms}
+                platformsLoading={platformsLoading}
+                transportMediumType={local.transportMediumType}
+                siteNameTypePref={local.siteNameTypePref}
                 onSave={onItemSave}
                 onRemove={onItemRemove}
               />

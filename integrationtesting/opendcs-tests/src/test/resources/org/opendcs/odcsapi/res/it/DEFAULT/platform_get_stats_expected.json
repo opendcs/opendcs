@@ -1,8 +1,9 @@
 [
   {
     "platformId": 1,
-    "platformName": "Platform 10",
+    "platformName": "Platform 10-Platform Designator",
     "siteId": 1,
+    "siteName": "Platform 10",
     "lastContact": "2021-01-01T00:00:00.000Z",
     "lastMessage": "2021-01-02T00:00:00.000Z",
     "lastError": "2021-01-03T00:00:00.000Z",

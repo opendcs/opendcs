@@ -54,7 +54,12 @@ table header/caption/thead markup.
 - **`columns: ColumnDef<T>[]`** — each column has `data` (key into `T`, or
   `null` for virtual columns) and `header` (what goes in the `<th>`). Other
   DataTables options (`defaultContent`, `className`, `name`, `orderable`,
-  `searchable`, `render`) pass through.
+  `searchable`, `render`) pass through. `defaultSort` picks the column the
+  table sorts by on first load — see [Initial sort order](#initial-sort-order).
+  **Wrap this in `useMemo`.** With `inlineEdit`, a new array identity makes
+  the wrapper re-render any row that is open for editing so it picks up
+  fresh `edit.render` markup; rebuilding `columns` every render would throw
+  that row's in-progress input away repeatedly.
 
 ### 2. Row modes
 
@@ -289,10 +294,10 @@ When **save** is clicked the wrapper:
 4. On success: transitions the row back to `"show"` (and removes from local
    items if it was a new row).
 
-### 4. `+` button for new rows
+### 4. Add button for new rows
 
-When `inlineEdit.newTemplate` is provided, the wrapper puts a `+` button in
-the table's toolbar. Clicking it calls `newTemplate()` to build a fresh row,
+When `inlineEdit.newTemplate` is provided, the wrapper puts an "Add" button in
+the top-end toolbar. Clicking it calls `newTemplate()` to build a fresh row,
 stores it locally in `"new"` mode, and assigns it a synthetic id via an
 internal `WeakMap` so it never collides with real ids — **your `getId`
 doesn't need to handle this case**.
@@ -303,14 +308,15 @@ doesn't need to handle this case**.
 
 ### `addNew` (for non-inline-edit tables)
 
-Adds a `+` button that creates a local row and tracks it via `rowState`.
+Adds an "Add" button that creates a local row and tracks it via `rowState`.
 Used by `renderDetail` flows where the detail itself provides the form
 (e.g. `AlgorithmsTable`). Mutually exclusive with `inlineEdit.newTemplate`.
 
 ```tsx
 addNew={{
   template: (nextId) => ({ algorithmId: nextId, /* … */ }),
-  ariaLabel: t("add_algorithm"),
+  ariaLabel: t("add_algorithm"),   // accessible name; also the tooltip-worthy detail
+  label: t("add_algorithm_short"), // optional; defaults to the translated "Add"
 }}
 ```
 
@@ -319,13 +325,42 @@ local numeric id, so it's unique against server-side positive ids.
 
 ### `extraHeaderButtons`
 
-Arbitrary buttons in the table toolbar (e.g. "Check for new", "Import…"):
+Arbitrary buttons in the top-end toolbar (e.g. "Check for new", "Import…"):
 
 ```tsx
 extraHeaderButtons={[
-  { text: t("check_new"), ariaLabel: t("check_new"), onClick: () => setOpen(true) },
+  {
+    text: t("check_new"),
+    ariaLabel: t("check_new"),
+    icon: "bi-plus-lg", // optional Bootstrap icon shown before the text
+    onClick: () => setOpen(true),
+  },
 ]}
 ```
+
+### Where the header buttons live
+
+`addNew`, `inlineEdit.newTemplate` and `extraHeaderButtons` all render into the
+DataTables **top-end toolbar cell** — inline with the search box on the right.
+The wrapper builds a plain `<button>` node (same markup as
+`TableCaption`) and routes its clicks by the `data-caption-action` attribute,
+the way row-action buttons are delegated. The `caption` title, when provided,
+still renders centered in the table `<caption>` above the toolbar.
+
+The whole table, including DataTables' length/search/paging controls, is
+wrapped in a `.dt-panel` outline so pages with several tables make it obvious
+which controls belong to which table. Use `TableCaption` directly if you have a
+hand-rolled `<DataTable>` that needs a caption row of buttons.
+
+### Toolbar layout and scrolling
+
+The wrapper sets a DataTables `layout` so the controls read left-to-right in a
+predictable order: **search** top-left, the table's **buttons** top-right,
+the **page-length** menu next to the **"showing N of M"** info on the
+bottom-left, and **paging** on the bottom-right. Each table body is also capped
+at `60vh` and scrolls with a **sticky header**, so a long list stays inside its
+panel (and larger page sizes stay usable) instead of pushing the paging
+controls off-screen. Override individual regions via `dataTableOptions.layout`.
 
 ### `loading`
 
@@ -339,6 +374,75 @@ table shell needs to render once for the overlay to have something to cover.
 Passed straight to the rendered table. `tableClassName` defaults to a sensible
 `table table-hover table-striped w-100 border` (plus `tablerow-cursor` when
 row expansion is enabled).
+
+### Column helpers
+
+Most list tables repeat the same few column shapes, so they come from
+`idColumn`/`textColumn`/`dateColumn` instead of being spelled out per table:
+
+```tsx
+import { dateColumn, idColumn, textColumn } from "../../components/data-table";
+
+const columns: ColumnDef<TableRoutingRef>[] = [
+  idColumn("routingId", t("routing:header.Id")),
+  {
+    data: "name",
+    header: t("routing:header.Name"),
+    type: "string",
+    defaultSort: "asc",
+  },
+  textColumn("dataSourceName", t("routing:header.DataSource")),
+  dateColumn("lastModified", t("routing:header.LastModified")),
+];
+```
+
+- **`idColumn(data, header)`** — numeric id, left aligned (DataTables right
+  aligns `num` columns), showing `"new"` for an unsaved row's synthetic id.
+- **`textColumn(data, header)`** — string column with `defaultContent: ""`, so
+  a row missing the field doesn't trip the DataTables "Requested unknown
+  parameter" error.
+- **`dateColumn(data, header)`** — date column formatted with
+  `toLocaleString()` on the `"display"` pass only, so DataTables still sorts
+  and filters on the raw value. A missing or unparseable date renders blank
+  instead of "Invalid Date".
+
+Anything beyond those three shapes — a `render`, a `className`, a different
+`defaultContent` — stays a plain `ColumnDef` object. Keeping the repeated
+shapes in one place also keeps the near-identical column arrays from tripping
+Sonar's copy-paste detector, which normalizes string literals and so reads
+these tables as duplicates of each other.
+
+### Initial sort order
+
+Set `defaultSort: "asc" | "desc"` on the column the table should sort by when
+it first renders (issue #1662):
+
+```tsx
+const columns: ColumnDef<TableConfigRef>[] = [
+  { data: "configId", header: t("configs:header.Id"), type: "num" },
+  {
+    data: "name",
+    header: t("configs:header.Name"),
+    type: "string",
+    defaultSort: "asc",
+  },
+];
+```
+
+Without it DataTables applies its own `[[0, "asc"]]` default, which sorts by
+whatever sits in the first column. Most list pages lead with a database id, so
+the rows come out in insert order and read as unsorted — that's the bug #1662
+reported, not a missing sort. Put `defaultSort` on the column a user actually
+scans (normally the name).
+
+Only the first column declaring it is used; the wrapper resolves it to a column
+index at render, so reordering columns can't point the sort at the wrong one.
+Leave it off for tables whose first column is already meaningful (a name, or a
+sensor number where numeric order is the point).
+
+Precedence, lowest to highest: the DataTables default → `defaultSort` → an
+explicit `dataTableOptions.order` → a saved `stateSave` order from a sort the
+user picked themselves.
 
 ### `dataTableOptions` (escape hatch)
 
@@ -415,16 +519,24 @@ Both component files are <150 lines — the wrapper absorbs the rest.
   `WeakMap` with synthetic ids. Don't mutate new-row objects by reference
   after save — the WeakMap entry is cleaned up on commit, but replacing the
   object identity would orphan its mode state.
-- **`dataTableOptions.layout`.** The wrapper builds `top1Start` for the
-  `+` button and `extraHeaderButtons`. If you need `topStart` or `top2End`,
-  supply them via `dataTableOptions.layout`; the wrapper merges but doesn't
-  deep-merge `top1Start`, so don't set that key in your override.
+- **`stateSave` outranks `defaultSort`.** The wrapper enables `stateSave`, so
+  DataTables restores each user's last sort, page and search from
+  `localStorage` (keyed by `tableId` + path, ~2h). That's deliberate — a sort
+  the user picked shouldn't be thrown away — but it means a newly added or
+  changed `defaultSort` won't show up for anyone with saved state until it
+  expires. Clear site data when verifying one by hand.
+- **`dataTableOptions.layout`.** The wrapper sets `topStart`/`topEnd`/
+  `bottomStart`/`bottomEnd` (search, buttons, page-length + info, paging). Any
+  region you pass in `dataTableOptions.layout` is merged over the wrapper's
+  defaults (your value wins), so override only the cells you need.
 
 ---
 
 ## Related exports
 
-| Export               | Use                                                                                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DetailFade`         | Component that wraps a detail with a skeleton→content fade. Used inside the Algorithm detail card; not needed at the table level.                 |
-| `useTableProcessing` | Low-level hook the wrapper uses internally. Exported for any custom DataTable that needs to drive the `processing` overlay from a `loading` flag. |
+| Export                                 | Use                                                                                                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DetailFade`                           | Component that wraps a detail with a skeleton→content fade. Used inside the Algorithm detail card; not needed at the table level.                 |
+| `TableCaption`                         | The caption row (title + toolbar buttons) as a standalone component, for raw `<DataTable>`s that aren't using the wrapper.                        |
+| `idColumn`, `textColumn`, `dateColumn` | Factories for the column shapes every list table repeats — see [Column helpers](#column-helpers).                                                 |
+| `useTableProcessing`                   | Low-level hook the wrapper uses internally. Exported for any custom DataTable that needs to drive the `processing` overlay from a `loading` flag. |

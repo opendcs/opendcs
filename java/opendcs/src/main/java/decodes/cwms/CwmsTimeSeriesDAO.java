@@ -1320,24 +1320,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
     {
         DataCollection dataCollection = new DataCollection();
 
-        String failTimeClause =
-                    DecodesSettings.instance().retryFailedComputations
-                    ? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
-                    : "";
-
-        String debounceClause = "";
-        if (tasklistDebounceSeconds > 0)
-            debounceClause = " and a.DATE_TIME_LOADED <= SYSDATE - ?/86400";
-
-        getTaskListStmtQuery =
-            "select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
-            + "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
-            + "from CP_COMP_TASKLIST a "
-            + "where a.LOADING_APPLICATION_ID = ?"
-            + " and ROWNUM < " + maxTake
-            + failTimeClause
-            + debounceClause
-            + " ORDER BY a.site_datatype_id, a.start_date_time";
+        getTaskListStmtQuery = buildTaskListQuery(maxTake, tasklistDebounceSeconds);
 
         try (Connection conn = getConnection();
              PreparedStatement getTaskListStmt = conn.prepareStatement(getTaskListStmtQuery);
@@ -1347,94 +1330,12 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             if (tasklistDebounceSeconds > 0)
                 getTaskListStmt.setInt(2, tasklistDebounceSeconds);
 
-            ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
-            ArrayList<Integer> badRecs = new ArrayList<Integer>();
             log.trace("Executing '{}' with appId={}", getTaskListStmtQuery, applicationId);
             try (ResultSet rs = getTaskListStmt.executeQuery())
             {
-                Date lastTimestamp = null;
-                while (rs.next())
-                {
-                    // Extract the info needed from the result set row.
-                    Date timeStamp = new Date(rs.getDate(4).getTime());
-                    boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
-                    if(exceedsMaxTimeGap)
-                    {
-                        break;
-                    }
-                    lastTimestamp = timeStamp;
-                    int recordNum = rs.getInt(1);
-                    DbKey sdi = DbKey.createDbKey(rs, 2);
-                    double value = rs.getDouble(3);
-                    boolean valueWasNull = rs.wasNull();
-                    String df = rs.getString(5);
-                    char c = df.toLowerCase().charAt(0);
-                    boolean deleted = false;
-                    if (c == 'u')
-                    {
-                        // msg handler will send this when he gets
-                        // TsCodeChanged. It tells me to update my cache.
-                        DbObjectCache<TimeSeriesIdentifier> cache = getCache();
-                        synchronized(cache)
-                        {
-                            TimeSeriesIdentifier tsid = cache.getByKey(sdi);
-                            if (tsid != null)
-                            {
-                                DbKey newCode = DbKey.createDbKey(rs, 9);
-                                cache.remove(sdi);
-                                tsid.setKey(newCode);
-                                cache.put(tsid);
-                                continue;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        deleted = TextUtil.str2boolean(df);
-                    }
-
-                    String unitsAbbr = rs.getString(6);
-                    Date versionDate = db.getFullDate(rs, 7);
-                    BigDecimal qc = rs.getBigDecimal(8);
-                    long qualityCode = qc == null ? 0 : qc.longValue();
-
-                    TasklistRec rec = new TasklistRec(recordNum, sdi, value,
-                        valueWasNull, timeStamp, deleted,
-                        unitsAbbr, versionDate, qualityCode);
-                    tasklistRecs.add(rec);
-                }
-
-                RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
-
-                // Process the real-time records collected above.
-                for(TasklistRec rec : tasklistRecs)
-                {
-                    processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
-                }
-
-                dataCollection.setTasklistHandle(rrhandle);
-
-                // Delete the bad tasklist recs, 250 at a time.
-                if (badRecs.size() > 0)
-                {
-                    log.warn("getNewDataSince deleting {} bad tasklist records.", + badRecs.size());
-                    doModifyBatch("delete from cp_comp_tasklist where record_num = ?",
-                                  (v) -> new Object[] {v},
-                                  badRecs, 250);
-                    badRecs.clear();
-                }
-
-                // Show each tasklist entry in the log if we're at debug level 3
-                if (log.isTraceEnabled())
-                {
-                    List<CTimeSeries> allTs = dataCollection.getAllTimeSeries();
-                    log.trace("getNewData, returning {} TimeSeries.", allTs.size());
-                    for(CTimeSeries ts : allTs)
-                    {
-                        log.trace("ts '{}' {} values.", ts.getTimeSeriesIdentifier().getUniqueString(), ts.size());
-                    }
-                }
-
+                List<TasklistRec> tasklistRecs = readTasklistRecs(rs);
+                collectTasklistRecs(tasklistRecs, dataCollection, applicationId);
+                logReturnedTimeSeries(dataCollection);
                 return dataCollection;
             }
         }
@@ -1444,6 +1345,153 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                .setCause(ex)
                .log("Error reading new data.");
             throw new DbIoException("Error reading new data: " + ex.getLocalizedMessage(), ex);
+        }
+    }
+
+    /**
+     * Builds the CP_COMP_TASKLIST query for {@link #getNewData(DbKey, int, int)}. The loading
+     * application id is always bind parameter 1; the debounce seconds, when enabled, are bind
+     * parameter 2.
+     */
+    private String buildTaskListQuery(int maxTake, int tasklistDebounceSeconds)
+    {
+        String failTimeClause =
+                    DecodesSettings.instance().retryFailedComputations
+                    ? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
+                    : "";
+
+        String debounceClause = "";
+        if (tasklistDebounceSeconds > 0)
+            debounceClause = " and a.DATE_TIME_LOADED <= SYSDATE - ?/86400";
+
+        return
+            "select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
+            + "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
+            + "from CP_COMP_TASKLIST a "
+            + "where a.LOADING_APPLICATION_ID = ?"
+            + " and ROWNUM < " + maxTake
+            + failTimeClause
+            + debounceClause
+            + " ORDER BY a.site_datatype_id, a.start_date_time";
+    }
+
+    /**
+     * Reads tasklist rows until the result set is exhausted or a row is more than
+     * {@code cp_cwmstsdb_getNewData_max_timegap_days} beyond the previous one.
+     *
+     * <p>Rows flagged 'U' are TsCodeChanged notifications rather than data: they update the tsid
+     * cache in place and are not returned.</p>
+     */
+    private List<TasklistRec> readTasklistRecs(ResultSet rs) throws SQLException
+    {
+        List<TasklistRec> tasklistRecs = new ArrayList<>();
+        Date lastTimestamp = null;
+        while (rs.next())
+        {
+            // Extract the info needed from the result set row.
+            Date timeStamp = new Date(rs.getDate(4).getTime());
+            boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
+            if(exceedsMaxTimeGap)
+            {
+                break;
+            }
+            lastTimestamp = timeStamp;
+            int recordNum = rs.getInt(1);
+            DbKey sdi = DbKey.createDbKey(rs, 2);
+            double value = rs.getDouble(3);
+            boolean valueWasNull = rs.wasNull();
+            String df = rs.getString(5);
+            char c = df.toLowerCase().charAt(0);
+            boolean deleted = false;
+            if (c == 'u')
+            {
+                if (applyTsCodeChange(rs, sdi))
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                deleted = TextUtil.str2boolean(df);
+            }
+
+            String unitsAbbr = rs.getString(6);
+            Date versionDate = db.getFullDate(rs, 7);
+            BigDecimal qc = rs.getBigDecimal(8);
+            long qualityCode = qc == null ? 0 : qc.longValue();
+
+            TasklistRec rec = new TasklistRec(recordNum, sdi, value,
+                valueWasNull, timeStamp, deleted,
+                unitsAbbr, versionDate, qualityCode);
+            tasklistRecs.add(rec);
+        }
+        return tasklistRecs;
+    }
+
+    /**
+     * Re-keys the cached tsid for {@code sdi} to the new ts code carried in column 9. The msg
+     * handler writes these rows when it gets TsCodeChanged; they tell us to update our cache.
+     *
+     * @return true if the cache held the old key and the row was consumed, false if the tsid was
+     *         not cached and the row should be treated as ordinary data.
+     */
+    private boolean applyTsCodeChange(ResultSet rs, DbKey sdi) throws SQLException
+    {
+        DbObjectCache<TimeSeriesIdentifier> cache = getCache();
+        synchronized(cache)
+        {
+            TimeSeriesIdentifier tsid = cache.getByKey(sdi);
+            if (tsid == null)
+            {
+                return false;
+            }
+            DbKey newCode = DbKey.createDbKey(rs, 9);
+            cache.remove(sdi);
+            tsid.setKey(newCode);
+            cache.put(tsid);
+            return true;
+        }
+    }
+
+    /**
+     * Folds the real-time records into {@code dataCollection} and purges any tasklist rows that
+     * could not be resolved to a time series.
+     */
+    private void collectTasklistRecs(List<TasklistRec> tasklistRecs, DataCollection dataCollection,
+        DbKey applicationId) throws DbIoException, SQLException
+    {
+        RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
+        ArrayList<Integer> badRecs = new ArrayList<>();
+
+        for(TasklistRec rec : tasklistRecs)
+        {
+            processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
+        }
+
+        dataCollection.setTasklistHandle(rrhandle);
+
+        // Delete the bad tasklist recs, 250 at a time.
+        if (!badRecs.isEmpty())
+        {
+            log.warn("getNewDataSince deleting {} bad tasklist records.", badRecs.size());
+            doModifyBatch("delete from cp_comp_tasklist where record_num = ?",
+                          (v) -> new Object[] {v},
+                          badRecs, 250);
+            badRecs.clear();
+        }
+    }
+
+    /** Shows each tasklist entry in the log if we're at debug level 3. */
+    private void logReturnedTimeSeries(DataCollection dataCollection)
+    {
+        if (log.isTraceEnabled())
+        {
+            List<CTimeSeries> allTs = dataCollection.getAllTimeSeries();
+            log.trace("getNewData, returning {} TimeSeries.", allTs.size());
+            for(CTimeSeries ts : allTs)
+            {
+                log.trace("ts '{}' {} values.", ts.getTimeSeriesIdentifier().getUniqueString(), ts.size());
+            }
         }
     }
 

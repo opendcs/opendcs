@@ -20,13 +20,17 @@
     "transportId": "ID de transporte",
     "platformName": "Nombre de la plataforma",
     "description": "Descripción",
-    "transportId_input": "ID de transporte para {{name}}",
-    "platformName_input": "Nombre de la plataforma para {{name}}",
     "description_input": "Descripción para {{name}}",
-    "add": "Agregar elemento",
     "edit": "Editar elemento {{transportId}}",
     "remove": "Eliminar elemento {{transportId}}",
     "save_edit": "Guardar elemento {{transportId}}",
-    "cancel_edit": "Cancelar la edición del elemento {{transportId}}"
+    "cancel_edit": "Cancelar la edición del elemento {{transportId}}",
+    "select_platforms": "Seleccionar plataformas",
+    "select_platforms_title": "Seleccionar plataformas para agregar",
+    "select_platforms_none": "No hay más plataformas con el medio de transporte {{type}} disponibles para agregar.",
+    "select_platforms_no_type": "Elija un tipo de medio de transporte para esta lista de red antes de seleccionar plataformas.",
+    "select_all_platforms": "Seleccionar todas las plataformas",
+    "select_platform": "Seleccionar plataforma {{name}}",
+    "add_selected": "Agregar {{count}} plataforma(s)"
   }
 }

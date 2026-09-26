@@ -16,8 +16,9 @@ jsch="0.1.55"
 aspectj="1.8.10"
 json="20251224"
 slf4j-api= { strictly = "2.0.17" }
-logback = "1.5.32" 
-jetty = "12.1.11"
+log4j-api = "2.26.1"
+logback = "1.5.34" 
+jetty = "12.1.12"
 jersey = "4.0.2"
 servlet-api = "6.1.0"
 jakarta-jakartaee-api = "11.0.0"
@@ -35,7 +36,7 @@ sun-mailapi="2.0.2"
 ayza = "10.0.0"
 auto-service = "1.1.1"
 password4j = "1.8.4"
-netty = "4.2.16.Final"
+netty = "4.2.17.Final"
 
 opentelemetry = "1.63.0"
 opentelemetry-java = "2.29.0"
@@ -50,9 +51,8 @@ swagger = "2.2.52"
 swagger-ui = "5.18.3"
 swagger-parser = "2.1.45"
 rs-api = "4.0.0"
-jackson = "2.22.1"
+jackson = "2.22.2"
 jackson-annotations = "2.22"
-selenium = "4.47.0"
 nimbus = "10.7"
 jwt = "4.4.0"
 jaxb = "4.0.0"
@@ -60,7 +60,7 @@ jaxb = "4.0.0"
 swagger-codegen = "3.0.61"
 jakarta-annotation-api = "3.0.0"
 jsr305 = "3.0.2"
-openapitools-databind-nullable = "0.2.10"
+openapitools-databind-nullable = "0.2.11"
 
 #test deps
 junit = "6.0.2"
@@ -73,7 +73,7 @@ greenmail = "2.1.8"
 mockito = "5.21.0"
 byte-buddy = "1.18.11"
 rest-assured = "6.0.0"
-tomcat = "11.0.24"
+tomcat = "11.0.25"
 microprofile-health = "4.0.1"
 
 # integration test deps
@@ -83,6 +83,9 @@ bucket4j = "8.15.0"
 
 # manual test deps
 gherkin-kiwi = "1.0.0-M12"
+
+# AWS deps... because sometimes it may not be the "best" way, but it is likely the only way.
+aws-sdk = "2.54.11"
 
 [libraries]
 gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }
@@ -105,6 +108,8 @@ org-aspectj-aspectjrt = { module = "org.aspectj:aspectjrt", version.ref="aspectj
 org-json-json = { module = "org.json:json", version.ref="json" }
 org-slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-api" }
 ch-qos-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+# Apache POI (5.1+) requires log4j-api at runtime; pin root version to fix CVE-2026-49844
+org-apache-logging-log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j-api" }
 # jetty (lrgs-web)
 org-eclipse-jetty-jsp = { module = "org.eclipse.jetty.ee11:jetty-ee11-apache-jsp", version.ref="jetty" }
 org-eclipse-jetty-annotations = { module = "org.eclipse.jetty.ee11:jetty-ee11-annotations", version.ref="jetty" }
@@ -188,6 +193,12 @@ hec-nucleus-data = { module = "mil.army.usace.hec:hec-nucleus-data" }
 com-google-flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
 usgs-waterdata-api = { module = "org.opendcs:usgs-waterdata-api", version.ref = "usgs-waterdata-api" }
 
+# AWS
+com-amazon-sdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "aws-sdk" }
+com-amazon-sdk-sns = { module = "software.amazon.awssdk:sns" }
+com-amazon-sdk-sns-message-manager = { module = "software.amazon.awssdk:sns-message-manager" }
+com-amazon-sdk-apache-client = { module = "software.amazon.awssdk:apache5-client" }
+
 # test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-launcher" }
@@ -221,8 +232,6 @@ testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgr
 testcontainers-oracle = { module = "org.testcontainers:testcontainers-oracle-free", version.ref="testcontainers" }
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
 
-selenium = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
-web-driver-manager = { module = "io.github.bonigarcia:webdrivermanager", version = "6.3.3" }
 nimbus = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 jwt = { module = "com.auth0:java-jwt", version.ref = "jwt" }
 

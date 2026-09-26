@@ -18,7 +18,7 @@ package org.opendcs.lrgs.dds;
 import java.security.Principal;
 
 /**
- * Updated replacement of {@link lrgs.ldds.LddsUser that doesn't assume directories on disk.
+ * Updated replacement of {@link lrgs.ldds.LddsUser} that doesn't assume directories on disk.
  * Should likely be replaced by the rest-api Principal object; however that will require some additional
  * restructuring.
  * DdsUserPrincipal

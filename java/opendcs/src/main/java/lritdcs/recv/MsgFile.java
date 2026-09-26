@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import lrgs.common.DcpMsg;
 
 /**
-IO Methods for reading & writing periodic files contining DCP messages.
+IO Methods for reading and writing periodic files contining DCP messages.
 */
 public class MsgFile
 {

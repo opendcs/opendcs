@@ -6,6 +6,8 @@ import type { UiDataSource } from "./DataSourceReducer";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
 import {
   AppDataTable,
+  idColumn,
+  textColumn,
   type ColumnDef,
   type RowAction,
 } from "../../../components/data-table";
@@ -29,26 +31,15 @@ export const DataSourcesTable: React.FC<DataSourcesTableProperties> = ({
 
   const columns = useMemo<ColumnDef<TableDataSourceRef>[]>(
     () => [
+      idColumn("dataSourceId", t("datasources:header.Id")),
       {
-        data: "dataSourceId",
-        header: t("datasources:header.Id"),
-        defaultContent: "new",
-        className: "dt-left",
-        type: "num",
-      },
-      { data: "name", header: t("datasources:header.Name"), type: "string" },
-      {
-        data: "type",
-        header: t("datasources:header.Type"),
-        defaultContent: "",
+        data: "name",
+        header: t("datasources:header.Name"),
         type: "string",
+        defaultSort: "asc",
       },
-      {
-        data: "arguments",
-        header: t("datasources:header.Arguments"),
-        defaultContent: "",
-        type: "string",
-      },
+      textColumn("type", t("datasources:header.Type")),
+      textColumn("arguments", t("datasources:header.Arguments")),
       {
         data: "usedBy",
         header: t("datasources:header.UsedBy"),

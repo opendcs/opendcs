@@ -33,6 +33,8 @@ import org.opendcs.odcsapi.beans.ApiAlgorithmRef;
 import org.opendcs.odcsapi.beans.ApiAlgorithmScript;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class AlgorithmResourcesTest
 {
@@ -122,5 +124,29 @@ final class AlgorithmResourcesTest
 		assertEquals("site", map.getParms().get(0).getRoleName(), "Algorithm param role should match");
 		assertEquals(placeholderScriptText, map.getAlgoScripts().get(0).getText(), "Scripts should match");
 		assertEquals(ScriptType.PY_TimeSlice.getDbChar(), map.getAlgoScripts().get(0).getScriptType(), "Scripts should match");
+	}
+
+	/**
+	 * The web UI creates an algorithm by POSTing only the fields the editor exposes:
+	 * no algorithmId, and no props/parms/scripts collections. That has to map to a
+	 * NullKey so the DAO takes its INSERT path and assigns the id. See issue #2074.
+	 */
+	@Test
+	void testMapNewAlgorithmFromEditor()
+	{
+		ApiAlgorithm apiAlgorithm = new ApiAlgorithm();
+		apiAlgorithm.setName("MyNewAlgo");
+		apiAlgorithm.setExecClass("decodes.comp.MyNewAlgo");
+		apiAlgorithm.setDescription("created from the web ui");
+
+		DbCompAlgorithm map = AlgorithmResources.map(apiAlgorithm);
+
+		assertEquals(DbKey.NullKey, map.getId(), "A new algorithm must carry a NullKey so the DAO inserts");
+		assertEquals("MyNewAlgo", map.getName(), "Algorithm name should match");
+		assertEquals("decodes.comp.MyNewAlgo", map.getExecClass(), "Exec class should match");
+		assertEquals("created from the web ui", map.getComment(), "Description should match");
+		assertFalse(map.getParms().hasNext(), "No parameters should be mapped");
+		assertTrue(map.getProperties().isEmpty(), "No properties should be mapped");
+		assertTrue(map.getScripts().isEmpty(), "No scripts should be mapped");
 	}
 }

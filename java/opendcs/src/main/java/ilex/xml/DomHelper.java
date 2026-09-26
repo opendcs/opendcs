@@ -330,7 +330,7 @@ public abstract class DomHelper
 
 	/**
 	 * Returns an attribute by a case-INsensitive attriibute name.
-	 * @param attrname the attribute name
+	 * @param name the attribute name
 	 * @param elem the Element.
 	 * @return the attribute value or null if not found.
 	 */

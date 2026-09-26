@@ -1,12 +1,12 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { UserProfilePage } from "./UserProfilePage";
-import { fn } from "storybook/test";
+import { expect, fn } from "storybook/test";
 import {
   ApiContext,
   defaultValue as apiDefault,
 } from "../../../contexts/app/ApiContext";
 import { AuthContext } from "../../../contexts/app/AuthContext";
-import { BasicUser } from "../../../../.storybook/mock/TestUsers";
+import { BasicUser, CwmsUser } from "../../../../.storybook/mock/TestUsers";
 import { http, HttpResponse } from "msw";
 
 const meta = {
@@ -54,7 +54,39 @@ const authDecorator: Decorator = (Story) => (
   </ApiContext>
 );
 
+const cwmsAuthDecorator: Decorator = (Story) => (
+  <ApiContext value={apiDefault}>
+    <AuthContext
+      value={{
+        user: CwmsUser,
+        isLoading: false,
+        loginSchemes: {},
+        setSchemes: fn(),
+        setUser: fn(),
+        logout: fn(),
+      }}
+    >
+      <Story />
+    </AuthContext>
+  </ApiContext>
+);
+
 export const Default: Story = {
   args: {},
   decorators: [authDecorator],
+  play: async ({ mount }) => {
+    const canvas = await mount();
+    expect(await canvas.findByText(/Default/)).toBeInTheDocument();
+  },
+};
+
+export const CwmsUserWithAdditionalOfficePermissions: Story = {
+  args: {},
+  decorators: [cwmsAuthDecorator],
+  play: async ({ mount }) => {
+    const canvas = await mount();
+
+    expect(await canvas.findByText(/SPK/)).toBeInTheDocument();
+    expect(await canvas.findByText(/SWT/)).toBeInTheDocument();
+  },
 };

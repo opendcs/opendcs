@@ -66,6 +66,11 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
         return null;
     }
 
+    public String getPrefix()
+    {
+        return !prefix.isBlank() ? prefix.substring(0, prefix.length() - 1) : "";
+    }
+
     public static String addUnderscoreIfMissing(String prefix)
     {
         var tmp = (prefix == null || prefix.isBlank()) ? "" : prefix;

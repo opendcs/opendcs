@@ -7,6 +7,8 @@ import type { ConfigDetails } from "./Config";
 import type { RemoveAction, SaveAction } from "../../../util/Actions";
 import {
   AppDataTable,
+  idColumn,
+  textColumn,
   type ColumnDef,
   type RowAction,
 } from "../../../components/data-table";
@@ -32,26 +34,20 @@ export const ConfigsTable: React.FC<ConfigsTableProperties> = ({
 
   const columns = useMemo<ColumnDef<TableConfigRef>[]>(
     () => [
+      idColumn("configId", t("configs:header.Id")),
       {
-        data: "configId",
-        header: t("configs:header.Id"),
-        defaultContent: "new",
-        className: "dt-left",
-        type: "num",
+        data: "name",
+        header: t("configs:header.Name"),
+        type: "string",
+        defaultSort: "asc",
       },
-      { data: "name", header: t("configs:header.Name"), type: "string" },
       {
         data: "numPlatforms",
         header: t("configs:header.NumPlatforms"),
         defaultContent: "0",
         type: "num",
       },
-      {
-        data: "description",
-        header: t("configs:header.Description"),
-        defaultContent: "",
-        type: "string",
-      },
+      textColumn("description", t("configs:header.Description")),
     ],
     [t],
   );

@@ -88,7 +88,7 @@ ENV APPLICATION_NAME="compdepends"
 
 CMD ["/compdepends.sh"]
 
-FROM alpine:3.23.4 AS tomcat_base
+FROM alpine:3.24.1 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
         openjdk21-jre \
@@ -97,11 +97,11 @@ RUN apk --no-cache upgrade && \
 
 RUN mkdir /download && \
     cd /download && \
-    wget https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.24/bin/apache-tomcat-11.0.24.tar.gz && \
-    echo "a2fb1bd511735bd3d135b87f628d2b1f71a43aed7c4d7511e770092e571bad6d5ad9e97a580852119770477fd86d7ed156d83d3cee2854bce260725ce48934d0 *apache-tomcat-11.0.24.tar.gz" > checksum.txt && \
+    wget https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.25/bin/apache-tomcat-11.0.25.tar.gz && \
+    echo "81339c046dff1b363a80a3bccf80cb391660a6828dd8ae042180ceb11c8b1614317143e60b311b9e791dab585bb046b777234667acce7dca2203a74b37bf20f2 *apache-tomcat-11.0.25.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
-    mv apache-tomcat-11.0.24 /usr/local/tomcat/ && \
+    mv apache-tomcat-11.0.25 /usr/local/tomcat/ && \
     cd / && \
     rm -rf /download && \
     rm -rf /usr/local/tomcat/webapps/*

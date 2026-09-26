@@ -1,0 +1,202 @@
+/*
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
+package org.opendcs.lrgs.webhook.dadds;
+
+import java.io.IOException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.time.ZoneOffset;
+import java.util.Date;
+import java.util.Map;
+
+import javax.net.ssl.SSLContext;
+
+import org.opendcs.lrgs.dao.MsgArchive;
+import org.opendcs.lrgs.webhook.dadds.AwsContextResolver.AwsContext;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import jakarta.inject.Singleton;
+import jakarta.servlet.ServletContext;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Providers;
+import lrgs.common.DcpAddress;
+import lrgs.common.DcpMsg;
+import lrgs.common.DcpMsgFlag;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.messagemanager.sns.SnsMessageManager;
+import software.amazon.awssdk.messagemanager.sns.model.SnsMessage;
+import software.amazon.awssdk.messagemanager.sns.model.SnsSubscriptionConfirmation;
+import software.amazon.awssdk.regions.Region;
+
+@Path("/webhook/dadds")
+@Singleton
+public class DaddsWebHookResource
+{
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    private static final ObjectMapper jsonMapper = JsonMapper.builder()
+                                                             .enable(MapperFeature.REQUIRE_HANDLERS_FOR_JAVA8_TIMES)
+                                                             .addModule(new JavaTimeModule())
+                                                             .build();
+
+    @Context
+    ServletContext servletContext;
+
+    // This is pull from the providers manually so that the tests have a chance to hack in altered trust
+    // for full sequence testing.
+    @Context
+    Providers providers;
+
+    // Dadds WebHooks are always SNS messages
+    @POST
+    @Path("{hookId}")
+    public Response handleHook(@PathParam("hookId") String hookId,
+                               @HeaderParam("x-amz-sns-message-type") String msgType,
+                               @HeaderParam("x-amz-sns-topic-arn") String topicArn,
+                               String message)
+    {
+        // validate hook id
+        // validate subscription (if that's the message)
+        // validate signature
+        // process message
+        var awsContext = providers.getContextResolver(AwsContext.class, null).getContext(null);
+        var hook = validateHookId(hookId);
+
+        if (hook == null)
+        {
+            log.warn("Attempt to post to hookId that doesn't exist.");
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        try
+        {
+            var region = parseRegion(topicArn);
+            if (region == null)
+            {
+                throw SdkClientException.create("Region could not be parsed from message topicArn");
+            }
+            var snsMessage = awsContext.snsMessageManagers()
+                                       .computeIfAbsent(
+                                            region,
+                                            r -> SnsMessageManager.builder()
+                                                                .region(region)
+                                                                .build())
+                                       .parseMessage(message);
+            return switch (snsMessage.type())
+            {
+                case SUBSCRIPTION_CONFIRMATION -> confirmSubscription((SnsSubscriptionConfirmation)snsMessage);
+                case NOTIFICATION -> processMessage(snsMessage, hook);
+                default -> Response.status(Response.Status.NOT_FOUND).build();
+            };
+        }
+        catch (InterruptedException | SdkClientException ex)
+        {
+            log.atError().setCause(ex).log("Invalid message sent");
+            if (ex instanceof InterruptedException)
+            {
+                Thread.currentThread().interrupt();
+            }
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+    }
+
+    private Region parseRegion(String topicArn)
+    {
+        String[] parts = topicArn != null ? topicArn.split(":") : new String[0];
+        if (parts.length < 4)
+        {
+            return null;
+        }
+        return Region.of(parts[3]);
+    }
+
+    private Response confirmSubscription(SnsSubscriptionConfirmation snsMessage) throws InterruptedException
+    {
+
+        try(HttpClient client = HttpClient.newBuilder().sslContext(SSLContext.getDefault()).build())
+        {
+            var response = client.send(HttpRequest.newBuilder(snsMessage.subscribeUrl()).build(),
+                                       BodyHandlers.discarding());
+            int code = response.statusCode();
+            if (code >= 200 && code < 300) // E.G. any success variant.
+            {
+                return Response.ok().build();
+            }
+        }
+        catch (IOException | NoSuchAlgorithmException ex)
+        {
+            log.atError().setCause(ex).log("Unable to confirm Dadds WebHook subscription.");
+        }
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    private Response processMessage(SnsMessage snsMessage, DaddsWebHookInput hookInput)
+    {
+        try
+        {
+            log.trace("Received: {}", snsMessage.message());
+            var message = jsonMapper.readValue(snsMessage.message(), DaddsDataMessage.class);
+
+            var archive = (MsgArchive)servletContext.getAttribute("archive");
+            var dcpMessage = new DcpMsg();
+            dcpMessage.setFlagbits(DcpMsgFlag.MSG_TYPE_OTHER);
+            var addr = new DcpAddress(message.address());
+            dcpMessage.setDcpAddress(addr);
+
+            dcpMessage.setXmitTime(new Date(message.time().toInstant(ZoneOffset.UTC).toEpochMilli()));
+            dcpMessage.setDomsatTime(new Date(message.time().toInstant(ZoneOffset.UTC).toEpochMilli()));
+            dcpMessage.setOrigAddress(new DcpAddress(message.AddressReceived()));
+            dcpMessage.setBaud(message.baud());
+            dcpMessage.setGoesFreqOffset(message.frequencyDeviationStart());
+            dcpMessage.setGoesGoodPhasePct(message.goodPhase());
+            dcpMessage.setGoesPhaseNoise(message.phaseNoise());
+            dcpMessage.setLocalReceiveTime(new Date());
+            dcpMessage.setMsgLength(message.length());
+            dcpMessage.setFailureCode(message.quality().charAt(0));
+
+            dcpMessage.setData(message.data().getBytes(StandardCharsets.US_ASCII));
+            dcpMessage.setHeaderLength(0);
+            archive.archiveMsg(dcpMessage, hookInput);
+            return Response.ok().build();
+        }
+        catch (JsonProcessingException ex)
+        {
+            log.atWarn().setCause(ex).log("Unable to process data message.");
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private DaddsWebHookInput validateHookId(String hookId)
+    {
+        var hooks = (Map<String,DaddsWebHookInput>)servletContext.getAttribute("hooks");
+        return hooks.get(hookId);
+    }
+}

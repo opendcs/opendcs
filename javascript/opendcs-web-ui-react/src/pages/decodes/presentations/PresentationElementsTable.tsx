@@ -34,7 +34,7 @@ export const PresentationElementsTable: React.FC<
 > = ({ elements, edit = false, onSave, onRemove }) => {
   const [t] = useTranslation(["presentations", "translation"]);
   const { isSuccess: unitsReady } = useUnitListQuery();
-  const { data: dataTypes = [] } = useDataTypeListQuery();
+  const { data: dataTypes = [], isSuccess: dataTypesReady } = useDataTypeListQuery();
   const queryClient = useQueryClient();
 
   const dataTypeStandards = useMemo(() => {
@@ -57,26 +57,42 @@ export const PresentationElementsTable: React.FC<
         type: "string",
         defaultContent: "",
         edit: {
+          // Until the data type list resolves, `dataTypeStandards` holds only the
+          // standards already used by the rows on screen - often just one. Offering
+          // that as a complete dropdown hides the real choices, so fall back to a
+          // free-text box (as the units column does) rather than a truncated select.
           render: (row, rowId) =>
-            renderToString(
-              <Form.Select
-                name="dataTypeStd"
-                defaultValue={row.dataTypeStd ?? ""}
-                aria-label={t("presentations:elements.dataTypeStd_input", {
-                  name: elementDisplayName(row, rowId),
-                })}
-              >
-                <option value="" />
-                {dataTypeStandards.map((std) => (
-                  <option key={std} value={std}>
-                    {std}
-                  </option>
-                ))}
-              </Form.Select>,
-            ),
+            dataTypesReady
+              ? renderToString(
+                  <Form.Select
+                    name="dataTypeStd"
+                    defaultValue={row.dataTypeStd ?? ""}
+                    aria-label={t("presentations:elements.dataTypeStd_input", {
+                      name: elementDisplayName(row, rowId),
+                    })}
+                  >
+                    <option value="" />
+                    {dataTypeStandards.map((std) => (
+                      <option key={std} value={std}>
+                        {std}
+                      </option>
+                    ))}
+                  </Form.Select>,
+                )
+              : renderToString(
+                  <Form.Control
+                    type="text"
+                    name="dataTypeStd"
+                    defaultValue={row.dataTypeStd ?? ""}
+                    aria-label={t("presentations:elements.dataTypeStd_input", {
+                      name: elementDisplayName(row, rowId),
+                    })}
+                  />,
+                ),
           read: (cell) =>
-            cell.querySelector<HTMLSelectElement>('select[name="dataTypeStd"]')
-              ?.value ?? "",
+            cell.querySelector<HTMLSelectElement | HTMLInputElement>(
+              'select[name="dataTypeStd"], input[name="dataTypeStd"]',
+            )?.value ?? "",
         },
       },
       {
@@ -215,7 +231,7 @@ export const PresentationElementsTable: React.FC<
         },
       },
     ],
-    [t, dataTypeStandards, unitsReady, queryClient],
+    [t, dataTypeStandards, dataTypesReady, unitsReady, queryClient],
   );
 
   return (

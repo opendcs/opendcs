@@ -10,7 +10,6 @@ package decodes.cwms.validation;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.sql.DbKey;
 import decodes.tsdb.TsdbAppTemplate;
@@ -33,9 +32,12 @@ public class ScreeningDelete extends TsdbAppTemplate
 	@Override
 	protected void runApp() throws Exception
 	{
-		CwmsTimeSeriesDb cwmsTsdb = (CwmsTimeSeriesDb)theDb;
-		ScreeningDAI screeningDAO = cwmsTsdb.makeScreeningDAO();
-		
+		ScreeningDAI screeningDAO = theDb.makeScreeningDAO();
+		if (screeningDAO == null)
+		{
+			throw new UnsupportedOperationException("Screenings are not supported by this database implementation.");
+		}
+
 		for(int idx = 0; idx < screeningIdArg.NumberOfValues(); idx++)
 		{
 			String screeningId = screeningIdArg.getValue(idx);

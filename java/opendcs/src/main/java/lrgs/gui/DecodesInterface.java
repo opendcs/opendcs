@@ -104,8 +104,6 @@ public class DecodesInterface
 	  <p>
 	  NOTE: If DECODES is not installed, a NoClassDefFoundError will be
 	  thrown when you attempt to call this method.
-
-	  @return true if success, false if failure,
 	*/
 	public static void initDecodes(String propFile)
 			throws DecodesException

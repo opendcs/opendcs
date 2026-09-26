@@ -20,7 +20,6 @@ import decodes.tsdb.DbIoException;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.TsidScreeningAssignment;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.cwms.CwmsTimeSeriesDb;
 import org.opendcs.annotations.algorithm.Algorithm;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -38,7 +37,11 @@ public class CwmsScreeningAlgorithm	extends ScreeningAlgorithm
 		ScreeningDAI screeningDAO = null;
 		try
 		{
-			screeningDAO = ((CwmsTimeSeriesDb)tsdb).makeScreeningDAO();
+			screeningDAO = tsdb.makeScreeningDAO();
+			if (screeningDAO == null)
+			{
+				throw new DbCompException("Screenings are not supported by this database implementation.");
+			}
 			TsidScreeningAssignment tsa = screeningDAO.getScreeningForTS(tsid);
 			return tsa != null && tsa.isActive() ? tsa.getScreening() : null;
 		}

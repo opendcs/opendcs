@@ -14,6 +14,7 @@ import { Button } from "react-bootstrap";
 import { Pencil, Save, Trash } from "react-bootstrap-icons";
 import { REFLIST_SITE_NAME_TYPE, useRefList } from "../../contexts/data/RefListContext";
 import type { RowState } from "../../util/DataTables";
+import { TableCaption, type CaptionButton } from "../../components/data-table";
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 DataTable.use(DT);
@@ -45,7 +46,7 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
   const { toDom } = useContextWrapper();
   const { refList } = useRefList();
   const table = useRef<DataTableRef>(null);
-  const [t, i18n] = useTranslation(["sites"]);
+  const [t, i18n] = useTranslation(["sites", "translation"]);
   const [rowState, updateRowState] = useState<RowState<string>>({});
   const rowStateRef = useRef(rowState);
   const rowInputRef = useRef<Record<string, { type?: string; name?: string }>>({});
@@ -278,46 +279,44 @@ export const SiteNameList: React.FC<SiteNameListProperties> = ({
     info: false,
     searching: false,
     language: dtLangs.get(i18n.language),
-    layout: {
-      top1Start: {
-        buttons: edit
-          ? [
-              {
-                text: "+",
-                action: () => {
-                  updateLocalSitenames((prev) => {
-                    return [...prev, { type: "-" }];
-                  });
-                },
-                attr: {
-                  "aria-label": t("sites:site_names.add_name"),
-                },
-              },
-            ]
-          : [],
-      },
-    },
   };
 
+  // The add button lives in the caption so it sits directly against the table
+  // it adds a row to (issue #2009).
+  const captionButtons: CaptionButton[] = edit
+    ? [
+        {
+          key: "add-name",
+          text: t("translation:add"),
+          ariaLabel: t("sites:site_names.add_name"),
+          icon: "bi-plus-lg",
+          onClick: () => updateLocalSitenames((prev) => [...prev, { type: "-" }]),
+        },
+      ]
+    : [];
+
   return (
-    <DataTable
-      key={i18n.language} // convient way to force a render of the components and aria labels on a language change.
-      id="siteNamesTable"
-      columns={columns}
-      data={allSites}
-      options={options}
-      slots={edit ? slots : undefined}
-      ref={table}
-      className="table table-hover table-striped tablerow-cursor w-100 border"
-    >
-      <thead>
-        <tr>
-          <th>{t("sites:site_names.name_type")}</th>
-          <th>{t("translation:value")}</th>
-          {edit ? <th>{t("translation:actions")}</th> : null}
-        </tr>
-      </thead>
-    </DataTable>
+    <div className="dt-panel">
+      <DataTable
+        key={i18n.language} // convient way to force a render of the components and aria labels on a language change.
+        id="siteNamesTable"
+        columns={columns}
+        data={allSites}
+        options={options}
+        slots={edit ? slots : undefined}
+        ref={table}
+        className="table table-hover table-striped tablerow-cursor w-100 border"
+      >
+        <TableCaption title={t("sites:site_names.title")} buttons={captionButtons} />
+        <thead>
+          <tr>
+            <th>{t("sites:site_names.name_type")}</th>
+            <th>{t("translation:value")}</th>
+            {edit ? <th>{t("translation:actions")}</th> : null}
+          </tr>
+        </thead>
+      </DataTable>
+    </div>
   );
 };
 

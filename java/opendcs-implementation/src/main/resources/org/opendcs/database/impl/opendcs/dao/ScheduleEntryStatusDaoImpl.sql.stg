@@ -1,0 +1,51 @@
+
+
+select(where, limit, columns, prefix) ::= <<
+    select <columns>, se.name <prefix>_schedule_entry_name
+     from schedule_entry_status <prefix>
+    left outer join schedule_entry se on <prefix>.schedule_entry_id = se.schedule_entry_id
+    <if(where)> <where> <endif>
+    order by <prefix>.schedule_entry_status_id asc,
+             <prefix>.schedule_entry_id asc,
+             <prefix>.last_modified asc
+    <limit>
+>>
+
+
+merge(dual) ::= <<
+    merge into schedule_entry_status ses
+    using (select :schedule_entry_status_id schedule_entry_status_id, :schedule_entry_id schedule_entry_id,
+            :run_start_time run_start_time, :last_message_time last_message_time, :run_complete_time run_complete_time,
+            :hostname hostname, :run_status run_status, :num_messages num_messages, :num_decode_errors num_decode_errors,
+            :num_platforms num_platforms, :last_source last_source, :last_consumer last_consumer,
+            :last_modified last_modified
+
+     <dual>) input
+    on (ses.schedule_entry_status_id = input.schedule_entry_status_id)
+    when matched then
+        update set schedule_entry_id = input.schedule_entry_id, run_start_time = input.run_start_time,
+            last_message_time = input.last_message_time, run_complete_time = input.run_complete_time,
+            hostname = input.hostname, run_status = input.run_status, num_messages = input.num_messages,
+            num_decode_errors = input.num_decode_errors, num_platforms = input.num_platforms,
+            last_source = input.last_source, last_consumer = input.last_consumer,
+            last_modified = input.last_modified
+    when not matched then
+        insert(
+            schedule_entry_status_id, schedule_entry_id, run_start_time, last_message_time, run_complete_time,
+            hostname, run_status, num_messages, num_decode_errors, num_platforms, last_source, last_consumer,
+            last_modified)
+        values(
+            input.schedule_entry_status_id, input.schedule_entry_id, input.run_start_time, input.last_message_time,
+            input.run_complete_time, input.hostname, input.run_status, input.num_messages, input.num_decode_errors,
+            input.num_platforms, input.last_source, input.last_consumer, input.last_modified)
+>>
+
+delete(where) ::= <<
+    -- a bit simple, but there's a lot of options, let the usage point sort it out.
+    delete from schedule_entry_status where <where>
+>>
+    
+unsetPlatformStatus(where) ::= <<
+    update platform_status set last_schedule_entry_status_id = null
+     where <where>
+>>

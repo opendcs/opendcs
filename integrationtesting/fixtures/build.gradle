@@ -5,6 +5,8 @@ plugins {
 }
 
 dependencies {
+    annotationProcessor(libs.org.netbeans.lookup)
+    implementation(libs.org.netbeans.lookup)
     api(project(":opendcs"))
     api(enforcedPlatform(libs.junit.bom))
     api(libs.bundles.junit)

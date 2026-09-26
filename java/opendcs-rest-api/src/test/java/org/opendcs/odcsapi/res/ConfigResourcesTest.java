@@ -22,7 +22,6 @@ import decodes.xml.DecodesScriptParser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.odcsapi.beans.ApiConfigRef;
@@ -39,6 +38,7 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.ConfigResources.coefficientMap;
 import static org.opendcs.odcsapi.res.ConfigResources.map;
 import static org.opendcs.odcsapi.res.ConfigResources.mapRef;
@@ -150,7 +150,7 @@ final class ConfigResourcesTest
 
 		DataType dataType = new DataType(Constants.datatype_CWMS, "Stage");
 		dataType.forceSetId(DbKey.createDbKey(1234L));
-		Mockito.when(dataTypeDao.lookup(null,Constants.datatype_CWMS, "Stage")).thenReturn(Optional.of(dataType));
+		when(dataTypeDao.lookup(null,Constants.datatype_CWMS, "Stage")).thenReturn(Optional.of(dataType));
 		PlatformConfig config = map(apiConfig, dataTypeDao, null);
 
 		assertNotNull(config);

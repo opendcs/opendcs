@@ -1,0 +1,41 @@
+
+select(limit, where, columns, prefix) ::= <<
+    select <columns>, rs.name <prefix>_last_routing_spec_name, p.platformdesignator <prefix>_platform_designator
+    from platform_status <prefix>
+    left outer join routingspec rs on rs.id =
+        (select se.routingspec_id
+            from schedule_entry se
+           where schedule_entry_id =
+                (select distinct ses.schedule_entry_id
+                   from schedule_entry_status ses
+                  where ses.schedule_entry_status_id = <prefix>.last_schedule_entry_status_id
+                )
+        )
+    left outer join platform p on <prefix>.platform_id = p.id
+    <if(where)> <where> <endif>
+    order by <prefix>.platform_id asc, <prefix>.last_contact_time asc
+    <if(limit)> <limit> <endif>
+>>
+
+
+merge(dual) ::= <<
+merge into platform_status ps
+using (select :platform_id platform_id, :last_contact_time last_contact_time, :last_message_time last_message_time,
+       :last_failure_codes last_failure_codes, :last_error_time last_error_time,
+       :last_schedule_entry_status_id last_schedule_entry_status_id, :annotation annotation
+ <dual>) input
+on (ps.platform_id = input.platform_id)
+when matched then
+    update set last_contact_time = input.last_contact_time, last_message_time = input.last_message_time,
+        last_failure_codes = input.last_failure_codes, last_error_time = input.last_error_time,
+        last_schedule_entry_status_id = input.last_schedule_entry_status_id,
+        annotation = input.annotation
+
+when not matched then
+    insert(platform_id, last_contact_time, last_message_time,
+           last_failure_codes, last_error_time, last_schedule_entry_status_id, annotation)
+    values(input.platform_id, input.last_contact_time, input.last_message_time, input.last_failure_codes,
+           input.last_error_time, input.last_schedule_entry_status_id, input.annotation)
+>>
+
+delete() ::= "delete from platform_status where platform_id = :platform_id"

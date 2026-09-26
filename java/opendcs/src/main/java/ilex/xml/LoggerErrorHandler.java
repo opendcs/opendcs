@@ -57,7 +57,7 @@ public class LoggerErrorHandler implements ErrorHandler
 
 	/**
 	* Issue a warning message.
-	* @param e the exception
+	* @param ex the exception
 	* @throws SAXException if stop-on-warnings is true.
 	*/
 	public void warning(SAXParseException ex) throws SAXException
@@ -74,7 +74,7 @@ public class LoggerErrorHandler implements ErrorHandler
 
 	/**
 	* Issue an error message.
-	* @param e the exception
+	* @param ex the exception
 	* @throws SAXException if stop-on-errors is true.
 	*/
 	public void error(SAXParseException ex) throws SAXException
@@ -91,7 +91,7 @@ public class LoggerErrorHandler implements ErrorHandler
 
 	/**
 	* Called when fatal error encountered.
-	* @param e the exception
+	* @param ex the exception
 	* @throws SAXException rethrows the exception
 	*/
 	public void fatalError(SAXParseException ex) throws SAXException

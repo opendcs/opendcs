@@ -6,6 +6,7 @@ import { AuthContext } from "../../contexts/app/AuthContext";
 import { OrganizationsContext } from "../../contexts/app/OrganizationsContext";
 import { ApiContext, defaultValue as apiDefault } from "../../contexts/app/ApiContext";
 import { MOCK_ORGANIZATIONS } from "../../../.storybook/mock/WithOrganization";
+import { CwmsUser } from "../../../.storybook/mock/TestUsers";
 
 const meta = {
   component: TopBar,
@@ -67,6 +68,38 @@ export const WithUser: Story = {
   },
 };
 
+export const WithCwmsUser: Story = {
+  args: {
+    onToggleSidebar: fn(),
+    sidebarOpen: false,
+  },
+  decorators: [
+    (Story) => {
+      return (
+        <AuthContext
+          value={{
+            logout: fn(),
+            setUser: fn(),
+            loginSchemes: {},
+            setSchemes: fn(),
+            user: CwmsUser,
+            isLoading: false,
+          }}
+        >
+          <OrganizationsContext value={{ organizations: MOCK_ORGANIZATIONS }}>
+            <Story />
+          </OrganizationsContext>
+        </AuthContext>
+      );
+    },
+  ],
+  play: async ({ mount }) => {
+    const canvas = await mount();
+    const text = await canvas.findByText("OpenDCS");
+    expect(text).toBeInTheDocument();
+  },
+};
+
 export const WithChangeOrg: Story = {
   args: {
     onToggleSidebar: fn(),
@@ -81,7 +114,7 @@ export const WithChangeOrg: Story = {
             setUser: fn(),
             loginSchemes: {},
             setSchemes: fn(),
-            user: { email: "testuser@example.com" },
+            user: CwmsUser,
             isLoading: false,
           }}
         >

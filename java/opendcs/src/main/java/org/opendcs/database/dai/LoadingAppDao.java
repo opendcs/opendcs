@@ -30,7 +30,7 @@ public interface LoadingAppDao extends OpenDcsDao
     /**
      * Retrieve Computation App (Loading App) information by Name (case insensitive comparison)
      * @param tx Transaction object for the request.
-     * @param id Computation App Name
+     * @param name Computation App Name
      * @return The Computation App information, or empty.
      * @throws OpenDcsDataException
      */

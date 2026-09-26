@@ -173,7 +173,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
     /** Name of summary log file for decoding wizard. */
     public String decwizSummaryLog = "$HOME/summary.log";
 
-    /** Provide default designator ( <device-id>-<seqno> for new platforms ) */
+    /** Provide default designator ( {@code <device-id>-<seqno>} for new platforms ) */
     public boolean setPlatformDesignatorName=false;
 
     /** @deprecated Set to true if the 1st line of site description contains long name. */

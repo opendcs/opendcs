@@ -1,5 +1,5 @@
 /*
-* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
 *
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
@@ -42,7 +42,7 @@ public final class PropertiesUtil
 	* In this method, keys are compared case SENSITIVE.
 	* @param p1 the first properties set.
 	* @param p2 the second properties set.
-	* @return true if keys & values in both sets are equal, or if both are null.
+	* @return true if keys and values in both sets are equal, or if both are null.
 	*/
 	public static boolean propertiesEqual( Properties p1, Properties p2 )
 	{

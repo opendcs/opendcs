@@ -14,9 +14,12 @@ import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jdbi.v3.core.Jdbi;
+import org.opendcs.data.Organization;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.dai.OrganizationDao;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.spi.Configuration;
@@ -318,5 +321,27 @@ public class CwmsOracleConfiguration implements Configuration
     public boolean supportsRestApi()
     {
         return true;
+    }
+
+
+    @Override
+    public Organization getDefaultOrganization()
+    {
+        var dao = databases.getDao(OrganizationDao.class)
+                           .orElseThrow(() -> new RuntimeException("Invalid setup. Cwms Impl cannot provide an OrganizationsDao"));
+
+        var settings = databases.getSettings(DecodesSettings.class).orElseThrow();
+        try (var tx = databases.newTransaction())
+        {
+            return dao.getAll(tx, -1, -1)
+                      .stream()
+                      .filter(org -> org.getName().equals(settings.CwmsOfficeId))
+                      .findFirst()
+                      .orElseThrow();
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new RuntimeException("Unable to retrieve Default Organization." ,ex); // NOSONAR - we just need to fail the tests
+        }
     }
 }

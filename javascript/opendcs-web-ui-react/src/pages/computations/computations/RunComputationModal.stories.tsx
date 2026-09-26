@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import { expect, fn, screen, waitFor } from "storybook/test";
+import { expect, fn, screen, userEvent, waitFor } from "storybook/test";
 import { RunComputationModal } from "./RunComputationModal";
 
 /** A minimal but realistic SSE transcript from /runcomputation. */
@@ -107,5 +107,199 @@ export const TracePopsOut: Story = {
     expect(
       screen.queryByText(i18n.t("computations:run.log_detached")),
     ).not.toBeInTheDocument();
+  },
+};
+
+/**
+ * A manual run must not write to the database -- the operator reviews the numbers first -- so
+ * the computed values travel inline on the Results event. This asserts they are rendered from
+ * that payload alone, with no /tsdata request to fall back on.
+ */
+export const RendersValuesFromResultsPayload: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        runComputation: http.get(
+          "/odcsapi/runcomputation",
+          () =>
+            new HttpResponse(
+              [
+                "event: computation-status",
+                "data: Computed 2 values for 'TESTSITE.Flow.Inst.1Hour.0.rev'",
+                "",
+                "event: Results",
+                `data: ${JSON.stringify({
+                  tsIds: [
+                    { uniqueString: "TESTSITE.Flow.Inst.1Hour.0.rev", key: 1234 },
+                  ],
+                  startTime: "2026-06-01T00:00:00Z",
+                  endTime: "2026-06-02T00:00:00Z",
+                  data: [
+                    {
+                      tsid: {
+                        uniqueString: "TESTSITE.Flow.Inst.1Hour.0.rev",
+                        key: 1234,
+                        storageUnits: "cms",
+                      },
+                      values: [
+                        { sampleTime: "2026-06-01T00:00:00Z", value: 11.5 },
+                        { sampleTime: "2026-06-01T01:00:00Z", value: 12.25 },
+                      ],
+                    },
+                  ],
+                })}`,
+                "",
+              ].join("\n"),
+              { headers: { "Content-Type": "text/event-stream" } },
+            ),
+        ),
+        // Any read-back attempt is a regression: the run wrote nothing, so there is nothing
+        // to read. Fail loudly rather than letting a fallback mask it.
+        tsData: http.get("/odcsapi/tsdata", () => {
+          throw new Error(
+            "RunComputationModal must not fetch /tsdata for a manual run",
+          );
+        }),
+      },
+    },
+  },
+  play: async ({ mount, parameters }) => {
+    await mount();
+    const { i18n } = parameters;
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: i18n.t("computations:run.run") }),
+    );
+
+    expect(await screen.findByText("11.5", {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.getByText("12.25")).toBeInTheDocument();
+    // The column is labelled from the identifier carried alongside the values.
+    expect(
+      screen.getByText(/TESTSITE\.Flow\.Inst\.1Hour\.0\.rev \(cms\)/),
+    ).toBeInTheDocument();
+  },
+};
+
+/**
+ * An output the run described but returned no series for has to be named, rather than leaving
+ * an unexplained gap in the results table.
+ */
+export const OutputsWithoutValuesAreReported: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        runComputation: http.get(
+          "/odcsapi/runcomputation",
+          () =>
+            new HttpResponse(
+              [
+                "event: computation-status",
+                "data: Computation produced no output time series.",
+                "",
+                "event: Results",
+                `data: ${JSON.stringify({
+                  tsIds: [
+                    { uniqueString: "TESTSITE.Flow.Inst.1Hour.0.compproc", key: -1 },
+                  ],
+                  startTime: "2026-06-01T00:00:00Z",
+                  endTime: "2026-06-02T00:00:00Z",
+                  data: [],
+                })}`,
+                "",
+              ].join("\n"),
+              { headers: { "Content-Type": "text/event-stream" } },
+            ),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, parameters }) => {
+    await mount();
+    const { i18n } = parameters;
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: i18n.t("computations:run.run") }),
+    );
+
+    const warning = await screen.findByText(
+      new RegExp(i18n.t("computations:run.unresolved_outputs")),
+      {},
+      { timeout: 5000 },
+    );
+    expect(warning).toHaveTextContent("TESTSITE.Flow.Inst.1Hour.0.compproc");
+  },
+};
+
+/**
+ * Screening algorithms express their result as quality flags, and a reviewer deciding whether to
+ * keep a run's output needs to see them next to the value. The flag encoding is database
+ * specific, so the server sends the rendered form and the dialog shows it verbatim.
+ *
+ * Deliberately mixes a flagged and an unflagged sample in one series: an unflagged value must
+ * stay clean, or the marker means nothing.
+ */
+export const RendersQualityFlags: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        runComputation: http.get(
+          "/odcsapi/runcomputation",
+          () =>
+            new HttpResponse(
+              [
+                "event: computation-status",
+                "data: Computation executed with 0 errors",
+                "",
+                "event: Results",
+                `data: ${JSON.stringify({
+                  tsIds: [{ uniqueString: "TESTSITE.Stage.Inst.1Hour.0.rev", key: 77 }],
+                  startTime: "2026-06-01T00:00:00Z",
+                  endTime: "2026-06-02T00:00:00Z",
+                  data: [
+                    {
+                      tsid: {
+                        uniqueString: "TESTSITE.Stage.Inst.1Hour.0.rev",
+                        key: 77,
+                        storageUnits: "ft",
+                      },
+                      values: [
+                        // Screened and rejected high -- what a screening run flags.
+                        {
+                          sampleTime: "2026-06-01T00:00:00Z",
+                          value: 998.5,
+                          flags: 1073741952,
+                          flagsDisplay: "S(R+)",
+                        },
+                        // Screened, nothing asserted: no marker.
+                        { sampleTime: "2026-06-01T01:00:00Z", value: 12.25, flags: 0 },
+                      ],
+                    },
+                  ],
+                })}`,
+                "",
+              ].join("\n"),
+              { headers: { "Content-Type": "text/event-stream" } },
+            ),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, parameters }) => {
+    await mount();
+    const { i18n } = parameters;
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: i18n.t("computations:run.run") }),
+    );
+
+    const flagged = await screen.findByText("S(R+)", {}, { timeout: 5000 });
+    expect(flagged).toBeInTheDocument();
+    // The raw flag word stays available for anyone who needs the exact bits.
+    expect(flagged).toHaveAttribute("title", "flags: 1073741952");
+
+    // The flagged value and the clean one both render, and only one is marked.
+    const flaggedCell = flagged.closest("td");
+    expect(flaggedCell).toHaveTextContent("998.5");
+    expect(screen.getByText("12.25").closest("td")?.textContent).toBe("12.25");
   },
 };

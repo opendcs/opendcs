@@ -76,8 +76,8 @@ public class RolesDaoImpl implements RolesDao
                 handle.createQuery("insert into opendcs_role (name, description, updated_at) " +
                                                      "values (:name, :description, now()) returning id, name, description,updated_at"))
         {
-            return addRole.bind(GenericColumns.NAME.column(), role.name)
-                          .bind(GenericColumns.DESCRIPTION.column(), role.description)
+            return addRole.bind(GenericColumns.NAME.column(), role.name())
+                          .bind(GenericColumns.DESCRIPTION.column(), role.description())
                           .map(ROLE_MAPPER).one();
         }
     }
@@ -99,8 +99,8 @@ public class RolesDaoImpl implements RolesDao
         Handle handle = getHandle(tx);
         try (var update = handle.createQuery("update opendcs_role set name =:name, description = :description where id=:id returning id, name, description,updated_at"))
         {
-            return update.bind(GenericColumns.NAME.column(), role.name)
-                         .bind(GenericColumns.DESCRIPTION.column(), role.description)
+            return update.bind(GenericColumns.NAME.column(), role.name())
+                         .bind(GenericColumns.DESCRIPTION.column(), role.description())
                          .bind(GenericColumns.ID.column(), id)
                          .map(ROLE_MAPPER).one();
         }

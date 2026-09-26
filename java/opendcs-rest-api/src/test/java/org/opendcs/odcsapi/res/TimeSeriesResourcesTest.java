@@ -34,12 +34,12 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import ilex.var.NoConversionException;
+import jakarta.ws.rs.core.Response;
 import ilex.var.TimedVariable;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.opentsdb.Interval;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.opendcs.odcsapi.beans.ApiInterval;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
@@ -47,13 +47,17 @@ import org.opendcs.odcsapi.beans.ApiTimeSeriesSpec;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesValue;
 import org.opendcs.odcsapi.beans.ApiTsGroup;
 import org.opendcs.odcsapi.beans.ApiTsGroupRef;
+import org.opendcs.odcsapi.errorhandling.WebAppException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.idMap;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.map;
@@ -327,6 +331,97 @@ final class TimeSeriesResourcesTest
 	}
 
 	@Test
+	void testTSGroupMapIncludesOtherMembersAsGroupAttrs()
+	{
+		TsGroup tsGroup = new TsGroup();
+		tsGroup.setGroupId(DbKey.createDbKey(1234L));
+		tsGroup.setGroupName("GateOpening");
+		tsGroup.setGroupType("basin");
+		tsGroup.addOtherMember("ParamType", "Inst");
+		tsGroup.addOtherMember("Interval", "1Hour");
+		tsGroup.addOtherMember("SubLocation", "Spillway*-Gate*");
+
+		ApiTsGroup apiTsGroup = map(tsGroup);
+
+		assertNotNull(apiTsGroup);
+		assertEquals(3, apiTsGroup.getGroupAttrs().size());
+		assertTrue(apiTsGroup.getGroupAttrs().contains("ParamType=Inst"));
+		assertTrue(apiTsGroup.getGroupAttrs().contains("Interval=1Hour"));
+		assertTrue(apiTsGroup.getGroupAttrs().contains("SubLocation=Spillway*-Gate*"));
+	}
+
+	@Test
+	void testApiTSGroupMapParsesGroupAttrs() throws Exception
+	{
+		ApiTsGroup apiTsGroup = new ApiTsGroup();
+		apiTsGroup.setGroupName("GateOpening");
+		apiTsGroup.setGroupType("basin");
+		apiTsGroup.getGroupAttrs().add("ParamType=Inst");
+		apiTsGroup.getGroupAttrs().add("BaseLocation=TESTSITE");
+
+		TsGroup tsGroup = map(apiTsGroup);
+
+		assertNotNull(tsGroup);
+		assertEquals(2, tsGroup.getOtherMembers().size());
+		assertEquals("Inst", tsGroup.getOtherMembers("ParamType").get(0));
+		assertEquals("TESTSITE", tsGroup.getOtherMembers("BaseLocation").get(0));
+	}
+
+	@Test
+	void testGroupAttrValueMayContainEqualsSign() throws Exception
+	{
+		ApiTsGroup apiTsGroup = new ApiTsGroup();
+		apiTsGroup.setGroupName("Odd");
+		apiTsGroup.setGroupType("basin");
+		// Only the first '=' separates name from value.
+		apiTsGroup.getGroupAttrs().add("Version=a=b");
+
+		TsGroup tsGroup = map(apiTsGroup);
+
+		assertEquals("a=b", tsGroup.getOtherMembers("Version").get(0));
+	}
+
+	@Test
+	void testGroupAttrsRoundTrip() throws Exception
+	{
+		ApiTsGroup original = new ApiTsGroup();
+		original.setGroupName("GateOpening");
+		original.setGroupType("basin");
+		original.getGroupAttrs().add("ParamType=Inst");
+		original.getGroupAttrs().add("Version=manual-raw");
+
+		ApiTsGroup roundTripped = map(map(original));
+
+		assertEquals(original.getGroupAttrs().size(), roundTripped.getGroupAttrs().size());
+		assertTrue(roundTripped.getGroupAttrs().containsAll(original.getGroupAttrs()));
+	}
+
+	@Test
+	void testMalformedGroupAttrIsRejected()
+	{
+		ApiTsGroup apiTsGroup = new ApiTsGroup();
+		apiTsGroup.setGroupName("Bad");
+		apiTsGroup.setGroupType("basin");
+		apiTsGroup.getGroupAttrs().add("NoSeparator");
+
+		WebAppException ex = assertThrows(WebAppException.class, () -> map(apiTsGroup));
+		assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), ex.getStatus());
+	}
+
+	@Test
+	void testBlankGroupAttrIsIgnored() throws Exception
+	{
+		ApiTsGroup apiTsGroup = new ApiTsGroup();
+		apiTsGroup.setGroupName("Blank");
+		apiTsGroup.setGroupType("basin");
+		apiTsGroup.getGroupAttrs().add("   ");
+
+		TsGroup tsGroup = map(apiTsGroup);
+
+		assertTrue(tsGroup.getOtherMembers().isEmpty());
+	}
+
+	@Test
 	void testGroupRefListMap()
 	{
 		ArrayList<TsGroup> groups = new ArrayList<>();
@@ -448,11 +543,11 @@ final class TimeSeriesResourcesTest
 	@Test
 	void testTransformByFirstInputSkipsMembersThatDontMatch() throws Exception
 	{
-		TimeSeriesResources resources = Mockito.spy(new TimeSeriesResources());
-		TimeSeriesDb tsdb = Mockito.mock(TimeSeriesDb.class);
+		TimeSeriesResources resources = spy(new TimeSeriesResources());
+		TimeSeriesDb tsdb = mock(TimeSeriesDb.class);
 		doReturn(tsdb).when(resources).getLegacyTimeseriesDB();
 
-		ComputationDAI compDai = Mockito.mock(ComputationDAI.class);
+		ComputationDAI compDai = mock(ComputationDAI.class);
 		when(tsdb.makeComputationDAO()).thenReturn(compDai);
 
 		DbComputation comp = new DbComputation(DbKey.createDbKey(1L), "TestComp");
@@ -461,7 +556,7 @@ final class TimeSeriesResourcesTest
 		comp.addParm(input);
 		when(compDai.getComputationById(DbKey.createDbKey(1L))).thenReturn(comp);
 
-		TimeSeriesDAI tsDai = Mockito.mock(TimeSeriesDAI.class);
+		TimeSeriesDAI tsDai = mock(TimeSeriesDAI.class);
 
 		TimeSeriesIdentifier tsid = new CwmsTsId();
 		tsid.setUniqueString("Site.Flow.Inst.1Hour.0.raw");

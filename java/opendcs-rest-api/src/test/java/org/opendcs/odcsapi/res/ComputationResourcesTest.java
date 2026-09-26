@@ -151,6 +151,65 @@ final class ComputationResourcesTest
 		assertEquals("HG", mappedParm.getDataType().getCode());
 	}
 
+	/**
+	 * A comp parm's SITE_DATATYPE_ID is the concrete time series it is bound to, and the API
+	 * carries it as tsKey. Mapping the data type id into that slot instead destroys the binding,
+	 * after which a non-group computation can no longer resolve its input for a manual run.
+	 */
+	@Test
+	void testMapKeepsTsKeyAndDataTypeIdSeparate() throws Exception
+	{
+		ApiComputation apiComp = new ApiComputation();
+		apiComp.setComputationId(-1L);
+		apiComp.setName("BoundParm");
+		ApiCompParm input = new ApiCompParm();
+		input.setAlgoRoleName("input");
+		input.setAlgoParmType("i");
+		input.setTsKey(9876L);
+		input.setDataTypeId(310L);
+		apiComp.setParmList(List.of(input));
+
+		DbCompParm mappedParm = DTOMappers.map(apiComp).getParms().next();
+
+		assertEquals(9876L, mappedParm.getSiteDataTypeId().getValue(),
+				"tsKey must map to the parm's site datatype id");
+		assertEquals(310L, mappedParm.getDataTypeId().getValue(),
+				"data type id must not be written into the site datatype id");
+	}
+
+	/** A parm with no bound time series must not invent one from its data type. */
+	@Test
+	void testMapWithoutTsKeyLeavesSiteDataTypeIdNull() throws Exception
+	{
+		ApiComputation apiComp = new ApiComputation();
+		apiComp.setComputationId(-1L);
+		apiComp.setName("UnboundParm");
+		ApiCompParm input = new ApiCompParm();
+		input.setAlgoRoleName("input");
+		input.setAlgoParmType("i");
+		input.setDataTypeId(310L);
+		apiComp.setParmList(List.of(input));
+
+		DbCompParm mappedParm = DTOMappers.map(apiComp).getParms().next();
+
+		assertTrue(mappedParm.getSiteDataTypeId().isNull(),
+				"an unbound parm must not borrow the data type id as its time series key");
+	}
+
+	/**
+	 * The outbound direction has to report tsKey too. Without it the UI reads back null and
+	 * sends null on the next save, silently unbinding a parm that was previously fine.
+	 */
+	@Test
+	void testMapReportsTsKeyForBoundParm()
+	{
+		DbCompParm parm = new DbCompParm("input", DbKey.createDbKey(9876L), "1Hour", "Inst.0.Rev", 0);
+
+		ApiCompParm mapped = DTOMappers.map(parm);
+
+		assertEquals(9876L, mapped.getTsKey(), "bound parm must round-trip its time series key");
+	}
+
 	@Test
 	void testComputationRefMap()
 	{

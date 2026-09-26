@@ -13,7 +13,6 @@ public interface MsgArchive
      * Archive a DCP message.
      * @param msg the message.
      * @param src the input device that generated the msg.
-     * @return true if message was archived, false if it was discarded.
      */
     void archiveMsg(DcpMsg msg, LrgsInputInterface src);
 

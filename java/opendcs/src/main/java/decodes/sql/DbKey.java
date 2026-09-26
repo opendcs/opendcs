@@ -15,6 +15,7 @@
 */
 package decodes.sql;
 
+import org.opendcs.database.DatabaseKey;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -49,7 +50,7 @@ import java.util.Map.Entry;
  * Recommendation: In new code, always compare keys with key1.equals(key2);
  */
 @SuppressWarnings("serial")
-public class DbKey implements Comparable<DbKey>, Serializable
+public final class DbKey implements Comparable<DbKey>, Serializable, DatabaseKey
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Immutable internal long integer key value */

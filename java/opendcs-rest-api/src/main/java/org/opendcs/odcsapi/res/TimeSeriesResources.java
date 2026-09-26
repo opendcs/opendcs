@@ -35,6 +35,7 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
+import decodes.tsdb.TsGroupMember;
 import ilex.util.IDateFormat;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -932,6 +933,12 @@ public final class TimeSeriesResources extends OpenDcsResource
 			dts.add(dt);
 		}
 		ret.getGroupDataTypes().addAll(dts);
+		List<String> attrs = new ArrayList<>();
+		for (TsGroupMember tgm : group.getOtherMembers())
+		{
+			attrs.add(formatGroupAttr(tgm.getMemberType(), tgm.getMemberValue()));
+		}
+		ret.getGroupAttrs().addAll(attrs);
 		ret.getIncludeGroups().addAll(mapRef(group.getIncludedSubGroups()));
 		ret.getExcludeGroups().addAll(mapRef(group.getExcludedSubGroups()));
 		return ret;
@@ -1096,7 +1103,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			},
 			tags = {"Time Series Methods - Groups"}
 	)
-	public Response postTsGroup (ApiTsGroup grp) throws DbException
+	public Response postTsGroup (ApiTsGroup grp) throws DbException, WebAppException
 	{
 			try (TsGroupDAI dai = getLegacyTimeseriesDB().makeTsGroupDAO())
 			{
@@ -1111,7 +1118,38 @@ public final class TimeSeriesResources extends OpenDcsResource
 			}
 	}
 
-	static TsGroup map(ApiTsGroup grp) throws BadTimeSeriesException
+	/**
+	 * Group attributes travel over the API as "Name=Value" strings (e.g.
+	 * "Interval=1Hour"), which correspond to the member_type / member_value
+	 * columns of tsdb_group_member_other. See decodes.tsdb.TsGroupMemberType
+	 * for the names the toolkit understands.
+	 */
+	static String formatGroupAttr(String memberType, String memberValue)
+	{
+		return memberType + "=" + (memberValue == null ? "" : memberValue);
+	}
+
+	/**
+	 * Parse a "Name=Value" group attribute and add it to the group. Only the
+	 * first '=' separates the two, so a value that itself contains an '='
+	 * survives the round trip.
+	 */
+	static void addGroupAttr(TsGroup group, String attr) throws WebAppException
+	{
+		if (attr == null || attr.trim().isEmpty())
+		{
+			return;
+		}
+		int idx = attr.indexOf('=');
+		if (idx <= 0)
+		{
+			throw new WebAppException(Response.Status.BAD_REQUEST.getStatusCode(),
+				"Group attribute '" + attr + "' must be in the form Name=Value.");
+		}
+		group.addOtherMember(attr.substring(0, idx).trim(), attr.substring(idx + 1));
+	}
+
+	static TsGroup map(ApiTsGroup grp) throws BadTimeSeriesException, WebAppException
 	{
 		TsGroup ret = new TsGroup();
 		ret.setDescription(grp.getDescription());
@@ -1138,6 +1176,10 @@ public final class TimeSeriesResources extends OpenDcsResource
 		for (ApiDataType dt : grp.getGroupDataTypes())
 		{
 			ret.addDataTypeId(DbKey.createDbKey(dt.getId()));
+		}
+		for (String attr : grp.getGroupAttrs())
+		{
+			addGroupAttr(ret, attr);
 		}
 		for (ApiTsGroupRef include : grp.getIncludeGroups())
 		{

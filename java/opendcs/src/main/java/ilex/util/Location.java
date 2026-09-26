@@ -33,7 +33,7 @@ public class Location
 	 * Southern latitudes are negative numbers
 	 * @param lat the String representation of the latitude
 	 * @return latitude as a number
-	 * @throws ParseException
+	 * @throws NumberFormatException if the string cannot be parsed
 	 */
 	public static double parseLatitude(String lat)
 		throws NumberFormatException
@@ -75,7 +75,7 @@ public class Location
 	 * West longitudes are negative numbers
 	 * @param lon the String representation of the latitude
 	 * @return longitude as a number
-	 * @throws ParseException
+	 * @throws NumberFormatException if the string cannot be parsed
 	 */
 	public static double parseLongitude(String lon)
 		throws NumberFormatException

@@ -12,7 +12,7 @@ import lrgs.common.DcpMsgRetriever;
  * Additionally, items placed in here should make a best effort to disconnect from implementation assumptions.
  *
  * NOTE: seqNumMsgBuf* is clearly a failure in that regard and are currently left in for completeness of implementation.
- * Such data is required, though likely better in a simple Map<String,Object> that is part of the session.
+ * Such data is required, though likely better in a simple {@code Map<String,Object>} that is part of the session.
  *
  * DdsSession
  * @param msgRetriever DcpMsgRetriever that is used to acquire messages.

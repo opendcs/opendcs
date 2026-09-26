@@ -353,9 +353,10 @@ public class ScreeningCriteria
 		if (screening == null || screening.isRocActive())
 		{
 			// RATE checks
-			TimedVariable prevtv = input.findWithin(
-				new Date(dataTime.getTime()-3600000L), alg.roundSec);
-			if (prevtv != null 
+			Date prevTime = rocPreviousTime(dataTime, tsinc, aggCal);
+			double hoursElapsed = (dataTime.getTime() - prevTime.getTime()) / 3600000.0;
+			TimedVariable prevtv = input.findWithin(prevTime, alg.roundSec);
+			if (prevtv != null
 			 && (prevtv.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0)
 			{
 				for(RocPerHourCheck chk : rocPerHourChecks)
@@ -363,7 +364,8 @@ public class ScreeningCriteria
 					log.debug(chk.toString());
 					try
 					{
-						double delta = value - prevtv.getDoubleValue();
+						// Limits are per hour, so normalize the change over the elapsed time.
+						double delta = (value - prevtv.getDoubleValue()) / hoursElapsed;
 						if (compare(delta, chk.getFall()) < 0 || compare(delta,chk.getRise()) > 0)
 						{
 							setValidity(chk.getFlag(), CwmsFlags.TEST_RATE_OF_CHANGE);
@@ -475,7 +477,24 @@ public class ScreeningCriteria
 		long diff = lval - llim;
 		return diff < 0 ? -1 : diff > 0 ? 1 : 0;
 	}
-	
+
+	/**
+	 * Return the time of the value that a rate-of-change check compares against.
+	 * Regular series with an interval longer than one hour compare against the previous
+	 * interval, so per-hour limits can be applied to 6-hour, 12-hour, or daily data.
+	 * Hourly, sub-hourly, and irregular series compare against the value one hour earlier.
+	 */
+	private static Date rocPreviousTime(Date dataTime, IntervalIncrement tsinc, Calendar cal)
+	{
+		Date oneHourEarlier = new Date(dataTime.getTime() - 3600000L);
+		if (tsinc == null || tsinc.getCount() == 0)
+			return oneHourEarlier;
+		cal.setTime(dataTime);
+		cal.add(tsinc.getCalConstant(), -tsinc.getCount());
+		Date previousInterval = cal.getTime();
+		return previousInterval.before(oneHourEarlier) ? previousInterval : oneHourEarlier;
+	}
+
 	private void setValidity(char testFlag, int testbits)
 	{
 		switch(testFlag)
@@ -520,7 +539,7 @@ public class ScreeningCriteria
 				aggCal,needed, alg, inputIrregular);
 		}
 
-		// ROC checks need the previous hour for each trigger value
+		// ROC checks need the value they compare against for each trigger value
 		if (rocPerHourChecks.size() > 0)
 		{
 			log.trace("Adding dates for ROC checks");
@@ -532,11 +551,7 @@ public class ScreeningCriteria
 				TimedVariable tv = inTS.sampleAt(idx);
 				if (!VarFlags.wasAdded(tv))
 					continue;
-				// Get this sample's time and subtract duration
-				Date sampleTime = tv.getTime();
-				aggCal.setTime(sampleTime);
-				aggCal.add(Calendar.HOUR_OF_DAY, -1);
-				Date d = aggCal.getTime();
+				Date d = rocPreviousTime(tv.getTime(), tsinc, aggCal);
 				addToNeeded(d, needed, inputIrregular);
 			}
 		}
