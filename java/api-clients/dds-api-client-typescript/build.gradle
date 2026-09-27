@@ -1,0 +1,106 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+buildscript {
+    dependencies {
+        // com.github.node-gradle.node pulls an older jackson-core onto the build classpath.
+        constraints {
+            classpath("com.fasterxml.jackson.core:jackson-core:${libs.versions.jackson.asProvider().get()}")
+        }
+    }
+}
+
+plugins {
+    id 'base'
+    id 'opendcs.deps-conventions'
+    id 'opendcs.sonar-conventions'
+    id 'opendcs.version-conventions'
+    id 'com.github.node-gradle.node' version '7.1.0'
+    id 'org.openapi.generator' version '7.24.0'
+}
+
+def generatedClientDir = layout.buildDirectory.dir('generated/openApi')
+def ddsSpec = layout.projectDirectory.file('src/main/openapi/dds-http.yaml')
+
+openApiGenerate {
+    inputSpec = ddsSpec.asFile.path
+    outputDir = generatedClientDir.get().asFile.path
+    generatorName = 'typescript-fetch'
+    globalProperties.set([
+        modelDocs: 'true',
+        modelTests: 'false',
+        apiDocs: 'true',
+        apiTests: 'false'
+    ])
+    additionalProperties.set([
+        npmName: 'opendcs-dds-api',
+        npmVersion: '0.0.1',
+        supportsES6: 'true',
+        typescriptThreePlus: 'true',
+        useSingleRequestParameter: 'true'
+    ])
+    ignoreFileOverride = layout.projectDirectory.file('.openapi-generator-ignore').asFile.path
+}
+
+openApiValidate {
+    inputSpec = ddsSpec.asFile.path
+}
+
+def generatedPackagePrivate = tasks.register('markGeneratedPackagePrivate') {
+    dependsOn tasks.named('openApiGenerate')
+    inputs.file(ddsSpec)
+    outputs.file(generatedClientDir.map { it.file('package.json') })
+    doLast {
+        def packageFile = generatedClientDir.get().file('package.json').asFile
+        def packageJson = new JsonSlurper().parse(packageFile)
+        packageJson.private = true
+        packageFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(packageJson)) + System.lineSeparator()
+    }
+}
+
+npmInstall {
+    dependsOn generatedPackagePrivate
+}
+
+def buildLib = tasks.register('buildLib', NpxTask) {
+    dependsOn npmInstall
+    command = 'npm'
+    args = ['run', 'build']
+    workingDir = generatedClientDir.get().asFile
+    inputs.dir(generatedClientDir)
+    outputs.dir(generatedClientDir.map { it.dir('dist') })
+}
+
+configurations {
+    lib {
+        artifacts {
+            add('lib', buildLib)
+        }
+    }
+}
+
+def verifyGeneratedPackage = tasks.register('verifyGeneratedPackage') {
+    group = 'verification'
+    dependsOn buildLib
+    doLast {
+        def packageJson = new JsonSlurper().parse(generatedClientDir.get().file('package.json').asFile)
+        assert packageJson.name == 'opendcs-dds-api'
+        assert packageJson.private == true
+        assert generatedClientDir.get().file('dist/index.d.ts').asFile.isFile()
+        assert generatedClientDir.get().file('dist/apis/DefaultApi.d.ts').asFile.isFile()
+    }
+}
+
+check.dependsOn tasks.named('openApiValidate')
+check.dependsOn verifyGeneratedPackage
+build.dependsOn buildLib
+
+node {
+    version = '24.13.1'
+    download = true
+    nodeProjectDir = generatedClientDir
+}
+
+sonar {
+    skipProject = true
+}
