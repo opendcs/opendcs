@@ -4,13 +4,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.db.NetworkListEntry;
 
-public final class NetworkListEntryMapper extends PrefixRowMapper<NetworkListEntry,NetworkListEntryMapper.Columns>
+public final class NetworkListEntryMapper extends OpenDcsTableMapper<NetworkListEntry,NetworkListEntryMapper.Columns>
 {
     protected NetworkListEntryMapper(String prefix)
     {

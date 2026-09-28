@@ -35,7 +35,7 @@ import decodes.sql.DbKey;
 /**
  * Map identity provider columns
  */
-public final class IdentityProviderMapper extends PrefixRowMapper<IdentityProvider,IdentityProviderMapper.Columns>
+public final class IdentityProviderMapper extends OpenDcsTableMapper<IdentityProvider,IdentityProviderMapper.Columns>
 {
     public static final String IDENTITY_PROVIDER_ID = "identity_provider_id";
 

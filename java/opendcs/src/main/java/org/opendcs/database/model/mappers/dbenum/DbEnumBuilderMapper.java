@@ -5,14 +5,14 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.db.DbEnum.DbEnumBuilder;
 import decodes.sql.DbKey;
 
-public final class DbEnumBuilderMapper extends PrefixRowMapper<DbEnumBuilder,DbEnumBuilderMapper.Columns>
+public final class DbEnumBuilderMapper extends OpenDcsTableMapper<DbEnumBuilder,DbEnumBuilderMapper.Columns>
 {
     private DbEnumBuilderMapper(String prefix)
     {
