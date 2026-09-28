@@ -49,12 +49,6 @@ public abstract class PrefixRowMapper<T,E extends Enum<E> & TableColumnDefinitio
         this(prefix, table, EnumSet.allOf(enumClass));
     }
 
-    @Override
-    public String getPrefix()
-    {
-        return prefix;
-    }
-
     public String getPrefix()
     {
         return !prefix.isBlank() ? prefix.substring(0, prefix.length() - 1) : "";
