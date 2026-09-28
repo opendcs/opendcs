@@ -40,11 +40,11 @@ final class VersionResourcesIT extends BaseApiIT
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.post("version")
+			.get("version")
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
 
@@ -64,11 +64,11 @@ final class VersionResourcesIT extends BaseApiIT
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.post("version")
+			.get("version")
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.statusCode(is(Response.Status.OK.getStatusCode()))
 			.extract()
 		;
         var version = response.as(ApiVersion.class);
