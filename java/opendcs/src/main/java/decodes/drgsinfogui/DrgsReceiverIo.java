@@ -30,6 +30,7 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import javax.xml.transform.Transformer;
+import javax.xml.XMLConstants;
 import javax.xml.transform.TransformerFactory;
 
 import org.w3c.dom.Document;
@@ -121,6 +122,8 @@ public class DrgsReceiverIo
 		{
 			createXSL();
 			TransformerFactory tFactory = TransformerFactory.newInstance();
+			tFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+			tFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
 			Transformer transformer = tFactory.newTransformer
 				(new javax.xml.transform.stream.StreamSource(drgsRecvXsl));
 			
