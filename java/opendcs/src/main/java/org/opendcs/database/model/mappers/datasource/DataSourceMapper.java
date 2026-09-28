@@ -7,14 +7,14 @@ import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.db.DataSource;
 import decodes.sql.DbKey;
 
-public final class DataSourceMapper extends PrefixRowMapper<DataSource,DataSourceMapper.Columns>
+public final class DataSourceMapper extends OpenDcsTableMapper<DataSource,DataSourceMapper.Columns>
 {
     private DataSourceMapper(String prefix)
     {

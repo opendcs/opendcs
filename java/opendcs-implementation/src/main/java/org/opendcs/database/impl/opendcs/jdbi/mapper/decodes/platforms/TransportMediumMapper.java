@@ -4,12 +4,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.db.TransportMedium;
 
-public class TransportMediumMapper extends PrefixRowMapper<TransportMedium,TransportMediumMapper.Columns>
+public class TransportMediumMapper extends OpenDcsTableMapper<TransportMedium,TransportMediumMapper.Columns>
 {
     protected TransportMediumMapper(String prefix)
     {
