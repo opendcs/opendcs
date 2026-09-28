@@ -1,14 +1,7 @@
 package org.opendcs.database.model.mappers.datasource;
 
-import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.Optional;
-
-import org.jdbi.v3.core.config.ConfigRegistry;
-import org.jdbi.v3.core.generic.GenericType;
-import org.jdbi.v3.core.mapper.RowMapper;
-import org.jdbi.v3.core.mapper.RowMapperFactory;
 import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
 import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
@@ -18,16 +11,6 @@ import decodes.sql.DbKey;
 
 public final class DataSourceAccumulator implements LinkedHashMapRowReducer<DbKey,DataSource>
 {
-    // NOTE, this doesn't actually work due to type erasure.
-    public static final GenericType<DataSource> PRIMARY_SOURCE = new GenericType<>()
-    {
-        /* marker type */    
-    };
-    public static final GenericType<DataSource> MEMBER_SOURCE = new GenericType<>()
-    {
-        /* marker type */
-    };
-
     public final DataSourceMapper primaryMapper;
     public final DataSourceMapper memberMapper;
 
@@ -50,10 +33,12 @@ public final class DataSourceAccumulator implements LinkedHashMapRowReducer<DbKe
 
             if (memberMapper != null)
             {
+                @SuppressWarnings("null") // we immediately check for null
                 var sequence = rowView.getColumn(memberMapper.column(DataSourceMapper.Columns.SEQUENCE_NUMBER),
                                                 Integer.class);
                 if (sequence != null)
                 {
+                    @SuppressWarnings("null")
                     var member = rowView.getRow(DataSource.class, memberMapper.getPrefix());
                     primaryDs.addGroupMember(sequence, member);
                 }

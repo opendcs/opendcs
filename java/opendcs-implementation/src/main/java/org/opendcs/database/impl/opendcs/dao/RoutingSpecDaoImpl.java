@@ -167,7 +167,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             select.registerRowMapper(DataSource.class, mappers.dataSourceAccumulator().primaryMapper);
             if (mappers.dataSourceAccumulator().memberMapper != null)
             {
-                select.registerRowMapper(DataSourceAccumulator.MEMBER_SOURCE, mappers.dataSourceAccumulator().memberMapper);
+                select.registerRowMapper(DataSource.class, mappers.dataSourceAccumulator().memberMapper);
             }
         }
         return select;
