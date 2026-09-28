@@ -4,13 +4,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.db.EnumValue;
 
-public final class EnumValueMapper extends PrefixRowMapper<EnumValue,EnumValueMapper.Columns>
+public final class EnumValueMapper extends OpenDcsTableMapper<EnumValue,EnumValueMapper.Columns>
 {
 
     private EnumValueMapper(String prefix)

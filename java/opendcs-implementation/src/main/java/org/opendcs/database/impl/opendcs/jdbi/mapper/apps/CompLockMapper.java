@@ -19,14 +19,14 @@ import java.sql.SQLException;
 import java.util.Date;
 
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.TsdbCompLock;
 
-public class CompLockMapper extends PrefixRowMapper<TsdbCompLock, CompLockMapper.Columns>
+public class CompLockMapper extends OpenDcsTableMapper<TsdbCompLock, CompLockMapper.Columns>
 {
     protected CompLockMapper(String prefix)
     {
