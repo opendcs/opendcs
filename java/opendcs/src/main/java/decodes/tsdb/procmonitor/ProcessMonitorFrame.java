@@ -137,11 +137,6 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 		mainPanel.setLayout(new BorderLayout());
 		JPanel titlePanel = new JPanel(new BorderLayout());
 		titlePanel.add(new JLabel(procmonLabels.getString("frameTitle")), BorderLayout.WEST);
-		if (computationQueueAvailable)
-		{
-			queueTotalLabel.setText("CCP Queue: 0");
-			titlePanel.add(queueTotalLabel, BorderLayout.EAST);
-		}
 		mainPanel.add(titlePanel, BorderLayout.NORTH);
 		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		mainPanel.add(splitPane, BorderLayout.CENTER);
@@ -238,17 +233,24 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 
 		if (computationQueueAvailable)
 		{
+			queueTotalLabel.setText("CCP Queue: 0");
+			queueTotalLabel.setHorizontalAlignment(JLabel.CENTER);
+			buttonPanel.add(queueTotalLabel,
+				new GridBagConstraints(0, 5, 1, 1, 1.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+					new Insets(2, 5, 2, 5), 0, 0));
+
 			JButton queueDetailsButton = new JButton("Queue Details");
 			queueDetailsButton.addActionListener(e -> queueDetailsPressed());
 			buttonPanel.add(queueDetailsButton,
-				new GridBagConstraints(0, 5, 1, 1, 1.0, 0.0,
+				new GridBagConstraints(0, 6, 1, 1, 1.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 5, 2, 5), 0, 0));
 
 			JButton stopClearButton = new JButton("Stop and Clear Queue");
 			stopClearButton.addActionListener(e -> stopAndClearQueuePressed());
 			buttonPanel.add(stopClearButton,
-				new GridBagConstraints(0, 6, 1, 1, 1.0, 1.0,
+				new GridBagConstraints(0, 7, 1, 1, 1.0, 1.0,
 					GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 5, 2, 5), 0, 0));
 		}
