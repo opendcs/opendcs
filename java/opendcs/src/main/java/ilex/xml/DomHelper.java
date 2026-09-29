@@ -17,6 +17,7 @@ package ilex.xml;
 
 import org.xml.sax.SAXException;
 import ilex.util.ErrorException;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
@@ -55,6 +56,19 @@ public abstract class DomHelper
 	public static SimpleDateFormat dateFormat =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 
+	private static DocumentBuilderFactory getFactory() throws ParserConfigurationException
+	{
+		if (factory == null)
+		{
+			DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+			f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			f.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+			f.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+			factory = f;
+		}
+		return factory;
+	}
+
 	/**
 	* Reads a file into a DOM Document.
 	* Pass your program module name (for log messages).
@@ -68,9 +82,7 @@ public abstract class DomHelper
 	{
 		try
 		{
-			if (factory == null)
-				factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
+			DocumentBuilder builder = getFactory().newDocumentBuilder();
 			Document doc = builder.parse(new File(filename));
 			return doc;
 		}
@@ -104,9 +116,7 @@ public abstract class DomHelper
 
 		try
 		{
-			if (factory == null)
-				factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
+			DocumentBuilder builder = getFactory().newDocumentBuilder();
 			Document doc = builder.parse(strm);
 			return doc;
 		}
@@ -380,9 +390,7 @@ public abstract class DomHelper
 	{
 		try
 		{
-			if (factory == null)
-				factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
+			DocumentBuilder builder = getFactory().newDocumentBuilder();
 			Document doc = builder.newDocument();
 			return doc;
 		}
@@ -403,6 +411,8 @@ public abstract class DomHelper
 		try (FileOutputStream fos = new FileOutputStream(filename))
 		{
 			TransformerFactory tranFactory = TransformerFactory.newInstance();
+			tranFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+			tranFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
 			Transformer trans = tranFactory.newTransformer();
 			Source src = new DOMSource(doc);
 			Result dest = new StreamResult(System.out);
