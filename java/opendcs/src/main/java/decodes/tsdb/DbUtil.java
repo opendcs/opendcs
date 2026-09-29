@@ -507,7 +507,6 @@ public class DbUtil extends TsdbAppTemplate
 		catch (Exception ex)
 		{
 			log.atError().setCause(ex).log("Error in '{}'", q);
-			ex.printStackTrace();
 		}
 	}
 
@@ -748,8 +747,7 @@ public class DbUtil extends TsdbAppTemplate
 			}
 			catch (DatabaseException ex)
 			{
-				System.out.println(ex);
-				ex.printStackTrace();
+				log.atDebug().setCause(ex).log("Error deleting platform.");
 			}
 		}
 		else if (tokens[1].equalsIgnoreCase("site"))
@@ -1019,7 +1017,6 @@ public class DbUtil extends TsdbAppTemplate
 		catch (DbIoException ex)
 		{
 			log.atError().setCause(ex).log("Error writing event.");
-			ex.printStackTrace(System.err);
 		}
 		finally
 		{

@@ -193,8 +193,9 @@ public class DataSource extends IdDatabaseObject
 		try {
 			((DataSource)rhs).setId(this.getId());
 			return true;
-		} catch (DatabaseException e) {
-			e.printStackTrace();
+		} catch (DatabaseException e) 
+		{
+			log.atDebug().setCause(e).log("Cannot compare data sources with id={}", this.getId());
 			return false;
 		}
 	}
