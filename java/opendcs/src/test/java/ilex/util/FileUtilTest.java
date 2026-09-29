@@ -68,9 +68,9 @@ class FileUtilTest
         boolean complete = false;
         Exception failure = null;
 
-        @Override public void setZipStatus(String msg) {}
-        @Override public void setNumZipEntries(int num) {}
-        @Override public void setZipProgress(int num) {}
+        @Override public void setZipStatus(String msg) { /* progress not needed by these tests */ }
+        @Override public void setNumZipEntries(int num) { /* progress not needed by these tests */ }
+        @Override public void setZipProgress(int num) { /* progress not needed by these tests */ }
         @Override public void zipComplete() { complete = true; }
         @Override public void zipFailed(Exception ex) { failure = ex; }
     }
