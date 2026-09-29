@@ -1,6 +1,6 @@
 package org.opendcs.database.model.mappers.sites;
 
-import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
+import static org.opendcs.database.model.mappers.OpenDcsTableMapper.addUnderscoreIfMissing;
 
 import java.util.Map;
 import java.util.function.BiConsumer;

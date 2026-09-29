@@ -22,11 +22,11 @@ import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
 import org.opendcs.database.model.mappers.IdentityProviderMapper;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
-public final class IdentityProviderMappingMapper extends PrefixRowMapper<IdentityProviderMapping,IdentityProviderMappingMapper.Columns>
+public final class IdentityProviderMappingMapper extends OpenDcsTableMapper<IdentityProviderMapping,IdentityProviderMappingMapper.Columns>
 {
     private final IdentityProviderMapper idpMapper;
 

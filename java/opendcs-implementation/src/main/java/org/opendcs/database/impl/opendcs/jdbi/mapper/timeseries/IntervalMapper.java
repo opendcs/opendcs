@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -15,7 +15,7 @@ import decodes.tsdb.IntervalCodes;
 import opendcs.opentsdb.Interval;
 
 @SuppressWarnings("java:S2143")
-public class IntervalMapper extends PrefixRowMapper<Interval, IntervalMapper.Columns>
+public class IntervalMapper extends OpenDcsTableMapper<Interval, IntervalMapper.Columns>
  {
 
     protected IntervalMapper(String prefix)

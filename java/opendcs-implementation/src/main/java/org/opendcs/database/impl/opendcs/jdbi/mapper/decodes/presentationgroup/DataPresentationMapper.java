@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDouble;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
@@ -15,7 +15,7 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 import decodes.db.DataPresentation;
 import decodes.sql.DbKey;
 
-public class DataPresentationMapper extends PrefixRowMapper<DataPresentation,DataPresentationMapper.Columns>
+public class DataPresentationMapper extends OpenDcsTableMapper<DataPresentation,DataPresentationMapper.Columns>
 {
     private static final ColumnMapper<Double> DOUBLE_MAPPER = new NullableDouble();
 
