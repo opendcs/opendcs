@@ -21,16 +21,7 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.Source;
-import javax.xml.transform.Result;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -397,40 +388,6 @@ public abstract class DomHelper
 		catch(ParserConfigurationException ex)
 		{
 			throw new ErrorException("Cannot make new DOM Document.", ex);
-		}
-	}
-
-	/**
-	 * Writes a DOM Document to a file.
-	 * @param doc the document
-	 * @param filename the file name
-	 */
-	public static void writeDocument(Document doc, String filename)
-		throws ErrorException
-	{
-		try (FileOutputStream fos = new FileOutputStream(filename))
-		{
-			TransformerFactory tranFactory = TransformerFactory.newInstance();
-			tranFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-			tranFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-			Transformer trans = tranFactory.newTransformer();
-			Source src = new DOMSource(doc);
-			Result dest = new StreamResult(System.out);
-			trans.setOutputProperty("indent", "yes");
-			trans.setOutputProperty("{ http://xml.apache.org/xslt }indent-amount", "2");
-			trans.transform(src, dest);
-		}
-		catch(TransformerConfigurationException ex)
-		{
-			throw new ErrorException("Cannot make new transformer.", ex);
-		}
-		catch(IOException ex)
-		{
-			throw new ErrorException("Cannot open '" + filename + "' for writing.", ex);
-		}
-		catch(TransformerException ex)
-		{
-			throw new ErrorException("Error in transformer.", ex);
 		}
 	}
 }
