@@ -883,6 +883,7 @@ CWMS Only - Hydrologic
     "CwmsRatingSingleIndep", "Implements CWMS Rating Computations"
     "CwmsScreening", "CWMS Validation with CWMS Screening Records"
     "DatchkScreening", "CWMS Validation with DATCHK files"
+    "CwmsVerticalDatumConversion", "Converts CWMS vertical values by datum offset or by STAGE plus CWMS_V_LOC elevation"
     "ResEvapAlgorithm", "Calculates Reservoir Water Temperature Profiles and Evaporation"
 
 CwmsRatingMultiIndep
@@ -904,6 +905,46 @@ DatchkScreening
 ---------------
 
 Exec Class: decodes.cwms.validation.DatchkScreeningAlgorithm
+
+CwmsVerticalDatumConversion
+---------------------------
+
+Exec Class: decodes.cwms.algo.CwmsVerticalDatumConversion
+
+CWMS only. This algorithm requires a ``CwmsTimeSeriesDb`` because it uses
+``cwms_loc.get_vertical_datum_offset`` and, for stage conversions,
+``CWMS_V_LOC.elevation`` and ``CWMS_V_LOC.vertical_datum``.
+
+It supports two modes:
+
+``cwmsDatumOffset``
+   Converts ``datum1`` directly to ``datum2`` with
+   ``cwms_loc.get_vertical_datum_offset``.
+
+``locationElevationOffset``
+   Requires ``datum1=STAGE``. The algorithm adds ``CWMS_V_LOC.elevation`` 
+   (the elevation in the ``Locations`` tab of CWMS-VUE to the stage value to reach the 
+   location's native vertical datum, then, if  ``datum2`` differs from 
+   ``CWMS_V_LOC.vertical_datum``, applies the CWMS datum offset from the native datum to ``datum2``.
+
+Properties:
+
++------------------+--------------------------------------------------------------+
+|Property          |Description                                                   |
++==================+==============================================================+
+|datum1            |Input vertical datum. Use ``STAGE`` for gage-height inputs.   |
++------------------+--------------------------------------------------------------+
+|datum2            |Output vertical datum. Leave blank in                         |
+|                  |``locationElevationOffset`` mode to use                       |
+|                  |``CWMS_V_LOC.vertical_datum``.                                |
++------------------+--------------------------------------------------------------+
+|officeId          |Optional CWMS office override for CWMS lookup calls.          |
++------------------+--------------------------------------------------------------+
+|effectiveDateMode |``latestOnOrBefore`` uses the timeslice time for CWMS datum   |
+|                  |offsets. ``latestOverall`` requests the latest stored offset. |
++------------------+--------------------------------------------------------------+
+|conversionMode    |``cwmsDatumOffset`` or ``locationElevationOffset``.           |
++------------------+--------------------------------------------------------------+
 
 .. include:: reservoir-evaporation-algorithm.rst
 
