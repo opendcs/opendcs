@@ -104,7 +104,7 @@ public class ClasspathIO {
         {
             return "";
         }
-        return entryName.endsWith("/") ? entryName : entryName + "/";
+        return entryName.endsWith("/") ? entryName : (entryName + "/");
     }
 
     private static List<String> childDirectory(URL url) throws IOException
