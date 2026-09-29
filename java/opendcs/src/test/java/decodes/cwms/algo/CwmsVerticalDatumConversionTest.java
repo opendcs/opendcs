@@ -5,6 +5,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -33,9 +34,12 @@ import mil.army.usace.hec.metadata.UnitUtil;
  */
 final class CwmsVerticalDatumConversionTest
 {
+	private static Database previousDatabase;
+
 	@BeforeAll
 	static void setupUnitConversions() throws Exception
 	{
+		previousDatabase = Database.getDb();
 		Database database = new Database();
 		Database.setDb(database);
 		String[] availableUnits = UnitUtil.getAvailableUnits();
@@ -59,6 +63,12 @@ final class CwmsVerticalDatumConversionTest
 				database.unitConverterSet.addDbConverter(unitConverterDb);
 			}
 		}
+	}
+
+	@AfterAll
+	static void restoreDatabase()
+	{
+		Database.setDb(previousDatabase);
 	}
 
 	/**
