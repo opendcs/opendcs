@@ -17,9 +17,11 @@ package decodes.cwms.validation.dao;
 
 import ilex.util.TextUtil;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -49,6 +51,7 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
+import oracle.jdbc.OracleConnection;
 import usace.cwms.db.dao.ifc.vt.CwmsDbVt;
 import usace.cwms.db.dao.ifc.vt.ScreenAssignT;
 import usace.cwms.db.dao.ifc.vt.ScreenCritType;
@@ -837,15 +840,15 @@ public class ScreeningDAO extends DaoBase implements ScreeningDAI
         throws DbIoException
     {
         // Note: CCP ignores the resultant TS ID in the table. Results are assigned via CCP output params.
-
-        try (Connection conn = getConnection())
+        // However, the database now fails if a value isn't set due to changes with the format_lrts_input
+        //
+        try (Connection conn = getConnection();
+             var assignTs = conn.prepareCall("{call cwms_vt.assign_screening_id(?,?,?)}"))
         {
-            List<ScreenAssignT> screenAssignTS = Collections.singletonList(
-                new ScreenAssignT(tsid.getUniqueString(), active, null));
-
-            csdbio.assignScreeningId(conn,
-                screening.getScreeningName(),
-                screenAssignTS, ((CwmsTimeSeriesDb)db).getDbOfficeId());
+            assignTs.setString(1, screening.getScreeningName());
+            assignTs.setArray(2, createAssignmentArray(conn, tsid, active));
+            assignTs.setString(3, ((CwmsTimeSeriesDb)db).getDbOfficeId());
+            assignTs.execute();
         }
         catch (SQLException ex)
         {
@@ -854,6 +857,27 @@ public class ScreeningDAO extends DaoBase implements ScreeningDAI
                 + active;
             throw new DbIoException(msg,ex);
         }
+    }
+
+    /**
+     * Given the actual fix was to just assign the input id as the output id so that CWMS DB is happy,
+     * this arguably isn't necessary. However, it is a good simple example of how to deal with with SQL UDTs
+     * and UDT arrays at that. So I will leave it in place for future reference.
+     * @param conn
+     * @param tsId
+     * @param active
+     * @return
+     * @throws SQLException
+     */
+    private Array createAssignmentArray(Connection conn, TimeSeriesIdentifier tsId, boolean active) throws SQLException
+    {
+        OracleConnection oraConn = conn.unwrap(OracleConnection.class);
+        List<Struct> jvmArray = new ArrayList<>();
+
+        var assignment = new Object[]{tsId.getUniqueString(), active ? 'T' : 'F', tsId.getUniqueString()};
+        jvmArray.add(oraConn.createStruct("CWMS_T_SCREEN_ASSIGN", assignment));
+
+        return oraConn.createOracleArray("CWMS_T_SCREEN_ASSIGN_ARRAY", jvmArray.toArray());
     }
 
     @Override
