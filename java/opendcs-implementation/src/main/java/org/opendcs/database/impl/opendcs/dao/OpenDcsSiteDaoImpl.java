@@ -96,6 +96,35 @@ public class OpenDcsSiteDaoImpl implements SiteDao
 
     private static final String DELETE_NAMES = "delete from sitename where siteid = :id";
     private static final String DELETE_PROPS = "delete from site_property where site_id = :id";
+    private static final String MERGE_SITE = """
+            merge into site
+            using (
+                select
+                    :id id, :latitude latitude, :longitude longitude, :nearestcity nearestcity,
+                    :state state, :region region, :timezone timezone, :country country,
+                    :elevation elevation, :elevunitabbr elevunitabbr, :description description,
+                    :active_flag active_flag, :location_type location_type, :modify_time modify_time,
+                    :public_name public_name <dual>
+                ) input
+            on (site.id = input.id)
+            when matched then
+                update set
+                    latitude = input.latitude, longitude = input.longitude,
+                    nearestcity = input.nearestcity, state = input.state, region = input.region,
+                    timezone = input.timezone, country = input.country, elevation = input.elevation,
+                    elevunitabbr = input.elevunitabbr, description = input.description,
+                    active_flag = input.active_flag, location_type = input.location_type,
+                    modify_time = input.modify_time, public_name = input.public_name
+            when not matched then
+                insert(
+                    id, latitude, longitude, nearestcity,state, region, timezone, country,
+                    elevation, elevunitabbr, description, active_flag, location_type, modify_time,
+                    public_name)
+                values(input.id, input.latitude, input.longitude, input.nearestcity,input.state,
+                       input.region, input.timezone, input.country, input.elevation, input.elevunitabbr,
+                       input.description, input.active_flag, input.location_type, input.modify_time,
+                       input.public_name)
+            """;
 
     public static final Pattern WHITE_SPACE = Pattern.compile("[\\h\\v\\p{IsWhite_Space}]+");
 
@@ -191,36 +220,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
         var ctx = tx.getContext();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
-        final var mergeSql = """
-                    merge into site
-                    using (
-                        select
-                            :id id, :latitude latitude, :longitude longitude, :nearestcity nearestcity,
-                            :state state, :region region, :timezone timezone, :country country,
-                            :elevation elevation, :elevunitabbr elevunitabbr, :description description,
-                            :active_flag active_flag, :location_type location_type, :modify_time modify_time,
-                            :public_name public_name <dual>
-                        ) input
-                    on (site.id = input.id)
-                    when matched then
-                        update set
-                            latitude = input.latitude, longitude = input.longitude,
-                            nearestcity = input.nearestcity, state = input.state, region = input.region,
-                            timezone = input.timezone, country = input.country, elevation = input.elevation,
-                            elevunitabbr = input.elevunitabbr, description = input.description,
-                            active_flag = input.active_flag, location_type = input.location_type,
-                            modify_time = input.modify_time, public_name = input.public_name
-                    when not matched then
-                        insert(
-                            id, latitude, longitude, nearestcity,state, region, timezone, country,
-                            elevation, elevunitabbr, description, active_flag, location_type, modify_time,
-                            public_name)
-                        values(input.id, input.latitude, input.longitude, input.nearestcity,input.state,
-                               input.region, input.timezone, input.country, input.elevation, input.elevunitabbr,
-                               input.description, input.active_flag, input.location_type, input.modify_time,
-                               input.public_name)
-                """;
-        try (var merge = handle.createUpdate(mergeSql)
+        try (var merge = handle.createUpdate(MERGE_SITE)
                                .define("dual", ctx.getDatabaseEngine() == DatabaseEngine.ORACLE ? "from dual" : "");
             var deleteProps = handle.createUpdate(DELETE_PROPS);
             var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");

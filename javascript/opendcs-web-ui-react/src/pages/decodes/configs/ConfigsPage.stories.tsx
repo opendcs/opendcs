@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { act } from "react";
 import { http, HttpResponse } from "msw";
 import type { ApiConfigRef, ApiPlatformConfig } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 import { WithUnits } from "../../../../.storybook/mock/WithUnits";
 import { ConfigsPage } from "./ConfigsPage";
 
@@ -177,6 +177,7 @@ export const EditExistingConfigPersistsAfterSave: Story = {
 
 // Adding a brand-new config posts it without a configId (the REST layer treats
 // a missing id as "create") and the row closes once the save lands.
+const postedNewConfig = fn();
 export const AddNewConfig: Story = {
   parameters: {
     msw: {
@@ -196,6 +197,7 @@ export const AddNewConfig: Story = {
           ),
           postConfig: http.post("/odcsapi/config", async ({ request }) => {
             posted = (await request.json()) as ApiPlatformConfig;
+            postedNewConfig(posted);
             return HttpResponse.json<ApiPlatformConfig>({ ...posted, configId: 303 });
           }),
         };
@@ -203,6 +205,7 @@ export const AddNewConfig: Story = {
     },
   },
   play: async ({ mount, userEvent, parameters }) => {
+    postedNewConfig.mockClear();
     const canvas = await mount();
     const { i18n } = parameters;
 
@@ -231,6 +234,9 @@ export const AddNewConfig: Story = {
       expect(canvas.queryByLabelText(i18n.t("configs:name"))).toBeNull(),
     );
     expect(await canvas.findByText("Brand New CFG")).toBeInTheDocument();
+    // The local row's placeholder id must not reach the server.
+    expect(postedNewConfig).toHaveBeenCalledOnce();
+    expect(postedNewConfig.mock.calls[0][0]).not.toHaveProperty("configId");
   },
 };
 
