@@ -1247,6 +1247,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	public ArrayList<Alarm> getAllCurrentAlarms()
 		throws DbIoException
 	{
+		if (noTsAlarms)
+			throw new DbIoException("This database does not support time series alarms.");
+
 		String q = "select " + alarmCurrentColumns + " from alarm_current "
 			+ "order by ts_id, assert_time";
 		ArrayList<Alarm> ret = new ArrayList<Alarm>();
@@ -1267,8 +1270,10 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 					// this means the ts key was invalid - no matching tsid.
 					log.atWarn()
 					   .setCause(ex)
-					   .log("getAllCurrentAlarms: {} - no mathing TSID: ", alarm.getTsidKey());
+					   .log("getAllCurrentAlarms: {} - no matching TSID. Skipped.", alarm.getTsidKey());
+					continue;
 				}
+				ret.add(alarm);
 			}
 
 			// Get all the limit sets that are used by current alarms.
@@ -1287,7 +1292,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		}
 		catch (SQLException ex)
 		{
-			log.atError().setCause(ex).log("getAllCurrentAlarms: Error in query '{}'", q);
+			// Returning a partial list here would report "no alarms", which is what this method
+			// wrongly did for every caller before. Fail loudly instead, like the other read methods.
+			throw new DbIoException("Error reading current alarms with query '" + q + "'", ex);
 		}
 		finally
 		{
