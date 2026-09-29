@@ -385,11 +385,6 @@ public class ScreeningCriteria
 			}
 		}
 		
-		if (!isCategoryActive(Category.RATE_OF_CHANGE))
-		{
-			log.debug("Skipping ROC checks because ROC is not active.");
-		}
-		
 		if (isCategoryActive(Category.RATE_OF_CHANGE))
 		{
 			// RATE checks
@@ -424,6 +419,10 @@ public class ScreeningCriteria
 			else if (rocPerHourChecks.size() > 0) 
 				log.debug("Not checking dataTime={} because prev is missing or rejected.", dataTime);
 				
+		}
+		else
+		{
+			log.debug("Skipping ROC checks because ROC is not active.");
 		}
 		
 		if (isCategoryActive(Category.DURATION_MAGNITUDE))
