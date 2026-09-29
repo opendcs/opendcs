@@ -273,7 +273,11 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                     Generally CWMS doesn't want values removed, just updated.
                     """);
             }
-            var country = site.country == null ? "US" : site.country.trim();
+            // CWMS expects to see the two-letter country code, but we have USA already encoded
+            // in several dozen test files. Probably worth fixing long term, but seems out side
+            // the scope of the changes that are requiring this. (simple update to which CWMS Database schema we
+            // test against.)
+            var country = (site.country == null || "USA".equals(site.country)) ? "US" : site.country.trim();
 
             store.registerArgument(new NullableDoubleArgumentFactory())
                  .bind(GenericColumns.NAME.column(), cwmsName.getNameValue())
