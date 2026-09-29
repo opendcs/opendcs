@@ -586,6 +586,16 @@ To stop a process add the following to a Stop or Off script.
 
    stopcomp -a compproc-examples
 
+For CWMS computation processes, add ``-Q`` to stop the process and clear its
+outstanding computation queue:
+
+::
+
+   stopcomp -a compproc-examples -Q
+
+The queue option permanently deletes queued computation triggers for the
+selected process.
+
 
 More about Computations
 =======================
@@ -600,6 +610,5 @@ computations, including some of the following:
 * Redefining floor/ceiling criteria
 * Defining trigger input criteria
 * Writing custom algorithms that pull data from the database
-
 
 

@@ -19,12 +19,14 @@ import ilex.util.TextUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import opendcs.dai.LoadingAppDAI;
 
+import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbCompLock;
@@ -40,8 +42,10 @@ public class DbPollThread extends Thread
 	private boolean _shutdown = false;
 	public static final long LockPollInterval = 5000L;
 	public static final long AppInfoPollInterval = 30000L;
+	public static final long QueuePollInterval = 10000L;
 	private long lastLockPoll;
 	private long lastAppInfoPoll;
+	private long lastQueuePoll;
 
 	public DbPollThread(ProcessMonitor processMonitor)
 	{
@@ -57,6 +61,7 @@ public class DbPollThread extends Thread
 	{
 		lastLockPoll = System.currentTimeMillis();
 		lastAppInfoPoll = 0L;
+		lastQueuePoll = 0L;
 		while(!_shutdown)
 		{
 			LoadingAppDAI loadingAppDAO = //processMonitor.getTsdb().makeLoadingAppDAO();
@@ -137,6 +142,23 @@ public class DbPollThread extends Thread
 					model.fireTableDataChanged();
 					lastLockPoll = System.currentTimeMillis();
 				}
+
+				if (processMonitor.isComputationQueueAvailable()
+				 && System.currentTimeMillis() - lastQueuePoll > QueuePollInterval)
+				{
+					Map<DbKey, Long> counts;
+					try (ComputationQueueDao queueDao = processMonitor.makeComputationQueueDao())
+					{
+						counts = queueDao.getQueueCounts();
+					}
+					model.setQueueCounts(counts);
+					model.fireTableDataChanged();
+					long total = 0L;
+					for (Long count : counts.values())
+						total += count.longValue();
+					processMonitor.getFrame().setTotalQueueCount(total);
+					lastQueuePoll = System.currentTimeMillis();
+				}
 			}
 			catch (DbIoException ex)
 			{
@@ -153,6 +175,6 @@ public class DbPollThread extends Thread
 	
 	public void pollNow()
 	{
-		lastLockPoll = lastAppInfoPoll = 0L;
+		lastLockPoll = lastAppInfoPoll = lastQueuePoll = 0L;
 	}
 }
