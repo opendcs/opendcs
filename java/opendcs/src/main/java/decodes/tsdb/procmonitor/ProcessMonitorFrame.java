@@ -247,14 +247,14 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 					GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 					new Insets(2, 5, 2, 5), 0, 0));
 
-			JButton queueDetailsButton = new JButton("Queue Details");
+			JButton queueDetailsButton = new JButton("Process Queue Details");
 			queueDetailsButton.addActionListener(e -> queueDetailsPressed());
 			buttonPanel.add(queueDetailsButton,
 				new GridBagConstraints(0, 7, 1, 1, 1.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 5, 2, 5), 0, 0));
 
-			JButton stopClearButton = new JButton("Stop and Clear Queue");
+			JButton stopClearButton = new JButton("Stop and Clear Process Queue");
 			stopClearButton.addActionListener(e -> stopAndClearQueuePressed());
 			buttonPanel.add(stopClearButton,
 				new GridBagConstraints(0, 8, 1, 1, 1.0, 1.0,
@@ -282,7 +282,7 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 		AppInfoStatus selected = getSelectedProc();
 		if (selected == null)
 		{
-			showError("Select a process, then press Queue Details.");
+			showError("Select a process, then press Process Queue Details.");
 			return;
 		}
 
@@ -353,7 +353,7 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 		AppInfoStatus selected = getSelectedProc();
 		if (selected == null)
 		{
-			showError("Select a process, then press Stop and Clear Queue.");
+			showError("Select a process, then press Stop and Clear Process Queue.");
 			return;
 		}
 
