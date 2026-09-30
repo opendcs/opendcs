@@ -357,7 +357,10 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 			return;
 		}
 
-		String confirmation = String.format("Stop %s and delete its %,d queued records?",
+		String confirmation = String.format(
+			"Stop %s and delete its %,d queued records?\n\n"
+				+ "The process will remain stopped and must be restarted manually "
+				+ "using your normal startup procedure.",
 			selected.getCompAppInfo().getAppName(), selected.getQueueCount());
 		if (showConfirm(genericLabels.getString("confirm"), confirmation,
 			JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
@@ -393,10 +396,20 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 				try
 				{
 					int deleted = get().intValue();
-					addEvent(String.format("Deleted %,d queued records for %s.",
-						deleted, selected.getCompAppInfo().getAppName()));
+					String processName = selected.getCompAppInfo().getAppName();
+					addEvent(String.format(
+						"Deleted %,d queued records for %s. "
+							+ "The process must be restarted manually.",
+						deleted, processName));
 					if (dbPollThread != null)
 						dbPollThread.pollNow();
+					JOptionPane.showMessageDialog(ProcessMonitorFrame.this,
+						String.format(
+							"Deleted %,d queued records for %s.\n\n"
+								+ "The process remains stopped. Restart it manually "
+								+ "using your normal startup procedure.",
+							deleted, processName),
+						"Queue Cleared", JOptionPane.INFORMATION_MESSAGE);
 				}
 				catch (InterruptedException ex)
 				{
