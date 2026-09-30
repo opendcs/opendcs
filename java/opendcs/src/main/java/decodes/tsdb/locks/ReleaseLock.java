@@ -65,18 +65,9 @@ public class ReleaseLock extends TsdbAppTemplate
 			}
 			if (releasedLock)
 				Thread.sleep(6000L);
-			try (LoadingAppDAI verificationDao = theDb.makeLoadingAppDAO())
-			{
-				for (TsdbCompLock lock : verificationDao.getAllCompProcLocks())
-					if (lock.getAppId().equals(getAppId()) && !lock.isStale())
-					{
-						log.error("Application restarted before its computation queue could be cleared.");
-						return;
-					}
-			}
 			try (ComputationQueueDao queueDao = new ComputationQueueDao(theDb))
 			{
-				int deleted = queueDao.clearQueue(getAppId());
+				int deleted = queueDao.clearQueueIfStopped(getAppId());
 				log.info("Deleted {} queued records for application {}.", deleted, appNameArg.getValue());
 			}
 		}

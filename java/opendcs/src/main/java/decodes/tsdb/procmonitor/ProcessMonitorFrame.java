@@ -369,7 +369,7 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 			protected Integer doInBackground() throws Exception
 			{
 				TsdbCompLock originalLock = selected.getCompLock();
-				if (originalLock != null && !originalLock.isStale())
+				if (originalLock != null)
 				{
 					try (LoadingAppDAI loadingAppDAO =
 						databaseConnectionOwner.makeLoadingAppDAO())
@@ -379,19 +379,11 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 					Thread.sleep(DbPollThread.LockPollInterval + 1000L);
 				}
 
-				try (LoadingAppDAI loadingAppDAO =
-					databaseConnectionOwner.makeLoadingAppDAO())
-				{
-					for (TsdbCompLock lock : loadingAppDAO.getAllCompProcLocks())
-						if (selected.getAppId().equals(lock.getAppId()) && !lock.isStale())
-							throw new DbIoException(
-								"The process restarted before its queue could be cleared.");
-				}
-
 				try (ComputationQueueDao queueDao =
 					new ComputationQueueDao(databaseConnectionOwner))
 				{
-					return Integer.valueOf(queueDao.clearQueue(selected.getAppId()));
+					return Integer.valueOf(
+						queueDao.clearQueueIfStopped(selected.getAppId()));
 				}
 			}
 

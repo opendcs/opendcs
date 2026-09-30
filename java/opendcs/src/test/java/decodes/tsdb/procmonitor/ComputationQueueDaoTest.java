@@ -17,6 +17,7 @@ package decodes.tsdb.procmonitor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
@@ -31,9 +32,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import decodes.sql.DbKey;
+import decodes.tsdb.DbIoException;
 import fixtures.NonPoolingConnectionOwner;
 import fixtures.TestConnectionOwner;
 import opendcs.dao.DaoBase;
+import opendcs.dao.LoadingAppDao;
 
 class ComputationQueueDaoTest
 {
@@ -66,6 +69,10 @@ class ComputationQueueDaoTest
 			dao.doModify("create table cp_comp_tasklist "
 				+ "(record_num integer primary key, loading_application_id bigint, "
 				+ "site_datatype_id bigint)");
+			dao.doModify("create table cp_comp_proc_lock "
+				+ "(loading_application_id bigint primary key, pid integer not null, "
+				+ "hostname varchar(400) not null, heartbeat date not null, "
+				+ "cur_status varchar(64))");
 			dao.doModify("create table cwms_v_ts_id "
 				+ "(ts_code bigint primary key, cwms_ts_id varchar(128))");
 
@@ -164,6 +171,103 @@ class ComputationQueueDaoTest
 			assertEquals(Long.valueOf(1L),
 				preservedCounts.get(DbKey.createDbKey(200L)));
 		}
+	}
+
+	@Test
+	void safelyClearsQueueAndReleasesMaintenanceLock() throws Exception
+	{
+		DbKey app100 = DbKey.createDbKey(100L);
+		try (ComputationQueueDao dao = new ComputationQueueDao(dbOwner))
+		{
+			assertEquals(3, dao.clearQueueIfStopped(app100));
+		}
+
+		reconnect();
+		try (DaoBase dao = new DaoBase(dbOwner, "test"))
+		{
+			assertEquals(Long.valueOf(0L), dao.getSingleResult(
+				"select count(*) from cp_comp_tasklist "
+					+ "where loading_application_id = ?",
+				rs -> Long.valueOf(rs.getLong(1)), app100));
+			assertEquals(Long.valueOf(0L), dao.getSingleResult(
+				"select count(*) from cp_comp_proc_lock "
+					+ "where loading_application_id = ?",
+				rs -> Long.valueOf(rs.getLong(1)), app100));
+		}
+	}
+
+	@Test
+	void refusesToClearQueueWhenProcessLockExists() throws Exception
+	{
+		DbKey app100 = DbKey.createDbKey(100L);
+		try (DaoBase dao = new DaoBase(dbOwner, "test"))
+		{
+			dao.doModify("insert into cp_comp_proc_lock values (?, ?, ?, current_date, ?)",
+				app100, 123, "test-host", "Running");
+		}
+
+		try (ComputationQueueDao dao = new ComputationQueueDao(dbOwner))
+		{
+			DbIoException ex = assertThrows(DbIoException.class,
+				() -> dao.clearQueueIfStopped(app100));
+			assertTrue(ex.getMessage().contains("running or restarting"));
+		}
+
+		reconnect();
+		try (DaoBase dao = new DaoBase(dbOwner, "test"))
+		{
+			assertEquals(Long.valueOf(3L), dao.getSingleResult(
+				"select count(*) from cp_comp_tasklist "
+					+ "where loading_application_id = ?",
+				rs -> Long.valueOf(rs.getLong(1)), app100));
+		}
+	}
+
+	@Test
+	void lockCheckFailureDoesNotClearQueue() throws Exception
+	{
+		DbKey app100 = DbKey.createDbKey(100L);
+		try (DaoBase dao = new DaoBase(dbOwner, "test"))
+		{
+			dao.doModify("drop table cp_comp_proc_lock");
+		}
+
+		try (ComputationQueueDao dao = new ComputationQueueDao(dbOwner))
+		{
+			DbIoException ex = assertThrows(DbIoException.class,
+				() -> dao.clearQueueIfStopped(app100));
+			assertTrue(ex.getMessage().contains("could not be verified"));
+		}
+
+		reconnect();
+		try (DaoBase dao = new DaoBase(dbOwner, "test"))
+		{
+			assertEquals(Long.valueOf(3L), dao.getSingleResult(
+				"select count(*) from cp_comp_tasklist "
+					+ "where loading_application_id = ?",
+				rs -> Long.valueOf(rs.getLong(1)), app100));
+		}
+	}
+
+	@Test
+	void lockLookupFailureIsReported() throws Exception
+	{
+		try (DaoBase dao = new DaoBase(dbOwner, "test"))
+		{
+			dao.doModify("drop table cp_comp_proc_lock");
+		}
+
+		try (LoadingAppDao dao = new LoadingAppDao(dbOwner))
+		{
+			DbIoException ex = assertThrows(DbIoException.class,
+				() -> dao.getAllCompProcLocks());
+			assertTrue(ex.getMessage().contains("Cannot read computation process locks"));
+		}
+	}
+
+	private void reconnect() throws SQLException
+	{
+		dbOwner.setConnection(DriverManager.getConnection("jdbc:derby:memory:queueDb"));
 	}
 
 	private void setSessionOffice(int officeCode) throws Exception

@@ -16,6 +16,7 @@
 package decodes.tsdb.procmonitor;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,6 +96,81 @@ public class ComputationQueueDao extends DaoBase
 		catch (SQLException ex)
 		{
 			throw new DbIoException("Unable to clear computation queue.", ex);
+		}
+	}
+
+	/**
+	 * Clears an application's queue only while a maintenance lock prevents the
+	 * computation process from starting.
+	 */
+	public int clearQueueIfStopped(DbKey applicationId) throws DbIoException
+	{
+		final int[] deleted = new int[1];
+		try
+		{
+			inTransaction(dao ->
+			{
+				Boolean lockExists;
+				try
+				{
+					lockExists = dao.getSingleResult(
+						"select loading_application_id from cp_comp_proc_lock "
+							+ "where loading_application_id = ?",
+						rs -> Boolean.TRUE, applicationId);
+				}
+				catch (SQLException ex)
+				{
+					throw new DbIoException(
+						"Process status could not be verified; the computation queue was not cleared.",
+						ex);
+				}
+
+				if (lockExists != null)
+					throw new DbIoException(
+						"The process is running or restarting; the computation queue was not cleared.");
+
+				try
+				{
+					dao.doModify(
+						"insert into cp_comp_proc_lock "
+							+ "(loading_application_id, pid, hostname, heartbeat, cur_status) "
+							+ "values (?, ?, ?, ?, ?)",
+						applicationId, Integer.valueOf(-1), "queue-clear",
+						new Date(), "Clearing computation queue");
+				}
+				catch (SQLException ex)
+				{
+					throw new DbIoException(
+						"The process restarted before its computation queue could be cleared.",
+						ex);
+				}
+
+				try
+				{
+					deleted[0] = dao.doModify(
+						"delete from cp_comp_tasklist "
+							+ "where loading_application_id = ? "
+							+ "and exists (select 1 from hdb_loading_application la "
+							+ "where la.loading_application_id = ?)",
+						applicationId, applicationId);
+					dao.doModify(
+						"delete from cp_comp_proc_lock where loading_application_id = ?",
+						applicationId);
+				}
+				catch (SQLException ex)
+				{
+					throw new DbIoException("Unable to clear computation queue.", ex);
+				}
+			});
+			return deleted[0];
+		}
+		catch (DbIoException ex)
+		{
+			throw ex;
+		}
+		catch (Exception ex)
+		{
+			throw new DbIoException("Unable to safely clear computation queue.", ex);
 		}
 	}
 
