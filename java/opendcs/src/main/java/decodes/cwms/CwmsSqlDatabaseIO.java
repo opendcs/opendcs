@@ -27,6 +27,7 @@ import org.opendcs.spi.authentication.AuthSource;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
@@ -310,6 +311,12 @@ public class CwmsSqlDatabaseIO extends SqlDatabaseIO
 	public IntervalDAI makeIntervalDAO()
 	{
 		return new CwmsIntervalDAO(this, dbOfficeId);
+	}
+
+	@Override
+	public ComputationQueueDAI makeComputationQueueDAO()
+	{
+		return new CwmsComputationQueueDao(this);
 	}
 
 	@Override

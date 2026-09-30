@@ -5,10 +5,10 @@ import java.util.List;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dai.LoadingAppDAI;
 
 import decodes.tsdb.*;
-import decodes.tsdb.procmonitor.ComputationQueueDao;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.db.Constants;
@@ -65,7 +65,7 @@ public class ReleaseLock extends TsdbAppTemplate
 			}
 			if (releasedLock)
 				Thread.sleep(6000L);
-			try (ComputationQueueDao queueDao = new ComputationQueueDao(theDb))
+			try (ComputationQueueDAI queueDao = theDb.makeComputationQueueDAO())
 			{
 				int deleted = queueDao.clearQueueIfStopped(getAppId());
 				log.info("Deleted {} queued records for application {}.", deleted, appNameArg.getValue());

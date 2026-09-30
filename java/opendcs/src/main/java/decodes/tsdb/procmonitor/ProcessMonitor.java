@@ -30,6 +30,7 @@ import lrgs.gui.DecodesInterface;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.db.Database;
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 
 public class ProcessMonitor extends TsdbAppTemplate
@@ -115,11 +116,11 @@ public class ProcessMonitor extends TsdbAppTemplate
 		return databaseConnectionOwner != null && databaseConnectionOwner.isCwms();
 	}
 
-	public ComputationQueueDao makeComputationQueueDao()
+	public ComputationQueueDAI makeComputationQueueDao()
 	{
 		if (!isComputationQueueAvailable())
 			throw new IllegalStateException("Computation queue monitoring requires a CWMS database.");
-		return new ComputationQueueDao(databaseConnectionOwner);
+		return databaseConnectionOwner.makeComputationQueueDAO();
 	}
 
 	@Override

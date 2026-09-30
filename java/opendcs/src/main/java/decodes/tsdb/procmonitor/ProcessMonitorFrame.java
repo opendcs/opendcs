@@ -59,6 +59,7 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dao.DatabaseConnectionOwner;
@@ -286,13 +287,13 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 			return;
 		}
 
-		new SwingWorker<List<ComputationQueueDao.QueueDetail>, Void>()
+		new SwingWorker<List<ComputationQueueDAI.QueueDetail>, Void>()
 		{
 			@Override
-			protected List<ComputationQueueDao.QueueDetail> doInBackground() throws Exception
+			protected List<ComputationQueueDAI.QueueDetail> doInBackground() throws Exception
 			{
-				try (ComputationQueueDao queueDao =
-					new ComputationQueueDao(databaseConnectionOwner))
+				try (ComputationQueueDAI queueDao =
+					databaseConnectionOwner.makeComputationQueueDAO())
 				{
 					return queueDao.getQueueDetails(selected.getAppId());
 				}
@@ -319,7 +320,7 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 	}
 
 	private void showQueueDetails(AppInfoStatus app,
-		List<ComputationQueueDao.QueueDetail> details)
+		List<ComputationQueueDAI.QueueDetail> details)
 	{
 		DefaultTableModel detailModel = new DefaultTableModel(
 			new Object[] { "TS Code", "CWMS TS ID", "Queue Count" }, 0)
@@ -330,7 +331,7 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 				return false;
 			}
 		};
-		for (ComputationQueueDao.QueueDetail detail : details)
+		for (ComputationQueueDAI.QueueDetail detail : details)
 		{
 			detailModel.addRow(new Object[] {
 				detail.getTimeSeriesCode(),
@@ -382,8 +383,8 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 					Thread.sleep(DbPollThread.LockPollInterval + 1000L);
 				}
 
-				try (ComputationQueueDao queueDao =
-					new ComputationQueueDao(databaseConnectionOwner))
+				try (ComputationQueueDAI queueDao =
+					databaseConnectionOwner.makeComputationQueueDAO())
 				{
 					return Integer.valueOf(
 						queueDao.clearQueueIfStopped(selected.getAppId()));

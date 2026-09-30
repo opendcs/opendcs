@@ -13,7 +13,7 @@
 * License for the specific language governing permissions and limitations
 * under the License.
 */
-package decodes.tsdb.procmonitor;
+package decodes.cwms;
 
 import java.sql.SQLException;
 import java.util.Date;
@@ -23,13 +23,14 @@ import java.util.Map;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
 
 /**
  * Reads and clears the CWMS computation task-list queue.
  */
-public class ComputationQueueDao extends DaoBase
+public class CwmsComputationQueueDao extends DaoBase implements ComputationQueueDAI
 {
 	private static final String APP_COUNTS_QUERY =
 		"select tl.loading_application_id, count(*) "
@@ -48,11 +49,15 @@ public class ComputationQueueDao extends DaoBase
 		+ "group by tl.site_datatype_id, tsi.cwms_ts_id "
 		+ "order by count(*) desc";
 
-	public ComputationQueueDao(DatabaseConnectionOwner db)
+	public CwmsComputationQueueDao(DatabaseConnectionOwner db)
 	{
-		super(db, "ComputationQueueDao");
+		super(db, "CwmsComputationQueueDao");
+		if (!db.isCwms())
+			throw new IllegalArgumentException(
+				"CwmsComputationQueueDao requires a CWMS database.");
 	}
 
+	@Override
 	public Map<DbKey, Long> getQueueCounts() throws DbIoException
 	{
 		Map<DbKey, Long> counts = new LinkedHashMap<DbKey, Long>();
@@ -68,6 +73,7 @@ public class ComputationQueueDao extends DaoBase
 		}
 	}
 
+	@Override
 	public List<QueueDetail> getQueueDetails(DbKey applicationId) throws DbIoException
 	{
 		try
@@ -82,27 +88,11 @@ public class ComputationQueueDao extends DaoBase
 		}
 	}
 
-	public int clearQueue(DbKey applicationId) throws DbIoException
-	{
-		try
-		{
-			return doModify(
-				"delete from cp_comp_tasklist "
-				+ "where loading_application_id = ? "
-				+ "and exists (select 1 from hdb_loading_application la "
-				+ "where la.loading_application_id = ?)",
-				applicationId, applicationId);
-		}
-		catch (SQLException ex)
-		{
-			throw new DbIoException("Unable to clear computation queue.", ex);
-		}
-	}
-
 	/**
 	 * Clears an application's queue only while a maintenance lock prevents the
 	 * computation process from starting.
 	 */
+	@Override
 	public int clearQueueIfStopped(DbKey applicationId) throws DbIoException
 	{
 		final int[] deleted = new int[1];
@@ -174,32 +164,4 @@ public class ComputationQueueDao extends DaoBase
 		}
 	}
 
-	public static class QueueDetail
-	{
-		private final DbKey timeSeriesCode;
-		private final String timeSeriesId;
-		private final long queueCount;
-
-		QueueDetail(DbKey timeSeriesCode, String timeSeriesId, long queueCount)
-		{
-			this.timeSeriesCode = timeSeriesCode;
-			this.timeSeriesId = timeSeriesId;
-			this.queueCount = queueCount;
-		}
-
-		public DbKey getTimeSeriesCode()
-		{
-			return timeSeriesCode;
-		}
-
-		public String getTimeSeriesId()
-		{
-			return timeSeriesId;
-		}
-
-		public long getQueueCount()
-		{
-			return queueCount;
-		}
-	}
 }

@@ -24,6 +24,7 @@ import java.util.Map;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dai.LoadingAppDAI;
 
 import decodes.sql.DbKey;
@@ -147,7 +148,7 @@ public class DbPollThread extends Thread
 				 && System.currentTimeMillis() - lastQueuePoll > QueuePollInterval)
 				{
 					Map<DbKey, Long> counts;
-					try (ComputationQueueDao queueDao = processMonitor.makeComputationQueueDao())
+					try (ComputationQueueDAI queueDao = processMonitor.makeComputationQueueDao())
 					{
 						counts = queueDao.getQueueCounts();
 					}
