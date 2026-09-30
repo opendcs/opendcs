@@ -206,6 +206,7 @@ public final class FileUtil
 		try (ZipFile zipfile = new ZipFile(zipname))
 		{
 			int numFiles = 0;
+			Path target = new File(targetdir).getCanonicalFile().toPath();
 			if (monitor != null)
 				monitor.setNumZipEntries(zipfile.size());
 			for(Enumeration entries = zipfile.entries();
@@ -213,7 +214,11 @@ public final class FileUtil
 			{
 				ZipEntry entry = (ZipEntry)entries.nextElement();
 				String name = entry.getName();
-				File file = new File(targetdir + File.separator + name);
+				File file = target.resolve(name).normalize().toFile();
+				if (!file.toPath().startsWith(target))
+				{
+					throw new IOException("Zip entry '" + name + "' is outside of the target directory.");
+				}
 				if (monitor != null)
 					monitor.setZipStatus("Unzipping " + name);
 				if (entry.isDirectory())

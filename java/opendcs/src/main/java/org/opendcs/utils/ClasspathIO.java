@@ -50,13 +50,16 @@ public class ClasspathIO {
                     if("jar".equalsIgnoreCase(url.getProtocol()))
                     {
                         JarURLConnection juc = (JarURLConnection)url.openConnection();
+                        String prefix = asDirectoryPrefix(juc.getEntryName());
                         Enumeration<JarEntry> entries = juc.getJarFile().entries();
                         while(entries.hasMoreElements())
                         {
                             JarEntry je = entries.nextElement();
-                            if(!je.isDirectory() && !je.getName().endsWith(".class"))
+                            String entryName = je.getName();
+                            if(!je.isDirectory() && entryName.startsWith(prefix)
+                               && !entryName.contains("..") && !entryName.endsWith(".class"))
                             {
-                                URL jUrl = loader.getResource(je.getName());
+                                URL jUrl = loader.getResource(entryName);
                                 if (jUrl != null)
                                 {
                                     ret.add(jUrl);
@@ -93,6 +96,15 @@ public class ClasspathIO {
     public static List<URL> getAllResourcesIn(String name, ClassLoader loader) throws IOException
     {        
         return getAllResourcesIn(name,name,loader);
+    }
+
+    private static String asDirectoryPrefix(String entryName)
+    {
+        if (entryName == null || entryName.isEmpty())
+        {
+            return "";
+        }
+        return entryName.endsWith("/") ? entryName : (entryName + "/");
     }
 
     private static List<String> childDirectory(URL url) throws IOException

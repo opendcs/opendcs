@@ -17,19 +17,11 @@ package ilex.xml;
 
 import org.xml.sax.SAXException;
 import ilex.util.ErrorException;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.Source;
-import javax.xml.transform.Result;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -55,6 +47,19 @@ public abstract class DomHelper
 	public static SimpleDateFormat dateFormat =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 
+	private static DocumentBuilderFactory getFactory() throws ParserConfigurationException
+	{
+		if (factory == null)
+		{
+			DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+			f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			f.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+			f.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+			factory = f;
+		}
+		return factory;
+	}
+
 	/**
 	* Reads a file into a DOM Document.
 	* Pass your program module name (for log messages).
@@ -68,9 +73,7 @@ public abstract class DomHelper
 	{
 		try
 		{
-			if (factory == null)
-				factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
+			DocumentBuilder builder = getFactory().newDocumentBuilder();
 			Document doc = builder.parse(new File(filename));
 			return doc;
 		}
@@ -104,9 +107,7 @@ public abstract class DomHelper
 
 		try
 		{
-			if (factory == null)
-				factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
+			DocumentBuilder builder = getFactory().newDocumentBuilder();
 			Document doc = builder.parse(strm);
 			return doc;
 		}
@@ -380,47 +381,13 @@ public abstract class DomHelper
 	{
 		try
 		{
-			if (factory == null)
-				factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
+			DocumentBuilder builder = getFactory().newDocumentBuilder();
 			Document doc = builder.newDocument();
 			return doc;
 		}
 		catch(ParserConfigurationException ex)
 		{
 			throw new ErrorException("Cannot make new DOM Document.", ex);
-		}
-	}
-
-	/**
-	 * Writes a DOM Document to a file.
-	 * @param doc the document
-	 * @param filename the file name
-	 */
-	public static void writeDocument(Document doc, String filename)
-		throws ErrorException
-	{
-		try (FileOutputStream fos = new FileOutputStream(filename))
-		{
-			TransformerFactory tranFactory = TransformerFactory.newInstance();
-			Transformer trans = tranFactory.newTransformer();
-			Source src = new DOMSource(doc);
-			Result dest = new StreamResult(System.out);
-			trans.setOutputProperty("indent", "yes");
-			trans.setOutputProperty("{ http://xml.apache.org/xslt }indent-amount", "2");
-			trans.transform(src, dest);
-		}
-		catch(TransformerConfigurationException ex)
-		{
-			throw new ErrorException("Cannot make new transformer.", ex);
-		}
-		catch(IOException ex)
-		{
-			throw new ErrorException("Cannot open '" + filename + "' for writing.", ex);
-		}
-		catch(TransformerException ex)
-		{
-			throw new ErrorException("Error in transformer.", ex);
 		}
 	}
 }

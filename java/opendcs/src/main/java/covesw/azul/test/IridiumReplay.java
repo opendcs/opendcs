@@ -1,3 +1,20 @@
+/*
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
+
 package covesw.azul.test;
 
 import java.io.File;
@@ -5,15 +22,18 @@ import java.io.IOException;
 
 import ilex.net.BasicClient;
 import ilex.util.FileUtil;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Replay old iridium files, updating the date/times to the current date/time.
  * Usage:
  *    java ... covesw.azul.test.IridiumReplay host[:port] directory
  */
-public class IridiumReplay
-	extends Thread
+public class IridiumReplay extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private String host;
 	private int port;
 	private File directory;
@@ -87,8 +107,7 @@ public class IridiumReplay
 		}
 		catch (Exception ex)
 		{
-			System.err.println("Error: " + ex);
-			ex.printStackTrace();
+			log.atDebug().setCause(ex).log("Error processing file '{}'", file.getPath());
 		}
 	}
 
