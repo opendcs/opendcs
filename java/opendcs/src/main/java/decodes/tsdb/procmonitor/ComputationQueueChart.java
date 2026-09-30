@@ -47,6 +47,7 @@ import decodes.util.DecodesSettings;
 final class ComputationQueueChart extends JPanel
 {
 	static final long HISTORY_MILLIS = 2L * 60L * 60L * 1000L;
+	static final long MINIMUM_DISPLAY_MILLIS = 5L * 60L * 1000L;
 	private static final Dimension CHART_SIZE = new Dimension(220, 120);
 	private final TimeSeries queueHistory =
 		new TimeSeries("CCP Queue", Millisecond.class);
@@ -63,8 +64,8 @@ final class ComputationQueueChart extends JPanel
 		SimpleDateFormat tooltipTimeFormat = new SimpleDateFormat("HH:mm:ss");
 		tooltipTimeFormat.setTimeZone(displayTimeZone);
 
-		DateAxis timeAxis = new DateAxis("Past 2 hours", displayTimeZone);
-		timeAxis.setFixedAutoRange(HISTORY_MILLIS);
+		DateAxis timeAxis = new DateAxis("Time", displayTimeZone);
+		timeAxis.setAutoRangeMinimumSize(MINIMUM_DISPLAY_MILLIS);
 		timeAxis.setDateFormatOverride(axisTimeFormat);
 
 		NumberAxis taskAxis = new NumberAxis("Tasks");

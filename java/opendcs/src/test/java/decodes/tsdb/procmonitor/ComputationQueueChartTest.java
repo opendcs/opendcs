@@ -16,7 +16,10 @@
 package decodes.tsdb.procmonitor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.axis.DateAxis;
 import org.junit.jupiter.api.Test;
 
 final class ComputationQueueChartTest
@@ -40,6 +43,25 @@ final class ComputationQueueChartTest
 		assertEquals(START_TIME + ComputationQueueChart.HISTORY_MILLIS,
 			chart.getOldestSampleTime());
 		assertEquals(30L, chart.getSampleValue(1));
+	}
+
+	@Test
+	void timeAxisExpandsWithAvailableHistory()
+	{
+		ComputationQueueChart chart = new ComputationQueueChart();
+		ChartPanel chartPanel = (ChartPanel)chart.getComponent(0);
+		DateAxis timeAxis =
+			(DateAxis)chartPanel.getChart().getXYPlot().getDomainAxis();
+
+		chart.addSample(START_TIME, 10L);
+		chart.addSample(START_TIME + 30L * 60L * 1000L, 20L);
+
+		assertTrue(timeAxis.isAutoRange());
+		assertEquals(ComputationQueueChart.MINIMUM_DISPLAY_MILLIS,
+			(long)timeAxis.getAutoRangeMinimumSize());
+		assertTrue(timeAxis.getRange().getLength()
+			< ComputationQueueChart.HISTORY_MILLIS);
+		assertTrue(timeAxis.getRange().getLength() > 30L * 60L * 1000L);
 	}
 
 	@Test

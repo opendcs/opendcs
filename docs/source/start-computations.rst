@@ -155,9 +155,10 @@ tab. To add a new process click "New".
 
 For CWMS databases, the Process Monitor also displays each process queue count
 and the total CCP queue. A rolling graph retains the total queue history from
-the past two hours, sampled every 10 seconds. Use "Queue Details" to group a
-selected process queue by time series, or "Stop and Clear Queue" to stop the
-process and delete its queued records.
+the past two hours, sampled every 10 seconds. Its time axis expands as history
+is collected, up to the two-hour retention window. Use "Queue Details" to
+group a selected process queue by time series, or "Stop and Clear Queue" to
+stop the process and delete its queued records.
 
 .. image:: ./media/start/computations/im-05-process.JPG
    :alt: new process window
@@ -616,4 +617,3 @@ computations, including some of the following:
 * Redefining floor/ceiling criteria
 * Defining trigger input criteria
 * Writing custom algorithms that pull data from the database
-
