@@ -96,6 +96,7 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 	private DatabaseConnectionOwner databaseConnectionOwner = null;
 	private boolean computationQueueAvailable = false;
 	private JLabel queueTotalLabel = new JLabel();
+	private ComputationQueueChart queueHistoryChart = null;
 
 	/**
 	 * Constructor
@@ -240,17 +241,23 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 5, 2, 5), 0, 0));
 
+			queueHistoryChart = new ComputationQueueChart();
+			buttonPanel.add(queueHistoryChart,
+				new GridBagConstraints(0, 6, 1, 1, 1.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+					new Insets(2, 5, 2, 5), 0, 0));
+
 			JButton queueDetailsButton = new JButton("Queue Details");
 			queueDetailsButton.addActionListener(e -> queueDetailsPressed());
 			buttonPanel.add(queueDetailsButton,
-				new GridBagConstraints(0, 6, 1, 1, 1.0, 0.0,
+				new GridBagConstraints(0, 7, 1, 1, 1.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 5, 2, 5), 0, 0));
 
 			JButton stopClearButton = new JButton("Stop and Clear Queue");
 			stopClearButton.addActionListener(e -> stopAndClearQueuePressed());
 			buttonPanel.add(stopClearButton,
-				new GridBagConstraints(0, 7, 1, 1, 1.0, 1.0,
+				new GridBagConstraints(0, 8, 1, 1, 1.0, 1.0,
 					GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 5, 2, 5), 0, 0));
 		}
@@ -760,8 +767,13 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 
 	public void setTotalQueueCount(long total)
 	{
+		long sampleTime = System.currentTimeMillis();
 		SwingUtilities.invokeLater(() ->
-			queueTotalLabel.setText(String.format("CCP Queue: %,d", total)));
+		{
+			queueTotalLabel.setText(String.format("CCP Queue: %,d", total));
+			if (queueHistoryChart != null)
+				queueHistoryChart.addSample(sampleTime, total);
+		});
 	}
 
 	public void dialogClosed(ProcessEditDialog dlg)
