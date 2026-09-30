@@ -190,8 +190,15 @@ and must match the application ID assigned to the screening algorithm.
 Alarm Editor
 ============
 
-The program “alarmedit” will allow you to maintain all of the screening
-records in a GUI. It is structured like the computations editor and the
+.. note::
+
+   The Alarm Editor and its ``alarmedit`` script have been removed along with the rest of the
+   Java Swing user interface (see https://github.com/opendcs/opendcs/issues/2096).
+   Alarm definitions can still be managed with the ``alarmimport``, ``alarmexport``,
+   ``alarmlist``, and ``alarmdelete`` scripts.
+
+The program “alarmedit” allowed you to maintain all of the screening
+records in a GUI. The rest of this section describes it as it was, for reference. It is structured like the computations editor and the
 DECODES database editor. At the top level there are two tabs:
 
 -  Email Groups – a list of named Email groups in the database from

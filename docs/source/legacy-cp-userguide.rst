@@ -6645,17 +6645,18 @@ read:
 CWMS Screening Editor
 ---------------------
 
-As of OpenDCS 6.1 RC15, the package includes a GUI Editor for CWMS
-Screening Records. The GUI is not yet integrated with the Launcher
-Button bar. To start it, use the script:
+.. note::
 
-screeningEdit
+   The Screening Editor and its ``screeningEdit`` script have been removed along with the
+   rest of the Java Swing user interface (see https://github.com/opendcs/opendcs/issues/2096).
+   Screenings can still be managed with the ``screeningImport``, ``screeningExport``, and
+   ``datchkImport`` scripts.
 
-It takes the normal options that other OpenDCS programs take, like:
-
--  -l *logfilename*
-
--  -d1, -d2, -d3 to set the debug level
+From OpenDCS 6.1 RC15 until its removal, the package included a GUI Editor
+for CWMS Screening Records. It was never integrated with the Launcher
+Button bar and was started with the ``screeningEdit`` script, which is no
+longer distributed. The remainder of this section describes the editor as
+it was, for reference.
 
 The initial screen is a tabbed pane with two tabs. The Screening IDs tab
 shows a list of all screening IDs that exist in your database:

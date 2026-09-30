@@ -85,7 +85,10 @@ public class EdlInputInterface extends Thread implements LrgsInputInterface
 					{
 						enableLrgsInput(false);
 						try { sleep(5000L); }
-						catch (InterruptedException e) { e.printStackTrace(); }
+						catch (InterruptedException e)
+						{
+							log.atDebug().setCause(e).log("Interrupted waiting for EDL file monitor to stop.");
+						}
 					}
 					enableLrgsInput(true);
 				}
@@ -94,7 +97,10 @@ public class EdlInputInterface extends Thread implements LrgsInputInterface
 			}
 
 			try { sleep(1000L); }
-			catch (InterruptedException e) { e.printStackTrace(); }
+			catch (InterruptedException e)
+			{
+				log.atDebug().setCause(e).log("Interrupted sleeping in EDL input loop.");
+			}
 		}
 	}
 

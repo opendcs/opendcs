@@ -23,28 +23,16 @@ Reasons that screening may be used include the following:
 How do I launch the Screening Editor?
 =====================================
 
-Unlike the computation processor or DECODES Database Editor the 
-Screening Editor is not launched from the Main Menu. 
+.. note::
 
-.. image:: ./media/start/screening/im-01-screeningedit.JPG
-   :alt: sources
-   :width: 400
+   The Screening Editor and its ``screeningEdit`` script have been removed along with the
+   rest of the Java Swing user interface (see https://github.com/opendcs/opendcs/issues/2096).
+   Screenings can still be managed with the ``screeningImport``, ``screeningExport``, and
+   ``datchkImport`` scripts. The rest of this page describes the editor as it was.
 
-A window will pop up for log-in information.
-
-For USACE:
-
-* USERNAME: H7
-* PASSWORD: Oracle
-
-Alternatively, if launching from the server, use the following
-command:
-
-:: screeningEdit
-
-   
-
-For USBR:
+The Screening Editor can no longer be launched. It was never available
+from the Main Menu; it was started with the ``screeningEdit`` script,
+which is no longer distributed.
 
 What are the tabs?
 ------------------
