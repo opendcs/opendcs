@@ -18,7 +18,7 @@ package lrgs.ldds;
 import ilex.util.EnvExpander;
 
 import java.io.FileReader;
-import java.util.Random;
+import java.security.SecureRandom;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.passay.DictionarySubstringRule;
@@ -52,7 +52,7 @@ public class NoaaPasswordChecker implements PasswordChecker
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String specialChars = "~`@#$%^&*()-_=+\\\"|';:,<.>/?";
-	private static final Random random = new Random(System.currentTimeMillis());
+	private static final SecureRandom random = new SecureRandom();
 	private static DictionarySubstringRule dictRule = null;
 
 	@Override
