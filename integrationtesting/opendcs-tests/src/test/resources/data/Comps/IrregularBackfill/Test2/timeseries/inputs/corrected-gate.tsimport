@@ -1,0 +1,4 @@
+SET:TZ=UTC
+SET:UNITS=cfs
+TSID:TESTSITE1.Flow.Inst.0.0.irb-fallback-gate
+2024/01/01-01:30:00,7.0,0
