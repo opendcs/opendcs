@@ -358,6 +358,8 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
 
     public boolean showHistoricalVersions = false;
 
+    private boolean showVersionNonAuthenticated = false;
+
     private static PropertySpec propSpecs[] =
     {
         new PropertySpec("jdbcDriverClass", PropertySpec.STRING,
@@ -607,6 +609,8 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
             "Name of file containing SNOTEL decoding specs for the SnotelOutputFormatter"),
         new PropertySpec("showHistoricalVersions", PropertySpec.BOOLEAN,
             "(default=false) If TRUE, show historical platform versions (deprecated feature)"),
+        new PropertySpec("showVersionNotAuthenticated", PropertySpec.BOOLEAN,
+            "(default=false) if true the web api will return the current code version to any user.")
     };
 
     /**
@@ -843,5 +847,14 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
         DecodesSettings newSettings = new DecodesSettings();
         newSettings.loadFromProperties(props);
         return newSettings;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean getShowVersionNonAuthenticated()
+    {
+        return this.showVersionNonAuthenticated;
     }
 }

@@ -19,13 +19,16 @@ import org.opendcs.odcsapi.beans.ApiVersion;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.OpenDcsVersion;
 
+import decodes.util.DecodesSettings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -38,6 +41,10 @@ import jakarta.ws.rs.core.Response;
 @Tag(name = "Version")
 public final class VersionResource extends OpenDcsResource
 {
+
+	@Context 
+	HttpServletRequest httpRequest;
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST, ApiConstants.ODCS_API_REGISTERED,
@@ -50,7 +57,19 @@ public final class VersionResource extends OpenDcsResource
 	)
 	public Response getVersion()
 	{
-		ApiVersion version = new ApiVersion(OpenDcsVersion.VERSION, OpenDcsVersion.COMMIT_HASH);
+		var db = createDb();
+		var showVersionNonAuthenticated = db.getSettings(DecodesSettings.class)
+											.map(DecodesSettings::getShowVersionNonAuthenticated)
+											.orElse(false);
+		ApiVersion version = null;
+		if (httpRequest.getUserPrincipal() == null && Boolean.FALSE.equals(showVersionNonAuthenticated))
+		{
+			version = new ApiVersion("","");
+		}
+		else
+		{
+			version = new ApiVersion(OpenDcsVersion.VERSION, OpenDcsVersion.COMMIT_HASH);
+		}
 		return Response.ok().entity(version).build();
 	}
 }
