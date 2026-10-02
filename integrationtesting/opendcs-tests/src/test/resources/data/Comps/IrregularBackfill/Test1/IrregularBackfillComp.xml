@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="IrregularBackfillAdder">
+    <ExecClass>decodes.tsdb.algo.BigAdder</ExecClass>
+    <AlgoParm roleName="input1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="Test1IrregularBackfill">
+    <Enabled>true</Enabled>
+    <AlgorithmName>IrregularBackfillAdder</AlgorithmName>
+    <CompProperty name="input1_MISSING">prev</CompProperty>
+    <CompProperty name="input1_TRIGGER_RANGE">next-or-now</CompProperty>
+    <CompProperty name="maxMissingTimeForFill">86400</CompProperty>
+    <CompProperty name="maxMissingValuesForFill">2147483647</CompProperty>
+    <CompParm roleName="input1">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>~15Minutes</Interval>
+      <TableSelector>Inst.0.irb-gate</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="input2">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.irb-driver</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.irb-output</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>

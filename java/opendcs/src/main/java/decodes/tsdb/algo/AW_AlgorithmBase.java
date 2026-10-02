@@ -529,6 +529,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 		}
 
 		TreeSet<Date> inputBaseTimes = determineInputBaseTimes();
+		expandForTriggerRanges(inputBaseTimes);
 
 		log.debug("Aggregating period is {}', found {} base times in input data.",
 				  intervalS, inputBaseTimes.size());

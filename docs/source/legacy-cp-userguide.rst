@@ -679,6 +679,31 @@ These properties can be defined in 3 places:
 3. Settings made in a Computation Record will override other settings
    and apply to this computation only.
 
+Backfilling Stateful Irregular Inputs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An irregular input can represent state that remains effective until its
+next value, such as a gate setting. By default, correcting a historical
+value only triggers the computation at the corrected timestamp. To
+recompute the timestamps affected by the corrected state, configure the
+input as follows::
+
+   gate_MISSING=prev
+   gate_TRIGGER_RANGE=next-or-now
+   maxMissingTimeForFill=2592000
+
+The ``rolename_TRIGGER_RANGE`` property is only valid for an irregular
+input whose ``rolename_MISSING`` property is ``prev``. This includes CWMS
+no-check intervals such as ``~15Minutes``. A newly added or deleted value
+opens a half-open recomputation range beginning at that value and ending
+at the earliest of the next value in the same series, the current time,
+or ``maxMissingTimeForFill`` seconds after the trigger.
+
+Within that range, actual timestamps from the computation's other inputs
+are used as time slices. If there is no regular input, timestamps are
+generated from the regular output interval. Supporting values loaded for
+the range are not treated as new computation triggers.
+
 Handling Questionable Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
