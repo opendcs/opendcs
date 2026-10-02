@@ -3,6 +3,7 @@ import { setProjectAnnotations } from "@storybook/react-vite";
 import * as projectAnnotations from "./preview";
 import { configure } from "@testing-library/react";
 import { configure as configureStorybookTest } from "storybook/test";
+import { afterEach } from "vitest";
 
 // This is an important step to apply the right configuration when testing your stories.
 // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
@@ -14,3 +15,6 @@ setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
 // exceed the 1s default, causing flaky "unable to find element" failures.
 configure({ asyncUtilTimeout: 5000 });
 configureStorybookTest({ asyncUtilTimeout: 5000 });
+afterEach(() => {
+  window.localStorage.clear();
+});
