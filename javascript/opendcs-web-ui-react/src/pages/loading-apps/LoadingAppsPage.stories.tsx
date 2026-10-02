@@ -95,15 +95,20 @@ interface StoredApp {
   properties: Record<string, string>;
 }
 
-const storedApps: StoredApp[] = [
-  {
+const storedApps: StoredApp[] = [];
+
+// Called at the top of the play function so a vitest retry starts from the
+// original row instead of the name the failed attempt already saved.
+const resetStoredApps = () => {
+  storedApps.length = 0;
+  storedApps.push({
     appId: 1,
     appName: "compproc",
     comment: "Main computation process",
     manualEditingApp: false,
     properties: { appType: "computationprocess" },
-  },
-];
+  });
+};
 
 const toApiApp = (app: StoredApp): ApiLoadingApp => ({
   appId: app.appId,
@@ -126,9 +131,11 @@ const statefulHandlers = {
       })),
     );
   }),
+  // Reports app 1 as running so the story can tell when this response has been
+  // merged into the table — with no status every row reads Inactive either way.
   appStat: http.get("/odcsapi/appstat", async () => {
     await delay(25);
-    return HttpResponse.json<ApiAppStatus[]>([]);
+    return HttpResponse.json<ApiAppStatus[]>([{ appId: 1, pid: 12345 }]);
   }),
   getApp: http.get("/odcsapi/app", async ({ request }) => {
     await delay(25);
@@ -170,8 +177,18 @@ const appNameInput = (): HTMLInputElement => {
 export const EditThenSaveShowsEdit: Story = {
   parameters: { msw: { handlers: statefulHandlers } },
   play: async ({ mount, parameters, userEvent }) => {
+    resetStoredApps();
     const canvas = await mount();
     const { i18n } = parameters;
+
+    // Wait for the app status to merge in before clicking. The edit button
+    // shows as soon as the app refs load, but a status response landing after
+    // them redraws the rows and replaces the button under the click, which
+    // then never opens the row. Waiting here also means the loadingapps
+    // namespace has loaded before i18n.t builds the button names below.
+    await waitFor(() => canvas.getByText(i18n.t("loadingapps:status_running")), {
+      timeout: 5000,
+    });
 
     const editBtn = await canvas.findByRole(
       "button",
