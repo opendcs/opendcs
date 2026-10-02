@@ -1,11 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  ApiAppRef,
-  ApiRoutingRef,
-  ApiScheduleEntry,
-  ApiScheduleEntryRef,
-} from "opendcs-api";
+import type { ApiScheduleEntry, ApiScheduleEntryRef } from "opendcs-api";
 import Schedule, { ScheduleSkeleton, type ScheduleDetails } from "./Schedule";
 import type { UiSchedule } from "./ScheduleReducer";
 import type { RemoveAction, SaveAction } from "../../util/Actions";
@@ -22,9 +17,6 @@ export type TableScheduleRef = Partial<ApiScheduleEntryRef>;
 
 export interface SchedulesTableProperties {
   schedules: TableScheduleRef[];
-  apps: ApiAppRef[];
-  routings: ApiRoutingRef[];
-  routingsLoading?: boolean;
   getSchedule?: (schedEntryId: number) => Promise<ApiScheduleEntry>;
   actions?: SaveAction<ApiScheduleEntry> & RemoveAction<number>;
   loading?: boolean;
@@ -32,9 +24,6 @@ export interface SchedulesTableProperties {
 
 export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
   schedules,
-  apps,
-  routings,
-  routingsLoading = false,
   getSchedule,
   actions = {},
   loading = false,
@@ -111,9 +100,6 @@ export const SchedulesTable: React.FC<SchedulesTableProperties> = ({
         return (
           <Schedule
             details={detailsPromise}
-            apps={apps}
-            routings={routings}
-            routingsLoading={routingsLoading}
             actions={{
               save: (s) => detailActions.save(s),
               cancel: () => detailActions.cancel(),
