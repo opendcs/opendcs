@@ -688,9 +688,16 @@ value only triggers the computation at the corrected timestamp. To
 recompute the timestamps affected by the corrected state, configure the
 input as follows::
 
-   gate_MISSING=prev
-   gate_TRIGGER_RANGE=next-or-now
+   indep1_MISSING=prev
+   indep1_TRIGGER_RANGE=next-or-now
    maxMissingTimeForFill=2592000
+
+The role name in both properties must exactly match the algorithm input
+role assigned in the computation's parameter mapping. For example, if
+the input is mapped to the algorithm role ``indep1``, the property must
+be named ``indep1_TRIGGER_RANGE``. Do not substitute a descriptive input
+name, time-series name, or other label such as ``gate``; a property whose
+role does not match the computation role is not applied.
 
 The ``rolename_TRIGGER_RANGE`` property is only valid for an irregular
 input whose ``rolename_MISSING`` property is ``prev``. This includes CWMS
