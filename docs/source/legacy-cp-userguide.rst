@@ -701,10 +701,15 @@ role does not match the computation role is not applied.
 
 The ``rolename_TRIGGER_RANGE`` property is only valid for an irregular
 input whose ``rolename_MISSING`` property is ``prev``. This includes CWMS
-no-check intervals such as ``~15Minutes``. A newly added or deleted value
-opens a half-open recomputation range beginning at that value and ending
-at the earliest of the next value in the same series, the current time,
-or ``maxMissingTimeForFill`` seconds after the trigger.
+no-check intervals such as ``~15Minutes``. A newly added or overwritten
+value opens a half-open recomputation range beginning at that value and
+ending at the earliest of the next value in the same series, the current
+time, or ``maxMissingTimeForFill`` seconds after the trigger.
+
+Deleting a value from an irregular input does not support this backfill
+behavior. Instead of deleting an incorrect value, overwrite it with the
+state that should be effective at that timestamp. The replacement value
+will trigger recomputation of the affected range.
 
 Within that range, actual timestamps from the computation's other inputs
 are used as time slices. If there is no regular input, timestamps are
