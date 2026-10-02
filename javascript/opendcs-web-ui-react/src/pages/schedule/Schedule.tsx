@@ -10,7 +10,7 @@ import {
   Row,
 } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import type { ApiAppRef, ApiRoutingRef, ApiScheduleEntry } from "opendcs-api";
+import type { ApiRoutingRef, ApiScheduleEntry } from "opendcs-api";
 import { DetailFade } from "../../components/data-table";
 import {
   CancelButton,
@@ -18,7 +18,10 @@ import {
   INPUT_H,
   LABEL_H,
   SaveButton,
+  SaveErrorAlert,
 } from "../../components/forms";
+import { useSaveError } from "../../hooks/useSaveError";
+import { useAppRefsQuery } from "../../queries/apps";
 import type { CancelAction, SaveAction } from "../../util/Actions";
 import { ExecutionSchedule } from "./ExecutionSchedule";
 import { RoutingSpecSelectModal } from "./RoutingSpecSelectModal";
@@ -88,18 +91,12 @@ export interface ScheduleDetails {
 
 export interface ScheduleProperties {
   details: Promise<ScheduleDetails> | ScheduleDetails;
-  apps: ApiAppRef[];
-  routings: ApiRoutingRef[];
-  routingsLoading?: boolean;
   actions?: SaveAction<ApiScheduleEntry> & CancelAction<number>;
   edit?: boolean;
 }
 
 export const Schedule: React.FC<ScheduleProperties> = ({
   details,
-  apps,
-  routings,
-  routingsLoading = false,
   actions = {},
   edit = false,
 }) => {
@@ -107,7 +104,17 @@ export const Schedule: React.FC<ScheduleProperties> = ({
   const resolved = details instanceof Promise ? use(details) : details;
   const provided = resolved.schedule;
   const [local, dispatch] = useReducer(ScheduleReducer, provided);
+  // Queried here, not passed in, for the same reason as RoutingSpecSelectModal:
+  // the detail row never re-renders with new props.
+  const { data: apps = [] } = useAppRefsQuery();
   const [showRoutingModal, setShowRoutingModal] = useState(false);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("schedule:save_error"),
+    "Schedule save failed",
+  );
+  // SCHEDULE_ENTRY.NAME and ROUTINGSPEC_ID are NOT NULL, so a blank field can
+  // only fail on the server.
+  const [incomplete, setIncomplete] = useState(false);
 
   const appOptions = useMemo(
     () =>
@@ -161,16 +168,31 @@ export const Schedule: React.FC<ScheduleProperties> = ({
   }, []);
 
   const saveSchedule = useCallback(() => {
+    const missing =
+      !local.name?.trim() ||
+      (local.routingSpecId == null && !local.routingSpecName?.trim());
+    setIncomplete(missing);
+    if (missing) {
+      clearSaveError();
+      return;
+    }
     // The appName select is by name; resolve back to the API's appId before
     // posting. The routing spec is already chosen via the modal which gives us
     // both id and name on the local record.
     const appRef = apps.find((a) => a.appName === local.appName);
-    actions.save?.({
-      ...local,
-      appId: appRef?.appId,
-      appName: appRef?.appName,
-    } as ApiScheduleEntry);
-  }, [actions, local, apps]);
+    void attemptSave(() =>
+      actions.save?.({
+        ...local,
+        appId: appRef?.appId,
+        appName: appRef?.appName,
+      } as ApiScheduleEntry),
+    );
+  }, [actions, local, apps, attemptSave, clearSaveError]);
+
+  const dismissError = useCallback(() => {
+    setIncomplete(false);
+    clearSaveError();
+  }, [clearSaveError]);
 
   const cancel = useCallback(() => {
     if (provided.schedEntryId !== undefined) actions.cancel?.(provided.schedEntryId);
@@ -284,6 +306,12 @@ export const Schedule: React.FC<ScheduleProperties> = ({
           </Row>
 
           {edit && (
+            <SaveErrorAlert
+              error={incomplete ? t("schedule:required_fields") : saveError}
+              onClose={dismissError}
+            />
+          )}
+          {edit && (
             <EditFormActions>
               <CancelButton
                 onClick={cancel}
@@ -308,8 +336,6 @@ export const Schedule: React.FC<ScheduleProperties> = ({
           onSelectRouting(r);
           setShowRoutingModal(false);
         }}
-        routings={routings}
-        loading={routingsLoading}
       />
     </DetailFade>
   );
