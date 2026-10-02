@@ -49,7 +49,7 @@ const REFLISTS: Record<string, ApiRefList> = {
   StopBits: { enumName: "StopBits", items: {} },
 };
 
-const reflistHandler = http.get("/odcsapi/reflists", () => HttpResponse.json(REFLISTS));
+const reflistHandler = http.get("/api/reflists", () => HttpResponse.json(REFLISTS));
 
 const meta = {
   title: "Platforms/TransportMediaTable",

@@ -264,7 +264,7 @@ export const EditModeWithIntervals: Story = {
   parameters: {
     msw: {
       handlers: {
-        intervals: http.get("/odcsapi/intervals", () =>
+        intervals: http.get("/api/intervals", () =>
           HttpResponse.json<ApiInterval[]>(MOCK_INTERVALS),
         ),
       },

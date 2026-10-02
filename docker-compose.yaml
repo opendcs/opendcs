@@ -56,7 +56,7 @@ services:
     entrypoint: ["/api_entry.sh"]
     command: ["/usr/local/tomcat/bin/catalina.sh", "run"]
     healthcheck:
-      test: ["CMD-SHELL", "curl http://localhost:7000/odcsapi/health/live"]
+      test: ["CMD-SHELL", "curl http://localhost:7000/api/health/live"]
       interval: 1m30s
       timeout: 30s
       retries: 5

@@ -121,7 +121,7 @@ export const useAlgorithmCatalogQuery = (enabled: boolean) => {
   return useQuery<CatalogAlgorithm[]>({
     queryKey: algorithmKeys.catalog(org),
     queryFn: () =>
-      fetch("/odcsapi/algorithmcatalog", {
+      fetch("/api/algorithmcatalog", {
         headers: { "X-ORGANIZATION-ID": org },
       }).then((res) => {
         if (!res.ok) throw new Error(`Catalog fetch failed: ${res.status}`);
@@ -139,7 +139,7 @@ export const useImportAlgorithmsMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (execClasses: string[]) =>
-      fetch("/odcsapi/algorithmcatalog", {
+      fetch("/api/algorithmcatalog", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

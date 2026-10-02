@@ -14,7 +14,7 @@ const meta = {
   parameters: {
     msw: {
       handlers: [
-        http.post("/odcsapi/user/updatePassword", async ({ request }) => {
+        http.post("/api/user/updatePassword", async ({ request }) => {
           const json = await request.json();
           console.log(json);
           const { currentPassword } = json as {

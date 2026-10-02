@@ -344,11 +344,11 @@ export const ImportViaCheckForNew: Story = {
   parameters: {
     msw: {
       handlers: {
-        catalogGet: http.get("/odcsapi/algorithmcatalog", () =>
+        catalogGet: http.get("/api/algorithmcatalog", () =>
           HttpResponse.json<CatalogAlgorithm[]>(CATALOG),
         ),
         importPost: http.post(
-          "/odcsapi/algorithmcatalog",
+          "/api/algorithmcatalog",
           () => new HttpResponse(null, { status: 200 }),
         ),
       },

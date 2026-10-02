@@ -92,7 +92,7 @@ public final class ConfigResources extends OpenDcsResource
 	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			summary = "This method returns a JSON list of DECODES Config records suitable for displaying in a table or pick-list",
-			description = "Example:\n\n    http://localhost:8080/odcsapi/configrefs\n\n\n"
+			description = "Example:\n\n    http://localhost:8080/api/configrefs\n\n\n"
 					+ "This method returns a JSON list of DECODES Config records suitable for displaying "
 					+ "in a table or pick-list. The returned structure contains an array in the following format:\n\n  "
 					+ "**Note**:The numeric ID may be used in subsequent calls to the 'config' method.\n\n```\n[\n  "
@@ -161,7 +161,7 @@ public final class ConfigResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON representation of a single, complete DECODES Config record",
-			description = "Example:  \n\n    http://localhost:8080/odcsapi/config?configid=12\n\n\n"
+			description = "Example:  \n\n    http://localhost:8080/api/config?configid=12\n\n\n"
 					+ "This method returns a JSON representation of a single, complete DECODES Config record. ",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully retrieved configuration details",

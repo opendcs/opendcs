@@ -33,7 +33,7 @@ const meta: Meta<typeof Login & { organizations: ApiOrganization[] }> = {
     msw: {
       handlers: [
         // Default: successful login handler
-        http.post("/odcsapi/credentials", async ({ request }) => {
+        http.post("/api/credentials", async ({ request }) => {
           const body = (await request.json()) as { username: string; password: string };
           const { username, password } = body;
           var orgHeader = request.headers.get(ORG_HEADER);
@@ -131,7 +131,7 @@ export const FailedLogin_BadCredentials: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.post("/odcsapi/credentials", () => {
+        http.post("/api/credentials", () => {
           return new HttpResponse("User not authorized for office", { status: 403 });
         }),
       ],
@@ -165,7 +165,7 @@ export const FailedLogin_BadOrg: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.post("/odcsapi/credentials", () => {
+        http.post("/api/credentials", () => {
           return new HttpResponse("User not authorized for office", { status: 403 });
         }),
       ],

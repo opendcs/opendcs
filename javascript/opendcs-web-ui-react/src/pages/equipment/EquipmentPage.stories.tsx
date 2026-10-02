@@ -24,7 +24,7 @@ const mockEquipmentRefs: ApiEquipmentModelRef[] = [
 ];
 
 const handlers = {
-  equipmentRefs: http.get("/odcsapi/equipmentrefs", () =>
+  equipmentRefs: http.get("/api/equipmentrefs", () =>
     HttpResponse.json<ApiEquipmentModelRef[]>(mockEquipmentRefs),
   ),
 };
@@ -51,7 +51,7 @@ export const Empty: Story = {
   parameters: {
     msw: {
       handlers: {
-        equipmentRefs: http.get("/odcsapi/equipmentrefs", () =>
+        equipmentRefs: http.get("/api/equipmentrefs", () =>
           HttpResponse.json<ApiEquipmentModelRef[]>([]),
         ),
       },

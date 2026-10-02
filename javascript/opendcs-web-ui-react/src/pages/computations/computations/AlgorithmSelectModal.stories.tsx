@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { expect, fn, screen, waitFor } from "storybook/test";
 import { AlgorithmSelectModal } from "./AlgorithmSelectModal";
 
-const emptyAlgorithmRefsHandler = http.get("/odcsapi/algorithmrefs", () =>
+const emptyAlgorithmRefsHandler = http.get("/api/algorithmrefs", () =>
   HttpResponse.json<ApiAlgorithmRef[]>([]),
 );
 
@@ -27,7 +27,7 @@ const mockAlgorithmRefs: ApiAlgorithmRef[] = [
 ];
 
 const handlers = {
-  algorithmRefs: http.get("/odcsapi/algorithmrefs", () =>
+  algorithmRefs: http.get("/api/algorithmrefs", () =>
     HttpResponse.json<ApiAlgorithmRef[]>(mockAlgorithmRefs),
   ),
 };

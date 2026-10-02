@@ -105,8 +105,8 @@ public final class TimeSeriesResources extends OpenDcsResource
 					You have the option to filter out inactive time series by passing 'active=true' argument. \s
 					Examples: \s
 
-					    http://localhost:8080/odcsapi/tsrefs
-					    http://localhost:8080/odcsapi/tsrefs?active=true
+					    http://localhost:8080/api/tsrefs
+					    http://localhost:8080/api/tsrefs?active=true
 
 
 					This returns an array of Time Series Identifiers. The numeric Key of a time series identifier \
@@ -225,7 +225,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "The tsspec method returns a complete specification for a time series identified by the 'key' parameter.",
-			description = "Example: \n\n    http://localhost:8080/odcsapi/tsspec?key=532",
+			description = "Example: \n\n    http://localhost:8080/api/tsspec?key=532",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully retrieved time series specification",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -356,7 +356,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 					*\t**HH:MM** \s
 
 					Examples: \s
-					```http://localhost:8080/odcsapi/tsdata?key=12```""",
+					```http://localhost:8080/api/tsdata?key=12```""",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Successfully retrieved time series data",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -437,7 +437,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			description = """
 					Example:
 
-					    http://localhost:8080/odcsapi/intervals
+					    http://localhost:8080/api/intervals
 
 					An array of data structures representing all known time intervals will be returned as shown below.
 					```
@@ -498,7 +498,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			description = """
 					Example URL for POST: \s
 
-					    http://localhost:8080/odcsapi/interval
+					    http://localhost:8080/api/interval
 
 
 					The POST data should contain a single time interval record as described \
@@ -613,7 +613,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			description = """
 					Example URL for DELETE: \s
 
-					    http://localhost:8080/odcsapi/interval?intervalid=1459
+					    http://localhost:8080/api/interval?intervalid=1459
 
 
 					This deletes the Time Interval with ID 1459. \s
@@ -662,7 +662,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 					  \s
 					Example URL: \s
 
-					    http://localhost:8080/odcsapi/tsgrouprefs
+					    http://localhost:8080/api/tsgrouprefs
 
 					The returned list has the following structure:
 					  \s
@@ -749,7 +749,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			description = """
 					Example URL: \s
 
-					    http://localhost:8080/odcsapi-0-7/tsgroup?groupid=9
+					    http://localhost:8080/api-0-7/tsgroup?groupid=9
 
 					The returned list has the following structure: \s
 					  \s
@@ -963,7 +963,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 
 					Example URL: \s
 
-					    http://localhost:8080/odcsapi/expandgroup?groupid=9
+					    http://localhost:8080/api/expandgroup?groupid=9
 
 					""",
 			responses = {
@@ -1082,7 +1082,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			description = """
 					Example URL for POST: \s
 
-					    http://localhost:8080/odcsapi/tsgroup
+					    http://localhost:8080/api/tsgroup
 
 					The POST data is as described above for GET tsgroup""",
 			requestBody = @RequestBody(
@@ -1253,7 +1253,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			description = """
 					Example URL for DELETE: \s
 
-					    http://localhost:8080/odcsapi/delete
+					    http://localhost:8080/api/delete
 
 					This example deletes the Time series group with ID 9.""",
 			responses = {

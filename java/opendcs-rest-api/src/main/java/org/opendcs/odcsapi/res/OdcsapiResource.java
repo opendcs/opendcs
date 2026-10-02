@@ -65,7 +65,7 @@ public final class OdcsapiResource extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Get TSDB Properties",
-			description = "Example:  \n\n    http://localhost:8080/odcsapi/tsdb_properties  \n    \n    \n"
+			description = "Example:  \n\n    http://localhost:8080/api/tsdb_properties  \n    \n    \n"
 					+ "The tsdb_properties table in the database will be returned in a structure as follows:  \n  \n"
 					+ "```\n  {\n    \"offsetErrorAction\": \"ROUND\",\n    \"storagePresentationGroup\": \"hydrodcs\","
 					+ "\n    \"api.datasource\": \"Cove-LRGS\",\n    \"allowDstOffsetVariation\": \"true\"\n  }\n\n```",
@@ -169,7 +169,7 @@ public final class OdcsapiResource extends OpenDcsResource
 			description = "Many of the Java classes within OpenDCS maintain a set of properties that "
 					+ "can alter the object’s behavior. This method allows the caller to get a list of acceptable "
 					+ "properties for a given class.  \n\n"
-					+ "\n\nExample:\n\n\thttp://localhost:8080/odcsapi/propspecs?class=decodes.db.Platform\n"
+					+ "\n\nExample:\n\n\thttp://localhost:8080/api/propspecs?class=decodes.db.Platform\n"
 					+ "For example, here are the properties accepted by the class decodes.db.Platform\n```\n[\n  {\n    "
 					+ "\"description\": \"(default=0) Set to 1, 2, 3 for increasing levels of debug information "
 					+ "when this platform is decoded.\",\n    \"dynamic\": false,\n    \"name\": \"debugLevel\",\n    "
@@ -236,7 +236,7 @@ public final class OdcsapiResource extends OpenDcsResource
 	@Operation(
 			summary = "Decode a Message",
 			description = "Example URL for HTTP POST method:  \n"
-					+ "```http://localhost:8080/odcsapi/decode?script=ST```\n\n"
+					+ "```http://localhost:8080/api/decode?script=ST```\n\n"
 					+ "Arguments required:\n* The script name to use in decoding the message "
 					+ "(if omitted, the first script in the config will be used).\n\n"
 					+ "The POST body must be in the following structure:\n```\n{\n\t\"config\": "

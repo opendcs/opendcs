@@ -15,7 +15,7 @@ https://<host>:<port>/[REST_API_CONTEXT]/swaggerui/index.html
 
 On development machines running the REST API locally, this will be located at 
 ```
-http://localhost:7000/odcsapi/swaggerui/index.html
+http://localhost:7000/api/swaggerui/index.html
 ```
 
 ## OpenAPI Specification Generation
@@ -31,11 +31,11 @@ endpoint mentioned above.
 
 The raw JSON or YAML for the specification can be found at 
 ```
-http://localhost:7000/odcsapi/openapi.json
+http://localhost:7000/api/openapi.json
 ```
 or 
 ```
-http://localhost:7000/odcsapi/openapi.yaml
+http://localhost:7000/api/openapi.yaml
 ```
 respectively.
 

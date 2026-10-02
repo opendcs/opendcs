@@ -42,7 +42,7 @@
         "openIdConnectUrl": "http://localhost:7100/auth/realms/opendcs/.well-known/openid-configuration",
         "x-logincomponent-configuration": {
           "oidcConfig": {
-            "redirectUri": "http://localhost:5173/odcsapi/oidc-callback",
+            "redirectUri": "http://localhost:5173/api/oidc-callback",
             "clientId": "opendcs"
           }
         }

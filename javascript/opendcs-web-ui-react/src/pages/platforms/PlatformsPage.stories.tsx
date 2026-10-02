@@ -71,27 +71,27 @@ const fullPlatform = (ref: ApiPlatformRef): ApiPlatform => ({
 });
 
 const baseHandlers = {
-  platformRefs: http.get("/odcsapi/platformrefs", () =>
+  platformRefs: http.get("/api/platformrefs", () =>
     HttpResponse.json<ApiPlatformRef[]>(PLATFORM_REFS),
   ),
-  platform: http.get("/odcsapi/platform", ({ request }) => {
+  platform: http.get("/api/platform", ({ request }) => {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("platformid"));
     const ref = PLATFORM_REFS.find((p) => p.platformId === id);
     if (!ref) return HttpResponse.json({}, { status: 404 });
     return HttpResponse.json<ApiPlatform>(fullPlatform(ref));
   }),
-  postPlatform: http.post("/odcsapi/platform", async () =>
+  postPlatform: http.post("/api/platform", async () =>
     HttpResponse.json<ApiPlatform>({}),
   ),
-  deletePlatform: http.delete("/odcsapi/platform", () => HttpResponse.json({})),
-  site: http.get("/odcsapi/site", ({ request }) => {
+  deletePlatform: http.delete("/api/platform", () => HttpResponse.json({})),
+  site: http.get("/api/site", ({ request }) => {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("siteid"));
     const site = SITES.find((s) => s.siteId === id);
     return HttpResponse.json<ApiSite>(site ?? {});
   }),
-  config: http.get("/odcsapi/config", ({ request }) => {
+  config: http.get("/api/config", ({ request }) => {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("configid"));
     const cfg = CONFIGS.find((c) => c.configId === id);
@@ -137,7 +137,7 @@ export const Empty: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        platformRefs: http.get("/odcsapi/platformrefs", () =>
+        platformRefs: http.get("/api/platformrefs", () =>
           HttpResponse.json<ApiPlatformRef[]>([]),
         ),
       },
@@ -243,7 +243,7 @@ export const SavePlatformError: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        postPlatform: http.post("/odcsapi/platform", () =>
+        postPlatform: http.post("/api/platform", () =>
           HttpResponse.json({ message: "Server error" }, { status: 500 }),
         ),
       },

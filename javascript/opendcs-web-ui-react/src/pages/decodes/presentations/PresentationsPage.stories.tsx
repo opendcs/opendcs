@@ -72,24 +72,24 @@ const MOCK_UNITS: Record<number, ApiUnit> = {
 };
 
 const baseHandlers = {
-  presentationRefs: http.get("/odcsapi/presentationrefs", () =>
+  presentationRefs: http.get("/api/presentationrefs", () =>
     HttpResponse.json<ApiPresentationRef[]>(PRESENTATION_REFS),
   ),
-  presentation: http.get("/odcsapi/presentation", ({ request }) => {
+  presentation: http.get("/api/presentation", ({ request }) => {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("groupid"));
     return HttpResponse.json<ApiPresentationGroup>(
       FULL_PRESENTATIONS[id] ?? { groupId: id },
     );
   }),
-  postPresentation: http.post("/odcsapi/presentation", async () =>
+  postPresentation: http.post("/api/presentation", async () =>
     HttpResponse.json<ApiPresentationGroup>({}),
   ),
-  deletePresentation: http.delete("/odcsapi/presentation", () => HttpResponse.json({})),
-  dataTypes: http.get("/odcsapi/datatypelist", () =>
+  deletePresentation: http.delete("/api/presentation", () => HttpResponse.json({})),
+  dataTypes: http.get("/api/datatypelist", () =>
     HttpResponse.json<ApiDataType[]>(MOCK_DATA_TYPES),
   ),
-  units: http.get("/odcsapi/unitlist", () =>
+  units: http.get("/api/unitlist", () =>
     HttpResponse.json<Record<number, ApiUnit>>(MOCK_UNITS),
   ),
 };
@@ -120,7 +120,7 @@ export const Empty: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        presentationRefs: http.get("/odcsapi/presentationrefs", () =>
+        presentationRefs: http.get("/api/presentationrefs", () =>
           HttpResponse.json<ApiPresentationRef[]>([]),
         ),
       },
@@ -230,10 +230,10 @@ export const DeletePresentationRow: Story = {
         const list = [...PRESENTATION_REFS];
         return {
           ...baseHandlers,
-          presentationRefs: http.get("/odcsapi/presentationrefs", () =>
+          presentationRefs: http.get("/api/presentationrefs", () =>
             HttpResponse.json<ApiPresentationRef[]>(list),
           ),
-          deletePresentation: http.delete("/odcsapi/presentation", ({ request }) => {
+          deletePresentation: http.delete("/api/presentation", ({ request }) => {
             const url = new URL(request.url);
             const id = Number(url.searchParams.get("groupid"));
             const idx = list.findIndex((p) => p.groupId === id);
@@ -267,7 +267,7 @@ const makeCapturingHandlers = () => {
   let lastBody: unknown = null;
   return {
     ...baseHandlers,
-    postPresentation: http.post("/odcsapi/presentation", async ({ request }) => {
+    postPresentation: http.post("/api/presentation", async ({ request }) => {
       lastBody = await request.json();
       return HttpResponse.json<ApiPresentationGroup>(lastBody as ApiPresentationGroup);
     }),

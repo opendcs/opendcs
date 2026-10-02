@@ -82,30 +82,30 @@ const INTERVALS: ApiInterval[] = [
 ];
 
 const baseHandlers = {
-  tsGroupRefs: http.get("/odcsapi/tsgrouprefs", () =>
+  tsGroupRefs: http.get("/api/tsgrouprefs", () =>
     HttpResponse.json<ApiTsGroupRef[]>(GROUP_REFS),
   ),
-  tsGroup: http.get("/odcsapi/tsgroup", ({ request }) => {
+  tsGroup: http.get("/api/tsgroup", ({ request }) => {
     const id = Number(new URL(request.url).searchParams.get("groupid"));
     return HttpResponse.json<ApiTsGroup>(FULL_GROUPS[id] ?? { groupId: id });
   }),
-  postTsGroup: http.post("/odcsapi/tsgroup", async () =>
+  postTsGroup: http.post("/api/tsgroup", async () =>
     HttpResponse.json<ApiTsGroup>({}),
   ),
-  deleteTsGroup: http.delete("/odcsapi/tsgroup", () => HttpResponse.json({})),
-  expandGroup: http.get("/odcsapi/expandgroup", () =>
+  deleteTsGroup: http.delete("/api/tsgroup", () => HttpResponse.json({})),
+  expandGroup: http.get("/api/expandgroup", () =>
     HttpResponse.json<ApiTimeSeriesIdentifier[]>(TS_REFS),
   ),
-  tsRefs: http.get("/odcsapi/tsrefs", () =>
+  tsRefs: http.get("/api/tsrefs", () =>
     HttpResponse.json<ApiTimeSeriesIdentifier[]>(TS_REFS),
   ),
-  siteRefs: http.get("/odcsapi/siterefs", () =>
+  siteRefs: http.get("/api/siterefs", () =>
     HttpResponse.json<ApiSiteRef[]>(SITE_REFS),
   ),
-  dataTypes: http.get("/odcsapi/datatypelist", () =>
+  dataTypes: http.get("/api/datatypelist", () =>
     HttpResponse.json<ApiDataType[]>(DATA_TYPES),
   ),
-  intervals: http.get("/odcsapi/intervals", () =>
+    intervals: http.get("/api/intervals", () =>
     HttpResponse.json<ApiInterval[]>(INTERVALS),
   ),
 };
@@ -134,7 +134,7 @@ export const Empty: Story = {
     msw: {
       handlers: {
         ...baseHandlers,
-        tsGroupRefs: http.get("/odcsapi/tsgrouprefs", () =>
+        tsGroupRefs: http.get("/api/tsgrouprefs", () =>
           HttpResponse.json<ApiTsGroupRef[]>([]),
         ),
       },

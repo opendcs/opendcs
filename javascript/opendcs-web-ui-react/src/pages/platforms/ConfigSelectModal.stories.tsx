@@ -21,12 +21,12 @@ const mockConfigRefs: ApiConfigRef[] = [
 ];
 
 const handlers = {
-  configRefs: http.get("/odcsapi/configrefs", () =>
+  configRefs: http.get("/api/configrefs", () =>
     HttpResponse.json<ApiConfigRef[]>(mockConfigRefs),
   ),
 };
 
-const emptyConfigRefsHandler = http.get("/odcsapi/configrefs", () =>
+const emptyConfigRefsHandler = http.get("/api/configrefs", () =>
   HttpResponse.json<ApiConfigRef[]>([]),
 );
 

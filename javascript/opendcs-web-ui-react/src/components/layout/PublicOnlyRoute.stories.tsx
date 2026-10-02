@@ -14,7 +14,7 @@ import { fromOpenApiData } from "../../util/login-providers";
 const authSchemes = await fromOpenApiData(apiAuthSpec);
 
 const platformMswHandlers = {
-  platforms: http.get("/odcsapi/platformrefs", () => {
+  platforms: http.get("/api/platformrefs", () => {
     return HttpResponse.json<ApiPlatformRef[]>([
       {
         platformId: 1,
@@ -34,7 +34,7 @@ const platformMswHandlers = {
       },
     ]);
   }),
-  authInfo: http.get("/odcsapi/openapi.json", async () => {
+  authInfo: http.get("/api/openapi.json", async () => {
     return HttpResponse.json(apiAuthSpec);
   }),
 };

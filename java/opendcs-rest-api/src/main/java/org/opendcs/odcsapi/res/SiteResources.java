@@ -70,7 +70,7 @@ public final class SiteResources extends OpenDcsResource
 	@Operation(
 			summary = "This method returns a JSON list of DECODES Site records suitable for displaying in a table or pick-list.",
 			description = "The returned structure contains only the numeric ID (unique), description, and an array of site names."
-					+ "\n\nExample:\n\n    http://localhost:8080/odcsapi/siterefs"
+					+ "\n\nExample:\n\n    http://localhost:8080/api/siterefs"
 					+ "\n\n**Note:** The numeric ID may be used in subsequent calls to the `site` method.",
 			operationId = "getsiterefs",
 			tags = {"REST - DECODES Site Records"},
@@ -129,7 +129,7 @@ public final class SiteResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON representation of a single, complete DECODES Site record.",
-			description = "Example:\n\n    http://localhost:8080/odcsapi/site?siteid=3\n\n"
+			description = "Example:\n\n    http://localhost:8080/api/site?siteid=3\n\n"
 					+ "The structure is as follows:\n```\n{\n  \"country\": \"USA\",\n  \"description\": "
 					+ "\"Barre Falls Dam, Ware River\",\n  \"elevUnits\": \"M\",\n  \"elevation\": 234.7,\n  "
 					+ "\"active\": true,\n  \"lastModified\": \"2021-07-07T14:00:00Z\",\n  \"locationtype\": \"\"\n  "

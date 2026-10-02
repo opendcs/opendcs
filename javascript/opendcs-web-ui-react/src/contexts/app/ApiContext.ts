@@ -12,7 +12,7 @@ export interface ApiContextType {
 
 export const defaultValue: ApiContextType = {
   conf: createConfiguration({
-    baseServer: new ServerConfiguration("/odcsapi", {}),
+    baseServer: new ServerConfiguration("/api", {}),
   }),
   org: parseOrg(window.localStorage.getItem("organization")).name || "",
   orgObj: parseOrg(window.localStorage.getItem("organization")) || {},

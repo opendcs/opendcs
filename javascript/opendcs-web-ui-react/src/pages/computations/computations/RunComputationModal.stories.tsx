@@ -22,7 +22,7 @@ const sseTranscript = [
 
 const handlers = {
   runComputation: http.get(
-    "/odcsapi/runcomputation",
+    "/api/runcomputation",
     () =>
       new HttpResponse(sseTranscript, {
         headers: { "Content-Type": "text/event-stream" },
@@ -120,7 +120,7 @@ export const RendersValuesFromResultsPayload: Story = {
     msw: {
       handlers: {
         runComputation: http.get(
-          "/odcsapi/runcomputation",
+          "/api/runcomputation",
           () =>
             new HttpResponse(
               [
@@ -155,7 +155,7 @@ export const RendersValuesFromResultsPayload: Story = {
         ),
         // Any read-back attempt is a regression: the run wrote nothing, so there is nothing
         // to read. Fail loudly rather than letting a fallback mask it.
-        tsData: http.get("/odcsapi/tsdata", () => {
+        tsData: http.get("/api/tsdata", () => {
           throw new Error(
             "RunComputationModal must not fetch /tsdata for a manual run",
           );
@@ -189,7 +189,7 @@ export const OutputsWithoutValuesAreReported: Story = {
     msw: {
       handlers: {
         runComputation: http.get(
-          "/odcsapi/runcomputation",
+          "/api/runcomputation",
           () =>
             new HttpResponse(
               [
@@ -243,7 +243,7 @@ export const RendersQualityFlags: Story = {
     msw: {
       handlers: {
         runComputation: http.get(
-          "/odcsapi/runcomputation",
+          "/api/runcomputation",
           () =>
             new HttpResponse(
               [

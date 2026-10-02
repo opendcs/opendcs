@@ -82,8 +82,8 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve Data Type List",
-			description = "Examples:  \n\n    http://localhost:8080/odcsapi/datatypelist  \n\n    "
-					+ "http://localhost:8080/odcsapi/datatypelist?standard=cwms  \n\n\n"
+			description = "Examples:  \n\n    http://localhost:8080/api/datatypelist  \n\n    "
+					+ "http://localhost:8080/api/datatypelist?standard=cwms  \n\n\n"
 					+ "The returned data structure is an array of JSON data type objects:\n"
 					+ "```\n[\n  {\n    \"code\": \"72114\",\n    \"displayName\": \"CWMS:72114\",\n    "
 					+ "\"id\": 367,\n    \"standard\": \"CWMS\"\n  },\n  {\n    \"code\": \"Address\",\n    "
@@ -151,7 +151,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	@Tag(name = "REST - Engineering Unit Methods")
 	@Operation(
 			summary = "Returns an array of data structures representing all known Engineering Units",
-			description = "Example: \n\n    http://localhost:8080/odcsapi/unitlist  \n  \n  "
+			description = "Example: \n\n    http://localhost:8080/api/unitlist  \n  \n  "
 					+ "An array of data structures representing all known Engineering Units will be returned as shown below.  "
 					+ "\n  \n  ```\n    [\n      {\n        \"abbr\": \"$\",\n        \"family\": \"univ\",\n        "
 					+ "\"measures\": \"Currency\",\n        \"name\": \"Dollars\"\n      },\n      {\n        "
@@ -210,7 +210,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	@Tag(name = "REST - Engineering Unit Methods")
 	@Operation(
 			summary = "Create a new, or update an existing Engineering Unit",
-			description = "Example URL for POST:  \n\n    http://localhost:8080/odcsapi/eu\n\n\n"
+			description = "Example URL for POST:  \n\n    http://localhost:8080/api/eu\n\n\n"
 					+ "The POST data should contain a single engineering unit as described above for unitlist.\n  "
 					+ "For example, to create a new unit with abbreviation 'blob', the data could be:  \n  ```\n  {\n    "
 					+ "\"abbr\": \"blob\",\n    \"family\": \"Metric\",\n    \"measures\": \"stuff\",\n    "
@@ -261,7 +261,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	@Operation(
 			summary = "Delete an existing Engineering Unit",
 			description = "Deletes an engineering unit record.\n\nExample URL:\n\n"
-					+ "`http://localhost:8080/odcsapi/eu?abbr=blob`\n",
+					+ "`http://localhost:8080/api/eu?abbr=blob`\n",
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted the engineering unit."),
 					@ApiResponse(responseCode = "400", description = "Missing required abbreviation parameter."),
@@ -303,7 +303,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	@Operation(
 			summary = "Returns a list of Engineering Unit Conversions defined in the database",
 			description = "Returns a list of Engineering Unit Conversions defined in the database.  \n"
-					+ "Example:  \n\n    http://localhost:8080/odcsapi/unitlist  \n\n"
+					+ "Example:  \n\n    http://localhost:8080/api/unitlist  \n\n"
 					+ "An array of data structures representing all known conversions will be returned as shown below.  "
 					+ "\n\n```\n  [\n    {\n      \"ucId\": 3689,\n      \"fromAbbr\": \"m^3/s\",\n      "
 					+ "\"toAbbr\": \"cms\",\n      \"algorithm\": \"none\",\n      \"a\": 0,\n      \"b\": 0,\n      "
@@ -348,7 +348,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	@Operation(
 			summary = "Create a new, or update an existing Engineering Unit Conversion",
 			description = "Example URL for POST:  \n\n    "
-					+ "http://localhost:8080/odcsapi/euconv  \n\n\n"
+					+ "http://localhost:8080/api/euconv  \n\n\n"
 					+ "The POST data should contain a single engineering unit conversion as described"
 					+ " above for euconvlist.  \n\nFor example, to create a new conversion that declares "
 					+ "'cms' to be a synonym of 'blob', the data could be:\n```\n  {\n    "
@@ -486,7 +486,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 	@Operation(
 			summary = "Delete an existing Engineering Unit conversion record",
 			description = "Example URL for DELETE:\n\n    "
-					+ "http://localhost:8080/odcsapi/euconv\n\n\n"
+					+ "http://localhost:8080/api/euconv\n\n\n"
 					+ "This deletes the EU Conversion record with ID 1459.",
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted the unit converter."),
