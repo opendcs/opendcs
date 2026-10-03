@@ -10,6 +10,10 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+/**
+ * Calculates daily Hamon evaporation from air temperature and site latitude.
+ * The monthly properties provide the local adjustment coefficient.
+ */
 public class HamonMethod extends AW_AlgorithmBase {
    public double input;
    String[] _inputNames = new String[]{"input"};
@@ -45,6 +49,8 @@ public class HamonMethod extends AW_AlgorithmBase {
          ParmRef inputParm = this.getParmRef("input");
          CTimeSeries inputTimeSeries = inputParm.timeSeries;
          Site site = inputTimeSeries.getTimeSeriesIdentifier().getSite();
+
+         // Hamon uses the Julian day to estimate solar declination and daylight length.
          String dayOfYearText = (new SimpleDateFormat("DDD HH:MM:SS yyyy", Locale.US)).format(this._timeSliceBaseTime).substring(0, 3);
          Calendar calendar = Calendar.getInstance();
          calendar.setTime(this._timeSliceBaseTime);
@@ -59,14 +65,21 @@ public class HamonMethod extends AW_AlgorithmBase {
             System.out.println("Latitude is not a decimal number. Please convert latitude for site " + site.getDisplayName() + " to a decimal number");
          }
 
+         // Solar declination and sunset hour angle are expressed in radians.
          double solarDeclinationRadians = 0.4093 * Math.sin(0.01721420632103996 * (double)dayOfYear - 1.405);
          double sunsetHourAngleRadians = Math.acos((double)-1.0F * Math.tan(Math.toRadians(latitudeDegrees)) * Math.tan(solarDeclinationRadians));
          double daylightHours = 7.639437268410976 * sunsetHourAngleRadians;
+
+         // Convert air temperature to saturation vapor pressure and density.
          double saturationVaporPressureKpa = 0.6108 * Math.pow(Math.E, 17.27 * this.input / (237.3 + this.input));
          double temperatureKelvin = this.input + 273.15;
          double saturationVaporDensity = 2166.74 * (saturationVaporPressureKpa / temperatureKelvin);
+
+         // This is the unadjusted Hamon estimate before the monthly coefficient.
          double baseHamonEvaporation = 0.55 * Math.pow(daylightHours / (double)12.0F, (double)2.0F) * (saturationVaporDensity / (double)100.0F);
          double monthlyCoefficient = (double)0.0F;
+
+         // Apply the coefficient configured for the time slice's calendar month.
          switch (month) {
             case 0:
                monthlyCoefficient = this.jan;
