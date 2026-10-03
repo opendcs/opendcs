@@ -42,71 +42,71 @@ public class HamonMethod extends AW_AlgorithmBase {
 
    protected void doAWTimeSlice() throws DbCompException {
       try {
-         ParmRef var1 = this.getParmRef("input");
-         CTimeSeries var2 = var1.timeSeries;
-         Site var3 = var2.getTimeSeriesIdentifier().getSite();
-         String var4 = (new SimpleDateFormat("DDD HH:MM:SS yyyy", Locale.US)).format(this._timeSliceBaseTime).substring(0, 3);
-         Calendar var5 = Calendar.getInstance();
-         var5.setTime(this._timeSliceBaseTime);
-         int var6 = var5.get(2);
-         int var7 = Integer.parseInt(var4);
-         String var8 = var3.latitude;
-         double var9 = (double)0.0F;
+         ParmRef inputParm = this.getParmRef("input");
+         CTimeSeries inputTimeSeries = inputParm.timeSeries;
+         Site site = inputTimeSeries.getTimeSeriesIdentifier().getSite();
+         String dayOfYearText = (new SimpleDateFormat("DDD HH:MM:SS yyyy", Locale.US)).format(this._timeSliceBaseTime).substring(0, 3);
+         Calendar calendar = Calendar.getInstance();
+         calendar.setTime(this._timeSliceBaseTime);
+         int month = calendar.get(2);
+         int dayOfYear = Integer.parseInt(dayOfYearText);
+         String latitudeText = site.latitude;
+         double latitudeDegrees = (double)0.0F;
 
          try {
-            var9 = Double.parseDouble(var8);
-         } catch (NumberFormatException var27) {
-            System.out.println("Latitude is not a decimal number. Please convert latitude for site " + var3.getDisplayName() + " to a decimal number");
+            latitudeDegrees = Double.parseDouble(latitudeText);
+         } catch (NumberFormatException exception) {
+            System.out.println("Latitude is not a decimal number. Please convert latitude for site " + site.getDisplayName() + " to a decimal number");
          }
 
-         double var11 = 0.4093 * Math.sin(0.01721420632103996 * (double)var7 - 1.405);
-         double var13 = Math.acos((double)-1.0F * Math.tan(Math.toRadians(var9)) * Math.tan(var11));
-         double var15 = 7.639437268410976 * var13;
-         double var17 = 0.6108 * Math.pow(Math.E, 17.27 * this.input / (237.3 + this.input));
-         double var19 = this.input + 273.15;
-         double var21 = 2166.74 * (var17 / var19);
-         double var23 = 0.55 * Math.pow(var15 / (double)12.0F, (double)2.0F) * (var21 / (double)100.0F);
-         double var25 = (double)0.0F;
-         switch (var6) {
+         double solarDeclinationRadians = 0.4093 * Math.sin(0.01721420632103996 * (double)dayOfYear - 1.405);
+         double sunsetHourAngleRadians = Math.acos((double)-1.0F * Math.tan(Math.toRadians(latitudeDegrees)) * Math.tan(solarDeclinationRadians));
+         double daylightHours = 7.639437268410976 * sunsetHourAngleRadians;
+         double saturationVaporPressureKpa = 0.6108 * Math.pow(Math.E, 17.27 * this.input / (237.3 + this.input));
+         double temperatureKelvin = this.input + 273.15;
+         double saturationVaporDensity = 2166.74 * (saturationVaporPressureKpa / temperatureKelvin);
+         double baseHamonEvaporation = 0.55 * Math.pow(daylightHours / (double)12.0F, (double)2.0F) * (saturationVaporDensity / (double)100.0F);
+         double monthlyCoefficient = (double)0.0F;
+         switch (month) {
             case 0:
-               var25 = this.jan;
+               monthlyCoefficient = this.jan;
             case 1:
-               var25 = this.feb;
+               monthlyCoefficient = this.feb;
                break;
             case 2:
-               var25 = this.mar;
+               monthlyCoefficient = this.mar;
                break;
             case 3:
-               var25 = this.apr;
+               monthlyCoefficient = this.apr;
                break;
             case 4:
-               var25 = this.may;
+               monthlyCoefficient = this.may;
                break;
             case 5:
-               var25 = this.jun;
+               monthlyCoefficient = this.jun;
                break;
             case 6:
-               var25 = this.jul;
+               monthlyCoefficient = this.jul;
                break;
             case 7:
-               var25 = this.aug;
+               monthlyCoefficient = this.aug;
                break;
             case 8:
-               var25 = this.sep;
+               monthlyCoefficient = this.sep;
                break;
             case 9:
-               var25 = this.oct;
+               monthlyCoefficient = this.oct;
                break;
             case 10:
-               var25 = this.nov;
+               monthlyCoefficient = this.nov;
                break;
             case 11:
-               var25 = this.dec;
+               monthlyCoefficient = this.dec;
          }
 
-         this.setOutput(this.output, var23 * var25);
-      } catch (Exception var28) {
-         var28.printStackTrace();
+         this.setOutput(this.output, baseHamonEvaporation * monthlyCoefficient);
+      } catch (Exception exception) {
+         exception.printStackTrace();
       }
 
    }
