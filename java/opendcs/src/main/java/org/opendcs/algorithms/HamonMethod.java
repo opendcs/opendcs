@@ -83,6 +83,7 @@ public class HamonMethod extends AW_AlgorithmBase {
          switch (month) {
             case 0:
                monthlyCoefficient = this.jan;
+               break;
             case 1:
                monthlyCoefficient = this.feb;
                break;
