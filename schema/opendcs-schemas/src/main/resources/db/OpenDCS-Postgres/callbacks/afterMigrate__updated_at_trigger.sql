@@ -17,3 +17,14 @@ create or replace trigger opendcs_role_updated_at_trigger
 	before insert on opendcs_role
 	for each row
 	execute procedure update_updated_at();
+
+
+create or replace trigger data_source_type_updated_at_trigger
+	before insert on data_source_type
+	for each row
+	execute procedure update_updated_at();
+
+create or replace trigger data_source_updated_at_trigger
+	before insert on data_source
+	for each row
+	execute procedure update_updated_at();
