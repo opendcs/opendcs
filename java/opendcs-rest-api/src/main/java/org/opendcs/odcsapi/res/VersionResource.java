@@ -58,11 +58,11 @@ public final class VersionResource extends OpenDcsResource
 	public Response getVersion()
 	{
 		var db = createDb();
-		var showVersionNonAuthenticated = db.getSettings(DecodesSettings.class)
-											.map(DecodesSettings::getShowVersionNonAuthenticated)
-											.orElse(false);
+		var showVersionIfAuthenticated = db.getSettings(DecodesSettings.class)
+											.map(DecodesSettings::getShowVersionIfAuthenticated)
+											.orElse(true);
 		ApiVersion version = null;
-		if (httpRequest.getUserPrincipal() == null && Boolean.FALSE.equals(showVersionNonAuthenticated))
+		if (httpRequest.getUserPrincipal() == null && showVersionIfAuthenticated)
 		{
 			version = new ApiVersion("","");
 		}
