@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  * NOTE: Unfortunately this doesn't test the case where showVersionNonAuth is true.
  * To do so here would require some method of resetting and reloading the database settings.
  * We could do something similar as the DaddsWebHook test, digging into the runtime information. However, the
- * logic here is some what simple so will except the situtation for know until reality proves otherwise.
+ * logic here is somewhat simple so will accept the situation for now until reality proves otherwise.
  * VersionResourcesIT
  */
 final class VersionResourcesIT extends BaseApiIT
