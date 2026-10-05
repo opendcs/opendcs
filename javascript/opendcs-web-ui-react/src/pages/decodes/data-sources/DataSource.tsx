@@ -1,13 +1,11 @@
-import { use, useCallback, useMemo, useReducer } from "react";
+import { use, useCallback, useMemo, useReducer, useState } from "react";
 import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { Save, X } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
-import type {
-  ApiDataSource,
-  ApiDataSourceGroupMember,
-  ApiDataSourceRef,
-} from "opendcs-api";
+import type { ApiDataSource, ApiDataSourceGroupMember } from "opendcs-api";
 import { DetailFade } from "../../../components/data-table";
+import { SaveErrorAlert } from "../../../components/forms";
+import { useSaveError } from "../../../hooks/useSaveError";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { RefListSelect } from "../routing/RoutingSelects";
 import type {
@@ -86,9 +84,6 @@ export interface DataSourceDetails {
 
 export interface DataSourceProperties {
   details: Promise<DataSourceDetails> | DataSourceDetails;
-  /** All data sources available to attach as group members. */
-  dataSources: ApiDataSourceRef[];
-  dataSourcesLoading?: boolean;
   actions?: SaveAction<ApiDataSource> & CancelAction<number>;
   edit?: boolean;
 }
@@ -98,8 +93,6 @@ const mapProps: (props: { [k: string]: string }) => Property[] = (props) =>
 
 export const DataSource: React.FC<DataSourceProperties> = ({
   details,
-  dataSources,
-  dataSourcesLoading = false,
   actions = {},
   edit = false,
 }) => {
@@ -107,6 +100,13 @@ export const DataSource: React.FC<DataSourceProperties> = ({
   const resolved = details instanceof Promise ? use(details) : details;
   const provided = resolved.dataSource;
   const [local, dispatch] = useReducer(DataSourceReducer, provided);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("datasources:save_error"),
+    "Data source save failed",
+  );
+  // DATASOURCE.NAME and DATASOURCETYPE are NOT NULL, so a blank field can only
+  // fail on the server.
+  const [incomplete, setIncomplete] = useState(false);
 
   const propsList = useMemo(() => mapProps(local.props ?? {}), [local.props]);
   const group = isGroupType(local.type);
@@ -144,8 +144,19 @@ export const DataSource: React.FC<DataSourceProperties> = ({
   );
 
   const saveDataSource = useCallback(() => {
-    actions.save?.(local as ApiDataSource);
-  }, [actions, local]);
+    const missing = !local.name?.trim() || !local.type;
+    setIncomplete(missing);
+    if (missing) {
+      clearSaveError();
+      return;
+    }
+    void attemptSave(() => actions.save?.(local as ApiDataSource));
+  }, [actions, local, attemptSave, clearSaveError]);
+
+  const dismissError = useCallback(() => {
+    setIncomplete(false);
+    clearSaveError();
+  }, [clearSaveError]);
 
   const cancel = useCallback(() => {
     if (provided.dataSourceId !== undefined) actions.cancel?.(provided.dataSourceId);
@@ -187,6 +198,7 @@ export const DataSource: React.FC<DataSourceProperties> = ({
                     value={local.type}
                     edit={edit}
                     ariaLabel={t("datasources:type")}
+                    includeBlank
                     onChange={(v) => setField("type", v)}
                   />
                 </Col>
@@ -208,8 +220,6 @@ export const DataSource: React.FC<DataSourceProperties> = ({
             <Row className="mt-4">
               <Col>
                 <DataSourceMembersTable
-                  allDataSources={dataSources}
-                  allDataSourcesLoading={dataSourcesLoading}
                   members={local.groupMembers ?? []}
                   selfName={local.name}
                   edit={edit}
@@ -220,6 +230,12 @@ export const DataSource: React.FC<DataSourceProperties> = ({
             </Row>
           )}
 
+          {edit && (
+            <SaveErrorAlert
+              error={incomplete ? t("datasources:required_fields") : saveError}
+              onClose={dismissError}
+            />
+          )}
           {edit && (
             <Row className="mt-3">
               <Col className="d-flex justify-content-end gap-2">
