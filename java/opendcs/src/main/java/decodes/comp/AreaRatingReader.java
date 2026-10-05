@@ -60,8 +60,7 @@ public class AreaRatingReader implements RatingTableReader
 	{
 		try
 		{
-			LineNumberReader rdr = new LineNumberReader(
-				new FileReader(filename));
+			rdr = new LineNumberReader( new FileReader(filename));
 			String line;
 			double samples[] = {.0,.1,.2,.3,.4,.5,.6,.7,.8,.9};
 			while((line = rdr.readLine()) != null)
@@ -134,7 +133,6 @@ public class AreaRatingReader implements RatingTableReader
 							break;
 						}
 					}
-					//If dataPoints is true
 					if (dataPoints)
 					{//This is a line to process
 //						double samples[] = {.00,.01,.02,.03,.04,
@@ -156,9 +154,6 @@ public class AreaRatingReader implements RatingTableReader
 						    bd = bd.setScale(
 						    		decimalPlace,BigDecimal.ROUND_HALF_EVEN);
 						    rc.addPoint(bd.doubleValue(), dep);
-							//rc.addPoint(indep + samples[y-1], dep);
-							//rc.addPoint(indep, dep);
-							//indep = indep + .01;
 						}
 					}
 				}
