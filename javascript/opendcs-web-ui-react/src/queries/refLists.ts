@@ -8,12 +8,13 @@ import { REFERENCE_DATA_CACHE } from "./cachePolicy";
 // Ref lists are a per-org map (e.g. SiteNameType, TransportMediumType). Loaded
 // once per org and shared across every consumer via the shared QueryClient
 // cache — replaces the prior RefListProvider's bespoke ref-tracking.
-export const useRefListsQuery = () => {
+export const useRefListsQuery = (enabled = true) => {
   const api = useApi();
   const refListApi = useMemo(() => new RESTReferenceListsApi(api.conf), [api.conf]);
   return useQuery<Record<string, ApiRefList>>({
     queryKey: refListKeys.list(api.org),
     queryFn: () => refListApi.getRefLists(api.org),
+    enabled,
     // Reference lists rarely change within a session; keep them in cache long.
     ...REFERENCE_DATA_CACHE,
   });
