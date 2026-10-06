@@ -228,25 +228,19 @@ final public class ResEvap
         }
 
         // met and surface heat exchange
-        BufferedWriter metout = null;
         if (outfil != null)
         {
-            try
+            try (BufferedWriter metout = new BufferedWriter(new FileWriter(metoutfil)))
             {
-                metout = new BufferedWriter(new FileWriter(metoutfil));
+                String heading =
+                        "    Date    JD  GMT     U       T      RH       P       Ts      K       u*        R*       L          Hs        HL        Qs        IR       IR_out     Evap";
+                metout.write(heading);
+                metout.newLine();
 
-                if (metout != null)
-                {
-                    String heading =
-                            "    Date    JD  GMT     U       T      RH       P       Ts      K       u*        R*       L          Hs        HL        Qs        IR       IR_out     Evap";
-                    metout.write(heading);
-                    metout.newLine();
-
-                    heading =
-                            "                       m/s    deg C     %      mb      deg C           m/s                m      ********** W/m**2 ***********************     mm/d";
-                    metout.write(heading);
-                    metout.newLine();
-                }
+                heading =
+                        "                       m/s    deg C     %      mb      deg C           m/s                m      ********** W/m**2 ***********************     mm/d";
+                metout.write(heading);
+                metout.newLine();
             }
             catch (IOException ex)
             {
@@ -340,7 +334,6 @@ final public class ResEvap
             try
             {
                 if (out != null) out.close();
-                if (metout != null) metout.close();
                 if (tout != null) tout.close();
                 if (xout != null) xout.close();
             }

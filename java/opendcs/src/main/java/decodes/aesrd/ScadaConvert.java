@@ -222,9 +222,8 @@ public class ScadaConvert
 		if (dailyArchiveDir != null)
 			archive(f);
 		
-		try
+		try (LineNumberReader lnr = new LineNumberReader(new FileReader(f)))
 		{
-			LineNumberReader lnr = new LineNumberReader(new FileReader(f));
 			String line;
 			while((line = lnr.readLine()) != null)
 			{
@@ -267,7 +266,6 @@ public class ScadaConvert
 				}
 				output(column, spec, timeStamp);
 			}
-			lnr.close();
 			String doneDir = appInfo.getProperty("DoneDir");
 			if (doneDir != null)
 				FileUtil.copyFile(f, 
@@ -297,10 +295,10 @@ public class ScadaConvert
 	private void archive(File f)
 	{
 		File archFile = new File(dailyArchiveDir, arcNameSdf.format(new Date()) + ".scda");
-		try
+		try (FileInputStream in = new FileInputStream(f);
+			 FileOutputStream out = new FileOutputStream(archFile, true))
 		{
-			FileUtil.copyStream(new FileInputStream(f), 
-				new FileOutputStream(archFile, true));
+			FileUtil.copyStream(in, out);
 		}
 		catch (IOException ex)
 		{
@@ -314,10 +312,9 @@ public class ScadaConvert
 		{
 			lastSpecLoad = System.currentTimeMillis();
 			decodeSpecs.clear();
-			try
+			try (LineNumberReader lnr = new LineNumberReader(
+					new FileReader(specFile)))
 			{
-				LineNumberReader lnr = new LineNumberReader(
-					new FileReader(specFile));
 				String line;
 				while((line = lnr.readLine()) != null)
 				{
@@ -333,7 +330,6 @@ public class ScadaConvert
        				.log("Invalid line {} '{}' -- ignored.", lnr.getLineNumber(), line);
 					}
 				}
-				lnr.close();
 				log.info("Parsed {} specifications from file '{}'",
 				        decodeSpecs.size(), specFile.getPath()
 );

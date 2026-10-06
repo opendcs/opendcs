@@ -1,12 +1,17 @@
-import { Suspense, use, useCallback, type ReactNode } from "react";
+import { use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import RefListContext from "../contexts/data/RefListContext";
-import { I18nextProvider, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { AuthContext } from "../contexts/app/AuthContext";
 import { ThemeContext } from "../contexts/app/ThemeContext";
 import { ApiContext } from "../contexts/app/ApiContext";
 import { SiteNameTypeContext } from "../contexts/app/SiteNameTypeContext";
-import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  SharedContextProviders,
+  type ContextStore,
+  type SharedContexts,
+} from "./SharedContextProviders";
 
 const rootsByContainer = new WeakMap<Node, Root>();
 
@@ -30,6 +35,25 @@ export interface Wrappers {
   toDom: (children: ReactNode) => Node;
 }
 
+function createContextStore(initial: SharedContexts): ContextStore {
+  let current = initial;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => current,
+    set: (value) => {
+      if (value === current) return;
+      current = value;
+      listeners.forEach((listener) => listener());
+    },
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+
 /**
  * Primarly for use in DataTables renders to allow sharing application contexts as needed
  * when raw DOM Nodes are required. This is due to a limitation of DataTables.
@@ -48,43 +72,45 @@ export function useContextWrapper(): Wrappers {
   const queryClient = useQueryClient();
   const { i18n } = useTranslation();
 
+  const contexts: SharedContexts = useMemo(
+    () => ({
+      refContext,
+      authContext,
+      themeContext,
+      apiContext,
+      siteNameTypeContext,
+      queryClient,
+      i18n,
+    }),
+    [
+      refContext,
+      authContext,
+      themeContext,
+      apiContext,
+      siteNameTypeContext,
+      queryClient,
+      i18n,
+    ],
+  );
+  // The roots made by `toDom` are never re-rendered from here, so they follow
+  // the contexts through this store instead of keeping the values they were
+  // created with.
+  const [store] = useState(() => createContextStore(contexts));
+  useEffect(() => {
+    store.set(contexts);
+  }, [store, contexts]);
+
   const toDom = useCallback(
     (children: ReactNode): Node => {
       const container = document.createElement("div");
       const root = createRoot(container);
       rootsByContainer.set(container, root);
-      // The DataTables-rendered subtree gets a fresh React root, so contexts
-      // from the parent tree don't flow in automatically. Re-wrap with the
-      // same context values (and the same QueryClient) so any TanStack hooks
-      // used downstream share the parent's cache.
       root.render(
-        <I18nextProvider i18n={i18n}>
-          <ThemeContext value={themeContext}>
-            <ApiContext value={apiContext}>
-              <AuthContext value={authContext}>
-                <RefListContext value={refContext}>
-                  <SiteNameTypeContext value={siteNameTypeContext}>
-                    <QueryClientProvider client={queryClient}>
-                      <Suspense fallback="Loading...">{children}</Suspense>
-                    </QueryClientProvider>
-                  </SiteNameTypeContext>
-                </RefListContext>
-              </AuthContext>
-            </ApiContext>
-          </ThemeContext>
-        </I18nextProvider>,
+        <SharedContextProviders store={store}>{children}</SharedContextProviders>,
       );
       return container;
     },
-    [
-      i18n,
-      themeContext,
-      apiContext,
-      authContext,
-      refContext,
-      siteNameTypeContext,
-      queryClient,
-    ],
+    [store],
   );
 
   return { toDom };
