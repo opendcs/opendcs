@@ -1,8 +1,17 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { act } from "react";
+import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
+import { act, useEffect, useState, type ReactNode } from "react";
 import { http, HttpResponse } from "msw";
-import type { ApiNetList, ApiNetlistRef, ApiPlatformRef } from "opendcs-api";
-import { expect, screen, waitFor } from "storybook/test";
+import type {
+  ApiNetList,
+  ApiNetlistRef,
+  ApiPlatformRef,
+  ApiRefList,
+  User,
+} from "opendcs-api";
+import { expect, fn, screen, waitFor, within } from "storybook/test";
+import { BasicUser } from "../../../../.storybook/mock/TestUsers";
+import { AuthContext } from "../../../contexts/app/AuthContext";
+import { RefListProvider } from "../../../contexts/data/RefListProvider";
 import { NetlistsPage } from "./NetlistsPage";
 
 const NETLIST_REFS: ApiNetlistRef[] = [
@@ -436,5 +445,203 @@ export const DeleteNetlistRow: Story = {
     await waitFor(() =>
       expect(canvas.queryByText("USGS-Sites")).not.toBeInTheDocument(),
     );
+  },
+};
+
+const REF_LISTS: Record<string, ApiRefList> = {
+  TransportMediumType: {
+    enumName: "TransportMediumType",
+    items: { goes: { value: "goes" }, iridium: { value: "iridium" } },
+  },
+  SiteNameType: {
+    enumName: "SiteNameType",
+    items: { local: { value: "local" }, nwshb5: { value: "nwshb5" } },
+  },
+};
+
+// The app's own provider in place of the always-ready storybook mock, so the
+// form sees /reflists the way it does in the running app.
+const withLiveRefLists: Decorator = (Story) => (
+  <AuthContext
+    value={{
+      user: BasicUser,
+      isLoading: false,
+      loginSchemes: {},
+      setUser: fn(),
+      setSchemes: fn(),
+      logout: fn(),
+    }}
+  >
+    <RefListProvider>
+      <Story />
+    </RefListProvider>
+  </AuthContext>
+);
+
+// "+Add" clicked before /reflists has answered: the selects fill in once it
+// does, and the new netlist saves with the chosen types (issue #2200).
+let releaseRefLists: () => void = () => {};
+const lateRefListPosts: ApiNetList[] = [];
+export const AddNewNetlistBeforeRefListsLoad: Story = {
+  decorators: [withLiveRefLists],
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        refLists: http.get("/odcsapi/reflists", async () => {
+          await new Promise<void>((resolve) => {
+            releaseRefLists = resolve;
+          });
+          return HttpResponse.json(REF_LISTS);
+        }),
+        postNetlist: http.post("/odcsapi/netlist", async ({ request }) => {
+          lateRefListPosts.push((await request.json()) as ApiNetList);
+          return HttpResponse.json<ApiNetList>({});
+        }),
+      },
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    lateRefListPosts.length = 0;
+    const canvas = await mount();
+    const { i18n } = parameters;
+    // Looked up inside waitFor: run on its own, the namespace may not be loaded yet.
+    const addBtn = await waitFor(() =>
+      canvas.getByRole("button", { name: i18n.t("netlists:add_netlist") }),
+    );
+    await act(async () => userEvent.click(addBtn));
+    const nameInput = await canvas.findByRole("textbox", {
+      name: i18n.t("netlists:name"),
+    });
+    await act(async () => userEvent.type(nameInput, "New-List"));
+
+    await act(async () => releaseRefLists());
+    const mediumSelect = await canvas.findByRole("combobox", {
+      name: i18n.t("netlists:transportMediumType"),
+    });
+    await waitFor(() =>
+      expect(within(mediumSelect).getByRole("option", { name: "goes" })).toBeEnabled(),
+    );
+    await act(async () => userEvent.selectOptions(mediumSelect, "goes"));
+    const siteNameSelect = await canvas.findByRole("combobox", {
+      name: i18n.t("netlists:siteNameTypePref"),
+    });
+    await act(async () => userEvent.selectOptions(siteNameSelect, "nwshb5"));
+    const saveBtn = await canvas.findByRole("button", {
+      name: new RegExp(`^${i18n.t("netlists:save_netlist", { id: "" }).trim()}`),
+    });
+    await act(async () => userEvent.click(saveBtn));
+    await waitFor(() => expect(lateRefListPosts).toHaveLength(1));
+    expect(lateRefListPosts[0]).toMatchObject({
+      name: "New-List",
+      transportMediumType: "goes",
+      siteNameTypePref: "nwshb5",
+    });
+  },
+};
+
+// Signed out at first, like the app is while the login page shows.
+let signIn: () => void = () => {};
+const SignInLater = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | undefined>(undefined);
+  useEffect(() => {
+    signIn = () => setUser(BasicUser);
+  }, []);
+  return (
+    <AuthContext
+      value={{
+        user,
+        isLoading: false,
+        loginSchemes: {},
+        setUser: fn(),
+        setSchemes: fn(),
+        logout: fn(),
+      }}
+    >
+      <RefListProvider>{children}</RefListProvider>
+    </AuthContext>
+  );
+};
+
+// /reflists rejects anyone without a session, so it is only asked for once the
+// user is signed in. Asked earlier, the rejection stuck and the selects of a
+// new netlist had nothing to choose from (issue #2200).
+let signedIn = false;
+let refListRequests = 0;
+export const AddNewNetlistAfterSignIn: Story = {
+  decorators: [
+    (Story) => (
+      <SignInLater>
+        <Story />
+      </SignInLater>
+    ),
+  ],
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        refLists: http.get("/odcsapi/reflists", () => {
+          refListRequests += 1;
+          return signedIn
+            ? HttpResponse.json(REF_LISTS)
+            : HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+        }),
+      },
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    signedIn = false;
+    refListRequests = 0;
+    const canvas = await mount();
+    const { i18n } = parameters;
+    expect(await canvas.findByText("BFD-BMD")).toBeInTheDocument();
+    expect(refListRequests).toBe(0);
+
+    signedIn = true;
+    await act(async () => signIn());
+    const addBtn = await waitFor(() =>
+      canvas.getByRole("button", { name: i18n.t("netlists:add_netlist") }),
+    );
+    await act(async () => userEvent.click(addBtn));
+    const mediumSelect = await canvas.findByRole("combobox", {
+      name: i18n.t("netlists:transportMediumType"),
+    });
+    expect(within(mediumSelect).getByRole("option", { name: "goes" })).toBeEnabled();
+    const siteNameSelect = await canvas.findByRole("combobox", {
+      name: i18n.t("netlists:siteNameTypePref"),
+    });
+    expect(
+      within(siteNameSelect).getByRole("option", { name: "nwshb5" }),
+    ).toBeEnabled();
+  },
+};
+
+// When the lists really can't be had, the selects say so instead of opening
+// onto nothing (issue #2200).
+export const AddNewNetlistRefListsUnavailable: Story = {
+  decorators: [withLiveRefLists],
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        refLists: http.get("/odcsapi/reflists", () =>
+          HttpResponse.json({ message: "boom" }, { status: 500 }),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const addBtn = await waitFor(() =>
+      canvas.getByRole("button", { name: i18n.t("netlists:add_netlist") }),
+    );
+    await act(async () => userEvent.click(addBtn));
+    const unavailable = i18n.t("translation:reference_lists_unavailable");
+    const mediumSelect = await canvas.findByRole("combobox", {
+      name: `${i18n.t("netlists:transportMediumType")} (${unavailable})`,
+    });
+    expect(mediumSelect).toBeDisabled();
+    expect(mediumSelect).toHaveTextContent(i18n.t("translation:unavailable_short"));
   },
 };
