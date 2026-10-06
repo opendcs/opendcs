@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Form } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import type { ApiDataSourceRef } from "opendcs-api";
+import { RefListPlaceholderSelect } from "../../../components/controls/RefListPlaceholderSelect";
 import { useRefList } from "../../../contexts/data/RefListContext";
 import { useDataSourceRefsQuery } from "../../../queries/dataSources";
 import { usePresentationRefsQuery } from "../../../queries/presentations";
@@ -30,7 +31,7 @@ export const RefListSelect: React.FC<RefListSelectProps> = ({
   onChange,
   ariaLabel,
 }) => {
-  const { refList, ready } = useRefList();
+  const { refList, ready, failed } = useRefList();
   const options = useMemo(() => {
     if (!ready) return [];
     const items = refList(refListName).items ?? {};
@@ -41,6 +42,18 @@ export const RefListSelect: React.FC<RefListSelectProps> = ({
   }, [refList, refListName, ready]);
   // Keep the current value selectable even if it isn't in the list.
   const allOptions = value && !options.includes(value) ? [value, ...options] : options;
+
+  // No list yet: say so rather than offering a dropdown with nothing in it.
+  if (!ready) {
+    return (
+      <RefListPlaceholderSelect
+        id={id}
+        ariaLabel={ariaLabel}
+        value={value}
+        failed={failed}
+      />
+    );
+  }
 
   return (
     <Form.Select
