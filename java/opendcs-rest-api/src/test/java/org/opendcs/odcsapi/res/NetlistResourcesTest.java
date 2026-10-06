@@ -136,6 +136,17 @@ final class NetlistResourcesTest
         assertThrows(MissingParameterException.class, () -> validate(netList));
     }
 
+    // There is no database behind this resource, so getting the 400 shows an
+    // incomplete list is turned away before the NOT NULL constraint can fail.
+    @Test
+    void testPostRejectsIncompleteNetlistBeforeTheDatabase()
+    {
+        NetlistResources resources = new NetlistResources();
+        MissingParameterException ex = assertThrows(MissingParameterException.class,
+                () -> resources.postNetlist(new ApiNetList()));
+        assertEquals("Network list name is required.", ex.getMessage());
+    }
+
     @Test
     void testGetSingleWord()
     {
