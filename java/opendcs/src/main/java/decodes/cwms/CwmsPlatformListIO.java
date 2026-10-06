@@ -62,7 +62,6 @@ public class CwmsPlatformListIO extends PlatformListIO
 		
 		CwmsSqlDatabaseIO cwmsDbIo = (CwmsSqlDatabaseIO)getDbio();
 
-		Statement stmt = createStatement();
 		
 		// When we read platform list, have to join it with config so that
 		// we implicitly get the predicate to filter on db_office_code.
@@ -73,79 +72,82 @@ public class CwmsPlatformListIO extends PlatformListIO
 			 "WHERE a.ConfigId = b.id";
 
 		log.trace("Executing '{}'", q);
-		ResultSet rs = stmt.executeQuery(q);
-		Set<DbKey> refreshedConfigs = new HashSet<>();
+		try (Statement stmt = createStatement();
+		     ResultSet rs = stmt.executeQuery(q))
+		{
+			Set<DbKey> refreshedConfigs = new HashSet<>();
 
-		if (rs != null) {
-			while (rs.next()) 
+			if (rs != null)
 			{
-				DbKey platformId = DbKey.createDbKey(rs, 1);
-
-				Platform p = _pList.getById(platformId);
-				if (p == null)
+				while (rs.next()) 
 				{
-					p = new Platform(platformId);
-					_pList.add(p);
-				}
-				else
-				{
-					p.transportMedia.clear();
-					p.setIsComplete(false);
-				}
+					DbKey platformId = DbKey.createDbKey(rs, 1);
 
-				p.agency = rs.getString(2);
-
-				DbKey siteId = DbKey.createDbKey(rs, 4);
-				if (!rs.wasNull()) {
-					p.setSite(p.getDatabase().siteList.getSiteById(siteId));
-				}
-				else
-					p.setSite(null);
-
-				DbKey configId = DbKey.createDbKey(rs, 5);
-				if (!rs.wasNull()) 
-				{
-					PlatformConfig pc = null;
-					try
+					Platform p = _pList.getById(platformId);
+					if (p == null)
 					{
-						pc = getConfigForPlatformList(platformList, configId,
-							refreshedConfigs);
+						p = new Platform(platformId);
+						_pList.add(p);
 					}
-					catch(Exception ex)
+					else
 					{
-						log.atWarn().setCause(ex).log("Error reading config({})", configId);
+						p.transportMedia.clear();
+						p.setIsComplete(false);
 					}
-					if (pc != null)
+
+					p.agency = rs.getString(2);
+
+					DbKey siteId = DbKey.createDbKey(rs, 4);
+					if (!rs.wasNull())
 					{
-						p.setConfigName(pc.configName);
-						p.setConfig(pc);
+						p.setSite(p.getDatabase().siteList.getSiteById(siteId));
+					}
+					else
+						p.setSite(null);
+
+					DbKey configId = DbKey.createDbKey(rs, 5);
+					if (!rs.wasNull()) 
+					{
+						PlatformConfig pc = null;
+						try
+						{
+							pc = getConfigForPlatformList(platformList, configId,
+								refreshedConfigs);
+						}
+						catch(Exception ex)
+						{
+							log.atWarn().setCause(ex).log("Error reading config({})", configId);
+						}
+						if (pc != null)
+						{
+							p.setConfigName(pc.configName);
+							p.setConfig(pc);
+						}
+						else
+						{
+							p.setConfigName(null);
+							p.setConfig(null);
+						}
 					}
 					else
 					{
 						p.setConfigName(null);
 						p.setConfig(null);
 					}
+
+					String desc = rs.getString(6);
+					p.setDescription(rs.wasNull() ? null : desc);
+
+					p.lastModifyTime = getTimeStamp(rs, 7, null);
+
+					p.expiration = getTimeStamp(rs, 8, null);
+
+					if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+						p.setPlatformDesignator(rs.getString(9));
+
 				}
-				else
-				{
-					p.setConfigName(null);
-					p.setConfig(null);
-				}
-
-				String desc = rs.getString(6);
-				p.setDescription(rs.wasNull() ? null : desc);
-
-				p.lastModifyTime = getTimeStamp(rs, 7, null);
-
-				p.expiration = getTimeStamp(rs, 8, null);
-
-				if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
-					p.setPlatformDesignator(rs.getString(9));
-
 			}
-			rs.close();
 		}
-		stmt.close();
 		readAllTransportMedia(platformList);
 	}
 

@@ -82,7 +82,7 @@ hec-testcontainers-cwms = "2.0.0"
 bucket4j = "8.15.0"
 
 # manual test deps
-gherkin-kiwi = "1.0.0-M12"
+gherkin-kiwi = "1.0.0-M14"
 
 # AWS deps... because sometimes it may not be the "best" way, but it is likely the only way.
 aws-sdk = "2.54.11"

@@ -260,11 +260,16 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql
     /**
      * Retrieve a valid connection from the pool.
      *
-     * Callers can either call Connection::close on the returned connection or This pool's returnConnection.
-     * The effect is the same.
+     * The connection is handed back wrapped, both for tracking and so that closing it
+     * returns it to the pool. Callers can either call Connection::close on the returned
+     * connection or this pool's returnConnection; the effect is the same.
      *
-     * @return a valid, through Wrapped for tracking connection
-     * @throws SQLException if auto commit can't be set or the Session context can be set, or no connections available.
+     * A timed-out or full pool is retried, up to 3 attempts in total.
+     *
+     * @return a valid, tracked connection with auto commit on, the UTC session time zone
+     *         and the db_office_id session context set.
+     * @throws SQLException if no connection can be obtained after 3 attempts, or the
+     *         time zone, auto commit or session context cannot be set.
      */
     public synchronized Connection getConnection() throws SQLException
     {
@@ -274,7 +279,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql
             Connection conn = null;
             try
             {
-                conn = pool.getConnection();
+                conn = pool.getConnection(); // NOSONAR java:S2095 given to the caller wrapped in WrappedConnection, which returns it to the pool on close
                 conn.unwrap(oracle.jdbc.OracleConnection.class).setDefaultTimeZone(TimeZone.getTimeZone("UTC"));
                 conn.setAutoCommit(true);
                 setCtxDbOfficeId(conn, info);

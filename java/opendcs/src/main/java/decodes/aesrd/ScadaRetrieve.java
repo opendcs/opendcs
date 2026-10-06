@@ -463,9 +463,8 @@ public class ScadaRetrieve
 	private void loadTags()
 	{
 		StringBuilder sb = new StringBuilder();
-		try
+		try (LineNumberReader lnr = new LineNumberReader(new FileReader(tagFile)))
 		{
-			LineNumberReader lnr = new LineNumberReader(new FileReader(tagFile));
 			String line;
 			while((line = lnr.readLine()) != null)
 			{
@@ -482,7 +481,6 @@ public class ScadaRetrieve
 					sb.append(',');
 				sb.append("'" + line.toLowerCase() + "'");
 			}
-			lnr.close();
 			tagList = sb.toString();
 			log.debug("taglist={}",tagList);
 		}
@@ -540,10 +538,10 @@ public class ScadaRetrieve
 	private void archive(File f)
 	{
 		File archFile = new File(dailyArchiveDir, arcNameSdf.format(new Date()) + ".scda");
-		try
+		try (FileInputStream in = new FileInputStream(f);
+			 FileOutputStream out = new FileOutputStream(archFile, true))
 		{
-			FileUtil.copyStream(new FileInputStream(f),
-				new FileOutputStream(archFile, true));
+			FileUtil.copyStream(in, out);
 		}
 		catch (IOException ex)
 		{
