@@ -245,17 +245,18 @@ public class FileAppendConsumer extends DataConsumer
 					lock = channel.lock();		/* Wait on lock */
 				}
 				raf.seek(raf.length());
-				FileInputStream fis = new FileInputStream(tempFile);
-				byte buf[] = new byte[4096];
-				int len;
-				while((len = fis.read(buf)) > 0)
-					raf.write(buf, 0, len);
+				try (FileInputStream fis = new FileInputStream(tempFile))
+				{
+					byte buf[] = new byte[4096];
+					int len;
+					while((len = fis.read(buf)) > 0)
+						raf.write(buf, 0, len);
+				}
 				if ( lock != null )
 				  lock.release();
 				if ( channel != null )
 				  channel.close();
 				raf.close();
-				fis.close();
 				tempFile.delete();
 			}
 			catch(Exception ex)
@@ -263,6 +264,19 @@ public class FileAppendConsumer extends DataConsumer
 				log.atError()
 				   .setCause(ex)
 				   .log("Cannot move '{}' to '{}'", tempFile.getPath(), path);
+			}
+			finally
+			{
+				if ( raf != null )
+				{
+					try
+					{
+						raf.close();
+					}
+					catch(Exception ex)
+					{
+					}
+				}
 			}
 			tempFile = null;
 		}
