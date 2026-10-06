@@ -11,7 +11,7 @@ import org.opendcs.database.sql.TableColumnDefinition;
 
 /**
  * Helper class for row mappers to take a prefix.
- * If the provided prefix does not start end with an underscore (_)
+ * If the provided prefix does not end with an underscore (_)
  * one will be added.
  *
  * A enum of defined columns must also be provided. At this time only
@@ -120,7 +120,7 @@ public abstract class OpenDcsTableMapper<T,E extends Enum<E> & TableColumnDefini
             }
             catch (SQLException ex)
             {
-                throw new OpenDcsDataRuntimeException("A very unlikely situtation has happened.", ex);
+                throw new OpenDcsDataRuntimeException("A very unlikely situation has happened.", ex);
             }
         });
 
