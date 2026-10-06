@@ -1,5 +1,5 @@
 /*
-* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
 * 
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
@@ -41,11 +41,6 @@ public class TabRatingReader implements RatingTableReader
 	 * The name of the file being read.
 	 */
 	private String filename;
-	
-	/**
-	 * Used for reading the file.
-	 */
-	LineNumberReader rdr;
 
 	/**
 	 * Constructs new TabRatingReader for a particular file name.
@@ -53,7 +48,6 @@ public class TabRatingReader implements RatingTableReader
 	public TabRatingReader( String filename )
 	{
 		this.filename = filename;
-		rdr = null;
 	}
 	
 	/**
@@ -64,10 +58,9 @@ public class TabRatingReader implements RatingTableReader
 	public synchronized void readRatingTable( HasLookupTable rc ) 
 		throws ComputationParseException
 	{
-		try
+		try (LineNumberReader rdr = new LineNumberReader(
+				new FileReader(EnvExpander.expand(filename))))
 		{
-			LineNumberReader rdr = new LineNumberReader(
-				new FileReader(EnvExpander.expand(filename)));
 			String line;
 			while((line = rdr.readLine()) != null)
 			{
@@ -96,15 +89,6 @@ public class TabRatingReader implements RatingTableReader
 		catch(IOException ex)
 		{
 			log.atError().setCause(ex).log("IO Error -- aborting.");
-		}
-		finally
-		{
-			if (rdr != null)
-			{
-				try { rdr.close(); }
-				catch(Exception ex) {}
-			}
-			rc = null;
 		}
 	}
 	
