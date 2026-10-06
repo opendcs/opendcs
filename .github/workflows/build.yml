@@ -36,7 +36,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.3.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
         with:
           dependency-graph: generate-and-submit
           # Force a cache write from this job so downstream test jobs can restore
@@ -105,7 +105,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.3.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         run: |
           mkdir -p ~/.gradle
@@ -211,7 +211,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.3.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         if: matrix.platform != 'windows-latest'
         run: |
@@ -324,7 +324,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.3.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         run: |
           mkdir -p ~/.gradle
@@ -398,7 +398,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.3.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         run: |
           mkdir -p ~/.gradle
