@@ -77,7 +77,8 @@ public class CwmsPlatformListIO extends PlatformListIO
 		{
 			Set<DbKey> refreshedConfigs = new HashSet<>();
 
-			if (rs != null) {
+			if (rs != null)
+			{
 				while (rs.next()) 
 				{
 					DbKey platformId = DbKey.createDbKey(rs, 1);
@@ -97,7 +98,8 @@ public class CwmsPlatformListIO extends PlatformListIO
 					p.agency = rs.getString(2);
 
 					DbKey siteId = DbKey.createDbKey(rs, 4);
-					if (!rs.wasNull()) {
+					if (!rs.wasNull())
+					{
 						p.setSite(p.getDatabase().siteList.getSiteById(siteId));
 					}
 					else

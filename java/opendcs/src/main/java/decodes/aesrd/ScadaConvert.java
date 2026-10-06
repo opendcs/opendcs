@@ -266,7 +266,6 @@ public class ScadaConvert
 				}
 				output(column, spec, timeStamp);
 			}
-			lnr.close();
 			String doneDir = appInfo.getProperty("DoneDir");
 			if (doneDir != null)
 				FileUtil.copyFile(f, 

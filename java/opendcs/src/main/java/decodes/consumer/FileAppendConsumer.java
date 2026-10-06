@@ -269,10 +269,13 @@ public class FileAppendConsumer extends DataConsumer
 			{
 				if ( raf != null )
 				{
-					try 
+					try
 					{
-					  raf.close(); 
-					} catch(Exception ex) {}
+						raf.close();
+					}
+					catch(Exception ex)
+					{
+					}
 				}
 			}
 			tempFile = null;
