@@ -34,7 +34,9 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -42,20 +44,25 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableModel;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
+import opendcs.dao.DatabaseConnectionOwner;
 import decodes.db.Database;
 import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
@@ -64,6 +71,7 @@ import decodes.tsdb.CompFilter;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TsdbCompLock;
 import decodes.util.DecodesSettings;
 
 
@@ -86,12 +94,24 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 	private ArrayList<ProcessEditDialog> editDialogs = new ArrayList<ProcessEditDialog>();
 	private TimeSeriesDb tsdb = null;
 	private DbPollThread dbPollThread = null;
+	private DatabaseConnectionOwner databaseConnectionOwner = null;
+	private boolean computationQueueAvailable = false;
+	private JLabel queueTotalLabel = new JLabel();
+	private ComputationQueueChart queueHistoryChart = null;
 
 	/**
 	 * Constructor
 	 */
 	public ProcessMonitorFrame()
 	{
+		this(null);
+	}
+
+	public ProcessMonitorFrame(DatabaseConnectionOwner databaseConnectionOwner)
+	{
+		this.databaseConnectionOwner = databaseConnectionOwner;
+		computationQueueAvailable =
+			databaseConnectionOwner != null && databaseConnectionOwner.isCwms();
 		DecodesSettings settings = DecodesSettings.instance();
 		genericLabels = LoadResourceBundle.getLabelDescriptions("decodes/resources/generic", settings.language);
 		procmonLabels = LoadResourceBundle.getLabelDescriptions("decodes/resources/procmon", settings.language);
@@ -114,10 +134,12 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 	private void guiInit()
 	{
 		this.setTitle("Process Monitor");
-		model = new ProcStatTableModel(this);
+		model = new ProcStatTableModel(this, computationQueueAvailable);
 		JPanel mainPanel = (JPanel) this.getContentPane();
 		mainPanel.setLayout(new BorderLayout());
-		mainPanel.add(new JLabel(procmonLabels.getString("frameTitle")), BorderLayout.NORTH);
+		JPanel titlePanel = new JPanel(new BorderLayout());
+		titlePanel.add(new JLabel(procmonLabels.getString("frameTitle")), BorderLayout.WEST);
+		mainPanel.add(titlePanel, BorderLayout.NORTH);
 		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		mainPanel.add(splitPane, BorderLayout.CENTER);
 		processTable = new SortingListTable(model, model.widths);
@@ -211,6 +233,36 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0));
 
+		if (computationQueueAvailable)
+		{
+			queueTotalLabel.setText("CCP Queue: 0");
+			queueTotalLabel.setHorizontalAlignment(JLabel.CENTER);
+			buttonPanel.add(queueTotalLabel,
+				new GridBagConstraints(0, 5, 1, 1, 1.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+					new Insets(2, 5, 2, 5), 0, 0));
+
+			queueHistoryChart = new ComputationQueueChart();
+			buttonPanel.add(queueHistoryChart,
+				new GridBagConstraints(0, 6, 1, 1, 1.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+					new Insets(2, 5, 2, 5), 0, 0));
+
+			JButton queueDetailsButton = new JButton("Process Queue Details");
+			queueDetailsButton.addActionListener(e -> queueDetailsPressed());
+			buttonPanel.add(queueDetailsButton,
+				new GridBagConstraints(0, 7, 1, 1, 1.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+					new Insets(2, 5, 2, 5), 0, 0));
+
+			JButton stopClearButton = new JButton("Stop and Clear Process Queue");
+			stopClearButton.addActionListener(e -> stopAndClearQueuePressed());
+			buttonPanel.add(stopClearButton,
+				new GridBagConstraints(0, 8, 1, 1, 1.0, 1.0,
+					GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
+					new Insets(2, 5, 2, 5), 0, 0));
+		}
+
 		processTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		processTable.getSelectionModel().addListSelectionListener(this);
 		model.addTableModelListener(this);
@@ -223,7 +275,154 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 					if (e.getClickCount() == 2)
 						editPressed();
 				}
+		});
+	}
+
+	private void queueDetailsPressed()
+	{
+		AppInfoStatus selected = getSelectedProc();
+		if (selected == null)
+		{
+			showError("Select a process, then press Process Queue Details.");
+			return;
+		}
+
+		new SwingWorker<List<ComputationQueueDAI.QueueDetail>, Void>()
+		{
+			@Override
+			protected List<ComputationQueueDAI.QueueDetail> doInBackground() throws Exception
+			{
+				try (ComputationQueueDAI queueDao =
+					databaseConnectionOwner.makeComputationQueueDAO())
+				{
+					return queueDao.getQueueDetails(selected.getAppId());
+				}
+			}
+
+			@Override
+			protected void done()
+			{
+				try
+				{
+					showQueueDetails(selected, get());
+				}
+				catch (InterruptedException ex)
+				{
+					Thread.currentThread().interrupt();
+				}
+				catch (ExecutionException ex)
+				{
+					log.atError().setCause(ex.getCause()).log("Unable to read computation queue details.");
+					showError("Cannot read computation queue: " + ex.getCause());
+				}
+			}
+		}.execute();
+	}
+
+	private void showQueueDetails(AppInfoStatus app,
+		List<ComputationQueueDAI.QueueDetail> details)
+	{
+		DefaultTableModel detailModel = new DefaultTableModel(
+			new Object[] { "TS Code", "CWMS TS ID", "Queue Count" }, 0)
+		{
+			@Override
+			public boolean isCellEditable(int row, int column)
+			{
+				return false;
+			}
+		};
+		for (ComputationQueueDAI.QueueDetail detail : details)
+		{
+			detailModel.addRow(new Object[] {
+				detail.getTimeSeriesCode(),
+				detail.getTimeSeriesId() == null ? "<unknown>" : detail.getTimeSeriesId(),
+				Long.valueOf(detail.getQueueCount())
 			});
+		}
+
+		JTable detailTable = new JTable(detailModel);
+		detailTable.setAutoCreateRowSorter(true);
+		JScrollPane detailScrollPane = new JScrollPane(detailTable);
+		detailScrollPane.setPreferredSize(new Dimension(800, 350));
+		JOptionPane.showMessageDialog(this, detailScrollPane,
+			"Computation Queue: " + app.getCompAppInfo().getAppName(),
+			JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	private void stopAndClearQueuePressed()
+	{
+		AppInfoStatus selected = getSelectedProc();
+		if (selected == null)
+		{
+			showError("Select a process, then press Stop and Clear Process Queue.");
+			return;
+		}
+
+		String confirmation = String.format(
+			"Stop %s and delete its %,d queued records?\n\n"
+				+ "The process will remain stopped and must be restarted manually "
+				+ "using your normal startup procedure.",
+			selected.getCompAppInfo().getAppName(), selected.getQueueCount());
+		if (showConfirm(genericLabels.getString("confirm"), confirmation,
+			JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
+			return;
+
+		new SwingWorker<Integer, Void>()
+		{
+			@Override
+			protected Integer doInBackground() throws Exception
+			{
+				TsdbCompLock originalLock = selected.getCompLock();
+				if (originalLock != null)
+				{
+					try (LoadingAppDAI loadingAppDAO =
+						databaseConnectionOwner.makeLoadingAppDAO())
+					{
+						loadingAppDAO.releaseCompProcLock(originalLock);
+					}
+					Thread.sleep(DbPollThread.LockPollInterval + 1000L);
+				}
+
+				try (ComputationQueueDAI queueDao =
+					databaseConnectionOwner.makeComputationQueueDAO())
+				{
+					return Integer.valueOf(
+						queueDao.clearQueueIfStopped(selected.getAppId()));
+				}
+			}
+
+			@Override
+			protected void done()
+			{
+				try
+				{
+					int deleted = get().intValue();
+					String processName = selected.getCompAppInfo().getAppName();
+					addEvent(String.format(
+						"Deleted %,d queued records for %s. "
+							+ "The process must be restarted manually.",
+						deleted, processName));
+					if (dbPollThread != null)
+						dbPollThread.pollNow();
+					JOptionPane.showMessageDialog(ProcessMonitorFrame.this,
+						String.format(
+							"Deleted %,d queued records for %s.\n\n"
+								+ "The process remains stopped. Restart it manually "
+								+ "using your normal startup procedure.",
+							deleted, processName),
+						"Queue Cleared", JOptionPane.INFORMATION_MESSAGE);
+				}
+				catch (InterruptedException ex)
+				{
+					Thread.currentThread().interrupt();
+				}
+				catch (ExecutionException ex)
+				{
+					log.atError().setCause(ex.getCause()).log("Unable to stop process and clear queue.");
+					showError("Cannot stop process and clear queue: " + ex.getCause());
+				}
+			}
+		}.execute();
 	}
 
 	protected void deletePressed()
@@ -532,7 +731,7 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 		int idx = processTable.getSelectedRow();
 		if (idx < 0)
 			return null;
-		return model.getAppAt(idx);
+		return model.getAppAt(processTable.convertRowIndexToModel(idx));
 	}
 
 	@Override
@@ -548,7 +747,12 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 				SwingUtilities.invokeLater(
 					new Runnable()
 					{
-						public void run() {	processTable.setRowSelectionInterval(selidx, selidx); }
+						public void run()
+						{
+							int viewIndex = processTable.convertRowIndexToView(selidx);
+							if (viewIndex >= 0)
+								processTable.setRowSelectionInterval(viewIndex, viewIndex);
+						}
 					});
 		}
 	}
@@ -563,8 +767,19 @@ public class ProcessMonitorFrame extends TopFrame implements TableModelListener,
 			selectedProc = null;
 		else
 		{
-			selectedProc = model.getAppAt(sel);
+			selectedProc = model.getAppAt(processTable.convertRowIndexToModel(sel));
 		}
+	}
+
+	public void setTotalQueueCount(long total)
+	{
+		long sampleTime = System.currentTimeMillis();
+		SwingUtilities.invokeLater(() ->
+		{
+			queueTotalLabel.setText(String.format("CCP Queue: %,d", total));
+			if (queueHistoryChart != null)
+				queueHistoryChart.addSample(sampleTime, total);
+		});
 	}
 
 	public void dialogClosed(ProcessEditDialog dlg)

@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 
 import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
@@ -847,6 +848,12 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 	public ScheduleEntryDAI makeScheduleEntryDAO()
 	{
 		return null;
+	}
+
+	@Override
+	public ComputationQueueDAI makeComputationQueueDAO()
+	{
+		return new CwmsComputationQueueDao(this);
 	}
 
 	public void setDbUri(String dbUri)

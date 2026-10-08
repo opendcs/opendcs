@@ -1,0 +1,167 @@
+/*
+* Where Applicable, Copyright 2026 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
+package decodes.cwms;
+
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import decodes.sql.DbKey;
+import decodes.tsdb.DbIoException;
+import opendcs.dai.ComputationQueueDAI;
+import opendcs.dao.DaoBase;
+import opendcs.dao.DatabaseConnectionOwner;
+
+/**
+ * Reads and clears the CWMS computation task-list queue.
+ */
+public class CwmsComputationQueueDao extends DaoBase implements ComputationQueueDAI
+{
+	private static final String APP_COUNTS_QUERY =
+		"select tl.loading_application_id, count(*) "
+		+ "from cp_comp_tasklist tl "
+		+ "join hdb_loading_application la "
+		+ "on la.loading_application_id = tl.loading_application_id "
+		+ "group by tl.loading_application_id";
+
+	private static final String TS_COUNTS_QUERY =
+		"select tl.site_datatype_id, tsi.cwms_ts_id, count(*) "
+		+ "from cp_comp_tasklist tl "
+		+ "join hdb_loading_application la "
+		+ "on la.loading_application_id = tl.loading_application_id "
+		+ "left join cwms_v_ts_id tsi on tsi.ts_code = tl.site_datatype_id "
+		+ "where tl.loading_application_id = ? "
+		+ "group by tl.site_datatype_id, tsi.cwms_ts_id "
+		+ "order by count(*) desc";
+
+	public CwmsComputationQueueDao(DatabaseConnectionOwner db)
+	{
+		super(db, "CwmsComputationQueueDao");
+		if (!db.isCwms())
+			throw new IllegalArgumentException(
+				"CwmsComputationQueueDao requires a CWMS database.");
+	}
+
+	@Override
+	public Map<DbKey, Long> getQueueCounts() throws DbIoException
+	{
+		Map<DbKey, Long> counts = new LinkedHashMap<DbKey, Long>();
+		try
+		{
+			doQuery(APP_COUNTS_QUERY, rs ->
+				counts.put(DbKey.createDbKey(rs, 1), rs.getLong(2)));
+			return counts;
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to read computation queue counts.", ex);
+		}
+	}
+
+	@Override
+	public List<QueueDetail> getQueueDetails(DbKey applicationId) throws DbIoException
+	{
+		try
+		{
+			return getResults(TS_COUNTS_QUERY, rs -> new QueueDetail(
+				DbKey.createDbKey(rs, 1), rs.getString(2), rs.getLong(3)),
+				applicationId);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to read computation queue details.", ex);
+		}
+	}
+
+	/**
+	 * Clears an application's queue only while a maintenance lock prevents the
+	 * computation process from starting.
+	 */
+	@Override
+	public int clearQueueIfStopped(DbKey applicationId) throws DbIoException
+	{
+		final int[] deleted = new int[1];
+		try
+		{
+			inTransaction(dao ->
+			{
+				Boolean lockExists;
+				try
+				{
+					lockExists = dao.getSingleResult(
+						"select loading_application_id from cp_comp_proc_lock "
+							+ "where loading_application_id = ?",
+						rs -> Boolean.TRUE, applicationId);
+				}
+				catch (SQLException ex)
+				{
+					throw new DbIoException(
+						"Process status could not be verified; the computation queue was not cleared.",
+						ex);
+				}
+
+				if (lockExists != null)
+					throw new DbIoException(
+						"The process is running or restarting; the computation queue was not cleared.");
+
+				try
+				{
+					dao.doModify(
+						"insert into cp_comp_proc_lock "
+							+ "(loading_application_id, pid, hostname, heartbeat, cur_status) "
+							+ "values (?, ?, ?, ?, ?)",
+						applicationId, Integer.valueOf(-1), "queue-clear",
+						new Date(), "Clearing computation queue");
+				}
+				catch (SQLException ex)
+				{
+					throw new DbIoException(
+						"The process restarted before its computation queue could be cleared.",
+						ex);
+				}
+
+				try
+				{
+					deleted[0] = dao.doModify(
+						"delete from cp_comp_tasklist "
+							+ "where loading_application_id = ? "
+							+ "and exists (select 1 from hdb_loading_application la "
+							+ "where la.loading_application_id = ?)",
+						applicationId, applicationId);
+					dao.doModify(
+						"delete from cp_comp_proc_lock where loading_application_id = ?",
+						applicationId);
+				}
+				catch (SQLException ex)
+				{
+					throw new DbIoException("Unable to clear computation queue.", ex);
+				}
+			});
+			return deleted[0];
+		}
+		catch (DbIoException ex)
+		{
+			throw ex;
+		}
+		catch (Exception ex)
+		{
+			throw new DbIoException("Unable to safely clear computation queue.", ex);
+		}
+	}
+
+}
