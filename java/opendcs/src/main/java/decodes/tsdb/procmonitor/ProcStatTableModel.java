@@ -22,29 +22,40 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.TimeZone;
 
 import javax.swing.table.AbstractTableModel;
 
 import decodes.gui.SortingListTableModel;
+import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.TsdbCompLock;
 
 @SuppressWarnings("serial")
 class ProcStatTableModel extends AbstractTableModel implements SortingListTableModel
 {
-	String[] colnames =
-		{ "App ID", "App Name", "App Type", "Host", "PID", "Heartbeat (UTC)", "Status", "Events?" };
-	int [] widths =
-		{ 8, 15, 15, 12, 8, 17, 17, 8 };
+	String[] colnames;
+	int [] widths;
 	private int sortColumn = 0;
 	private ArrayList<AppInfoStatus> apps = new ArrayList<AppInfoStatus>();
-	private AppColumnizer columnizer = new AppColumnizer();
+	private AppColumnizer columnizer;
 	private ProcessMonitorFrame frame = null;
+	private boolean showQueueCount;
 
-	public ProcStatTableModel(ProcessMonitorFrame frame)
+	public ProcStatTableModel(ProcessMonitorFrame frame, boolean showQueueCount)
 	{
 		this.frame = frame;
+		this.showQueueCount = showQueueCount;
+		colnames = showQueueCount
+			? new String[] { "App ID", "App Name", "App Type", "Host", "PID",
+				"Heartbeat (UTC)", "Status", "Queue Count", "Events?" }
+			: new String[] { "App ID", "App Name", "App Type", "Host", "PID",
+				"Heartbeat (UTC)", "Status", "Events?" };
+		widths = showQueueCount
+			? new int[] { 8, 15, 15, 12, 8, 17, 17, 10, 8 }
+			: new int[] { 8, 15, 15, 12, 8, 17, 17, 8 };
+		columnizer = new AppColumnizer(showQueueCount);
 	}
 
 	@Override
@@ -60,11 +71,11 @@ class ProcStatTableModel extends AbstractTableModel implements SortingListTableM
 
 	public boolean isCellEditable(int row, int col)
 	{
-		return col == 7;
+		return col == (showQueueCount ? 8 : 7);
 	}
 	public void setValueAt(Object value, int row, int col)
 	{
-		if (col != 7)
+		if (col != (showQueueCount ? 8 : 7))
 			return;
 		try { getAppAt(row).setRetrieveEvents((Boolean)value); }
 		catch(ProcMonitorException ex)
@@ -78,7 +89,9 @@ class ProcStatTableModel extends AbstractTableModel implements SortingListTableM
 
 	public Class getColumnClass(int col)
 	{
-		return col == 7 ? Boolean.class : String.class;
+		if (showQueueCount && col == 7)
+			return Long.class;
+		return col == (showQueueCount ? 8 : 7) ? Boolean.class : String.class;
 	}
 
 	@Override
@@ -128,6 +141,14 @@ class ProcStatTableModel extends AbstractTableModel implements SortingListTableM
 		return null;
 	}
 
+	public synchronized void setQueueCounts(Map<DbKey, Long> counts)
+	{
+		for (AppInfoStatus app : apps)
+		{
+			Long count = counts.get(app.getAppId());
+			app.setQueueCount(count == null ? 0L : count.longValue());
+		}
+	}
 
 	public void addApp(CompAppInfo appInfo)
 	{
@@ -189,8 +210,11 @@ class ProcStatTableModel extends AbstractTableModel implements SortingListTableM
 class AppColumnizer
 {
 	SimpleDateFormat sdf = new SimpleDateFormat("MMM-dd-yyyy HH:mm:ss");
-	AppColumnizer()
+	private boolean showQueueCount;
+
+	AppColumnizer(boolean showQueueCount)
 	{
+		this.showQueueCount = showQueueCount;
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 	public Object getColumnObject(AppInfoStatus app, int col)
@@ -206,7 +230,9 @@ class AppColumnizer
 		case 4: return lock != null ? ("" + lock.getPID()) : "N/A";
 		case 5: return lock != null ? sdf.format(lock.getHeartbeat()) : "~";
 		case 6: return lock != null ? app.getCompLock().getStatus() : "Not Running";
-		case 7: return app.getRetrieveEvents();
+		case 7: return showQueueCount
+			? Long.valueOf(app.getQueueCount()) : app.getRetrieveEvents();
+		case 8: return app.getRetrieveEvents();
 		default: return "";
 		}
 	}
@@ -217,6 +243,11 @@ class AppColumnizer
 			return (String)obj;
 		else
 			return obj.toString();
+	}
+
+	public boolean isQueueColumn(int col)
+	{
+		return showQueueCount && col == 7;
 	}
 }
 
@@ -236,6 +267,8 @@ class AppComparator implements Comparator<AppInfoStatus>
 	{
 		if (sortColumn == 0)
 			return app1.getAppId().compareTo(app2.getAppId());
+		if (columnizer.isQueueColumn(sortColumn))
+			return Long.compare(app1.getQueueCount(), app2.getQueueCount());
 		return TextUtil.strCompareIgnoreCase(
 			columnizer.getColumnString(app1, sortColumn),
 			columnizer.getColumnString(app2, sortColumn));
