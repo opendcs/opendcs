@@ -168,9 +168,7 @@ export const Schedule: React.FC<ScheduleProperties> = ({
   }, []);
 
   const saveSchedule = useCallback(() => {
-    const missing =
-      !local.name?.trim() ||
-      (local.routingSpecId == null && !local.routingSpecName?.trim());
+    const missing = !local.name?.trim() || local.routingSpecId == null;
     setIncomplete(missing);
     if (missing) {
       clearSaveError();
@@ -305,12 +303,10 @@ export const Schedule: React.FC<ScheduleProperties> = ({
             </Col>
           </Row>
 
-          {edit && (
-            <SaveErrorAlert
-              error={incomplete ? t("schedule:required_fields") : saveError}
-              onClose={dismissError}
-            />
-          )}
+          <SaveErrorAlert
+            error={incomplete ? t("schedule:required_fields") : saveError}
+            onClose={dismissError}
+          />
           {edit && (
             <EditFormActions>
               <CancelButton

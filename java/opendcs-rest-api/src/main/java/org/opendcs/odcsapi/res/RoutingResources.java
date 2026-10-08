@@ -714,7 +714,7 @@ public final class RoutingResources extends OpenDcsResource
                             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ApiScheduleEntry.class))),
                     @ApiResponse(responseCode = "400", description = "Bad Request - Missing required request body,"
-                            + " name, or routing spec",
+                            + " name, or routingSpecId",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = Status.class))),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -740,7 +740,7 @@ public final class RoutingResources extends OpenDcsResource
 
     // SCHEDULE_ENTRY.NAME and ROUTINGSPEC_ID are NOT NULL; catch missing values here so the
     // caller gets a 400 naming the field instead of a generic error from the constraint.
-    // The DAO resolves a routing spec name to its id, so either one is enough.
+    // The routing spec has to come as an id: map() drops a routingSpecName sent without one.
     static void validateSchedule(ApiScheduleEntry schedule) throws MissingParameterException
     {
         if (schedule == null)
@@ -752,10 +752,9 @@ public final class RoutingResources extends OpenDcsResource
         {
             throw new MissingParameterException("Schedule entry name is required.");
         }
-        String routingSpecName = schedule.getRoutingSpecName();
-        if (schedule.getRoutingSpecId() == null && (routingSpecName == null || routingSpecName.isBlank()))
+        if (schedule.getRoutingSpecId() == null)
         {
-            throw new MissingParameterException("Schedule entry routing spec is required.");
+            throw new MissingParameterException("Schedule entry routingSpecId is required.");
         }
     }
 

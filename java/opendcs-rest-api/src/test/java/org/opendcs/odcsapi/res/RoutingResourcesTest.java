@@ -425,8 +425,9 @@ final class RoutingResourcesTest
 		schedule.setRoutingSpecId(null);
 		assertThrows(MissingParameterException.class, () -> validateSchedule(schedule));
 
+		// A name alone is not enough: map() only carries it alongside an id.
 		schedule.setRoutingSpecName("TestRoutingSpec");
-		assertDoesNotThrow(() -> validateSchedule(schedule));
+		assertThrows(MissingParameterException.class, () -> validateSchedule(schedule));
 	}
 
 	private RoutingSpec buildRoutingSpec() throws Exception

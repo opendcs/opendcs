@@ -350,7 +350,7 @@ export const AddNewScheduleShowsSaveError: Story = {
         ...baseHandlers,
         postSchedule: http.post("/odcsapi/schedule", () =>
           HttpResponse.json(
-            { message: "Schedule entry routing spec is required." },
+            { message: "Schedule entry routingSpecId is required." },
             { status: 400 },
           ),
         ),
@@ -363,7 +363,7 @@ export const AddNewScheduleShowsSaveError: Story = {
     await pickRoutingSpec(canvas, ctx, "goes1");
     await clickNewRowSave(canvas, ctx);
     expect(
-      await canvas.findByText("Schedule entry routing spec is required."),
+      await canvas.findByText("Schedule entry routingSpecId is required."),
     ).toBeInTheDocument();
     expect(nameInput.value).toEqual("New-Schedule");
   },
