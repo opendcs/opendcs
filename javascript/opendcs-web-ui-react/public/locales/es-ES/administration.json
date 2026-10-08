@@ -1,0 +1,24 @@
+{
+  "title": "Administración",
+  "importTitle": "Importar",
+  "decodesImportTitle": "Importar DECODES",
+  "decodesImportDescription": "Importar registros de DECODES desde archivos XML.",
+  "timeSeriesImportTitle": "Importar series temporales",
+  "timeSeriesImportDescription": "Importar valores de series temporales desde un archivo.",
+  "timeSeriesImportPlaceholder": "La importación de series temporales estará disponible en una futura actualización.",
+  "decodesImport": {
+    "back": "Volver a los tipos de importación",
+    "dropFile": "Arrastre y suelte aquí un archivo XML de DECODES",
+    "fileHint": "Seleccione un archivo XML o utilice el selector de archivos de abajo.",
+    "chooseFile": "Seleccionar archivo XML",
+    "invalidFile": "Seleccione un único archivo XML con la extensión .xml.",
+    "selectedFile": "Seleccionado: {{name}} ({{size}} bytes)",
+    "selectedLog": "[Seleccionado] {{name}} — listo para la vista previa.",
+    "preview": "Vista previa",
+    "import": "Importar",
+    "previewHint": "Revise la vista previa del archivo seleccionado antes de importarlo.",
+    "logTitle": "Registro de importación",
+    "clearLog": "Borrar registro",
+    "emptyLog": "Seleccione un archivo y haga clic en Vista previa para ver aquí los mensajes."
+  }
+}
