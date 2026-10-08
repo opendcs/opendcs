@@ -20,6 +20,7 @@ import { LoadingAppsPage } from "./pages/loading-apps";
 import { EquipmentPage } from "./pages/equipment";
 import OidcCallback from "./pages/auth/login/OidcCallback";
 import UserProfilePage from "./pages/auth/user/UserProfilePage";
+import { ImportPage } from "./pages/administration/ImportPage";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -57,6 +58,7 @@ function App() {
               <Route path="/tsgroups" element={<TsGroups />} />
               <Route path="/loading-apps" element={<LoadingAppsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/administration/import" element={<ImportPage />} />
               <Route path="/user/profile" element={<UserProfilePage />} />
             </Route>
           </Route>
