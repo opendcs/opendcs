@@ -958,31 +958,6 @@ public abstract class DbAlgorithmExecutive
 		return null;
 	}
 
-	private static class StatefulTrigger
-	{
-		private final ParmRef parmRef;
-		private final TimedVariable value;
-
-		private StatefulTrigger(ParmRef parmRef, TimedVariable value)
-		{
-			this.parmRef = parmRef;
-			this.value = value;
-		}
-	}
-
-	private static class TriggerRange
-	{
-		private final Date start;
-		private Date end;
-
-		private TriggerRange(Date start, Date end)
-		{
-			this.start = start;
-			this.end = end;
-		}
-	}
-
-
 	/**
 	 * Handle cases where we need additional data outside the base times
 	 * in order to compute an interpolated value.
