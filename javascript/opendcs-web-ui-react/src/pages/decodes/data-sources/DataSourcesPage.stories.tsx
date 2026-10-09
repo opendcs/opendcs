@@ -203,6 +203,181 @@ export const AddNewDataSourceRow: Story = {
   },
 };
 
+// --- Add-new helpers (issue #2202) ------------------------------------------
+
+type PlayContext = Parameters<NonNullable<Story["play"]>>[0];
+type Canvas = Awaited<ReturnType<PlayContext["mount"]>>;
+// Storybook needs `mount` destructured in each play's own arguments, so the
+// helpers take the rest of the context.
+type HelperContext = Pick<PlayContext, "userEvent" | "parameters">;
+
+// Opens a new data source row via "+". The button's name is translated inside
+// waitFor: a story that holds the list request open gets here before the
+// namespace has loaded, when i18n.t still hands back the bare key.
+const openNewDataSource = async (
+  canvas: Canvas,
+  { userEvent, parameters: { i18n } }: HelperContext,
+) => {
+  const addBtn = await waitFor(() =>
+    canvas.getByRole("button", { name: i18n.t("datasources:add_datasource") }),
+  );
+  await act(async () => userEvent.click(addBtn));
+};
+
+const typeName = async (
+  canvas: Canvas,
+  { userEvent, parameters: { i18n } }: HelperContext,
+  name: string,
+): Promise<HTMLInputElement> => {
+  const nameInput = (await canvas.findByRole("textbox", {
+    name: i18n.t("datasources:name"),
+  })) as HTMLInputElement;
+  await act(async () => userEvent.type(nameInput, name));
+  return nameInput;
+};
+
+const chooseType = async (
+  canvas: Canvas,
+  { userEvent, parameters: { i18n } }: HelperContext,
+  type: string,
+) => {
+  const typeSelect = await canvas.findByRole("combobox", {
+    name: i18n.t("datasources:type"),
+  });
+  await act(async () => userEvent.selectOptions(typeSelect, type));
+};
+
+const clickSave = async (
+  canvas: Canvas,
+  { userEvent, parameters: { i18n } }: HelperContext,
+) => {
+  const saveBtn = await canvas.findByRole("button", {
+    name: new RegExp(`^${i18n.t("datasources:save_datasource", { id: "" }).trim()}`),
+  });
+  await act(async () => userEvent.click(saveBtn));
+};
+
+// The headline case from issue #2202: name + type, Save, and the new source
+// lands in the list.
+const savedList: ApiDataSourceRef[] = [];
+const savedPosts: ApiDataSource[] = [];
+export const AddNewDataSourceSaves: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        dataSourceRefs: http.get("/odcsapi/datasourcerefs", () =>
+          HttpResponse.json<ApiDataSourceRef[]>(savedList),
+        ),
+        postDataSource: http.post("/odcsapi/datasource", async ({ request }) => {
+          const body = (await request.json()) as ApiDataSource;
+          savedPosts.push(body);
+          savedList.push({ dataSourceId: 15, name: body.name, type: body.type });
+          return HttpResponse.json<ApiDataSource>(
+            { ...body, dataSourceId: 15 },
+            { status: 201 },
+          );
+        }),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    savedList.splice(0, savedList.length, ...DATA_SOURCE_REFS);
+    savedPosts.length = 0;
+    const canvas = await mount();
+    await openNewDataSource(canvas, ctx);
+    await typeName(canvas, ctx, "New-Source");
+    await chooseType(canvas, ctx, "lrgs");
+    await clickSave(canvas, ctx);
+    expect(await canvas.findByText("New-Source")).toBeInTheDocument();
+    expect(savedPosts).toHaveLength(1);
+    expect(savedPosts[0]).toMatchObject({ name: "New-Source", type: "lrgs" });
+    // The row's placeholder id must stay out of the body: the API reads an id
+    // as "overwrite that record".
+    expect(savedPosts[0]).not.toHaveProperty("dataSourceId");
+  },
+};
+
+// Saving a new data source without choosing a type says which fields are
+// required instead of posting and silently failing. The type select has to
+// start blank: without a blank option it displayed its first entry while the
+// record held no type at all (issue #2202).
+const requiredFieldsPosts: unknown[] = [];
+export const AddNewDataSourceRequiresFields: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postDataSource: http.post("/odcsapi/datasource", async ({ request }) => {
+          requiredFieldsPosts.push(await request.json());
+          return HttpResponse.json<ApiDataSource>({});
+        }),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    requiredFieldsPosts.length = 0;
+    const canvas = await mount();
+    const { i18n } = ctx.parameters;
+    await openNewDataSource(canvas, ctx);
+    await typeName(canvas, ctx, "New-Source");
+    const typeSelect = canvas.getByRole("combobox", {
+      name: i18n.t("datasources:type"),
+    }) as HTMLSelectElement;
+    expect(typeSelect.value).toEqual("");
+    await clickSave(canvas, ctx);
+    expect(
+      await canvas.findByText(i18n.t("datasources:required_fields")),
+    ).toBeInTheDocument();
+    expect(requiredFieldsPosts).toHaveLength(0);
+    // Once a type is chosen the same Save goes through and the message clears.
+    await chooseType(canvas, ctx, "lrgs");
+    await clickSave(canvas, ctx);
+    await waitFor(() =>
+      expect(requiredFieldsPosts).toEqual([{ name: "New-Source", type: "lrgs" }]),
+    );
+    await waitFor(() =>
+      expect(
+        canvas.queryByText(i18n.t("datasources:required_fields")),
+      ).not.toBeInTheDocument(),
+    );
+  },
+};
+
+// A server rejection on a new data source shows the server's message and keeps
+// the row open with the user's input, for both error codes the endpoint
+// documents (issue #2202).
+const SAVE_FAILURES = [
+  { status: 400, message: "Data source name is required." },
+  { status: 500, message: "Error writing data source" },
+];
+let saveFailureCount = 0;
+export const AddNewDataSourceShowsSaveError: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postDataSource: http.post("/odcsapi/datasource", () => {
+          const { status, message } = SAVE_FAILURES[saveFailureCount++];
+          return HttpResponse.json({ message }, { status });
+        }),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    saveFailureCount = 0;
+    const canvas = await mount();
+    await openNewDataSource(canvas, ctx);
+    const nameInput = await typeName(canvas, ctx, "New-Source");
+    await chooseType(canvas, ctx, "lrgs");
+    for (const { message } of SAVE_FAILURES) {
+      await clickSave(canvas, ctx);
+      expect(await canvas.findByText(message)).toBeInTheDocument();
+      expect(nameInput.value).toEqual("New-Source");
+    }
+  },
+};
+
 // Deleting a data source fires the DELETE and the row drops out after the refetch.
 export const DeleteDataSourceRow: Story = {
   parameters: {
@@ -299,5 +474,41 @@ export const AddMemberViaModal: Story = {
     await waitFor(() =>
       expect(within(membersTable).getByText("karl-test-xml")).toBeInTheDocument(),
     );
+  },
+};
+
+// The row is opened before the data source list arrives. The detail row is
+// never re-rendered with new props, so the member chooser must pick the list up
+// itself rather than stay on the empty/loading snapshot it opened with
+// (issue #2202).
+let releaseDataSourceRefs: () => void = () => {};
+export const MemberChooserLoadsAfterRowOpens: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        dataSourceRefs: http.get("/odcsapi/datasourcerefs", async () => {
+          await new Promise<void>((resolve) => (releaseDataSourceRefs = resolve));
+          return HttpResponse.json<ApiDataSourceRef[]>(DATA_SOURCE_REFS);
+        }),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    const canvas = await mount();
+    const {
+      userEvent,
+      parameters: { i18n },
+    } = ctx;
+    await openNewDataSource(canvas, ctx);
+    await chooseType(canvas, ctx, "hotbackupgroup");
+    const addMembers = await canvas.findByRole("button", {
+      name: i18n.t("datasources:add_members"),
+    });
+    await act(async () => userEvent.click(addMembers));
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByRole("status")).toBeInTheDocument();
+    await act(async () => releaseDataSourceRefs());
+    expect(await within(dialog).findByText("karl-test-xml")).toBeInTheDocument();
   },
 };

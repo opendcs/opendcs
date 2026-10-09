@@ -7,12 +7,10 @@ import {
   type HeaderButton,
   type RowAction,
 } from "../../../components/data-table";
+import { useDataSourceRefsQuery } from "../../../queries/dataSources";
 import { DataSourceMembersAddModal } from "./DataSourceMembersAddModal";
 
 export interface DataSourceMembersTableProperties {
-  /** All data sources available to attach (resolves details + populates the modal). */
-  allDataSources: ApiDataSourceRef[];
-  allDataSourcesLoading?: boolean;
   /** Members currently attached to this group data source. */
   members: ApiDataSourceGroupMember[];
   /** This data source's own name — excluded from the chooser to avoid self-reference. */
@@ -22,15 +20,22 @@ export interface DataSourceMembersTableProperties {
   onRemove: (name: string) => void;
 }
 
+// Stable fallback so the memoised rows don't rebuild on every render while loading.
+const NO_DATA_SOURCES: ApiDataSourceRef[] = [];
+
 interface MemberRow {
   key: string;
   name: string;
   ref?: ApiDataSourceRef;
 }
 
+/**
+ * Queries the data source list itself rather than taking it as a prop: this
+ * renders inside an AppDataTable detail row, which is built once per open and
+ * never re-rendered with new props, so a list passed down while still loading
+ * would leave the member chooser empty for as long as the row is open (#2202).
+ */
 export const DataSourceMembersTable: React.FC<DataSourceMembersTableProperties> = ({
-  allDataSources,
-  allDataSourcesLoading = false,
   members,
   selfName,
   edit = false,
@@ -39,6 +44,8 @@ export const DataSourceMembersTable: React.FC<DataSourceMembersTableProperties> 
 }) => {
   const [t] = useTranslation(["datasources", "translation"]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const { data: allDataSources = NO_DATA_SOURCES, isFetching } =
+    useDataSourceRefsQuery();
 
   const refsByName = useMemo(() => {
     const m = new Map<string, ApiDataSourceRef>();
@@ -144,7 +151,7 @@ export const DataSourceMembersTable: React.FC<DataSourceMembersTableProperties> 
         show={showAddModal}
         onHide={() => setShowAddModal(false)}
         dataSources={allDataSources}
-        loading={allDataSourcesLoading}
+        loading={isFetching}
         excludeNames={excludeNames}
         onAdd={handleAdd}
       />
