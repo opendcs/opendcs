@@ -4,6 +4,8 @@ import { Save, X } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import type { ApiDecodedMessage, ApiPlatformConfig } from "opendcs-api";
 import { DetailFade } from "../../../components/data-table";
+import { SaveErrorAlert } from "../../../components/forms";
+import { useSaveError } from "../../../hooks/useSaveError";
 import type { CancelAction, SaveAction } from "../../../util/Actions";
 import { ConfigReducer, type UiConfig } from "./ConfigReducer";
 import ConfigSensorsTable from "./ConfigSensorsTable";
@@ -104,15 +106,23 @@ export const Config: React.FC<ConfigProperties> = ({
   const resolved = details instanceof Promise ? use(details) : details;
   const provided = resolved.config;
   const [local, dispatch] = useReducer(ConfigReducer, provided);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("configs:save_error"),
+    "Config save failed",
+  );
 
   const inputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     dispatch({ type: "save", payload: { [name]: value } });
   }, []);
 
-  const saveConfig = useCallback(() => {
-    actions.save?.(local as ApiPlatformConfig);
-  }, [actions, local]);
+  // The wrapper lets a new row's save rejection propagate so the detail can
+  // report it (and keep the row in edit mode with the user's input intact),
+  // so swallowing it here would leave the Save button looking inert - #2199.
+  const saveConfig = useCallback(
+    () => attemptSave(() => actions.save?.(local as ApiPlatformConfig)),
+    [attemptSave, actions, local],
+  );
 
   const cancel = useCallback(() => {
     if (provided.configId !== undefined) actions.cancel?.(provided.configId);
@@ -220,6 +230,7 @@ export const Config: React.FC<ConfigProperties> = ({
               />
             </Col>
           </Row>
+          <SaveErrorAlert error={saveError} onClose={clearSaveError} />
           {edit && (
             <Row className="mt-3">
               <Col className="d-flex justify-content-end gap-2">

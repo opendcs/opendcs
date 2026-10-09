@@ -3,6 +3,7 @@ package org.opendcs.database.impl.opendcs.dao;
 import org.jdbi.v3.core.Handle;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.database.dai.UnitConverterDao;
@@ -208,7 +209,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
         final var mergeSql = """
                 merge into platformconfig pc
                 using (
-                    select :id id, :name name, :description description, :equipmentid equipmentid
+                    select :id id, :name name, :description description, :equipmentid equipmentid <dual>
                 ) input
                 on (pc.id = input.id)
                 when matched then
@@ -218,7 +219,9 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                     insert (id, name, description, equipmentid)
                     values(input.id, input.name, input.description, input.equipmentid)
                 """;
-        try (var merge = handle.createUpdate(mergeSql);
+        final var dbEngine = ctx.getDatabaseEngine();
+        try (var merge = handle.createUpdate(mergeSql)
+                               .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
              var deleteConfigSensorProps = handle.createUpdate(DELETE_CONFIGSENSOR_PROPERTIES);
              var deleteConfigSensorDataType = handle.createUpdate(DELETE_CONFIGSENSOR_DATATYPE);
              var deleteConfigSensor = handle.createUpdate(DELETE_CONFIGSENSOR);

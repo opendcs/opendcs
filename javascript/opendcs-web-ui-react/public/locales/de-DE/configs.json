@@ -19,6 +19,7 @@
   "delete_for": "Konfiguration mit ID {{id}} löschen",
   "save_config": "Konfiguration mit ID {{id}} speichern",
   "cancel_for": "Bearbeitung der Konfiguration mit ID {{id}} abbrechen",
+  "save_error": "Speichern fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen.",
   "sensor_num": "Sensor-Nr.",
   "duplicate_sensor_number": "Diese Sensornummer wird bereits von einem anderen Sensor in dieser Konfiguration verwendet.",
   "sensor_name": "Name",
