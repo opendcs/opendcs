@@ -67,6 +67,14 @@ body {
   padding: 0;
 }
 
+// Fills the viewport (minus topbar + main's p-3) so the table stretches and
+// pins paging to the bottom; see `.content > .dt-panel` in components/datatables.
+.content {
+  min-height: calc(100vh - var(--odcs-topbar-height) - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+
 // =============================================================================
 // Theme / mode icons
 // =============================================================================

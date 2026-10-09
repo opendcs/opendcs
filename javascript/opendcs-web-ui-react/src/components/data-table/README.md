@@ -362,6 +362,12 @@ at `60vh` and scrolls with a **sticky header**, so a long list stays inside its
 panel (and larger page sizes stay usable) instead of pushing the paging
 controls off-screen. Override individual regions via `dataTableOptions.layout`.
 
+The `60vh` cap applies to tables embedded in other content (modals, detail
+rows). On a list page — the table wrapped in the page's `.content` div — the
+cap is dropped and the panel fills the viewport, so the body grows to the
+available height and the paging controls sit at the bottom of the screen
+(`.content > .dt-panel` in `styles/components/_datatables.scss`).
+
 ### `loading`
 
 When `true` the wrapper toggles DataTables' built-in `processing` overlay so

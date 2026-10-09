@@ -36,15 +36,17 @@ export const SitesPage: React.FC = () => {
   }, [searchParams, setSearchParams, sites]);
 
   return (
-    <SitesTable
-      sites={sites}
-      loading={isFetching}
-      getSite={fetchSite}
-      actions={{
-        save: (site) => saveSite.mutateAsync(site),
-        remove: (siteId) => deleteSite.mutate(siteId),
-      }}
-      tableRef={tableRef}
-    />
+    <div className="content">
+      <SitesTable
+        sites={sites}
+        loading={isFetching}
+        getSite={fetchSite}
+        actions={{
+          save: (site) => saveSite.mutateAsync(site),
+          remove: (siteId) => deleteSite.mutate(siteId),
+        }}
+        tableRef={tableRef}
+      />
+    </div>
   );
 };
