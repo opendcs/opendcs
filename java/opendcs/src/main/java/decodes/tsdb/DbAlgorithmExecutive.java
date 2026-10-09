@@ -19,7 +19,10 @@ import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -48,6 +51,7 @@ import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
+import opendcs.opentsdb.Interval;
 
 /**
  * This is the base class for all computational algorithms.
@@ -58,6 +62,8 @@ import decodes.util.TSUtil;
 public abstract class DbAlgorithmExecutive
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final String TRIGGER_RANGE_SUFFIX = "_TRIGGER_RANGE";
+	private static final String TRIGGER_RANGE_NEXT_OR_NOW = "next-or-now";
 	/**
 	 * The data collection passed to the 'apply' method.
 	 */
@@ -599,6 +605,7 @@ public abstract class DbAlgorithmExecutive
 	{
 		// Step 1: Construct a list of base times for all DB_ADDED data.
 		TreeSet<Date> baseTimes = determineInputBaseTimes();
+		expandForTriggerRanges(baseTimes);
 
 		// Step 2: Query for missing data
 		for(String role : getInputNames())
@@ -633,6 +640,323 @@ public abstract class DbAlgorithmExecutive
 		return baseTimes;
 	}
 
+	/**
+	 * Expands corrections to configured stateful irregular inputs through the
+	 * next value, current time, or missing-data safety limit.
+	 */
+	protected void expandForTriggerRanges(TreeSet<Date> baseTimes)
+		throws DbIoException
+	{
+		ArrayList<StatefulTrigger> triggers = new ArrayList<StatefulTrigger>();
+		for(String role : getInputNames())
+		{
+			ParmRef parmRef = parmMap.get(role);
+			if (!isTriggerRangeInput(parmRef, true))
+				continue;
+
+			for(int idx = 0; idx < parmRef.timeSeries.size(); idx++)
+			{
+				TimedVariable tv = parmRef.timeSeries.sampleAt(idx);
+				if ((tv.getFlags() & (VarFlags.DB_ADDED | VarFlags.DB_DELETED)) != 0)
+					triggers.add(new StatefulTrigger(parmRef, tv));
+			}
+		}
+		if (triggers.isEmpty())
+			return;
+
+		ArrayList<TriggerRange> ranges = new ArrayList<TriggerRange>();
+		Date now = new Date();
+		TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
+		try
+		{
+			for(StatefulTrigger statefulTrigger : triggers)
+			{
+				ParmRef parmRef = statefulTrigger.parmRef;
+				TimedVariable trigger = statefulTrigger.value;
+				if (VarFlags.wasDeleted(trigger)
+				 && findPreviousStateValue(parmRef.timeSeries, trigger.getTime()) == null)
+				{
+					try
+					{
+						timeSeriesDAO.getPreviousValue(parmRef.timeSeries, trigger.getTime());
+					}
+					catch(BadTimeSeriesException ex)
+					{
+						log.atWarn().setCause(ex)
+							.log("Cannot retrieve previous state for role '{}'.", parmRef.role);
+					}
+				}
+
+				TimedVariable next = parmRef.timeSeries.findNext(trigger.getTime());
+				if (next == null)
+				{
+					try
+					{
+						next = timeSeriesDAO.getNextValue(parmRef.timeSeries, trigger.getTime());
+					}
+					catch(BadTimeSeriesException ex)
+					{
+						log.atWarn().setCause(ex)
+							.log("Cannot retrieve next state for role '{}'.", parmRef.role);
+					}
+				}
+
+				Date start = parmRef.compParm.paramTimeToBaseTime(trigger.getTime(), aggCal);
+				Date end = now;
+				if (next != null)
+				{
+					Date nextBaseTime =
+						parmRef.compParm.paramTimeToBaseTime(next.getTime(), aggCal);
+					if (nextBaseTime.before(end))
+						end = nextBaseTime;
+				}
+
+				long maxRangeMsec = Math.max(0L, (long)maxMissingTimeForFill * 1000L);
+				long safetyEndMsec = start.getTime() > Long.MAX_VALUE - maxRangeMsec
+					? Long.MAX_VALUE : start.getTime() + maxRangeMsec;
+				if (safetyEndMsec < end.getTime())
+					end = new Date(safetyEndMsec);
+
+				if (effectiveStart != null && start.before(effectiveStart))
+					start = effectiveStart;
+				if (effectiveEnd != null && !end.before(effectiveEnd))
+				{
+					long endMsec = effectiveEnd.getTime();
+					end = new Date(endMsec == Long.MAX_VALUE ? endMsec : endMsec + 1L);
+				}
+
+				if (start.before(end))
+					ranges.add(new TriggerRange(start, end));
+			}
+
+			ranges = mergeTriggerRanges(ranges);
+			for(TriggerRange range : ranges)
+				loadInputsForTriggerRange(timeSeriesDAO, range, baseTimes);
+		}
+		finally
+		{
+			timeSeriesDAO.close();
+		}
+
+		if (!ranges.isEmpty() && !hasRegularInput())
+			addRegularOutputBaseTimes(ranges, baseTimes);
+	}
+
+	private boolean isTriggerRangeInput(ParmRef parmRef, boolean warn)
+	{
+		if (parmRef == null || parmRef.tsid == null)
+			return false;
+
+		String value = comp.getProperty(parmRef.role + TRIGGER_RANGE_SUFFIX);
+		if (value == null)
+			return false;
+		if (!TRIGGER_RANGE_NEXT_OR_NOW.equalsIgnoreCase(value.trim()))
+		{
+			if (warn)
+				log.warn("Ignoring unsupported property {}{}={}.",
+					parmRef.role, TRIGGER_RANGE_SUFFIX, value);
+			return false;
+		}
+
+		String interval = parmRef.compParm.getInterval();
+		boolean irregular = IntervalCodes.int_irregular.equalsIgnoreCase(interval)
+			|| IntervalCodes.int_cwms_zero.equalsIgnoreCase(interval)
+			|| (interval != null && interval.startsWith("~"));
+		if (parmRef.missingAction != MissingAction.PREV || !irregular)
+		{
+			if (warn)
+			{
+				log.warn("Ignoring property {}{}={} because role '{}' must be an irregular input "
+					+ "with {}_MISSING=prev.",
+					parmRef.role, TRIGGER_RANGE_SUFFIX, value, parmRef.role, parmRef.role);
+			}
+			return false;
+		}
+		return true;
+	}
+
+	private ArrayList<TriggerRange> mergeTriggerRanges(ArrayList<TriggerRange> ranges)
+	{
+		if (ranges.size() < 2)
+			return ranges;
+
+		Collections.sort(ranges, new Comparator<TriggerRange>()
+		{
+			@Override
+			public int compare(TriggerRange left, TriggerRange right)
+			{
+				return left.start.compareTo(right.start);
+			}
+		});
+
+		ArrayList<TriggerRange> merged = new ArrayList<TriggerRange>();
+		TriggerRange current = ranges.get(0);
+		for(int idx = 1; idx < ranges.size(); idx++)
+		{
+			TriggerRange next = ranges.get(idx);
+			if (!next.start.after(current.end))
+			{
+				if (next.end.after(current.end))
+					current.end = next.end;
+			}
+			else
+			{
+				merged.add(current);
+				current = next;
+			}
+		}
+		merged.add(current);
+		return merged;
+	}
+
+	private void loadInputsForTriggerRange(TimeSeriesDAI timeSeriesDAO,
+		TriggerRange range, TreeSet<Date> baseTimes)
+		throws DbIoException
+	{
+		for(String role : getInputNames())
+		{
+			ParmRef parmRef = parmMap.get(role);
+			if (parmRef == null || parmRef.tsid == null)
+				continue;
+
+			try
+			{
+				Date paramSince = parmRef.compParm.baseTimeToParamTime(range.start, aggCal);
+				Date paramUntil = parmRef.compParm.baseTimeToParamTime(range.end, aggCal);
+				timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, paramSince, paramUntil,
+					true, false, false);
+
+				for(int idx = 0; idx < parmRef.timeSeries.size(); idx++)
+				{
+					Date sampleTime = parmRef.timeSeries.sampleAt(idx).getTime();
+					Date baseTime = normalizeBaseTime(
+						parmRef.compParm.paramTimeToBaseTime(sampleTime, aggCal));
+					if (!baseTime.before(range.start) && baseTime.before(range.end)
+					 && baseTimeWithinCompRange(baseTime))
+					{
+						baseTimes.add(baseTime);
+					}
+				}
+			}
+			catch(BadTimeSeriesException ex)
+			{
+				log.atWarn().setCause(ex)
+					.log("Cannot load trigger range for role '{}'.", role);
+			}
+		}
+	}
+
+	private boolean hasRegularInput()
+	{
+		for(String role : getInputNames())
+		{
+			ParmRef parmRef = parmMap.get(role);
+			if (parmRef != null && parmRef.tsid != null
+			 && isRegularInterval(parmRef.compParm.getInterval()))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean isRegularInterval(String intervalName)
+	{
+		Interval interval = IntervalCodes.getInterval(intervalName);
+		return interval != null && interval.getCalMultiplier() > 0;
+	}
+
+	private void addRegularOutputBaseTimes(ArrayList<TriggerRange> ranges,
+		TreeSet<Date> baseTimes)
+	{
+		Interval outputInterval = null;
+		IntervalIncrement outputIncrement = null;
+		ParmRef outputParmRef = null;
+		for(String role : getOutputNames())
+		{
+			ParmRef parmRef = parmMap.get(role);
+			if (parmRef == null || parmRef.tsid == null)
+				continue;
+
+			Interval interval = IntervalCodes.getInterval(parmRef.compParm.getInterval());
+			IntervalIncrement increment =
+				IntervalCodes.getIntervalCalIncr(parmRef.compParm.getInterval());
+			if (interval == null || increment == null || interval.getCalMultiplier() <= 0)
+				continue;
+
+			if (outputIncrement != null
+			 && (outputIncrement.getCalConstant() != increment.getCalConstant()
+				 || outputIncrement.getCount() != increment.getCount()
+				 || outputParmRef.compParm.getDeltaT() != parmRef.compParm.getDeltaT()
+				 || !TextUtil.strEqualIgnoreCase(outputParmRef.compParm.getDeltaTUnits(),
+					parmRef.compParm.getDeltaTUnits())))
+			{
+				log.warn("Cannot generate trigger-range base times for computation '{}' "
+					+ "because its regular outputs have different intervals or offsets.",
+					comp.getName());
+				return;
+			}
+			outputInterval = interval;
+			outputIncrement = increment;
+			outputParmRef = parmRef;
+		}
+
+		if (outputInterval == null || outputIncrement == null || outputParmRef == null)
+			return;
+
+		for(Iterator<Date> it = baseTimes.iterator(); it.hasNext(); )
+		{
+			Date baseTime = it.next();
+			for(TriggerRange range : ranges)
+				if (!baseTime.before(range.start) && baseTime.before(range.end))
+				{
+					it.remove();
+					break;
+				}
+		}
+
+		for(TriggerRange range : ranges)
+		{
+			Date paramStart =
+				outputParmRef.compParm.baseTimeToParamTime(range.start, aggCal);
+			Date paramEnd =
+				outputParmRef.compParm.baseTimeToParamTime(range.end, aggCal);
+			long offsetMsec =
+				(long)TSUtil.getIntervalOffsetForTime(outputInterval, paramStart) * 1000L;
+			Date first = new Date(paramStart.getTime() - offsetMsec);
+			GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+			cal.setTime(first);
+			if (first.before(paramStart))
+				cal.add(outputIncrement.getCalConstant(), outputIncrement.getCount());
+
+			while(cal.getTime().before(paramEnd))
+			{
+				Date baseTime = outputParmRef.compParm.paramTimeToBaseTime(cal.getTime(), aggCal);
+				if (baseTimeWithinCompRange(baseTime))
+					baseTimes.add(normalizeBaseTime(baseTime));
+				cal.add(outputIncrement.getCalConstant(), outputIncrement.getCount());
+			}
+		}
+	}
+
+	private Date normalizeBaseTime(Date baseTime)
+	{
+		long sec = baseTime.getTime() / 1000L;
+		if (roundSec > 1 && (sec % roundSec) != 0)
+			sec = ((sec + roundSec/2) / roundSec) * roundSec;
+		return new Date(sec * 1000L);
+	}
+
+	private TimedVariable findPreviousStateValue(CTimeSeries timeSeries, Date refTime)
+	{
+		for(int idx = timeSeries.size() - 1; idx >= 0; idx--)
+		{
+			TimedVariable candidate = timeSeries.sampleAt(idx);
+			if (candidate.getTime().before(refTime) && !VarFlags.wasDeleted(candidate))
+				return candidate;
+		}
+		return null;
+	}
 
 	/**
 	 * Handle cases where we need additional data outside the base times
@@ -1285,6 +1609,9 @@ public abstract class DbAlgorithmExecutive
 				Date paramTime = parmRef.compParm.baseTimeToParamTime(baseTime, aggCal);
 				long varSec = paramTime.getTime()/1000L;
 				TimedVariable tv = parmRef.timeSeries.findWithin(paramTime, roundSec/2);
+				boolean statefulInput = isTriggerRangeInput(parmRef, false);
+				if (statefulInput && tv != null && VarFlags.wasDeleted(tv))
+					tv = null;
 
 
 				if (tv == null) // Time series missing value for this slice?
@@ -1303,7 +1630,9 @@ public abstract class DbAlgorithmExecutive
 					if (parmRef.missingAction == MissingAction.IGNORE)
 						continue; // next input param.
 
-					TimedVariable prevTv = parmRef.timeSeries.findPrev(varSec);
+					TimedVariable prevTv = statefulInput
+						? findPreviousStateValue(parmRef.timeSeries, paramTime)
+						: parmRef.timeSeries.findPrev(varSec);
 					if (prevTv == null)
 					{
 						// Can't compute non-ignored param. Skip slice.
