@@ -114,11 +114,7 @@
 // -----------------------------------------------------------------------------
 // Scrollable table body with a sticky header
 //
-// Cap each table's body height so a long list scrolls inside the panel instead
-// of pushing the paging controls off-screen, and pin the header while it does.
-// This lets larger "entries per page" sizes stay usable. `.dt-layout-table` is
-// the DataTables layout row that wraps the <table> (the toolbar rows are
-// separate siblings, so only the table body scrolls).
+// 60vh cap keeps paging on-screen; header stays pinned while the body scrolls.
 // -----------------------------------------------------------------------------
 .dt-panel .dt-layout-table {
   max-height: 60vh;
@@ -131,6 +127,31 @@
   // Sit above the (non-sticky) body cells and any inline-edit form controls
   // that scroll underneath.
   z-index: 2;
+}
+
+// -----------------------------------------------------------------------------
+// Full-height list pages: the body takes all remaining space (cap dropped),
+// so paging sits at the screen bottom. Modals / detail rows keep the cap.
+// -----------------------------------------------------------------------------
+.content > .dt-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-bottom: 0; // would push the page past the viewport
+  display: flex;
+  flex-direction: column;
+
+  .dt-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dt-layout-table {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
 }
 
 .dataTable td {
