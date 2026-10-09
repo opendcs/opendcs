@@ -94,9 +94,9 @@ exit /B %ERRORLEVEL%
     if not defined JAVA_HOME (
         call :FindJavaExe
         if "!JAVA_EXE_PATH!"=="" (
-            echo java.exe not found in the system PATH.
-            call :LogStderr "ERROR: JAVA_HOME environment variable is not set."
+            call :LogStderr "ERROR: JAVA_HOME environment variable is not set and java.exe was not found in the system PATH."
             call :LogStderr "Please set JAVA_HOME to a Java installation, or ensure java.exe is in the system PATH."
+            call :PauseForUser
             exit /B 1
         )
         for /f "delims=" %%i in ("!JAVA_EXE_PATH!") do set "JAVA_BIN_DIR=%%~dpi"
@@ -107,8 +107,17 @@ exit /B %ERRORLEVEL%
     if not exist "%JAVA_HOME%\bin\java.exe" (
         call :LogStderr "ERROR: Java executable not found at %JAVA_HOME%\bin\java.exe"
         call :LogStderr "Please verify JAVA_HOME is set correctly."
+        call :PauseForUser
         exit /B 1
     )
+    exit /B 0
+
+:PauseForUser
+    :: Gives a double-clicked user time to read the error. Any keypress ends it.
+    :: `timeout` returns immediately when stdin is a pipe or NUL, so batch jobs
+    :: and redirected runs never block.
+    call :LogStderr "Waiting up to 15 seconds - press any key to continue..."
+    timeout /t 15 >nul 2>nul
     exit /B 0
 
 :FindJavaExe
