@@ -29,5 +29,7 @@
   "edit_schedule": "Zeitplaneintrag {{id}} bearbeiten",
   "delete_for": "Zeitplaneintrag {{id}} löschen",
   "save_schedule": "Zeitplaneintrag {{id}} speichern",
-  "cancel_for": "Bearbeitung von Zeitplaneintrag {{id}} abbrechen"
+  "cancel_for": "Bearbeitung von Zeitplaneintrag {{id}} abbrechen",
+  "save_error": "Speichern fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen.",
+  "required_fields": "Name und Routing-Spezifikation sind erforderlich."
 }

@@ -74,6 +74,7 @@ import org.opendcs.odcsapi.beans.ApiRoutingRef;
 import org.opendcs.odcsapi.beans.ApiRoutingStatus;
 import org.opendcs.odcsapi.beans.ApiScheduleEntry;
 import org.opendcs.odcsapi.beans.ApiScheduleEntryRef;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
@@ -712,12 +713,17 @@ public final class RoutingResources extends OpenDcsResource
                     @ApiResponse(responseCode = "201", description = "Successfully created or updated the schedule",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ApiScheduleEntry.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad Request - Missing required request body,"
+                            + " name, or routingSpecId",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = Status.class))),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public Response postSchedule(ApiScheduleEntry schedule)
-            throws DbException
+            throws WebAppException, DbException
     {
+        validateSchedule(schedule);
         try(ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
         {
             ScheduleEntry entry = map(schedule);
@@ -729,6 +735,26 @@ public final class RoutingResources extends OpenDcsResource
         catch(DbIoException ex)
         {
             throw new DbException("Unable to store schedule entry", ex);
+        }
+    }
+
+    // SCHEDULE_ENTRY.NAME and ROUTINGSPEC_ID are NOT NULL; catch missing values here so the
+    // caller gets a 400 naming the field instead of a generic error from the constraint.
+    // The routing spec has to come as an id: map() drops a routingSpecName sent without one.
+    static void validateSchedule(ApiScheduleEntry schedule) throws MissingParameterException
+    {
+        if (schedule == null)
+        {
+            throw new MissingParameterException("Missing required schedule entry body.");
+        }
+        String name = schedule.getName();
+        if (name == null || name.isBlank())
+        {
+            throw new MissingParameterException("Schedule entry name is required.");
+        }
+        if (schedule.getRoutingSpecId() == null)
+        {
+            throw new MissingParameterException("Schedule entry routingSpecId is required.");
         }
     }
 

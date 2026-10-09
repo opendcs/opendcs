@@ -170,6 +170,9 @@ export const ExecutionSchedule: React.FC<ExecutionScheduleProps> = ({
               min={0}
               aria-label={t("schedule:run_amount")}
               disabled={periodicDisabled}
+              // Outside "Run Every" there is no amount; preview the one that
+              // mode starts with rather than leaving the disabled box blank.
+              placeholder={String(count)}
               value={parsed ? String(parsed.count) : ""}
               onChange={setCount}
             />

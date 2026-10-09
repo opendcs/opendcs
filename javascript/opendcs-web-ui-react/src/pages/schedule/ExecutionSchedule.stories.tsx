@@ -79,6 +79,9 @@ export const RunContinuously: Story = {
       i18n.t("schedule:run_amount"),
     ) as HTMLInputElement;
     expect(amount.disabled).toBe(true);
+    // Blank, but previews the amount "Run Every" would start with.
+    expect(amount.value).toEqual("");
+    expect(amount.placeholder).toEqual("1");
   },
 };
 
@@ -105,6 +108,7 @@ export const RunOnce: Story = {
       i18n.t("schedule:run_amount"),
     ) as HTMLInputElement;
     expect(amount.disabled).toBe(true);
+    expect(amount.placeholder).toEqual("1");
   },
 };
 
