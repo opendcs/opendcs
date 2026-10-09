@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useCallback, useState } from "react";
+import { delay, http, HttpResponse } from "msw";
 import type { ApiRoutingRef } from "opendcs-api";
 import { expect, fn, screen, waitFor } from "storybook/test";
 import { RoutingSpecSelectModal } from "./RoutingSpecSelectModal";
@@ -28,16 +29,10 @@ const ROUTING_REFS: ApiRoutingRef[] = [
 // Wrapper that mirrors how `Schedule.tsx` drives the modal: holds `show`
 // state, hides on cancel/select, and forwards the picked record to a spy.
 type WrapperProps = {
-  routings: ApiRoutingRef[];
-  loading?: boolean;
   onSelect: (r: ApiRoutingRef) => void;
 };
 
-const RoutingSpecSelectModalDemo: React.FC<WrapperProps> = ({
-  routings,
-  loading = false,
-  onSelect,
-}) => {
+const RoutingSpecSelectModalDemo: React.FC<WrapperProps> = ({ onSelect }) => {
   const [show, setShow] = useState(true);
   const handleSelect = useCallback(
     (r: ApiRoutingRef) => {
@@ -51,18 +46,22 @@ const RoutingSpecSelectModalDemo: React.FC<WrapperProps> = ({
       show={show}
       onHide={() => setShow(false)}
       onSelect={handleSelect}
-      routings={routings}
-      loading={loading}
     />
   );
 };
 
+const routingRefsReturning = (routings: ApiRoutingRef[]) => ({
+  routingRefs: http.get("/odcsapi/routingrefs", () =>
+    HttpResponse.json<ApiRoutingRef[]>(routings),
+  ),
+});
+
 const meta = {
   component: RoutingSpecSelectModalDemo,
   args: {
-    routings: ROUTING_REFS,
     onSelect: fn(),
   },
+  parameters: { msw: { handlers: routingRefsReturning(ROUTING_REFS) } },
 } satisfies Meta<typeof RoutingSpecSelectModalDemo>;
 
 export default meta;
@@ -83,7 +82,7 @@ export const Default: Story = {
 
 // Empty state: noneMessage renders instead of the chooser table.
 export const Empty: Story = {
-  args: { routings: [] },
+  parameters: { msw: { handlers: routingRefsReturning([]) } },
   play: async ({ mount, parameters }) => {
     await mount();
     const { i18n } = parameters;
@@ -95,7 +94,16 @@ export const Empty: Story = {
 
 // Loading state: showed with no data => the spinner appears.
 export const Loading: Story = {
-  args: { routings: [], loading: true },
+  parameters: {
+    msw: {
+      handlers: {
+        routingRefs: http.get("/odcsapi/routingrefs", async () => {
+          await delay("infinite");
+          return HttpResponse.json<ApiRoutingRef[]>([]);
+        }),
+      },
+    },
+  },
   play: async ({ mount }) => {
     await mount();
     expect(await screen.findByRole("status")).toBeInTheDocument();
