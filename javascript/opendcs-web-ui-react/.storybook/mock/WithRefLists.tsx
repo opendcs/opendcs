@@ -79,17 +79,35 @@ export const WithRefLists: Decorator = (Story) => {
       DataSourceType: {
         enumName: "DataSourceType",
         items: {
-          lrgs: { value: "lrgs", description: "LRGS Network Server" },
-          abstractweb: { value: "abstractweb", description: "Abstract Web Source" },
-          file: { value: "file", description: "Single File" },
-          directory: { value: "directory", description: "Directory of Files" },
+          lrgs: {
+            value: "lrgs",
+            description: "LRGS Network Server",
+            execClassName: "decodes.datasource.LrgsDataSource",
+          },
+          abstractweb: {
+            value: "abstractweb",
+            description: "Abstract Web Source",
+            execClassName: "decodes.datasource.WebAbstractDataSource",
+          },
+          file: {
+            value: "file",
+            description: "Single File",
+            execClassName: "decodes.datasource.FileDataSource",
+          },
+          directory: {
+            value: "directory",
+            description: "Directory of Files",
+            execClassName: "decodes.datasource.DirectoryDataSource",
+          },
           hotbackupgroup: {
             value: "hotbackupgroup",
             description: "Hot Backup Group",
+            execClassName: "decodes.datasource.HotBackupGroup",
           },
           roundrobingroup: {
             value: "roundrobingroup",
             description: "Round Robin Group",
+            execClassName: "decodes.datasource.RoundRobinGroup",
           },
         },
       },

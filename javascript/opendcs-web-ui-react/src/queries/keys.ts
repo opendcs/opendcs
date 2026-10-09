@@ -95,6 +95,15 @@ export const refListKeys = {
   list: (org: string) => [...refListKeys.all(org), "list"] as const,
 };
 
+// Property specs describe what an OpenDCS class accepts, so they are keyed by
+// class rather than under whichever entity asks for them: saving that entity
+// must not throw them away.
+export const propSpecKeys = {
+  all: (org: string) => ["propSpecs", org] as const,
+  detail: (org: string, execClass: string) =>
+    [...propSpecKeys.all(org), "detail", execClass] as const,
+};
+
 export const unitKeys = {
   all: (org: string) => ["units", org] as const,
   list: (org: string) => [...unitKeys.all(org), "list"] as const,

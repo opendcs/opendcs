@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { act } from "react";
 import { http, HttpResponse } from "msw";
-import type { ApiDataSource, ApiDataSourceRef } from "opendcs-api";
+import type { ApiDataSource, ApiDataSourceRef, ApiPropSpec } from "opendcs-api";
 import { expect, screen, waitFor, within } from "storybook/test";
 import { DataSourcesPage } from "./DataSourcesPage";
 
@@ -57,6 +57,19 @@ const FULL_DATA_SOURCES: Record<number, ApiDataSource> = {
   },
 };
 
+// What /propspecs reports for the classes behind the mocked DataSourceType list.
+// Types without an entry declare no properties.
+const PROP_SPECS: Record<string, ApiPropSpec[]> = {
+  "decodes.datasource.LrgsDataSource": [
+    { name: "host", type: "h", description: "Host name or IP Address of LRGS Server" },
+    { name: "port", type: "i", description: "Listening port on LRGS Server" },
+    { name: "username", type: "s", description: "DDS User name" },
+  ],
+  "decodes.datasource.FileDataSource": [
+    { name: "filename", type: "f", description: "Name of the file to read" },
+  ],
+};
+
 const baseHandlers = {
   dataSourceRefs: http.get("/odcsapi/datasourcerefs", () =>
     HttpResponse.json<ApiDataSourceRef[]>(DATA_SOURCE_REFS),
@@ -72,6 +85,10 @@ const baseHandlers = {
     HttpResponse.json<ApiDataSource>({}),
   ),
   deleteDataSource: http.delete("/odcsapi/datasource", () => HttpResponse.json({})),
+  propSpecs: http.get("/odcsapi/propspecs", ({ request }) => {
+    const execClass = new URL(request.url).searchParams.get("class") ?? "";
+    return HttpResponse.json<ApiPropSpec[]>(PROP_SPECS[execClass] ?? []);
+  }),
 };
 
 const meta = {
@@ -375,6 +392,234 @@ export const AddNewDataSourceShowsSaveError: Story = {
       expect(await canvas.findByText(message)).toBeInTheDocument();
       expect(nameInput.value).toEqual("New-Source");
     }
+  },
+};
+
+// --- Properties offered by the type ------------------------------------------
+
+const editPropButton = ({ parameters: { i18n } }: HelperContext, name: string) => ({
+  name: i18n.t("properties:edit_prop", { name }),
+});
+
+// Edits one row of the properties table and saves that row. An empty value
+// saves the row as it is.
+const setProperty = async (
+  canvas: Canvas,
+  ctx: HelperContext,
+  name: string,
+  value: string,
+) => {
+  const {
+    userEvent,
+    parameters: { i18n },
+  } = ctx;
+  const editBtn = await canvas.findByRole("button", editPropButton(ctx, name));
+  await act(async () => userEvent.click(editBtn));
+  const valueInput = await canvas.findByRole("textbox", {
+    name: i18n.t("properties:value_input", { name }),
+  });
+  if (value) await act(async () => userEvent.type(valueInput, value));
+  const savePropName = { name: i18n.t("properties:save_prop", { name }) };
+  const saveBtn = await canvas.findByRole("button", savePropName);
+  await act(async () => userEvent.click(saveBtn));
+  // The table redraws once the row is saved; wait so the next click lands on
+  // the redrawn row.
+  await waitFor(() =>
+    expect(canvas.queryByRole("button", savePropName)).not.toBeInTheDocument(),
+  );
+};
+
+// Choosing a type lists the properties that type accepts, and the list follows
+// the type when it changes. Before a type is chosen there is nothing to offer.
+export const TypeOffersItsProperties: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, ...ctx }) => {
+    const canvas = await mount();
+    await openNewDataSource(canvas, ctx);
+    await typeName(canvas, ctx, "New-Source");
+    expect(
+      canvas.queryByRole("button", editPropButton(ctx, "host")),
+    ).not.toBeInTheDocument();
+    await chooseType(canvas, ctx, "lrgs");
+    for (const name of ["host", "port", "username"]) {
+      expect(
+        await canvas.findByRole("button", editPropButton(ctx, name)),
+      ).toBeInTheDocument();
+    }
+    // Each offered name carries the type's own description of it.
+    expect(canvas.getByTitle("Listening port on LRGS Server")).toHaveTextContent(
+      "port",
+    );
+    await chooseType(canvas, ctx, "file");
+    expect(
+      await canvas.findByRole("button", editPropButton(ctx, "filename")),
+    ).toBeInTheDocument();
+    expect(
+      canvas.queryByRole("button", editPropButton(ctx, "host")),
+    ).not.toBeInTheDocument();
+  },
+};
+
+// An offered property is not a value: only what the user fills in is posted,
+// and a declared property saved blank stays unset instead of being posted as
+// "", which the data source would read as a real (empty) setting.
+const filledPropsPosts: unknown[] = [];
+export const OnlyFilledPropertiesAreSaved: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postDataSource: http.post("/odcsapi/datasource", async ({ request }) => {
+          filledPropsPosts.push(await request.json());
+          return HttpResponse.json<ApiDataSource>({});
+        }),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    filledPropsPosts.length = 0;
+    const canvas = await mount();
+    await openNewDataSource(canvas, ctx);
+    await typeName(canvas, ctx, "New-Source");
+    await chooseType(canvas, ctx, "lrgs");
+    await setProperty(canvas, ctx, "host", "lrgs.example.com");
+    await setProperty(canvas, ctx, "port", "");
+    await clickSave(canvas, ctx);
+    await waitFor(() =>
+      expect(filledPropsPosts).toEqual([
+        { name: "New-Source", type: "lrgs", props: { host: "lrgs.example.com" } },
+      ]),
+    );
+  },
+};
+
+// A saved property fills the row its type declares even when the two differ in
+// case, the way OpenDCS reads them, and saved properties the type does not
+// declare are still listed.
+export const SavedPropertiesFillDeclaredRows: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        dataSource: http.get("/odcsapi/datasource", () =>
+          HttpResponse.json<ApiDataSource>({
+            ...FULL_DATA_SOURCES[13],
+            props: { HOST: "lrgs.example.com", single: "true" },
+          }),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    const canvas = await mount();
+    const {
+      userEvent,
+      parameters: { i18n },
+    } = ctx;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("datasources:edit_datasource", { id: 13 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    for (const name of ["HOST", "port", "username", "single"]) {
+      expect(
+        await canvas.findByRole("button", editPropButton(ctx, name)),
+      ).toBeInTheDocument();
+    }
+    expect(
+      canvas.queryByRole("button", editPropButton(ctx, "host")),
+    ).not.toBeInTheDocument();
+    expect(canvas.getByText("lrgs.example.com")).toBeInTheDocument();
+  },
+};
+
+// The properties table stays out of the form until the type's specs are in. If
+// it showed the saved properties first, the specs arriving would redraw every
+// row under the user: a click on a row's edit button would be swallowed, and a
+// property already being edited would lose what was typed.
+let releasePropSpecs: () => void = () => {};
+export const PropertiesWaitForSpecs: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        propSpecs: http.get("/odcsapi/propspecs", async () => {
+          await new Promise<void>((resolve) => (releasePropSpecs = resolve));
+          return HttpResponse.json<ApiPropSpec[]>(
+            PROP_SPECS["decodes.datasource.LrgsDataSource"],
+          );
+        }),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    const canvas = await mount();
+    const {
+      userEvent,
+      parameters: { i18n },
+    } = ctx;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("datasources:edit_datasource", { id: 13 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    // The form itself is up, with the record's own fields filled in.
+    await waitFor(() =>
+      expect(
+        canvas.getByRole("textbox", { name: i18n.t("datasources:name") }),
+      ).toHaveValue("lrgs-main"),
+    );
+    // The table's caption renders with the table itself, before any row does,
+    // so its absence means the table is not there at all.
+    expect(
+      canvas.queryByText(i18n.t("properties:PropertiesTitle")),
+    ).not.toBeInTheDocument();
+    await act(async () => releasePropSpecs());
+    expect(
+      await canvas.findByText(i18n.t("properties:PropertiesTitle")),
+    ).toBeInTheDocument();
+    for (const name of ["host", "port", "username"]) {
+      expect(
+        await canvas.findByRole("button", editPropButton(ctx, name)),
+      ).toBeInTheDocument();
+    }
+  },
+};
+
+// Property specs are a convenience. When the API cannot describe a type's class
+// the form still opens and shows the properties that were saved.
+let failedSpecRequests = 0;
+export const PropertySpecsUnavailable: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        propSpecs: http.get("/odcsapi/propspecs", () => {
+          failedSpecRequests++;
+          return HttpResponse.json(
+            { message: "Cannot get property specs" },
+            { status: 409 },
+          );
+        }),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    failedSpecRequests = 0;
+    const canvas = await mount();
+    const {
+      userEvent,
+      parameters: { i18n },
+    } = ctx;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("datasources:edit_datasource", { id: 13 }),
+    });
+    await act(async () => userEvent.click(editBtn));
+    await waitFor(() => expect(failedSpecRequests).toBeGreaterThan(0));
+    expect(
+      await canvas.findByRole("button", editPropButton(ctx, "host")),
+    ).toBeInTheDocument();
+    expect(
+      canvas.queryByRole("button", editPropButton(ctx, "username")),
+    ).not.toBeInTheDocument();
   },
 };
 

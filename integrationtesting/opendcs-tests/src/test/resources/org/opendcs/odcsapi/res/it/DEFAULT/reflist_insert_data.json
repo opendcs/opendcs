@@ -5,8 +5,8 @@
     "june" : {
       "value" : "june",
       "description" : "Month in summer",
-      "execClassName" : null,
-      "editClassName" : null,
+      "execClassName" : "org.example.JuneExec",
+      "editClassName" : "org.example.JuneEdit",
       "sortNumber" : 1
     },
     "july" : {
