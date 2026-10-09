@@ -55,12 +55,22 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
       {
         data: "name",
         header: t("translation:name"),
+        // A property that comes with a spec says what it is for on hover.
+        render: (name: string, type: string, row: Property) =>
+          type === "display" && row.spec?.description
+            ? renderToString(
+                <span title={row.spec.description} style={{ cursor: "help" }}>
+                  {name}
+                </span>,
+              )
+            : name,
         edit: {
           render: (row, rowId) =>
             renderToString(
               <Form.Control
                 type="text"
                 name="name"
+                title={row.spec?.description}
                 defaultValue={row.name ?? ""}
                 aria-label={t("properties:name_input", {
                   name: propDisplayName(row, rowId),

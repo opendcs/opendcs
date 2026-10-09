@@ -5,6 +5,7 @@ import {
   configKeys,
   intervalKeys,
   platformKeys,
+  propSpecKeys,
   siteKeys,
 } from "./keys";
 
@@ -179,5 +180,25 @@ describe("appKeys", () => {
   test("keys for different orgs never collide", () => {
     expect(appKeys.list("acme")).not.toEqual(appKeys.list("globex"));
     expect(appKeys.stat("acme")).not.toEqual(appKeys.stat("globex"));
+  });
+});
+
+describe("propSpecKeys", () => {
+  test("all() scopes the key to an org", () => {
+    expect(propSpecKeys.all("acme")).toEqual(["propSpecs", "acme"]);
+    expect(propSpecKeys.all("acme")).not.toEqual(propSpecKeys.all("globex"));
+  });
+
+  test("detail() extends all() and includes the exec class", () => {
+    const all = propSpecKeys.all("acme");
+    const detail = propSpecKeys.detail("acme", "org.example.MySource");
+    expect(detail.slice(0, all.length)).toEqual([...all]);
+    expect(detail).toEqual(["propSpecs", "acme", "detail", "org.example.MySource"]);
+  });
+
+  test("keys for different orgs never collide", () => {
+    expect(propSpecKeys.detail("acme", "X")).not.toEqual(
+      propSpecKeys.detail("globex", "X"),
+    );
   });
 });
