@@ -128,6 +128,19 @@ export const Default: Story = {
   },
 };
 
+export const SortedByNameOnFirstLoad: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, canvasElement }) => {
+    await mount();
+    await waitFor(() => {
+      const names = Array.from(canvasElement.querySelectorAll("tbody tr")).map(
+        (row) => row.querySelectorAll("td")[1]?.textContent?.trim() ?? "",
+      );
+      expect(names).toEqual(["GateOpening", "MROI4-ROWI4-HG", "regtest_017"]);
+    });
+  },
+};
+
 // Empty state: no groups defined — the caption still renders.
 export const Empty: Story = {
   parameters: {

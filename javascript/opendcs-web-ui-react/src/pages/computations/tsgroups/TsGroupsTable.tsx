@@ -53,7 +53,12 @@ export const TsGroupsTable: React.FC<TsGroupsTableProperties> = ({
         className: "dt-left",
         type: "num",
       },
-      { data: "groupName", header: t("tsgroups:header.Name"), type: "string" },
+      {
+        data: "groupName",
+        header: t("tsgroups:header.Name"),
+        type: "string",
+        defaultSort: "asc",
+      },
       {
         data: "groupType",
         header: t("tsgroups:header.Type"),
