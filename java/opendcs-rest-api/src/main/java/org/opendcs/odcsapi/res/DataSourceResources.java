@@ -48,6 +48,7 @@ import jakarta.ws.rs.core.Response;
 import org.opendcs.odcsapi.beans.ApiDataSource;
 import org.opendcs.odcsapi.beans.ApiDataSourceGroupMember;
 import org.opendcs.odcsapi.beans.ApiDataSourceRef;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
@@ -275,13 +276,19 @@ public class DataSourceResources extends OpenDcsResource
 							mediaType = MediaType.APPLICATION_JSON,
 							schema = @Schema(implementation = ApiDataSource.class)
 					)),
-					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required data source object"),
-					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required data source object,"
+							+ " name, or type",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class)))
 			},
 			tags = {"REST - DECODES Data Source Records"}
 	)
-	public Response postDatasource(ApiDataSource datasource) throws DbException
+	public Response postDatasource(ApiDataSource datasource) throws WebAppException, DbException
 	{
+		validate(datasource);
 		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{
@@ -299,6 +306,29 @@ public class DataSourceResources extends OpenDcsResource
 		{
 			dbIo.close();
 		}
+	}
+
+	// DATASOURCE.NAME and DATASOURCETYPE are NOT NULL; catch missing values here so the caller
+	// gets a 400 naming the field instead of a generic 500 from building the SQL.
+	static void validate(ApiDataSource datasource) throws MissingParameterException
+	{
+		if (datasource == null)
+		{
+			throw new MissingParameterException("Missing required data source body.");
+		}
+		if (isBlank(datasource.getName()))
+		{
+			throw new MissingParameterException("Data source name is required.");
+		}
+		if (isBlank(datasource.getType()))
+		{
+			throw new MissingParameterException("Data source type is required.");
+		}
+	}
+
+	private static boolean isBlank(String value)
+	{
+		return value == null || value.isBlank();
 	}
 
 	static DataSource map(ApiDataSource ads) throws DatabaseException

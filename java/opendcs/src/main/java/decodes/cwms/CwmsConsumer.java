@@ -715,9 +715,10 @@ public class CwmsConsumer extends DataConsumer
 		try 
 		{ 
 			shefCwmsMap = EnvExpander.expand(shefCwmsFilePath);
-			FileInputStream is = new FileInputStream(new File(shefCwmsMap));
-			shefCwmsProps.load(is);
-			is.close();	
+			try (FileInputStream is = new FileInputStream(new File(shefCwmsMap)))
+			{
+				shefCwmsProps.load(is);
+			}
 		}
 		catch(IOException ex)
 		{

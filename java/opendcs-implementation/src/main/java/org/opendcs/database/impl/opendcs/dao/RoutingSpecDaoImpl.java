@@ -397,6 +397,10 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             return select.reduceRows(new RoutingSpecReducer(mappers))
                          .map(rs ->
                          {
+                            if (rs.outputTimeZoneAbbr == null)
+                            {
+                                rs.outputTimeZoneAbbr = "UTC";
+                            }
                             rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
                             rs.setProperty("RoutingSpecName", rs.getName());
                             rs.forceSetPrepared();
