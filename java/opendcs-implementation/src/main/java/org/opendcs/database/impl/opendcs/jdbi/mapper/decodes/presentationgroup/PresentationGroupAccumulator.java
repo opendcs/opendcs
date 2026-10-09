@@ -1,6 +1,6 @@
 package org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.presentationgroup;
 
-import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
+import static org.opendcs.database.model.mappers.OpenDcsTableMapper.addUnderscoreIfMissing;
 import static org.opendcs.utils.ExceptionUtil.wrappedComputeIfAbsent;
 
 import java.sql.ResultSet;

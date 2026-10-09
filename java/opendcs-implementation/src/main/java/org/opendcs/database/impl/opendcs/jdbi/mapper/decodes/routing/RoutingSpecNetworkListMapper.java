@@ -20,12 +20,12 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 
 import ilex.util.Pair;
 
-public final class RoutingSpecNetworkListMapper extends PrefixRowMapper<Pair<Long,String>, RoutingSpecNetworkListMapper.Columns>
+public final class RoutingSpecNetworkListMapper extends OpenDcsTableMapper<Pair<Long,String>, RoutingSpecNetworkListMapper.Columns>
 {    
     public static final GenericType<Pair<Long,String>> ROUTING_SPEC_LIST = new GenericType<>()
     { /* marker interface */

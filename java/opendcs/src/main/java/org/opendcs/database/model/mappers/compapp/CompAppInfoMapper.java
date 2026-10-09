@@ -5,13 +5,13 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 
-public final class CompAppInfoMapper extends PrefixRowMapper<CompAppInfo, CompAppInfoMapper.Columns>
+public final class CompAppInfoMapper extends OpenDcsTableMapper<CompAppInfo, CompAppInfoMapper.Columns>
 {
     private CompAppInfoMapper(String prefix)
     {

@@ -3,7 +3,7 @@ package org.opendcs.database.model.mappers;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
+import static org.opendcs.database.model.mappers.OpenDcsTableMapper.addUnderscoreIfMissing;
 
 class PrefixRowMapperTest
 {

@@ -4,13 +4,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.db.EngineeringUnit;
 
-public final class EngineeringUnitMapper extends PrefixRowMapper<EngineeringUnit,EngineeringUnitMapper.Columns>
+public final class EngineeringUnitMapper extends OpenDcsTableMapper<EngineeringUnit,EngineeringUnitMapper.Columns>
 {
     private EngineeringUnitMapper(String prefix)
     {

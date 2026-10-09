@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
@@ -13,7 +13,7 @@ import decodes.db.DataType;
 import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 
-public final class DataTypeMapper extends PrefixRowMapper<DataType,DataTypeMapper.Columns>
+public final class DataTypeMapper extends OpenDcsTableMapper<DataType,DataTypeMapper.Columns>
 {
     private DataTypeMapper(String prefix)
     {

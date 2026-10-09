@@ -18,6 +18,13 @@ plugins {
     id 'war'
 }
 
+// We don't need the other elements of java-conventions so we duplicate this here.
+// NOTE: JVM version doesn't really matter, there are no class files that should be in the resulting WAR file.
+tasks.withType(JavaCompile) {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
 configurations {
     api
 }
