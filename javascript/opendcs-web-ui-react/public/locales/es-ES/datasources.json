@@ -15,6 +15,8 @@
   "delete_for": "Eliminar fuente de datos {{id}}",
   "save_datasource": "Guardar fuente de datos {{id}}",
   "cancel_for": "Cancelar la edición de la fuente de datos {{id}}",
+  "save_error": "Error al guardar. Por favor verifique sus entradas e intente de nuevo.",
+  "required_fields": "El nombre y el tipo son obligatorios.",
   "add_members": "Agregar miembros del grupo",
   "add_members_none": "No hay fuentes de datos disponibles para agregar.",
   "remove_member": "Eliminar miembro {{name}}",
