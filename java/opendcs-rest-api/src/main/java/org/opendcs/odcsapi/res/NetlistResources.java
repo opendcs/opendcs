@@ -52,6 +52,7 @@ import org.opendcs.database.dai.NetworkListDao;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiNetListItem;
 import org.opendcs.odcsapi.beans.ApiNetlistRef;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -246,14 +247,20 @@ public final class NetlistResources extends OpenDcsResource
                     @ApiResponse(responseCode = "201", description = "Successfully created or updated network list",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ApiNetList.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad Request - Missing required request body"),
-                    @ApiResponse(responseCode = "500", description = "Internal Server Error"),
+                    @ApiResponse(responseCode = "400", description = "Bad Request - Missing required request body,"
+                            + " name, transportMediumType, or siteNameTypePref",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = Status.class))),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = Status.class))),
             },
             tags = {"REST - Network Lists"}
     )
     public Response postNetlist(ApiNetList netList)
             throws WebAppException, OpenDcsDataException
     {
+        validate(netList);
         final var db = createDb();
         final var dao = db.getDao(NetworkListDao.class)
                           .orElseThrow(() -> NO_NETWORKLIST_DAO);
@@ -268,6 +275,33 @@ public final class NetlistResources extends OpenDcsResource
         {
             throw new OpenDcsDataException("Unable to store network list", ex);
         }
+    }
+
+    // The NETWORKLIST columns are NOT NULL; catch missing values here so the caller
+    // gets a 400 naming the field instead of a generic 500 from the constraint.
+    static void validate(ApiNetList netList) throws MissingParameterException
+    {
+        if (netList == null)
+        {
+            throw new MissingParameterException("Missing required network list body.");
+        }
+        if (isBlank(netList.getName()))
+        {
+            throw new MissingParameterException("Network list name is required.");
+        }
+        if (isBlank(netList.getTransportMediumType()))
+        {
+            throw new MissingParameterException("Network list transport medium type is required.");
+        }
+        if (isBlank(netList.getSiteNameTypePref()))
+        {
+            throw new MissingParameterException("Network list site name type is required.");
+        }
+    }
+
+    private static boolean isBlank(String value)
+    {
+        return value == null || value.isBlank();
     }
 
     static NetworkList map(ApiNetList netList) throws DatabaseException
