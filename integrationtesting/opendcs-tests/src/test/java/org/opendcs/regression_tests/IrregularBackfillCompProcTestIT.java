@@ -48,15 +48,23 @@ public class IrregularBackfillCompProcTestIT extends AppTestBase
     {
         File logDir = configuration.getUserDir();
         File propertiesFile = configuration.getPropertiesFile();
+        String contextResource = getResource(
+            configuration, "CompProc/IrregularBackfill/context.tsimport");
 
         Programs.ImportTs(
             new File(logDir, "irregular-backfill-context.log"),
             propertiesFile, environment, exit,
-            getResource(configuration, "CompProc/IrregularBackfill/context.tsimport"));
+            contextResource);
 
         Programs.UpdateComputationDependencies(
             new File(logDir, "irregular-backfill-dependencies.log"),
             propertiesFile, environment, exit);
+
+        // Replay values now that their time series have computation dependencies.
+        Programs.ImportTs(
+            new File(logDir, "irregular-backfill-trigger.log"),
+            propertiesFile, environment, exit,
+            contextResource);
 
         Waiting.assertResultWithinTimeFrame(
             ignored -> hasExpectedOutputs(11.0, 12.0, 13.0),
