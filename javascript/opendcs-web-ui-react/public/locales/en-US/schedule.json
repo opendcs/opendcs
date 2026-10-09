@@ -29,5 +29,7 @@
   "edit_schedule": "Edit schedule entry {{id}}",
   "delete_for": "Delete schedule entry {{id}}",
   "save_schedule": "Save schedule entry {{id}}",
-  "cancel_for": "Cancel editing schedule entry {{id}}"
+  "cancel_for": "Cancel editing schedule entry {{id}}",
+  "save_error": "Save failed. Please check your entries and try again.",
+  "required_fields": "Name and Routing Spec are required."
 }
