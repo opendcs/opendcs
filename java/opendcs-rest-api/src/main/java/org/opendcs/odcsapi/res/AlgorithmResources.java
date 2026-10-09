@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.sql.SQLException;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.DbAlgoParm;
@@ -61,6 +62,9 @@ import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.AlgorithmCatalogScanner;
+import org.opendcs.algorithms.update.AlgorithmSpec;
+import org.opendcs.algorithms.update.AlgorithmUpdater;
+import org.opendcs.odcsapi.dao.DbException;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -68,6 +72,54 @@ import static java.util.stream.Collectors.toList;
 @Path("/")
 public final class AlgorithmResources extends OpenDcsResource
 {
+	@POST
+	@Path("algorithmupdate")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed(ApiConstants.ODCS_API_ADMIN)
+	@Operation(summary = "Synchronize selected installed Java algorithms and their computations",
+			tags = {"REST - Algorithm Methods"})
+	public Response updateAlgorithms(List<Long> algorithmIds) throws DbException
+	{
+		try
+		{
+			return Response.ok(AlgorithmUpdater.synchronize(getDataSource(), false,
+					algorithmIds == null ? Set.of() : new HashSet<>(algorithmIds))).build();
+		}
+		catch (SQLException ex)
+		{
+			throw new DbException("Unable to synchronize installed algorithms", ex);
+		}
+	}
+	@GET
+	@Path("algorithmupdatespec")
+	@Produces(MediaType.APPLICATION_JSON)
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
+	@Operation(summary = "Get current annotated roles and former names from the installed algorithm class",
+			tags = {"REST - Algorithm Methods"})
+	public Response getAlgorithmUpdateSpec(@QueryParam("algorithmid") Long algorithmId)
+			throws DbIoException, WebAppException
+	{
+		if (algorithmId == null)
+			throw new MissingParameterException("Missing required algorithmid parameter.");
+		try (AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
+		{
+			DbCompAlgorithm algorithm = dai.getAlgorithmById(DbKey.createDbKey(algorithmId));
+			try
+			{
+				return Response.ok(AlgorithmSpec.read(algorithm.getExecClass())).build();
+			}
+			catch (ClassNotFoundException | LinkageError | IllegalArgumentException ex)
+			{
+				return Response.status(Response.Status.NOT_FOUND)
+						.entity("Installed annotated algorithm is unavailable: " + ex.getMessage()).build();
+			}
+		}
+		catch (NoSuchObjectException ex)
+		{
+			throw new DatabaseItemNotFoundException("No algorithm with id: " + algorithmId, ex);
+		}
+	}
 
 	@GET
 	@Path("algorithmrefs")
