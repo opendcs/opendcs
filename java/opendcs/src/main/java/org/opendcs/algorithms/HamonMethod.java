@@ -48,6 +48,7 @@ public class HamonMethod extends AW_AlgorithmBase {
          ParmRef inputParm = this.getParmRef("input");
          CTimeSeries inputTimeSeries = inputParm.timeSeries;
          Site site = inputTimeSeries.getTimeSeriesIdentifier().getSite();
+         double temperatureCelsius = toCelsius(this.input, inputTimeSeries.getUnitsAbbr());
 
          // Hamon uses the Julian day to estimate solar declination and daylight length.
          String dayOfYearText = (new SimpleDateFormat("DDD HH:MM:SS yyyy", Locale.US)).format(this._timeSliceBaseTime).substring(0, 3);
@@ -70,8 +71,8 @@ public class HamonMethod extends AW_AlgorithmBase {
          double daylightHours = 7.639437268410976 * sunsetHourAngleRadians;
 
          // Convert air temperature to saturation vapor pressure and density.
-         double saturationVaporPressureKpa = 0.6108 * Math.pow(Math.E, 17.27 * this.input / (237.3 + this.input));
-         double temperatureKelvin = this.input + 273.15;
+         double saturationVaporPressureKpa = 0.6108 * Math.pow(Math.E, 17.27 * temperatureCelsius / (237.3 + temperatureCelsius));
+         double temperatureKelvin = temperatureCelsius + 273.15;
          double saturationVaporDensity = 2166.74 * (saturationVaporPressureKpa / temperatureKelvin);
 
          // This is the unadjusted Hamon estimate before the monthly coefficient.
@@ -125,6 +126,20 @@ public class HamonMethod extends AW_AlgorithmBase {
    }
 
    protected void afterTimeSlices() throws DbCompException {
+   }
+
+   private double toCelsius(double temperature, String units) {
+      if (units == null) {
+         return temperature;
+      }
+
+      if (units.equalsIgnoreCase("F")
+            || units.equalsIgnoreCase("degF")
+            || units.equalsIgnoreCase("Fahrenheit")) {
+         return (temperature - 32.0) * 5.0 / 9.0;
+      }
+
+      return temperature;
    }
 
    public String[] getInputNames() {
