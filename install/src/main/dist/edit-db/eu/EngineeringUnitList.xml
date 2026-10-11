@@ -725,6 +725,16 @@
     <A>1.8</A>
     <B>32.0</B>
   </UnitConverter>
+  <UnitConverter FromUnitsAbbr="C" ToUnitsAbbr="F">
+    <Algorithm>linear</Algorithm>
+    <A>1.8</A>
+    <B>32.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="F" ToUnitsAbbr="C">
+    <Algorithm>linear</Algorithm>
+    <A>0.5555555555555556</A>
+    <B>-17.77777777777778</B>
+  </UnitConverter>
   <UnitConverter FromUnitsAbbr="cfs" ToUnitsAbbr="ft^3/s">
     <Algorithm>none</Algorithm>
   </UnitConverter>
