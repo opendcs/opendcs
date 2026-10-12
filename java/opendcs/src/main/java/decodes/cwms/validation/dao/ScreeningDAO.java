@@ -53,7 +53,6 @@ import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
 import oracle.jdbc.OracleConnection;
 import usace.cwms.db.dao.ifc.vt.CwmsDbVt;
-import usace.cwms.db.dao.ifc.vt.ScreenAssignT;
 import usace.cwms.db.dao.ifc.vt.ScreenCritType;
 import usace.cwms.db.dao.ifc.vt.ScreenDurMagType;
 import usace.cwms.db.dao.ifc.vt.ScreeningControlT;
