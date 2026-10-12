@@ -181,15 +181,15 @@ public class DecodesHelper {
                 String parts[] = sensorLine.split(",");
                 ScriptSensor stage = new ScriptSensor(decodesScript, sensorIndex);
 
-                stage.rawConverter = new UnitConverterDb("raw", parts[1]);
+                stage.rawConverter = new UnitConverterDb("raw", parts[1].trim());
                 stage.rawConverter.algorithm = lookupAlgo(parts);
                 stage.rawConverter.coefficients = lookupCoefficients(parts);
                 decodesScript.scriptSensors.add(stage);
                 ConfigSensor configSensor = new ConfigSensor(decodesScript.platformConfig, Integer.parseInt(parts[0]));
                 setRecordingModeAndInterval(configSensor, parts);
-                configSensor.sensorName = parts[1];
+                configSensor.sensorName = parts[1].trim();
 
-                if( parts.length >= 5)
+                if (parts.length >= 5)
                 {
                     //1, Stage, ft, none,SHEF-PE:HGIFF;
                     String[] tokens = parts[4].split(":");

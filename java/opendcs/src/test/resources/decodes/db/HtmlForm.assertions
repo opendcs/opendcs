@@ -1,0 +1,3 @@
+#sensor number, time (ISO8601), expected value (double or string), precision, message
+1,2014-03-01T12:00:00Z,1.4,  0.0, Expected value not parsed (sensor 1)
+2,2014-03-01T12:00:00Z,5.5,  0.0, Expected value not parsed (sensor 2)
