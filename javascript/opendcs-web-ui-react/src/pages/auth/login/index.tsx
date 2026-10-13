@@ -17,6 +17,7 @@ import {
 import { oidcConfigToClient, type ParamMap } from "../../../util/login-providers";
 import type { SigninRequest } from "oidc-client-ts";
 import { AppVersion } from "../../../components/AppVersion";
+import { ConfigSensorSkeleton } from "../../decodes/configs/ConfigSensor";
 
 // Indentation for nested offices in the organization select. Built from its
 // code point so the character stays visible in source.
@@ -68,8 +69,7 @@ export default function Login() {
         return [key, { ...defaults, ...existing }];
       }),
     );
-  }, [loginSchemes]);
-
+  }, [loginSchemes, api]);
   return (
     <Container className="odcs-login">
       <Container className="odcs-login__bg-image" />
@@ -183,10 +183,8 @@ export default function Login() {
                   name="organization"
                   aria-labelledby="organization-label"
                   required
-                  defaultValue={api.org}
-                  onChange={(e) => {
-                    api.setOrg(JSON.parse(e.currentTarget.value));
-                  }}
+                  value={JSON.stringify(api.orgObj)}
+                  onChange={(e) => api.setOrg(JSON.parse(e.currentTarget.value))}
                 >
                   {orgOptions.map(({ org, depth }) => (
                     <option key={org.name} value={JSON.stringify(org)}>

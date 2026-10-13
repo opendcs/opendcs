@@ -8,9 +8,11 @@ import {
 } from "../../../../.storybook/mock/WithOrganization";
 import { ApiOrganization } from "opendcs-api";
 import { AuthContext } from "../../../contexts/app/AuthContext";
+import { ApiProvider } from "../../../contexts/app/ApiProvider";
 import {
   ApiContext,
   defaultValue as apiDefault,
+  useApi,
 } from "../../../contexts/app/ApiContext";
 import apiAuthSpec from "../../../../.storybook/mock/openapi-security-schemes.json";
 import { fromOpenApiData } from "../../../util/login-providers";
@@ -63,7 +65,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const authDecorator = (Story: any) => (
-  <ApiContext value={apiDefault}>
+  <ApiProvider>
     <AuthContext
       value={{
         user: undefined,
@@ -80,17 +82,53 @@ const authDecorator = (Story: any) => (
         <Route path="*" element={<Story />} />
       </Routes>
     </AuthContext>
-  </ApiContext>
+  </ApiProvider>
 );
-
+// DefaultPage and Login within Previously stored org
+// intentionally bypass the the decorator.
+// A since we are changing the local storage
+// for one of the tests we need to bypass some of the
+// behavior so that what we set is actually used.
 export const DefaultPageWithOrgs: Story = {
+  parameters: {
+    bypassGlobalDecorators: true,
+  },
   args: {
     organization: undefined,
   },
-  decorators: [authDecorator],
+  render: (args) => {
+    const api = useApi();
+    api.setOrg({ name: "HQ" });
+    window.localStorage.clear();
+    window.localStorage.setItem("organization", JSON.stringify({ name: "HQ" }));
+    return authDecorator(Login);
+  },
   play: async ({ args, mount }) => {
     const canvas = await mount();
     await expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
+  },
+};
+
+export const LoginWithPreviouslyStoredOrg: Story = {
+  parameters: {
+    bypassGlobalDecorators: true,
+  },
+  render: () => {
+    const api = useApi();
+    api.setOrg({ name: "MVP" });
+    window.localStorage.clear();
+    window.localStorage.setItem("organization", JSON.stringify({ name: "MVP" }));
+
+    return authDecorator(Login);
+  },
+  play: async ({ args, mount }) => {
+    const canvas = await mount();
+    await expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
+    const orgs = canvas.getByRole("combobox", {
+      name: "Organization",
+    }) as HTMLSelectElement;
+    console.log(orgs);
+    await expect(JSON.parse(orgs.value)).toStrictEqual({ name: "MVP" });
   },
 };
 
