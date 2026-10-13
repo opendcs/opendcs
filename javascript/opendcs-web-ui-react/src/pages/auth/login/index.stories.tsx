@@ -90,7 +90,7 @@ export const DefaultPageWithOrgs: Story = {
   decorators: [authDecorator],
   play: async ({ args, mount }) => {
     const canvas = await mount();
-    expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
+    await expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
   },
 };
 
@@ -106,8 +106,8 @@ export const SuccessfulLogin: Story = {
     await userEvent.type(await canvas.getByPlaceholderText(/password/i), "secret");
 
     // Set the organization
-    userEvent.selectOptions(
-      await canvas.getByRole("combobox", {
+    await userEvent.selectOptions(
+      canvas.getByRole("combobox", {
         name: "Organization",
       }),
       JSON.stringify(args.organization),
@@ -117,7 +117,7 @@ export const SuccessfulLogin: Story = {
     await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // Verify the user was redirected to the platforms page
-    await waitFor(() => {
+    await waitFor(async () => {
       expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
   },
@@ -151,8 +151,10 @@ export const FailedLogin_BadCredentials: Story = {
     await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // The login page should still be visible (no redirect)
-    await waitFor(() => {
-      expect(canvas.getByRole("button", { name: /^login$/i })).toBeInTheDocument();
+    await waitFor(async () => {
+      await expect(
+        canvas.getByRole("button", { name: /^login$/i }),
+      ).toBeInTheDocument();
     });
   },
 };
@@ -185,8 +187,10 @@ export const FailedLogin_BadOrg: Story = {
     await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // The login page should still be visible (no redirect)
-    await waitFor(() => {
-      expect(canvas.getByRole("button", { name: /^login$/i })).toBeInTheDocument();
+    await waitFor(async () => {
+      await expect(
+        canvas.getByRole("button", { name: /^login$/i }),
+      ).toBeInTheDocument();
     });
   },
 };
@@ -202,15 +206,15 @@ export const SuccessfulLogin_HiddenOrganizations: Story = {
     await userEvent.type(canvas.getByPlaceholderText(/username/i), "admin");
     await userEvent.type(canvas.getByPlaceholderText(/password/i), "secret");
 
-    await waitFor(() => {
-      expect(canvas.queryByRole("combobox", { name: "Organization" })).toBeNull();
+    await waitFor(async () => {
+      await expect(canvas.queryByRole("combobox", { name: "Organization" })).toBeNull();
     });
 
     await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // Successful login
-    await waitFor(() => {
-      expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
+    await waitFor(async () => {
+      await expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
   },
 };
@@ -231,7 +235,7 @@ export const OrganizationsAreSortedAlphabetically: Story = {
       .getAllByRole("option")
       .map((o) => o.textContent);
 
-    expect(options).toEqual(["HQ", "LRL", "MVP", "SPK", "SWT"]);
+    await expect(options).toEqual(["HQ", "LRL", "MVP", "SPK", "SWT"]);
   },
 };
 
@@ -255,7 +259,7 @@ export const OrganizationsAreNestedUnderTheirParents: Story = {
     // characters stay visible in source.
     const NBSP = String.fromCharCode(160);
 
-    expect(options.map((o) => o.replaceAll(NBSP, ""))).toEqual([
+    await expect(options.map((o) => o.replaceAll(NBSP, ""))).toEqual([
       "HQ",
       "MVD",
       "MVP",
@@ -265,7 +269,7 @@ export const OrganizationsAreNestedUnderTheirParents: Story = {
       "SWT",
     ]);
     // Indentation tracks depth: divisions one level in, districts two.
-    expect(options.map((o) => (o.split(NBSP).length - 1) / 4)).toEqual([
+    await expect(options.map((o) => (o.split(NBSP).length - 1) / 4)).toEqual([
       0, 1, 2, 1, 2, 1, 2,
     ]);
   },

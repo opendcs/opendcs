@@ -133,6 +133,7 @@ def genSpec = tasks.register('generateOpenAPI') {
     group = "documentation"
     description = "Generates the Swagger OpenAPI JSON file without running the application"
     dependsOn resolve
+    inputs.files(sourceSets.main.allSource)
     outputs.files(file("build/swagger/${fileName}.${format}"))
 }
 

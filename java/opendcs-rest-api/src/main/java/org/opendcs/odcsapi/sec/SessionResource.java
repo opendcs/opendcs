@@ -58,7 +58,7 @@ public final class SessionResource
 					@ApiResponse(responseCode = "200", description = "If the session is valid," +
 							" a successful response will be returned.",
 						content = @Content(mediaType = MediaType.APPLICATION_JSON,
-								schema = @Schema(implementation = User.class)
+								schema = @Schema(implementation = OpenDcsPrincipal.class)
 							) ),
 					@ApiResponse(
 							responseCode = "401",
@@ -81,7 +81,7 @@ public final class SessionResource
 		Object sessionPrincipal = session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE);
 		
 		OpenDcsPrincipal principal = (OpenDcsPrincipal) sessionPrincipal;
-		return Response.ok().entity(principal.getUser()).build();
+		return Response.ok().entity(principal).build();
 	}
 
 	@DELETE
@@ -109,15 +109,15 @@ public final class SessionResource
 
 	public static ResponseBuilder updateSessionWithUser(User user, HttpServletRequest httpRequest)
 	{
-		var roleMap = new HashMap<ApiOrganization, ArrayList<OpenDcsApiRoles>>();
+		var roleMap = new HashMap<String, ArrayList<OpenDcsApiRole>>();
 		user.roles.forEach((org, roles) ->
-			roleMap.put(OrganizationResource.map(org),
-						new ArrayList<OpenDcsApiRoles>(roles.stream()
-															.map(role -> OpenDcsApiRoles.valueOf(role.name()))
+			roleMap.put(org.getName(),
+						new ArrayList<OpenDcsApiRole>(roles.stream()
+															.map(OpenDcsApiRole::valueOf)
 															.toList()))
 		);
 		
-		roleMap.computeIfAbsent(OrganizationResource.map(Organization.NULL_ORG), org -> new ArrayList<>()).add(OpenDcsApiRoles.ODCS_API_REGISTERED);
+		roleMap.computeIfAbsent(Organization.NULL_ORG.getName(), org -> new ArrayList<>()).add(OpenDcsApiRole.ODCS_API_REGISTERED);
 		OpenDcsPrincipal principal = new OpenDcsPrincipal(user, roleMap);
 		HttpSession oldSession = httpRequest.getSession(false);
 		if(oldSession != null)
@@ -127,6 +127,6 @@ public final class SessionResource
 		HttpSession session = httpRequest.getSession(true);
 
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);
-		return Response.ok().entity(user);
+		return Response.ok().entity(principal);
 	}
 }
