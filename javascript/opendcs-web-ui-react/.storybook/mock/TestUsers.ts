@@ -1,19 +1,18 @@
-import { User } from "opendcs-api";
+import { OpenDcsApiRoles, OpenDcsPrincipal } from "opendcs-api";
 
-export const BasicUser: User = {
+const USER: OpenDcsApiRoles = { role: "ODCS_API_USER", description: "Generic User" };
+const ADMIN: OpenDcsApiRoles = {
+  role: "ODCS_API_ADMIN",
+  description: "User with addition privleges",
+};
+
+export const BasicUser: OpenDcsPrincipal = {
   id: { value: 1 },
   email: "BasicUser@noreply.com",
   createdAt: new Date("2026-05-06T00:00:00Z"),
   updatedAt: new Date("2026-05-07T00:00:00Z"),
   roles: {
-    "": [
-      {
-        id: { value: 1 },
-        name: "TestRole",
-        description: "A simple role to validate UI behavior",
-        updatedAt: new Date("2026-05-01T00:00:00Z"),
-      },
-    ],
+    "": [USER],
   },
   identityProviders: [
     {
@@ -23,30 +22,10 @@ export const BasicUser: User = {
   ],
 };
 
-export const CwmsUser: User = {
+export const CwmsUser: OpenDcsPrincipal = {
   ...BasicUser,
   roles: {
-    SPK: [
-      {
-        id: { value: 1 },
-        name: "User",
-        description: "User Role",
-        updatedAt: new Date("2026-05-01T00:00:00Z"),
-      },
-      {
-        id: { value: 2 },
-        name: "Admin",
-        description: "Admin Role",
-        updatedAt: new Date("2026-05-01T00:00:00Z"),
-      },
-    ],
-    SWT: [
-      {
-        id: { value: 1 },
-        name: "User",
-        description: "User Role",
-        updatedAt: new Date("2026-05-01T00:00:00Z"),
-      },
-    ],
+    SPK: [USER, ADMIN],
+    SWT: [USER],
   },
 };

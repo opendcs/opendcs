@@ -127,7 +127,7 @@ public final class TomcatServer implements AutoCloseable
 	public void start() throws LifecycleException
 	{
 		tomcatInstance.start();
-		log.info("Tomcat listening at http://localhost:{}", tomcatInstance.getConnector().getLocalPort());
+		log.info("Tomcat listening at http://localhost:{}", getPort());
 	}
 
 	public int getPort()
