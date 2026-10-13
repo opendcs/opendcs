@@ -1,7 +1,7 @@
-import { OpenDcsApiRoles, OpenDcsPrincipal } from "opendcs-api";
+import { OpenDcsApiRole, OpenDcsPrincipal } from "opendcs-api";
 
-const USER: OpenDcsApiRoles = { role: "ODCS_API_USER", description: "Generic User" };
-const ADMIN: OpenDcsApiRoles = {
+const USER: OpenDcsApiRole = { role: "ODCS_API_USER", description: "Generic User" };
+const ADMIN: OpenDcsApiRole = {
   role: "ODCS_API_ADMIN",
   description: "User with addition privleges",
 };

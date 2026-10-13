@@ -1,7 +1,7 @@
 import DataTable from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import { AppDataTable } from "../../../components/data-table";
-import type { OpenDcsApiRoles } from "opendcs-api";
+import type { OpenDcsApiRole } from "opendcs-api";
 import type UserProperties from "./UserProperties";
 import { useTranslation } from "react-i18next";
 import { compareStrings } from "../../../util/sort";
@@ -21,13 +21,13 @@ export function Roles({ user }: Readonly<UserProperties>) {
       return (
         <div key={org}>
           For {org !== "" ? org : "Default"}
-          <AppDataTable<OpenDcsApiRoles, string, string>
+          <AppDataTable<OpenDcsApiRole, string, string>
             data={roles || []}
             columns={[
               { header: t("role"), data: "role" },
               { header: t("translation:description"), data: "description" },
             ]}
-            getId={function (row: OpenDcsApiRoles): string {
+            getId={function (row: OpenDcsApiRole): string {
               return row.role!;
             }}
           />
