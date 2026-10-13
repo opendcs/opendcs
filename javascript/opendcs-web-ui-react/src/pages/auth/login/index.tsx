@@ -17,7 +17,6 @@ import {
 import { oidcConfigToClient, type ParamMap } from "../../../util/login-providers";
 import type { SigninRequest } from "oidc-client-ts";
 import { AppVersion } from "../../../components/AppVersion";
-import { ConfigSensorSkeleton } from "../../decodes/configs/ConfigSensor";
 
 // Indentation for nested offices in the organization select. Built from its
 // code point so the character stays visible in source.

@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
@@ -70,6 +71,8 @@ import org.opendcs.fixtures.extensions.auth.KeyCloakTestExtension;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
@@ -184,7 +187,7 @@ public class BaseApiIT extends AppTestBase
 				.addHeader(ORGANIZATION_HEADER, organization)
 				.build();
 		//Check while passing in cookie
-		given()
+		var principal = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -196,7 +199,11 @@ public class BaseApiIT extends AppTestBase
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
-		;
+		.extract().body();
+		final ObjectMapper mapper = new ObjectMapperContextResolver().getContext(OpenDcsPrincipal.class);
+		final var principalMapped = (JsonNode)assertDoesNotThrow(() -> mapper.valueToTree(mcup));
+		final var rolesFromMapped = assertDoesNotThrow(() -> mapper.treeToValue(principalMapped.get("roles"), Map.class));
+		assertEquals(rolesFromMapped, principal.jsonPath().getMap("roles"));
 	}
 
 	String getCookie()
