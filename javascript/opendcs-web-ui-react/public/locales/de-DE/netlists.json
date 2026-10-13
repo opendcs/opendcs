@@ -15,6 +15,8 @@
   "delete_for": "Netzwerkliste {{id}} löschen",
   "save_netlist": "Netzwerkliste {{id}} speichern",
   "cancel_for": "Bearbeitung der Netzwerkliste {{id}} abbrechen",
+  "save_error": "Speichern fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen.",
+  "required_fields": "Name, Transportmedium-Typ und Standortnamen-Typ sind erforderlich.",
   "items": {
     "title": "Netzwerklisteneinträge",
     "transportId": "Transport-ID",
