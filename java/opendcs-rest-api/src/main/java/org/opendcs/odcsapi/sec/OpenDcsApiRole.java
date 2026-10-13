@@ -20,7 +20,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 
 /**
  * record instead of enum so that additional roles could be created/registered.
- * OpenDcsApiRoles
+ * OpenDcsApiRole
  * @param role
  * @param description
  */
@@ -42,7 +42,7 @@ public record OpenDcsApiRole(String role, String description)
 	/**
 	 * Either return one of the constants if the name matches or just create a new 
 	 * instance with the given information.
-	 * @return OpenDcsApiRoles
+	 * @return
 	 */
 	public static OpenDcsApiRole valueOf(Role databaseRole)
 	{
