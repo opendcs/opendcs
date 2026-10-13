@@ -1,4 +1,4 @@
-import { use, useCallback, useMemo, useReducer } from "react";
+import { use, useCallback, useMemo, useReducer, useState } from "react";
 import { Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import type { ApiNetList, ApiNetListItem, ApiPlatformRef } from "opendcs-api";
@@ -9,7 +9,9 @@ import {
   INPUT_H,
   LABEL_H,
   SaveButton,
+  SaveErrorAlert,
 } from "../../../components/forms";
+import { useSaveError } from "../../../hooks/useSaveError";
 import type { CancelAction, SaveAction } from "../../../util/Actions";
 import { RefListSelect } from "../routing/RoutingSelects";
 import { NetlistReducer, type UiNetlist } from "./NetlistReducer";
@@ -97,6 +99,12 @@ export const Netlist: React.FC<NetlistProperties> = ({
   const resolved = details instanceof Promise ? use(details) : details;
   const provided = resolved.netlist;
   const [local, dispatch] = useReducer(NetlistReducer, provided);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("netlists:save_error"),
+    "Netlist save failed",
+  );
+  // The NETWORKLIST columns are NOT NULL, so a blank field can only fail on the server.
+  const [incomplete, setIncomplete] = useState(false);
 
   const itemsList = useMemo(() => Object.values(local.items ?? {}), [local.items]);
 
@@ -122,8 +130,20 @@ export const Netlist: React.FC<NetlistProperties> = ({
   );
 
   const saveNetlist = useCallback(() => {
-    actions.save?.(local as ApiNetList);
-  }, [actions, local]);
+    const missing =
+      !local.name?.trim() || !local.transportMediumType || !local.siteNameTypePref;
+    setIncomplete(missing);
+    if (missing) {
+      clearSaveError();
+      return;
+    }
+    void attemptSave(() => actions.save?.(local as ApiNetList));
+  }, [actions, local, attemptSave, clearSaveError]);
+
+  const dismissError = useCallback(() => {
+    setIncomplete(false);
+    clearSaveError();
+  }, [clearSaveError]);
 
   const cancel = useCallback(() => {
     if (provided.netlistId !== undefined) actions.cancel?.(provided.netlistId);
@@ -201,6 +221,12 @@ export const Netlist: React.FC<NetlistProperties> = ({
             </Col>
           </Row>
 
+          {edit && (
+            <SaveErrorAlert
+              error={incomplete ? t("netlists:required_fields") : saveError}
+              onClose={dismissError}
+            />
+          )}
           {edit && (
             <EditFormActions>
               <CancelButton

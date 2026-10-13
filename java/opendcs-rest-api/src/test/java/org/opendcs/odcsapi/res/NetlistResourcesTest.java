@@ -13,11 +13,15 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiNetListItem;
 import org.opendcs.odcsapi.beans.ApiNetlistRef;
+import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.opendcs.odcsapi.res.NetlistResources.map;
 import static org.opendcs.odcsapi.res.NetlistResources.mapRef;
+import static org.opendcs.odcsapi.res.NetlistResources.validate;
 
 final class NetlistResourcesTest
 {
@@ -107,6 +111,40 @@ final class NetlistResourcesTest
         assertEquals(nle.getDescription(), nle2.getDescription());
         assertEquals(nle.getPlatformName(), nle2.getPlatformName());
         assertEquals(nle.getTransportId(), nle2.getTransportId());
+    }
+
+    @Test
+    void testValidateRequiresNotNullColumns()
+    {
+        assertThrows(MissingParameterException.class, () -> validate(null));
+
+        ApiNetList netList = new ApiNetList();
+        netList.setName("New List");
+        netList.setTransportMediumType("goes");
+        netList.setSiteNameTypePref("nwshb5");
+        assertDoesNotThrow(() -> validate(netList));
+
+        netList.setName(" ");
+        assertThrows(MissingParameterException.class, () -> validate(netList));
+        netList.setName("New List");
+
+        netList.setTransportMediumType(null);
+        assertThrows(MissingParameterException.class, () -> validate(netList));
+        netList.setTransportMediumType("goes");
+
+        netList.setSiteNameTypePref("");
+        assertThrows(MissingParameterException.class, () -> validate(netList));
+    }
+
+    // There is no database behind this resource, so getting the 400 shows an
+    // incomplete list is turned away before the NOT NULL constraint can fail.
+    @Test
+    void testPostRejectsIncompleteNetlistBeforeTheDatabase()
+    {
+        NetlistResources resources = new NetlistResources();
+        MissingParameterException ex = assertThrows(MissingParameterException.class,
+                () -> resources.postNetlist(new ApiNetList()));
+        assertEquals("Network list name is required.", ex.getMessage());
     }
 
     @Test
