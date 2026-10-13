@@ -4,41 +4,64 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import decodes.db.Database;
+import decodes.db.EngineeringUnit;
 import decodes.db.Site;
+import decodes.db.UnitConverter;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.ParmRef;
+import decodes.util.DecodesException;
 import ilex.var.NamedVariable;
 
 /**
  * Calculates daily Hamon evaporation from air temperature and site latitude.
  * The monthly properties provide the local adjustment coefficient.
  */
+@Algorithm(description = "Calculates daily Hamon evaporation from air temperature, site latitude, and monthly adjustment coefficients.")
 public class HamonMethod extends AW_AlgorithmBase
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private UnitConverter temperatureConverter;
+	private UnitConverter evaporationConverter;
 
+	@Input
 	public double input;
-	private final String[] inputNames = new String[] { "input" };
+
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	private final String[] outputNames = new String[] { "output" };
+
+	@PropertySpec(value = "0.0")
 	public double jan = 0.0;
+	@PropertySpec(value = "0.0")
 	public double feb = 0.0;
+	@PropertySpec(value = "0.0")
 	public double mar = 0.0;
+	@PropertySpec(value = "0.0")
 	public double apr = 0.0;
+	@PropertySpec(value = "0.0")
 	public double may = 0.0;
+	@PropertySpec(value = "0.0")
 	public double jun = 0.0;
+	@PropertySpec(value = "0.0")
 	public double jul = 0.0;
+	@PropertySpec(value = "0.0")
 	public double aug = 0.0;
+	@PropertySpec(value = "0.0")
 	public double sep = 0.0;
+	@PropertySpec(value = "0.0")
 	public double oct = 0.0;
+	@PropertySpec(value = "0.0")
 	public double nov = 0.0;
+	@PropertySpec(value = "0.0")
 	public double dec = 0.0;
-	private final String[] propertyNames = new String[]
-		{ "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
 
 	public HamonMethod()
 	{
@@ -54,7 +77,8 @@ public class HamonMethod extends AW_AlgorithmBase
 	@Override
 	protected void beforeTimeSlices() throws DbCompException
 	{
-		// Hamon has no state to initialize before processing time slices.
+		temperatureConverter = getConverter(getInputUnitsAbbr("input"), "C");
+		evaporationConverter = getConverter("in", getParmUnitsAbbr("output"));
 	}
 
 	@Override
@@ -63,7 +87,7 @@ public class HamonMethod extends AW_AlgorithmBase
 		ParmRef inputParm = getParmRef("input");
 		CTimeSeries inputTimeSeries = inputParm.timeSeries;
 		Site site = inputTimeSeries.getTimeSeriesIdentifier().getSite();
-		double temperatureCelsius = toCelsius(input, inputTimeSeries.getUnitsAbbr());
+		double temperatureCelsius = convert(input, temperatureConverter, "temperature", "C");
 
 		// Hamon uses the Julian day to estimate solar declination and daylight length.
 		String dayOfYearText = new SimpleDateFormat("DDD HH:MM:SS yyyy", Locale.US)
@@ -94,7 +118,9 @@ public class HamonMethod extends AW_AlgorithmBase
 			* (saturationVaporDensity / 100.0);
 		double monthlyCoefficient = getMonthlyCoefficient(month);
 
-		setOutput(output, baseHamonEvaporation * monthlyCoefficient);
+		double evaporationInches = baseHamonEvaporation * monthlyCoefficient;
+		double evaporation = convert(evaporationInches, evaporationConverter, "evaporation", "inches");
+		setOutput(output, evaporation);
 	}
 
 	private double parseLatitude(Site site)
@@ -115,55 +141,57 @@ public class HamonMethod extends AW_AlgorithmBase
 	{
 		return switch (month)
 		{
-    		case Calendar.JANUARY -> jan;
-		    case Calendar.FEBRUARY ->feb;
-    		case Calendar.MARCH -> mar;
-    		case Calendar.APRIL -> apr;
-	    	case Calendar.MAY -> may;
-    		case Calendar.JUNE -> jun;
-    		case Calendar.JULY -> jul;
-	    	case Calendar.AUGUST -> aug;
-		    case Calendar.SEPTEMBER -> sep;
-    		case Calendar.OCTOBER -> oct;
-    		case Calendar.NOVEMBER -> nov;
-    		case Calendar.DECEMBER -> dec;
-    		default -> throw new IllegalStateException("Unexpected calendar month: " + month);
+		case Calendar.JANUARY -> jan;
+		case Calendar.FEBRUARY -> feb;
+		case Calendar.MARCH -> mar;
+		case Calendar.APRIL -> apr;
+		case Calendar.MAY -> may;
+		case Calendar.JUNE -> jun;
+		case Calendar.JULY -> jul;
+		case Calendar.AUGUST -> aug;
+		case Calendar.SEPTEMBER -> sep;
+		case Calendar.OCTOBER -> oct;
+		case Calendar.NOVEMBER -> nov;
+		case Calendar.DECEMBER -> dec;
+		default -> throw new IllegalStateException("Unexpected calendar month: " + month);
 		};
 	}
 
-	private double toCelsius(double temperature, String units)
+	private UnitConverter getConverter(String fromUnits, String toUnits) throws DbCompException
 	{
-		if (units == null)
+		if (fromUnits == null || toUnits == null || fromUnits.equalsIgnoreCase(toUnits)
+			|| fromUnits.equalsIgnoreCase("unknown") || toUnits.equalsIgnoreCase("unknown"))
 		{
-			return temperature;
+			return null;
 		}
 
-		if ("F".equalsIgnoreCase(units)
-			|| "degF".equalsIgnoreCase(units)
-			|| "Fahrenheit".equalsIgnoreCase(units))
+		EngineeringUnit from = EngineeringUnit.getEngineeringUnit(fromUnits);
+		EngineeringUnit to = EngineeringUnit.getEngineeringUnit(toUnits);
+		UnitConverter converter = Database.getDb().unitConverterSet.get(from, to);
+		if (converter == null)
 		{
-			return (temperature - 32.0) * 5.0 / 9.0;
+			throw new DbCompException("No Hamon unit converter is available from "
+				+ fromUnits + " to " + toUnits);
+		}
+		return converter;
+	}
+
+	private double convert(double value, UnitConverter converter, String valueName, String units)
+		throws DbCompException
+	{
+		if (converter == null)
+		{
+			return value;
 		}
 
-		return temperature;
-	}
-
-	@Override
-	public String[] getInputNames()
-	{
-		return inputNames;
-	}
-
-	@Override
-	public String[] getOutputNames()
-	{
-		return outputNames;
-	}
-
-	@Override
-	public String[] getPropertyNames()
-	{
-		return propertyNames;
+		try
+		{
+			return converter.convert(value);
+		}
+		catch (DecodesException exception)
+		{
+			throw new DbCompException("Unable to convert Hamon " + valueName + " to " + units, exception);
+		}
 	}
 
 	@Override
