@@ -113,35 +113,22 @@ public class HamonMethod extends AW_AlgorithmBase
 
 	private double getMonthlyCoefficient(int month)
 	{
-		switch (month)
+		return switch (month)
 		{
-		case Calendar.JANUARY:
-			return jan;
-		case Calendar.FEBRUARY:
-			return feb;
-		case Calendar.MARCH:
-			return mar;
-		case Calendar.APRIL:
-			return apr;
-		case Calendar.MAY:
-			return may;
-		case Calendar.JUNE:
-			return jun;
-		case Calendar.JULY:
-			return jul;
-		case Calendar.AUGUST:
-			return aug;
-		case Calendar.SEPTEMBER:
-			return sep;
-		case Calendar.OCTOBER:
-			return oct;
-		case Calendar.NOVEMBER:
-			return nov;
-		case Calendar.DECEMBER:
-			return dec;
-		default:
-			throw new IllegalStateException("Unexpected calendar month: " + month);
-		}
+    		case Calendar.JANUARY -> jan;
+		    case Calendar.FEBRUARY ->feb;
+    		case Calendar.MARCH -> mar;
+    		case Calendar.APRIL -> apr;
+	    	case Calendar.MAY -> may;
+    		case Calendar.JUNE -> jun;
+    		case Calendar.JULY -> jul;
+	    	case Calendar.AUGUST -> aug;
+		    case Calendar.SEPTEMBER -> sep;
+    		case Calendar.OCTOBER -> oct;
+    		case Calendar.NOVEMBER -> nov;
+    		case Calendar.DECEMBER -> dec;
+    		default -> throw new IllegalStateException("Unexpected calendar month: " + month);
+		};
 	}
 
 	private double toCelsius(double temperature, String units)
