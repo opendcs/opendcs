@@ -15,6 +15,8 @@
   "delete_for": "Eliminar lista de red {{id}}",
   "save_netlist": "Guardar lista de red {{id}}",
   "cancel_for": "Cancelar la edición de la lista de red {{id}}",
+  "save_error": "Error al guardar. Por favor verifique sus entradas e intente de nuevo.",
+  "required_fields": "El nombre, el tipo de medio de transporte y el tipo de nombre de sitio son obligatorios.",
   "items": {
     "title": "Elementos de la lista de red",
     "transportId": "ID de transporte",
