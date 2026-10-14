@@ -167,11 +167,16 @@ const FALLBACK_TZS = [
   "Pacific/Honolulu",
 ];
 
+// V8 (Chrome, Edge) leaves UTC and GMT out of supportedValuesOf, so they are
+// always listed first.
+const PINNED_TZS = ["UTC", "GMT"];
+
 const getTimeZones = (): string[] => {
   const intl = Intl as unknown as { supportedValuesOf?: (k: string) => string[] };
   try {
     if (typeof intl.supportedValuesOf === "function") {
-      return intl.supportedValuesOf("timeZone");
+      const zones = intl.supportedValuesOf("timeZone");
+      return [...PINNED_TZS, ...zones.filter((z) => !PINNED_TZS.includes(z))];
     }
   } catch {
     // fall through to fallback list

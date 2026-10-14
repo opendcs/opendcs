@@ -302,3 +302,23 @@ export const EditTimezoneFiresCallback: Story = {
     });
   },
 };
+
+export const NewScheduleOffersUtcAndGmt: Story = {
+  args: {
+    startTime: new Date("2024-06-15T10:30:00"),
+  },
+  play: async ({ args, canvas, mount, parameters, userEvent }) => {
+    await mount();
+    const { i18n } = parameters;
+    const tz = (await canvas.findByLabelText(
+      i18n.t("schedule:timezone"),
+    )) as HTMLSelectElement;
+    const values = Array.from(tz.options).map((o) => o.value);
+    expect(values.slice(0, 3)).toEqual(["", "UTC", "GMT"]);
+    expect(values.filter((v) => v === "UTC")).toHaveLength(1);
+    await userEvent.selectOptions(tz, "GMT");
+    await waitFor(() => {
+      expect(args.onTimeZoneChange).toHaveBeenCalledWith("GMT");
+    });
+  },
+};
