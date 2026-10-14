@@ -11,6 +11,7 @@ package decodes.cwms.validation;
  * Absolute value range check
  */
 public class AbsCheck
+	implements ScreeningCheck
 {
 	private char flag;
 	private double low;
@@ -30,9 +31,16 @@ public class AbsCheck
 		this.high = high;
 	}
 
+	@Override
 	public char getFlag()
 	{
 		return flag;
+	}
+
+	@Override
+	public Category getCategory()
+	{
+		return Category.ABSOLUTE;
 	}
 
 	public double getLow()

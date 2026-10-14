@@ -11,6 +11,7 @@ package decodes.cwms.validation;
  * Check to make sure rate of change did not exceed a specified range.
  */
 public class RocPerHourCheck
+	implements ScreeningCheck
 {
 	private char flag;
 	private double rise;
@@ -30,9 +31,16 @@ public class RocPerHourCheck
 		this.rise = rise;
 	}
 
+	@Override
 	public char getFlag()
 	{
 		return flag;
+	}
+
+	@Override
+	public Category getCategory()
+	{
+		return Category.RATE_OF_CHANGE;
 	}
 
 	public double getRise()
