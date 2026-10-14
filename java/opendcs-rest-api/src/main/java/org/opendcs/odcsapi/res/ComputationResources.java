@@ -312,7 +312,7 @@ public final class ComputationResources extends OpenDcsResource
 
 	/**
 	 * Stopgap to figure out a better method. This will only work for CWMS and the OpenDCS implementations.
-	 * Additionally, it's arguable this should be handle at the UI level instead of trying to hack it in here.
+	 * Additionally, it's arguable this should be handled at the UI level instead of trying to hack it in here.
 	 * @param p provied ApiCompParm instance
 	 * @return a possibly invalid "time series unique string"
 	 */
