@@ -36,6 +36,7 @@ public final class OpenDcsPrincipal implements Principal, Serializable
 	private static final long serialVersionUID = -2116796045388257540L;
 	@JsonIgnoreProperties({"roles"})
 	@JsonUnwrapped
+	@SuppressWarnings ("java:S1948") // User is serializable just doesn't get seen as such
 	private final User user;
 
 	private final Map<String, ArrayList<OpenDcsApiRole>> roles;

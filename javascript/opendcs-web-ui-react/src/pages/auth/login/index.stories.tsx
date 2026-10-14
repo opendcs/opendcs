@@ -9,11 +9,7 @@ import {
 import { ApiOrganization } from "opendcs-api";
 import { AuthContext } from "../../../contexts/app/AuthContext";
 import { ApiProvider } from "../../../contexts/app/ApiProvider";
-import {
-  ApiContext,
-  defaultValue as apiDefault,
-  useApi,
-} from "../../../contexts/app/ApiContext";
+import { useApi } from "../../../contexts/app/ApiContext";
 import apiAuthSpec from "../../../../.storybook/mock/openapi-security-schemes.json";
 import { fromOpenApiData } from "../../../util/login-providers";
 import { Route, Routes } from "react-router-dom";
@@ -96,14 +92,15 @@ export const DefaultPageWithOrgs: Story = {
   args: {
     organization: undefined,
   },
-  render: (args) => {
+  render: () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const api = useApi();
     api.setOrg({ name: "HQ" });
     window.localStorage.clear();
     window.localStorage.setItem("organization", JSON.stringify({ name: "HQ" }));
     return authDecorator(Login);
   },
-  play: async ({ args, mount }) => {
+  play: async ({ mount }) => {
     const canvas = await mount();
     await expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
   },
@@ -114,6 +111,7 @@ export const LoginWithPreviouslyStoredOrg: Story = {
     bypassGlobalDecorators: true,
   },
   render: () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const api = useApi();
     api.setOrg({ name: "MVP" });
     window.localStorage.clear();
@@ -121,7 +119,7 @@ export const LoginWithPreviouslyStoredOrg: Story = {
 
     return authDecorator(Login);
   },
-  play: async ({ args, mount }) => {
+  play: async ({ mount }) => {
     const canvas = await mount();
     await expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
     const orgs = canvas.getByRole("combobox", {
@@ -156,7 +154,7 @@ export const SuccessfulLogin: Story = {
 
     // Verify the user was redirected to the platforms page
     await waitFor(async () => {
-      expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
+      await expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
   },
 };
@@ -295,7 +293,7 @@ export const OrganizationsAreNestedUnderTheirParents: Story = {
 
     // Non-breaking space, built from its code point so the indentation
     // characters stay visible in source.
-    const NBSP = String.fromCharCode(160);
+    const NBSP = String.fromCodePoint(160);
 
     await expect(options.map((o) => o.replaceAll(NBSP, ""))).toEqual([
       "HQ",

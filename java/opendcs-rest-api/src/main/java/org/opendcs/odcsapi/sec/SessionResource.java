@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.opendcs.data.Organization;
 import org.opendcs.database.model.User;
-import org.opendcs.odcsapi.beans.ApiOrganization;
 import org.opendcs.odcsapi.util.ApiConstants;
 
 import io.swagger.v3.oas.annotations.Operation;
