@@ -141,6 +141,25 @@ export const SortedByNameOnFirstLoad: Story = {
   },
 };
 
+// A browser that opened this page before it sorted by name still holds the id
+// sort DataTables saved back then; the name sort has to win regardless.
+export const SortedByNameDespiteSavedIdSort: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, canvasElement }) => {
+    localStorage.setItem(
+      `DataTables_tsGroupsTable_${location.pathname}`,
+      JSON.stringify({ time: Date.now(), start: 0, length: 10, order: [[0, "asc"]] }),
+    );
+    await mount();
+    await waitFor(() => {
+      const names = Array.from(canvasElement.querySelectorAll("tbody tr")).map(
+        (row) => row.querySelectorAll("td")[1]?.textContent?.trim() ?? "",
+      );
+      expect(names).toEqual(["GateOpening", "MROI4-ROWI4-HG", "regtest_017"]);
+    });
+  },
+};
+
 // Empty state: no groups defined — the caption still renders.
 export const Empty: Story = {
   parameters: {
