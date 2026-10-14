@@ -86,11 +86,21 @@ export default function Login() {
                   <FormLogin
                     key={key}
                     login={(credentials: Credentials) => {
+                      const selectedOrg = api.org;
                       auth
-                        .postCredentials(api.org, credentials)
+                        // /credentials only accepts the guest role, which lives under the
+                        // blank org; the selected office is applied after the session exists.
+                        .postCredentials("", credentials)
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         .then((user_value: any) => {
                           setUser(user_value);
+                          return selectedOrg
+                            ? auth
+                                .getOrganizations(selectedOrg)
+                                .catch(() => api.setOrg({}))
+                            : undefined;
+                        })
+                        .then(() => {
                           const redirectPath = location.state?.from || "/platforms";
                           navigate(redirectPath, { replace: true });
                         })
