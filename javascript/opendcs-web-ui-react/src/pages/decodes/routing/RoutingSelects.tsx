@@ -179,7 +179,7 @@ const getTimeZones = (): string[] => {
   } catch {
     // fall through to fallback list
   }
-  return [...new Set([...zones, ...EXTRA_TZS])].sort();
+  return [...new Set([...zones, ...EXTRA_TZS])].sort((a, b) => a.localeCompare(b));
 };
 
 export const TimezoneSelect: React.FC<BaseSelectProps> = ({
@@ -190,7 +190,10 @@ export const TimezoneSelect: React.FC<BaseSelectProps> = ({
   ariaLabel,
 }) => {
   const zones = useMemo(() => getTimeZones(), []);
-  const allZones = value && !zones.includes(value) ? [...zones, value].sort() : zones;
+  const allZones =
+    value && !zones.includes(value)
+      ? [...zones, value].sort((a, b) => a.localeCompare(b))
+      : zones;
 
   return (
     <Form.Select

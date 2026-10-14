@@ -317,7 +317,7 @@ export const NewScheduleOffersUtcAndGmt: Story = {
     expect(blank).toEqual("");
     expect(zones.filter((v) => v === "UTC")).toHaveLength(1);
     expect(zones.filter((v) => v === "GMT")).toHaveLength(1);
-    expect(zones).toEqual([...zones].sort());
+    expect(zones).toEqual([...zones].sort((a, b) => a.localeCompare(b)));
     await userEvent.selectOptions(tz, "GMT");
     await waitFor(() => {
       expect(args.onTimeZoneChange).toHaveBeenCalledWith("GMT");
@@ -340,6 +340,6 @@ export const SavedZoneSortsIntoList: Story = {
     const [, ...zones] = Array.from(tz.options).map((o) => o.value);
     expect(tz.value).toEqual("EST");
     expect(zones.filter((v) => v === "EST")).toHaveLength(1);
-    expect(zones).toEqual([...zones].sort());
+    expect(zones).toEqual([...zones].sort((a, b) => a.localeCompare(b)));
   },
 };
