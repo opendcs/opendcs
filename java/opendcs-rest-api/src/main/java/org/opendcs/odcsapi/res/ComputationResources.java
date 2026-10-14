@@ -202,9 +202,22 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			throw new MissingParameterException("Missing required computationid parameter.");
 		}
-
-		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
+		final var tsdb = getLegacyTimeseriesDB();
+		try (ComputationDAI dai = tsdb.makeComputationDAO())
 		{
+			var comp = dai.getComputationById(DbKey.createDbKey(compId));
+			comp.getParmList()
+				.forEach(p ->
+				{
+					try
+					{
+						tsdb.expandSDI(p);
+					}
+					catch (DbIoException | NoSuchObjectException ex)
+					{
+						log.atWarn().setCause(ex).log("Unable to expand {}", p.getRoleName());
+					}
+				});
 			return Response.ok()
 					.entity(DTOMappers.map(dai.getComputationById(DbKey.createDbKey(compId)))).build();
 		}
