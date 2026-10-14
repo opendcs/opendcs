@@ -8,20 +8,26 @@ import java.util.Vector;
 import decodes.db.DataSource;
 import decodes.db.DataSourceList;
 import decodes.sql.DbKey;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiDataSource;
 import org.opendcs.odcsapi.beans.ApiDataSourceGroupMember;
 import org.opendcs.odcsapi.beans.ApiDataSourceRef;
+import org.opendcs.odcsapi.beans.Status;
+import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 
 import static ilex.util.PropertiesUtil.props2string;
 import static ilex.util.PropertiesUtil.string2props;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.opendcs.odcsapi.res.DataSourceResources.map;
+import static org.opendcs.odcsapi.res.DataSourceResources.validate;
 
 final class DataSourceResourcesTest
 {
@@ -188,5 +194,42 @@ final class DataSourceResourcesTest
 		propString = "";
 		result = string2props(propString);
 		assertEquals(0, result.size());
+	}
+
+	@Test
+	void testValidateRequiresNotNullColumns()
+	{
+		assertThrows(MissingParameterException.class, () -> validate(null));
+
+		ApiDataSource dataSource = new ApiDataSource();
+		dataSource.setName("New Source");
+		dataSource.setType("lrgs");
+		assertDoesNotThrow(() -> validate(dataSource));
+
+		dataSource.setName(" ");
+		assertThrows(MissingParameterException.class, () -> validate(dataSource));
+		dataSource.setName("New Source");
+
+		dataSource.setType(null);
+		assertThrows(MissingParameterException.class, () -> validate(dataSource));
+		dataSource.setType("");
+		assertThrows(MissingParameterException.class, () -> validate(dataSource));
+	}
+
+	@Test
+	void testPostWithoutTypeReturnsBadRequestNamingTheField()
+	{
+		ApiDataSource dataSource = new ApiDataSource();
+		dataSource.setName("New Source");
+
+		// No servlet context exists here, so reaching the database would fail differently.
+		MissingParameterException ex = assertThrows(MissingParameterException.class,
+				() -> new DataSourceResources().postDatasource(dataSource));
+
+		try (Response response = new AppExceptionMapper().toResponse(ex))
+		{
+			assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+			assertEquals("Data source type is required.", ((Status) response.getEntity()).getMessage());
+		}
 	}
 }

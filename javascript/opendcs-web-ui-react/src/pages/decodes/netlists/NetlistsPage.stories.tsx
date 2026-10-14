@@ -237,6 +237,90 @@ export const AddNewNetlistRow: Story = {
   },
 };
 
+// Saving a new netlist with the NOT NULL selects left blank says which fields
+// are required instead of posting and silently failing (issue #2200).
+const requiredFieldsPosts: unknown[] = [];
+export const AddNewNetlistRequiresFields: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postNetlist: http.post("/odcsapi/netlist", async ({ request }) => {
+          requiredFieldsPosts.push(await request.json());
+          return HttpResponse.json<ApiNetList>({});
+        }),
+      },
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    requiredFieldsPosts.length = 0;
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("netlists:add_netlist"),
+    });
+    await act(async () => userEvent.click(addBtn));
+    const nameInput = await canvas.findByRole("textbox", {
+      name: i18n.t("netlists:name"),
+    });
+    await act(async () => userEvent.type(nameInput, "New-List"));
+    const saveBtn = await canvas.findByRole("button", {
+      name: new RegExp(`^${i18n.t("netlists:save_netlist", { id: "" }).trim()}`),
+    });
+    await act(async () => userEvent.click(saveBtn));
+    expect(
+      await canvas.findByText(i18n.t("netlists:required_fields")),
+    ).toBeInTheDocument();
+    expect(requiredFieldsPosts).toHaveLength(0);
+  },
+};
+
+// A server rejection on a new netlist shows the server's message and keeps
+// the row open with the user's input (issue #2200).
+export const AddNewNetlistShowsSaveError: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postNetlist: http.post("/odcsapi/netlist", () =>
+          HttpResponse.json(
+            { message: "Network list name is required." },
+            { status: 400 },
+          ),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const addBtn = await canvas.findByRole("button", {
+      name: i18n.t("netlists:add_netlist"),
+    });
+    await act(async () => userEvent.click(addBtn));
+    const nameInput = (await canvas.findByRole("textbox", {
+      name: i18n.t("netlists:name"),
+    })) as HTMLInputElement;
+    await act(async () => userEvent.type(nameInput, "New-List"));
+    const mediumSelect = await canvas.findByRole("combobox", {
+      name: i18n.t("netlists:transportMediumType"),
+    });
+    await act(async () => userEvent.selectOptions(mediumSelect, "goes"));
+    const siteNameSelect = await canvas.findByRole("combobox", {
+      name: i18n.t("netlists:siteNameTypePref"),
+    });
+    await act(async () => userEvent.selectOptions(siteNameSelect, "nwshb5"));
+    const saveBtn = await canvas.findByRole("button", {
+      name: new RegExp(`^${i18n.t("netlists:save_netlist", { id: "" }).trim()}`),
+    });
+    await act(async () => userEvent.click(saveBtn));
+    expect(
+      await canvas.findByText("Network list name is required."),
+    ).toBeInTheDocument();
+    expect(nameInput.value).toEqual("New-List");
+  },
+};
+
 // "Select platforms" offers only platforms with a medium of the list's type
 // that aren't already on it, and adds the chosen ones with their transport id,
 // preferred site name and description filled in (issue #2029).

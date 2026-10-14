@@ -1,13 +1,18 @@
-import { use, useCallback, useMemo, useReducer } from "react";
+import { use, useCallback, useMemo, useReducer, useState } from "react";
 import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-bootstrap";
 import { Save, X } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import type {
   ApiDataSource,
   ApiDataSourceGroupMember,
-  ApiDataSourceRef,
+  ApiPropSpec,
+  ApiRefList,
 } from "opendcs-api";
 import { DetailFade } from "../../../components/data-table";
+import { SaveErrorAlert } from "../../../components/forms";
+import { useRefList } from "../../../contexts/data/RefListContext";
+import { useSaveError } from "../../../hooks/useSaveError";
+import { usePropSpecsQuery } from "../../../queries/propSpecs";
 import { PropertiesTable, type Property } from "../../../components/properties";
 import { RefListSelect } from "../routing/RoutingSelects";
 import type {
@@ -28,6 +33,24 @@ const GROUP_TYPES = new Set(["hotbackupgroup", "roundrobingroup"]);
 
 const isGroupType = (type?: string): boolean =>
   type !== undefined && GROUP_TYPES.has(type.toLowerCase());
+
+const TYPE_REF_LIST = "DataSourceType";
+
+// The class that implements a data source type; it is what declares which
+// properties the type accepts.
+const execClassOf = (types: ApiRefList, type?: string): string | undefined => {
+  if (!type) return undefined;
+  const wanted = type.toLowerCase();
+  return Object.values(types.items ?? {}).find(
+    (item) => item.value?.toLowerCase() === wanted,
+  )?.execClassName;
+};
+
+const PropertiesPlaceholder: React.FC = () => (
+  <Placeholder animation="glow" className="d-block">
+    <Placeholder xs={12} style={{ height: "12rem" }} />
+  </Placeholder>
+);
 
 export const DataSourceSkeleton: React.FC<{ edit?: boolean; className?: string }> = ({
   edit = false,
@@ -53,9 +76,7 @@ export const DataSourceSkeleton: React.FC<{ edit?: boolean; className?: string }
           ))}
         </Col>
         <Col md={6}>
-          <Placeholder animation="glow" className="d-block">
-            <Placeholder xs={12} style={{ height: "12rem" }} />
-          </Placeholder>
+          <PropertiesPlaceholder />
         </Col>
       </Row>
       {edit && (
@@ -86,20 +107,30 @@ export interface DataSourceDetails {
 
 export interface DataSourceProperties {
   details: Promise<DataSourceDetails> | DataSourceDetails;
-  /** All data sources available to attach as group members. */
-  dataSources: ApiDataSourceRef[];
-  dataSourcesLoading?: boolean;
   actions?: SaveAction<ApiDataSource> & CancelAction<number>;
   edit?: boolean;
 }
 
-const mapProps: (props: { [k: string]: string }) => Property[] = (props) =>
-  Object.entries(props).map(([name, value]): Property => ({ name, value }));
+const mapProps = (props: { [k: string]: string }, specs: ApiPropSpec[]): Property[] => {
+  const savedNames = new Map(
+    Object.keys(props).map((name) => [name.toLowerCase(), name]),
+  );
+  const declared = new Map<string, Property>();
+  for (const spec of specs) {
+    const key = spec.name?.toLowerCase();
+    if (!key || declared.has(key)) continue;
+    const name = savedNames.get(key) ?? spec.name!;
+    declared.set(key, { name, value: props[name] ?? "", spec });
+  }
+  const shown = new Set([...declared.values()].map((prop) => prop.name));
+  const undeclared = Object.entries(props)
+    .filter(([name]) => !shown.has(name))
+    .map(([name, value]): Property => ({ name, value }));
+  return [...declared.values(), ...undeclared];
+};
 
 export const DataSource: React.FC<DataSourceProperties> = ({
   details,
-  dataSources,
-  dataSourcesLoading = false,
   actions = {},
   edit = false,
 }) => {
@@ -107,18 +138,33 @@ export const DataSource: React.FC<DataSourceProperties> = ({
   const resolved = details instanceof Promise ? use(details) : details;
   const provided = resolved.dataSource;
   const [local, dispatch] = useReducer(DataSourceReducer, provided);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("datasources:save_error"),
+    "Data source save failed",
+  );
+  // DATASOURCE.NAME and DATASOURCETYPE are NOT NULL, so a blank field can only
+  // fail on the server.
+  const [incomplete, setIncomplete] = useState(false);
 
-  const propsList = useMemo(() => mapProps(local.props ?? {}), [local.props]);
+  const { refList } = useRefList();
+  const { data: propSpecs, isLoading: specsLoading } = usePropSpecsQuery(
+    execClassOf(refList(TYPE_REF_LIST), local.type),
+  );
+  const propsList = useMemo(
+    () => mapProps(local.props ?? {}, propSpecs ?? []),
+    [local.props, propSpecs],
+  );
   const group = isGroupType(local.type);
 
   const propertyActions: CollectionActions<Property, string> = edit
     ? {
         remove: (name) => dispatch({ type: "delete_prop", payload: { name } }),
-        save: (prop) =>
-          dispatch({
-            type: "save_prop",
-            payload: { name: prop.name, value: prop.value },
-          }),
+        save: ({ name, value }) =>
+          dispatch(
+            !value.trim() && propsList.some((prop) => prop.spec && prop.name === name)
+              ? { type: "delete_prop", payload: { name } }
+              : { type: "save_prop", payload: { name, value } },
+          ),
       }
     : {};
 
@@ -144,8 +190,19 @@ export const DataSource: React.FC<DataSourceProperties> = ({
   );
 
   const saveDataSource = useCallback(() => {
-    actions.save?.(local as ApiDataSource);
-  }, [actions, local]);
+    const missing = !local.name?.trim() || !local.type;
+    setIncomplete(missing);
+    if (missing) {
+      clearSaveError();
+      return;
+    }
+    void attemptSave(() => actions.save?.(local as ApiDataSource));
+  }, [actions, local, attemptSave, clearSaveError]);
+
+  const dismissError = useCallback(() => {
+    setIncomplete(false);
+    clearSaveError();
+  }, [clearSaveError]);
 
   const cancel = useCallback(() => {
     if (provided.dataSourceId !== undefined) actions.cancel?.(provided.dataSourceId);
@@ -182,25 +239,33 @@ export const DataSource: React.FC<DataSourceProperties> = ({
                 </Form.Label>
                 <Col sm={8}>
                   <RefListSelect
-                    refListName="DataSourceType"
+                    refListName={TYPE_REF_LIST}
                     id="type"
                     value={local.type}
                     edit={edit}
                     ariaLabel={t("datasources:type")}
+                    includeBlank
                     onChange={(v) => setField("type", v)}
                   />
                 </Col>
               </FormGroup>
             </Col>
             <Col md={6}>
-              <PropertiesTable
-                theProps={propsList}
-                actions={propertyActions}
-                edit={edit}
-                canAdd={true}
-                width={"100%"}
-                height={"auto"}
-              />
+              {/* Held back until the type's properties are in. Adding them to a
+                  table already on screen redraws every row, which swallows a
+                  click in progress and resets a property being edited. */}
+              {specsLoading ? (
+                <PropertiesPlaceholder />
+              ) : (
+                <PropertiesTable
+                  theProps={propsList}
+                  actions={propertyActions}
+                  edit={edit}
+                  canAdd={true}
+                  width={"100%"}
+                  height={"auto"}
+                />
+              )}
             </Col>
           </Row>
 
@@ -208,8 +273,6 @@ export const DataSource: React.FC<DataSourceProperties> = ({
             <Row className="mt-4">
               <Col>
                 <DataSourceMembersTable
-                  allDataSources={dataSources}
-                  allDataSourcesLoading={dataSourcesLoading}
                   members={local.groupMembers ?? []}
                   selfName={local.name}
                   edit={edit}
@@ -220,6 +283,12 @@ export const DataSource: React.FC<DataSourceProperties> = ({
             </Row>
           )}
 
+          {edit && (
+            <SaveErrorAlert
+              error={incomplete ? t("datasources:required_fields") : saveError}
+              onClose={dismissError}
+            />
+          )}
           {edit && (
             <Row className="mt-3">
               <Col className="d-flex justify-content-end gap-2">

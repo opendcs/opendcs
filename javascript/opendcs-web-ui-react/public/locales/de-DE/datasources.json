@@ -15,6 +15,8 @@
   "delete_for": "Datenquelle {{id}} löschen",
   "save_datasource": "Datenquelle {{id}} speichern",
   "cancel_for": "Bearbeitung der Datenquelle {{id}} abbrechen",
+  "save_error": "Speichern fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen.",
+  "required_fields": "Name und Typ sind erforderlich.",
   "add_members": "Gruppenmitglieder hinzufügen",
   "add_members_none": "Keine Datenquellen zum Hinzufügen verfügbar.",
   "remove_member": "Mitglied {{name}} entfernen",
