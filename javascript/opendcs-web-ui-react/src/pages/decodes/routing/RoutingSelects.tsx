@@ -157,8 +157,6 @@ export const PresentationGroupSelect: React.FC<BaseSelectProps> = ({
 
 // --- Timezone select (IANA names from Intl, with the record's value injected) ---
 const FALLBACK_TZS = [
-  "UTC",
-  "GMT",
   "America/New_York",
   "America/Chicago",
   "America/Denver",
@@ -168,20 +166,20 @@ const FALLBACK_TZS = [
 ];
 
 // V8 (Chrome, Edge) leaves UTC and GMT out of supportedValuesOf, so they are
-// always listed first.
-const PINNED_TZS = ["UTC", "GMT"];
+// added back in alphabetical order.
+const EXTRA_TZS = ["UTC", "GMT"];
 
 const getTimeZones = (): string[] => {
   const intl = Intl as unknown as { supportedValuesOf?: (k: string) => string[] };
+  let zones = FALLBACK_TZS;
   try {
     if (typeof intl.supportedValuesOf === "function") {
-      const zones = intl.supportedValuesOf("timeZone");
-      return [...PINNED_TZS, ...zones.filter((z) => !PINNED_TZS.includes(z))];
+      zones = intl.supportedValuesOf("timeZone");
     }
   } catch {
     // fall through to fallback list
   }
-  return FALLBACK_TZS;
+  return [...new Set([...zones, ...EXTRA_TZS])].sort();
 };
 
 export const TimezoneSelect: React.FC<BaseSelectProps> = ({
@@ -192,7 +190,7 @@ export const TimezoneSelect: React.FC<BaseSelectProps> = ({
   ariaLabel,
 }) => {
   const zones = useMemo(() => getTimeZones(), []);
-  const allZones = value && !zones.includes(value) ? [value, ...zones] : zones;
+  const allZones = value && !zones.includes(value) ? [...zones, value].sort() : zones;
 
   return (
     <Form.Select
