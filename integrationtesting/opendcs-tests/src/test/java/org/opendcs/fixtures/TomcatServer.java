@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +37,7 @@ import decodes.sql.DbKey;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
+import org.opendcs.data.Organization;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.spi.database.MigrationHelper;
 import org.apache.catalina.Host;
@@ -54,6 +56,7 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
+import org.opendcs.database.dai.OrganizationDao;
 import org.opendcs.database.dai.UsersDao;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.IdentityProviderMapping;
@@ -438,8 +441,11 @@ public final class TomcatServer implements AutoCloseable
 			final var ub = new UserBuilder();
 			String[] roles = new String[] {"ODCS_API_USER", "ODCS_API_ADMIN"};
 
-			for (var role: roles) {
-				ub.withRole(config.getDefaultOrganization(), new Role(DbKey.NullKey, role, null, null));
+			for (var org: getRoleOrganizations(db, config))
+			{
+				for (var role: roles) {
+					ub.withRole(org, new Role(DbKey.NullKey, role, null, null));
+				}
 			}
 			final String userName = "test_user";
 			ub.withEmail(userName);
@@ -452,6 +458,51 @@ public final class TomcatServer implements AutoCloseable
 		catch (OpenDcsAuthException ex)
 		{
 			throw new OpenDcsDataException("Unable to set initial user credentials.", ex);
+		}
+	}
+
+	/**
+	 * Organizations the test user gets roles in. Defaults to the config's default
+	 * organization; override with -Popendcs.runApi.userOffices=SPD,SWO to exercise
+	 * the UI org switcher. No-op unless the db has an {@link OrganizationDao}.
+	 */
+	private static List<Organization> getRoleOrganizations(OpenDcsDatabase db, Configuration config)
+	{
+		String officeList = System.getProperty("opendcs.runApi.userOffices");
+		if (officeList == null || officeList.trim().isEmpty())
+		{
+			return List.of(config.getDefaultOrganization());
+		}
+		var orgDaoOpt = db.getDao(OrganizationDao.class);
+		if (orgDaoOpt.isEmpty())
+		{
+			log.warn("opendcs.runApi.userOffices='{}' ignored; this database has no OrganizationDao.", officeList);
+			return List.of(config.getDefaultOrganization());
+		}
+		try (var tx = db.newTransaction())
+		{
+			var found = orgDaoOpt.get().getAll(tx, -1, -1);
+			var selected = Arrays.stream(officeList.split(","))
+							 .map(String::trim)
+							 .filter(name -> !name.isEmpty())
+							 .flatMap(name -> found.stream()
+								 .filter(org -> name.equalsIgnoreCase(org.getName()))
+								 .limit(1))
+							 .toList();
+			if (selected.isEmpty())
+			{
+				log.warn("opendcs.runApi.userOffices='{}' matched no offices in the database; falling back to the default organization.",
+						officeList);
+				return List.of(config.getDefaultOrganization());
+			}
+			log.info("Granting API roles to the test user in organizations: {}",
+					selected.stream().map(Organization::getName).toList());
+			return selected;
+		}
+		catch (OpenDcsDataException ex)
+		{
+			log.atWarn().setCause(ex).log("Error looking up offices for the test user; using the default organization.");
+			return List.of(config.getDefaultOrganization());
 		}
 	}
 

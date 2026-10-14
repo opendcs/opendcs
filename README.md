@@ -260,6 +260,25 @@ If you are on a platform with Docker, or establish the appropriate database conf
 
 The default user name and password are `test_user` and `test_password`
 
+Useful `-P` options for `runApi`:
+- `-Popendcs.test.integration.db=CWMS-Oracle` - run against a CWMS Oracle database instead of the default OpenDCS-Postgres.
+- `-Popendcs.runApi.userOffices=SPK,SPD` - grant the test user roles in multiple offices so the UI's Change Organization menu has entries to switch between (requires CWMS-Oracle, which is the only implementation with organizations). Office codes must exist in the database; the CWMS test container ships `SPK`, `SPD`, `SWT`, `HQ` and other NWS office codes.
+- `-Popendcs.runApi.seedData=<dir>` - load extra data from `<dir>/decodes/*.xml` and `<dir>/comps/*.xml` on top of the baseline database.
+
+When running with organizations (CWMS-Oracle), select the office to sign in with on the login page (or leave the
+default and switch later via the Change Organization menu in the top bar). Credentials are sent against the blank
+organization - the selected office is applied to the session after authentication, and is reset if the user is not
+authorized there.
+
+Example two-office run:
+
+```
+./gradlew :testing:opendcs-tests:runApi \
+  -Popendcs.test.integration.db=CWMS-Oracle \
+  -Popendcs.runApi.userOffices=SPK,SPD
+# Startup log confirms: "Granting API roles to the test user in organizations: [SPK, SPD]"
+```
+
 
 # Financial Information
 
