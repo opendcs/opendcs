@@ -14,6 +14,7 @@ import org.opendcs.odcsapi.beans.ApiSeason;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.opendcs.odcsapi.res.ReflistResources.map;
+import static org.opendcs.odcsapi.res.ReflistResources.mapItem;
 import static org.opendcs.odcsapi.res.ReflistResources.mapSeasons;
 import static org.opendcs.odcsapi.res.ReflistResources.mapToEnum;
 
@@ -126,6 +127,8 @@ final class ReflistResourcesTest
 		enumValue.setExecClassName("Integer.class");
 		enumValue.setDescription("A value");
 		dbEnum.addValue(enumValue);
+		EnumValue otherValue = new EnumValue(dbEnum, "Other Value");
+		dbEnum.addValue(otherValue);
 
 		ApiRefList refList = map(dbEnum);
 
@@ -134,9 +137,33 @@ final class ReflistResourcesTest
 		assertEquals(dbEnum.getDescription(), refList.getDescription());
 		assertEquals(dbEnum.getDefault(), refList.getDefaultValue());
 		assertEquals(dbEnum.getUniqueName(), refList.getEnumName());
-		assertEquals(1, refList.getItems().size());
-		ApiRefListItem item = refList.getItems().get(dbEnum.getUniqueName());
+		// Items are keyed by their own value, as GET reflists keys them. Keyed by
+		// the enum's name they all landed on one entry and only the last survived.
+		assertEquals(2, refList.getItems().size());
+		assertNotNull(refList.getItems().get(otherValue.getValue()));
+		ApiRefListItem item = refList.getItems().get(enumValue.getValue());
 		assertNotNull(item);
+		assertEquals(enumValue.getDescription(), item.getDescription());
+		assertEquals(enumValue.getSortNumber(), item.getSortNumber());
+		assertEquals(enumValue.getEditClassName(), item.getEditClassName());
+		assertEquals(enumValue.getExecClassName(), item.getExecClassName());
+	}
+
+	// GET reflists maps its items with this too. It used to leave the class names
+	// out, so a client could not tell which class implements, say, a data source type.
+	@Test
+	void testRefListItemMap()
+	{
+		DbEnum dbEnum = new DbEnum("DataSourceType");
+		EnumValue enumValue = new EnumValue(dbEnum, "lrgs");
+		enumValue.setSortNumber(1);
+		enumValue.setEditClassName("org.example.LrgsEditor");
+		enumValue.setExecClassName("decodes.datasource.LrgsDataSource");
+		enumValue.setDescription("Read messages from LRGS data server");
+
+		ApiRefListItem item = mapItem(enumValue);
+
+		assertEquals(enumValue.getValue(), item.getValue());
 		assertEquals(enumValue.getDescription(), item.getDescription());
 		assertEquals(enumValue.getSortNumber(), item.getSortNumber());
 		assertEquals(enumValue.getEditClassName(), item.getEditClassName());
