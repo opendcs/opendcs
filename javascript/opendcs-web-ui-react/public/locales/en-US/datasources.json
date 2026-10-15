@@ -15,6 +15,8 @@
   "delete_for": "Delete data source {{id}}",
   "save_datasource": "Save data source {{id}}",
   "cancel_for": "Cancel editing data source {{id}}",
+  "save_error": "Save failed. Please check your entries and try again.",
+  "required_fields": "Name and Type are required.",
   "add_members": "Add group members",
   "add_members_none": "No data sources available to add.",
   "remove_member": "Remove member {{name}}",

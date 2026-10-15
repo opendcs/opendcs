@@ -24,15 +24,19 @@ import org.opendcs.odcsapi.beans.ApiRoutingRef;
 import org.opendcs.odcsapi.beans.ApiRoutingStatus;
 import org.opendcs.odcsapi.beans.ApiScheduleEntry;
 import org.opendcs.odcsapi.beans.ApiScheduleEntryRef;
+import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 
 import static ilex.util.TextUtil.str2boolean;
 import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.odcsapi.res.RoutingResources.map;
 import static org.opendcs.odcsapi.res.RoutingResources.mapRef;
 import static org.opendcs.odcsapi.res.RoutingResources.statusMap;
+import static org.opendcs.odcsapi.res.RoutingResources.validateSchedule;
 
 final class RoutingResourcesTest
 {
@@ -402,6 +406,28 @@ final class RoutingResourcesTest
 		assertEquals(apiDacqEvent.getSubsystem(), dacqEvent.getSubsystem());
 		assertEquals(apiDacqEvent.getRoutingExecId(), dacqEvent.getScheduleEntryStatusId().getValue());
 		assertEquals(apiDacqEvent.getPlatformId(), dacqEvent.getPlatformId().getValue());
+	}
+
+	@Test
+	void testValidateScheduleRequiresNotNullColumns()
+	{
+		assertThrows(MissingParameterException.class, () -> validateSchedule(null));
+
+		ApiScheduleEntry schedule = new ApiScheduleEntry();
+		schedule.setName("New Schedule");
+		schedule.setRoutingSpecId(1234L);
+		assertDoesNotThrow(() -> validateSchedule(schedule));
+
+		schedule.setName(" ");
+		assertThrows(MissingParameterException.class, () -> validateSchedule(schedule));
+		schedule.setName("New Schedule");
+
+		schedule.setRoutingSpecId(null);
+		assertThrows(MissingParameterException.class, () -> validateSchedule(schedule));
+
+		// A name alone is not enough: map() only carries it alongside an id.
+		schedule.setRoutingSpecName("TestRoutingSpec");
+		assertThrows(MissingParameterException.class, () -> validateSchedule(schedule));
 	}
 
 	private RoutingSpec buildRoutingSpec() throws Exception

@@ -256,6 +256,172 @@ export const AddNewScheduleRow: Story = {
   },
 };
 
+// --- Add-new helpers (issue #2201) ------------------------------------------
+
+type PlayContext = Parameters<NonNullable<Story["play"]>>[0];
+type Canvas = Awaited<ReturnType<PlayContext["mount"]>>;
+// Storybook needs `mount` destructured in each play's own arguments, so the
+// helpers take the rest of the context.
+type HelperContext = Pick<PlayContext, "userEvent" | "parameters">;
+
+// Opens a new schedule row via "+" and types a name into it.
+const addScheduleNamed = async (
+  canvas: Canvas,
+  { userEvent, parameters: { i18n } }: HelperContext,
+  name: string,
+): Promise<HTMLInputElement> => {
+  const addBtn = await canvas.findByRole("button", {
+    name: i18n.t("schedule:add_schedule"),
+  });
+  await act(async () => userEvent.click(addBtn));
+  const nameInput = (await canvas.findByRole("textbox", {
+    name: i18n.t("schedule:name"),
+  })) as HTMLInputElement;
+  await act(async () => userEvent.type(nameInput, name));
+  return nameInput;
+};
+
+// Picks a routing spec through the chooser modal.
+const pickRoutingSpec = async (
+  canvas: Canvas,
+  { userEvent, parameters: { i18n } }: HelperContext,
+  routingName: string,
+) => {
+  const chooseBtn = await canvas.findByRole("button", {
+    name: i18n.t("schedule:select_routing"),
+  });
+  await act(async () => userEvent.click(chooseBtn));
+  // Modal portals to the body — query via the global screen.
+  const dialog = await screen.findByRole("dialog");
+  const row = await within(dialog).findByText(routingName);
+  await act(async () => userEvent.click(row));
+  const select = await within(dialog).findByRole("button", {
+    name: i18n.t("translation:select"),
+  });
+  await act(async () => userEvent.click(select));
+};
+
+// Clicks Save on the (single) new row; its synthetic id varies, so match by prefix.
+const clickNewRowSave = async (
+  canvas: Canvas,
+  { userEvent, parameters: { i18n } }: HelperContext,
+) => {
+  const saveBtn = await canvas.findByRole("button", {
+    name: new RegExp(`^${i18n.t("schedule:save_schedule", { id: "" }).trim()}`),
+  });
+  await act(async () => userEvent.click(saveBtn));
+};
+
+// Captures POST /schedule bodies and answers with a saved entry.
+const capturePosts = (posts: Partial<ApiScheduleEntry>[]) =>
+  http.post("/odcsapi/schedule", async ({ request }) => {
+    const body = (await request.json()) as Partial<ApiScheduleEntry>;
+    posts.push(body);
+    return HttpResponse.json<ApiScheduleEntry>({ ...body, schedEntryId: 99 });
+  });
+
+// Saving a new schedule without a routing spec says which fields are required
+// instead of posting and silently failing on the NOT NULL column.
+const requiredFieldsPosts: Partial<ApiScheduleEntry>[] = [];
+export const AddNewScheduleRequiresFields: Story = {
+  parameters: {
+    msw: {
+      handlers: { ...baseHandlers, postSchedule: capturePosts(requiredFieldsPosts) },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    requiredFieldsPosts.length = 0;
+    const canvas = await mount();
+    await addScheduleNamed(canvas, ctx, "New-Schedule");
+    await clickNewRowSave(canvas, ctx);
+    expect(
+      await canvas.findByText(ctx.parameters.i18n.t("schedule:required_fields")),
+    ).toBeInTheDocument();
+    expect(requiredFieldsPosts).toHaveLength(0);
+  },
+};
+
+// A server rejection on a new schedule shows the server's message and keeps
+// the row open with the user's input.
+export const AddNewScheduleShowsSaveError: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postSchedule: http.post("/odcsapi/schedule", () =>
+          HttpResponse.json(
+            { message: "Schedule entry routingSpecId is required." },
+            { status: 400 },
+          ),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    const canvas = await mount();
+    const nameInput = await addScheduleNamed(canvas, ctx, "New-Schedule");
+    await pickRoutingSpec(canvas, ctx, "goes1");
+    await clickNewRowSave(canvas, ctx);
+    expect(
+      await canvas.findByText("Schedule entry routingSpecId is required."),
+    ).toBeInTheDocument();
+    expect(nameInput.value).toEqual("New-Schedule");
+  },
+};
+
+// A complete new schedule posts the name and the chosen routing spec, with no
+// id so the server inserts rather than updates.
+const savedPosts: Partial<ApiScheduleEntry>[] = [];
+export const AddNewSchedulePostsEntry: Story = {
+  parameters: {
+    msw: { handlers: { ...baseHandlers, postSchedule: capturePosts(savedPosts) } },
+  },
+  play: async ({ mount, ...ctx }) => {
+    savedPosts.length = 0;
+    const canvas = await mount();
+    await addScheduleNamed(canvas, ctx, "New-Schedule");
+    await pickRoutingSpec(canvas, ctx, "goes1");
+    await clickNewRowSave(canvas, ctx);
+    await waitFor(() => expect(savedPosts).toHaveLength(1));
+    expect(savedPosts[0]).toMatchObject({
+      name: "New-Schedule",
+      routingSpecId: 101,
+      routingSpecName: "goes1",
+    });
+    expect(savedPosts[0].schedEntryId).toBeUndefined();
+  },
+};
+
+// The row is opened before the routing list arrives. The detail row is never
+// re-rendered with new props, so the chooser must pick the list up itself
+// rather than stay on the empty/loading snapshot it opened with.
+let releaseRoutings: () => void = () => {};
+export const RoutingChooserLoadsAfterRowOpens: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        routingRefs: http.get("/odcsapi/routingrefs", async () => {
+          await new Promise<void>((resolve) => (releaseRoutings = resolve));
+          return HttpResponse.json<ApiRoutingRef[]>(ROUTING_REFS);
+        }),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    const canvas = await mount();
+    await addScheduleNamed(canvas, ctx, "New-Schedule");
+    const chooseBtn = await canvas.findByRole("button", {
+      name: ctx.parameters.i18n.t("schedule:select_routing"),
+    });
+    await act(async () => ctx.userEvent.click(chooseBtn));
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByRole("status")).toBeInTheDocument();
+    await act(async () => releaseRoutings());
+    expect(await within(dialog).findByText("goes1")).toBeInTheDocument();
+  },
+};
+
 // `goes1` has both startTime and a parseable runInterval, so the editor should
 // derive the "Run Every" mode and populate the amount/unit inputs.
 export const RunEveryModeReflected: Story = {
@@ -372,25 +538,17 @@ export const SwitchToRunEveryEnablesControls: Story = {
 // Use the entry that already has `polltest` selected and switch it to `goes1`.
 export const PickRoutingSpecViaModal: Story = {
   parameters: { msw: { handlers: baseHandlers } },
-  play: async ({ mount, userEvent, parameters }) => {
+  play: async ({ mount, ...ctx }) => {
     const canvas = await mount();
-    const { i18n } = parameters;
+    const {
+      userEvent,
+      parameters: { i18n },
+    } = ctx;
     const editBtn = await canvas.findByRole("button", {
       name: i18n.t("schedule:edit_schedule", { id: 17 }),
     });
     await act(async () => userEvent.click(editBtn));
-    const chooseBtn = await canvas.findByRole("button", {
-      name: i18n.t("schedule:select_routing"),
-    });
-    await act(async () => userEvent.click(chooseBtn));
-    // Modal portals to the body — query via the global screen.
-    const dialog = await screen.findByRole("dialog");
-    const row = await within(dialog).findByText("goes1");
-    await act(async () => userEvent.click(row));
-    const select = await within(dialog).findByRole("button", {
-      name: i18n.t("translation:select"),
-    });
-    await act(async () => userEvent.click(select));
+    await pickRoutingSpec(canvas, ctx, "goes1");
     await waitFor(() => {
       const routing = canvas.getByLabelText(
         i18n.t("schedule:routing_spec"),

@@ -1,0 +1,24 @@
+{
+  "title": "Administration",
+  "importTitle": "Import",
+  "decodesImportTitle": "DECODES Import",
+  "decodesImportDescription": "Import DECODES records from XML files.",
+  "timeSeriesImportTitle": "Time Series Import",
+  "timeSeriesImportDescription": "Import time-series values from a file.",
+  "timeSeriesImportPlaceholder": "Time Series Import will be available in a future update.",
+  "decodesImport": {
+    "back": "Back to import types",
+    "dropFile": "Drag and drop a DECODES XML file here",
+    "fileHint": "Select one XML file, or use the file chooser below.",
+    "chooseFile": "Choose XML file",
+    "invalidFile": "Select a single XML file with an .xml extension.",
+    "selectedFile": "Selected: {{name}} ({{size}} bytes)",
+    "selectedLog": "[Selected] {{name}} — ready for preview.",
+    "preview": "Preview",
+    "import": "Import",
+    "previewHint": "Preview the selected file before importing.",
+    "logTitle": "Import log",
+    "clearLog": "Clear log",
+    "emptyLog": "Select a file, then click Preview to see feedback here."
+  }
+}

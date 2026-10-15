@@ -22,6 +22,7 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
     "presentations",
     "schedule",
     "tsgroups",
+    "administration",
   ]);
   const location = useLocation();
 
@@ -142,6 +143,17 @@ export const SideBar = ({ open, onClose }: SideBarProps) => {
             onClick={onClose}
           >
             {t("loadingapps:title")}
+          </Nav.Link>
+        </Nav>
+        <div className="odcs-sidebar__section-title">{t("administration:title")}</div>
+        <Nav className="flex-column">
+          <Nav.Link
+            as={Link}
+            to="/administration/import"
+            active={location.pathname === "/administration/import"}
+            onClick={onClose}
+          >
+            {t("administration:importTitle")}
           </Nav.Link>
         </Nav>
       </nav>

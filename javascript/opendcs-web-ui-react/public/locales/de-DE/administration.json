@@ -1,0 +1,24 @@
+{
+  "title": "Administration",
+  "importTitle": "Import",
+  "decodesImportTitle": "DECODES-Import",
+  "decodesImportDescription": "DECODES-Datensätze aus XML-Dateien importieren.",
+  "timeSeriesImportTitle": "Zeitreihenimport",
+  "timeSeriesImportDescription": "Zeitreihenwerte aus einer Datei importieren.",
+  "timeSeriesImportPlaceholder": "Der Zeitreihenimport wird in einer zukünftigen Aktualisierung verfügbar sein.",
+  "decodesImport": {
+    "back": "Zurück zu den Importtypen",
+    "dropFile": "Eine DECODES-XML-Datei hierher ziehen",
+    "fileHint": "Eine XML-Datei auswählen oder die Dateiauswahl unten verwenden.",
+    "chooseFile": "XML-Datei auswählen",
+    "invalidFile": "Eine einzelne XML-Datei mit der Dateiendung .xml auswählen.",
+    "selectedFile": "Ausgewählt: {{name}} ({{size}} Bytes)",
+    "selectedLog": "[Ausgewählt] {{name}} — bereit für die Vorschau.",
+    "preview": "Vorschau",
+    "import": "Importieren",
+    "previewHint": "Vor dem Import eine Vorschau der ausgewählten Datei anzeigen.",
+    "logTitle": "Importprotokoll",
+    "clearLog": "Protokoll leeren",
+    "emptyLog": "Eine Datei auswählen und auf Vorschau klicken, um hier Rückmeldungen zu sehen."
+  }
+}

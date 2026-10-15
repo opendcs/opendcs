@@ -92,8 +92,6 @@ export const DataSourcesTable: React.FC<DataSourcesTableProperties> = ({
         return (
           <DataSource
             details={detailsPromise}
-            dataSources={dataSources as ApiDataSourceRef[]}
-            dataSourcesLoading={loading}
             actions={{
               save: (d) => detailActions.save(d),
               cancel: () => detailActions.cancel(),
