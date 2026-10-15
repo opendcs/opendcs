@@ -128,6 +128,38 @@ export const Default: Story = {
   },
 };
 
+export const SortedByNameOnFirstLoad: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, canvasElement }) => {
+    await mount();
+    await waitFor(() => {
+      const names = Array.from(canvasElement.querySelectorAll("tbody tr")).map(
+        (row) => row.querySelectorAll("td")[1]?.textContent?.trim() ?? "",
+      );
+      expect(names).toEqual(["GateOpening", "MROI4-ROWI4-HG", "regtest_017"]);
+    });
+  },
+};
+
+// A browser that opened this page before it sorted by name still holds the id
+// sort DataTables saved back then; the name sort has to win regardless.
+export const SortedByNameDespiteSavedIdSort: Story = {
+  parameters: { msw: { handlers: baseHandlers } },
+  play: async ({ mount, canvasElement }) => {
+    localStorage.setItem(
+      `DataTables_tsGroupsTable_${location.pathname}`,
+      JSON.stringify({ time: Date.now(), start: 0, length: 10, order: [[0, "asc"]] }),
+    );
+    await mount();
+    await waitFor(() => {
+      const names = Array.from(canvasElement.querySelectorAll("tbody tr")).map(
+        (row) => row.querySelectorAll("td")[1]?.textContent?.trim() ?? "",
+      );
+      expect(names).toEqual(["GateOpening", "MROI4-ROWI4-HG", "regtest_017"]);
+    });
+  },
+};
+
 // Empty state: no groups defined — the caption still renders.
 export const Empty: Story = {
   parameters: {
@@ -271,5 +303,133 @@ export const AddBaseLocationCriterion: Story = {
         await canvas.findByText(i18n.t("tsgroups:criteria.part.BaseLocation")),
       ).toBeInTheDocument();
     });
+  },
+};
+
+type PlayContext = Parameters<NonNullable<Story["play"]>>[0];
+type Canvas = Awaited<ReturnType<PlayContext["mount"]>>;
+// Storybook needs `mount` destructured in each play's own arguments, so the
+// helpers take the rest of the context.
+type HelperContext = Pick<PlayContext, "userEvent" | "parameters">;
+
+// Opens a new group row via "+" and hands back its two required inputs. They
+// are queried by role, not label: the editor sits hidden under its skeleton
+// while it fades in, and typing into a hidden input is silently dropped.
+const addGroup = async (
+  canvas: Canvas,
+  { userEvent, parameters: { i18n } }: HelperContext,
+) => {
+  const addBtn = await canvas.findByRole("button", {
+    name: i18n.t("tsgroups:add_group"),
+  });
+  await act(async () => userEvent.click(addBtn));
+  const nameInput = (await canvas.findByRole("textbox", {
+    name: i18n.t("tsgroups:groupName"),
+  })) as HTMLInputElement;
+  // The datalist of existing types makes this one a combobox.
+  const typeInput = (await canvas.findByRole("combobox", {
+    name: i18n.t("tsgroups:groupType"),
+  })) as HTMLInputElement;
+  return { nameInput, typeInput };
+};
+
+// Clicks Save on the (single) new row; its synthetic id varies, so match by prefix.
+const clickNewRowSave = async (
+  canvas: Canvas,
+  { userEvent, parameters: { i18n } }: HelperContext,
+) => {
+  const saveBtn = await canvas.findByRole("button", {
+    name: new RegExp(`^${i18n.t("tsgroups:save_group", { id: "" }).trim()}`),
+  });
+  await act(async () => userEvent.click(saveBtn));
+};
+
+// Captures POST /tsgroup bodies and answers with a saved group.
+const capturePosts = (posts: ApiTsGroup[]) =>
+  http.post("/odcsapi/tsgroup", async ({ request }) => {
+    const body = (await request.json()) as ApiTsGroup;
+    posts.push(body);
+    return HttpResponse.json<ApiTsGroup>({ ...body, groupId: 99 });
+  });
+
+// Saving a new group with the NOT NULL name and type left blank flags each
+// missing field instead of posting, and a flag clears once its field is filled.
+const requiredFieldsPosts: ApiTsGroup[] = [];
+export const AddNewGroupRequiresNameAndType: Story = {
+  parameters: {
+    msw: {
+      handlers: { ...baseHandlers, postTsGroup: capturePosts(requiredFieldsPosts) },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    requiredFieldsPosts.length = 0;
+    const canvas = await mount();
+    const { nameInput, typeInput } = await addGroup(canvas, ctx);
+    await clickNewRowSave(canvas, ctx);
+    await waitFor(() => expect(nameInput).toHaveClass("is-invalid"));
+    expect(typeInput).toHaveClass("is-invalid");
+    const { i18n } = ctx.parameters;
+    await waitFor(() => {
+      expect(canvas.getByText(i18n.t("tsgroups:groupName_required"))).toBeVisible();
+      expect(canvas.getByText(i18n.t("tsgroups:groupType_required"))).toBeVisible();
+    });
+
+    // A name alone is still not enough: the type stays flagged and nothing posts.
+    await act(async () => ctx.userEvent.type(nameInput, "New-Group"));
+    await waitFor(() => expect(nameInput).not.toHaveClass("is-invalid"));
+    await clickNewRowSave(canvas, ctx);
+    expect(typeInput).toHaveClass("is-invalid");
+    expect(requiredFieldsPosts).toHaveLength(0);
+  },
+};
+
+// A complete new group posts its name and type, with no id so the server
+// inserts rather than updates.
+const savedPosts: ApiTsGroup[] = [];
+export const AddNewGroupPostsGroup: Story = {
+  parameters: {
+    msw: { handlers: { ...baseHandlers, postTsGroup: capturePosts(savedPosts) } },
+  },
+  play: async ({ mount, ...ctx }) => {
+    savedPosts.length = 0;
+    const canvas = await mount();
+    const { nameInput, typeInput } = await addGroup(canvas, ctx);
+    await act(async () => ctx.userEvent.type(nameInput, "New-Group"));
+    await act(async () => ctx.userEvent.type(typeInput, "basin"));
+    await clickNewRowSave(canvas, ctx);
+    await waitFor(() => expect(savedPosts).toHaveLength(1));
+    expect(savedPosts[0]).toMatchObject({ groupName: "New-Group", groupType: "basin" });
+    expect(savedPosts[0].groupId).toBeUndefined();
+    expect(nameInput).not.toHaveClass("is-invalid");
+  },
+};
+
+// A server rejection on a new group shows the server's message and keeps the
+// row open with the user's input.
+export const AddNewGroupShowsSaveError: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postTsGroup: http.post("/odcsapi/tsgroup", () =>
+          HttpResponse.json(
+            { message: "A group named New-Group already exists." },
+            { status: 400 },
+          ),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, ...ctx }) => {
+    const canvas = await mount();
+    const { nameInput, typeInput } = await addGroup(canvas, ctx);
+    await act(async () => ctx.userEvent.type(nameInput, "New-Group"));
+    await act(async () => ctx.userEvent.type(typeInput, "basin"));
+    await clickNewRowSave(canvas, ctx);
+    expect(
+      await canvas.findByText("A group named New-Group already exists."),
+    ).toBeInTheDocument();
+    expect(nameInput.value).toEqual("New-Group");
+    expect(typeInput.value).toEqual("basin");
   },
 };

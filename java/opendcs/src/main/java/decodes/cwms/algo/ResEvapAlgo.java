@@ -368,6 +368,12 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     @Override
     public void beforeAllTimeSlices() throws DbCompException
     {
+        // The executive is reused across compproc cycles; discard state from the previous run so it
+        // doesn't retain the old input time series and hourly profiles.
+        hourlyWTP = null;
+        resEvap = null;
+        reservoir = null;
+
         //initialize database connections
         siteDAO = tsdb.makeSiteDAO();
         timeSeriesDAO = tsdb.makeTimeSeriesDAO();
@@ -749,10 +755,32 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             {
                 throw new DbCompException("Failed to append hourly water temperature profiles", ex);
             }
+            trimHourlyProfiles();
         }
         else
         {
             log.warn("Found {} hourly values — daily totals require exactly 23 or 24 values. Skipping daily computation.", baseTimes.size());
+        }
+    }
+
+    /**
+     * Drop all but the last hour of each hourly water temperature profile once the day has been
+     * appended to dailyWTP. The hourly profiles are not saved, so keeping every hour for the whole
+     * compute window only consumes memory (large windows can be months of hours times every depth layer).
+     * NOTE: if hourlyWTP is ever saved (see the TODO in afterAllTimeSlices), it must be saved before
+     * this trim, or this trim removed.
+     */
+    private void trimHourlyProfiles()
+    {
+        for (CTimeSeries cts : hourlyWTP.getTimeSeries().getAllTimeSeries())
+        {
+            int size = cts.size();
+            if (size > 1)
+            {
+                TimedVariable last = cts.sampleAt(size - 1);
+                cts.deleteAll();
+                cts.addSample(last);
+            }
         }
     }
 
