@@ -14,7 +14,9 @@ import {
   INPUT_H,
   LABEL_H,
   SaveButton,
+  SaveErrorAlert,
 } from "../../../components/forms";
+import { useSaveError } from "../../../hooks/useSaveError";
 import type { CancelAction, SaveAction } from "../../../util/Actions";
 import { useSiteNameType } from "../../../contexts/app/SiteNameTypeContext";
 import { criteriaRows, dataTypeLabel, siteCriterionLabel } from "./groupCriteria";
@@ -129,6 +131,11 @@ export const TsGroup: React.FC<TsGroupProperties> = ({
   const [local, dispatch] = useReducer(TsGroupReducer, provided);
   const [showEvaluate, setShowEvaluate] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [showRequired, setShowRequired] = useState(false);
+  const { saveError, clearSaveError, attemptSave } = useSaveError(
+    t("translation:save_failed"),
+    "Time series group save failed",
+  );
 
   // Group types are free-form strings; the desktop's "New Type" button just
   // lets you type one. Offer the types already in use as suggestions while
@@ -216,9 +223,18 @@ export const TsGroup: React.FC<TsGroupProperties> = ({
     dispatch({ type: "remove_criterion", payload: { key } });
   }, []);
 
-  const saveGroup = useCallback(() => {
-    actions.save?.(local as ApiTsGroup);
-  }, [actions, local]);
+  // group_name and group_type are NOT NULL in the database, so a blank one can
+  // only fail on the server. Stop it here and say which field is missing.
+  const nameMissing = !local.groupName?.trim();
+  const typeMissing = !local.groupType?.trim();
+
+  const saveGroup = useCallback(async () => {
+    if (nameMissing || typeMissing) {
+      setShowRequired(true);
+      return;
+    }
+    await attemptSave(() => actions.save?.(local as ApiTsGroup));
+  }, [actions, attemptSave, local, nameMissing, typeMissing]);
 
   const cancel = useCallback(() => {
     if (provided.groupId !== undefined) actions.cancel?.(provided.groupId);
@@ -245,8 +261,12 @@ export const TsGroup: React.FC<TsGroupProperties> = ({
                     name="groupName"
                     readOnly={!edit}
                     defaultValue={local.groupName ?? ""}
+                    isInvalid={showRequired && nameMissing}
                     onChange={textChange}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {t("tsgroups:groupName_required")}
+                  </Form.Control.Feedback>
                   <Form.Text>{t("tsgroups:groupName_hint")}</Form.Text>
                 </Col>
               </FormGroup>
@@ -262,8 +282,12 @@ export const TsGroup: React.FC<TsGroupProperties> = ({
                     list="tsGroupTypeOptions"
                     readOnly={!edit}
                     defaultValue={local.groupType ?? ""}
+                    isInvalid={showRequired && typeMissing}
                     onChange={textChange}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {t("tsgroups:groupType_required")}
+                  </Form.Control.Feedback>
                   <datalist id="tsGroupTypeOptions">
                     {groupTypeOptions.map((type) => (
                       <option key={type} value={type} />
@@ -330,6 +354,7 @@ export const TsGroup: React.FC<TsGroupProperties> = ({
             </Col>
           </Row>
 
+          <SaveErrorAlert error={saveError} onClose={clearSaveError} />
           <EditFormActions>
             <Button
               variant="outline-secondary"
