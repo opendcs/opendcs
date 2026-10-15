@@ -119,7 +119,10 @@ const EditableRender: ArgsStoryFn<ReactRenderer, ComputationProperties> = (args)
 
 export const ViewMode: Story = {
   args: {
-    computation: sampleComputation,
+    computation: {
+      ...sampleComputation,
+      parmList: [{ algoRoleName: "input", algoParmType: "i" }],
+    },
     algorithm: sampleAlgorithm,
     edit: false,
     processOptions: sampleProcessOptions,
@@ -432,7 +435,7 @@ const compWithExtraParm: ApiComputation = {
   ],
 };
 
-export const MergesExistingParmsAndIgnoresBlankRoles: Story = {
+export const KeepsStoredParmsUntilUpdate: Story = {
   args: {
     computation: compWithExtraParm,
     algorithm: algorithmWithBlankRoles,
@@ -443,8 +446,49 @@ export const MergesExistingParmsAndIgnoresBlankRoles: Story = {
   play: async ({ mount }) => {
     const canvas = await mount();
 
-    expect(await canvas.findByText("validInput")).toBeInTheDocument();
     expect(await canvas.findByText("extraExisting")).toBeInTheDocument();
+    expect(canvas.queryByText("validInput")).not.toBeInTheDocument();
+  },
+};
+
+export const LinksFormerParameterAndAddsNewParameter: Story = {
+  args: {
+    computation: compWithExtraParm,
+    algorithm: algorithmWithBlankRoles,
+    edit: true,
+    processOptions: sampleProcessOptions,
+    groupOptions: sampleGroupOptions,
+  },
+  render: EditableRender,
+  parameters: {
+    msw: {
+      handlers: {
+        installedSpec: http.get("/odcsapi/algorithmupdatespec", () =>
+          HttpResponse.json({
+            roles: [
+              { name: "renamedOutput", type: "o", formerNames: ["extraExisting"] },
+              { name: "newOutput", type: "o", formerNames: [] },
+            ],
+          }),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, userEvent }) => {
+    const canvas = await mount();
+
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Update parameters…" }),
+    );
+    expect(await screen.findByLabelText("renamedOutput (output)")).toHaveValue(
+      "extraExisting",
+    );
+    expect(screen.getByLabelText("newOutput (output)")).toHaveValue("");
+
+    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+    expect(await canvas.findByText("renamedOutput")).toBeInTheDocument();
+    expect(await canvas.findByText("newOutput")).toBeInTheDocument();
+    expect(canvas.queryByText("extraExisting")).not.toBeInTheDocument();
   },
 };
 
