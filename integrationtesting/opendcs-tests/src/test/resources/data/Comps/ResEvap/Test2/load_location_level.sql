@@ -6,7 +6,7 @@ DECLARE
     l_location_level_id VARCHAR2(256) := 'TESTSITE1.Depth.Const.0.Secchi Depth';
     l_level_value NUMBER := 13;
     l_level_units VARCHAR2(16) := 'ft';
-    l_level_date DATE := SYSDATE - 1;
+    l_level_date DATE := TRUNC(SYSDATE - 70, 'MI');
 BEGIN
 
     CWMS_20.CWMS_LEVEL.STORE_LOCATION_LEVEL(
