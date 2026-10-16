@@ -83,8 +83,8 @@ public final class SecurityFilter implements ContainerRequestFilter
 			log.trace("Public endpoint identified: {}", resourceInfo.getResourceMethod().toGenericString());
 		}
 		OpenDcsPrincipal principal = new OpenDcsPrincipal(new UserBuilder().withEmail("guest").build(),
-														  Collections.singletonMap(OrganizationResource.map(Organization.NULL_ORG),
-														  						   new ArrayList<>(List.of(OpenDcsApiRoles.ODCS_API_GUEST))));
+														  Collections.singletonMap(Organization.NULL_ORG.getName(),
+														  						   new ArrayList<>(List.of(OpenDcsApiRole.ODCS_API_GUEST))));
 		requestContext.setSecurityContext(new OpenDcsSecurityContext(principal,
 				httpServletRequest.isSecure(), ""));
 
