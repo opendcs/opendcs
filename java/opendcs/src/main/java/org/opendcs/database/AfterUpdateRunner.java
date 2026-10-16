@@ -1,12 +1,9 @@
 package org.opendcs.database;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
 
 import javax.sql.DataSource;
@@ -19,6 +16,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.spi.database.AfterUpdate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.openide.util.Lookup;
 
 /** Discovers and executes after-updaters, each in its own database transaction. */
 public final class AfterUpdateRunner
@@ -36,26 +34,21 @@ public final class AfterUpdateRunner
 
     public static void run(Jdbi jdbi) throws SQLException, OpenDcsDataException
     {
-        List<AfterUpdate> updaters = new ArrayList<>();
-        ServiceLoader.load(AfterUpdate.class).forEach(updaters::add);
-        run(jdbi, updaters);
+        run(jdbi, List.copyOf(Lookup.getDefault().lookupAll(AfterUpdate.class)));
     }
 
-    /** Package visible for testing order and transaction isolation. */
+    /** Package visible for testing transaction isolation. */
     static void run(Jdbi jdbi, List<AfterUpdate> updaters) throws SQLException, OpenDcsDataException
     {
-        List<AfterUpdate> ordered = updaters.stream()
-                .sorted(Comparator.comparingInt(AfterUpdate::order).thenComparing(AfterUpdate::name))
-                .toList();
         Set<String> names = new HashSet<>();
-        for (AfterUpdate updater : ordered)
+        for (AfterUpdate updater : updaters)
         {
             if (!names.add(updater.name()))
             {
                 throw new IllegalArgumentException("Duplicate after-updater name: " + updater.name());
             }
         }
-        for (AfterUpdate updater : ordered)
+        for (AfterUpdate updater : updaters)
         {
             log.info("Running after-update task '{}'", updater.name());
             try (Handle handle = jdbi.open())

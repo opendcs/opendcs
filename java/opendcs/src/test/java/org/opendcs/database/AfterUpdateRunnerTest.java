@@ -9,37 +9,37 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.UUID;
 
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.spi.database.AfterUpdate;
+import org.openide.util.Lookup;
 
 class AfterUpdateRunnerTest
 {
     @Test
     void discoversAlgorithmAfterUpdater()
     {
-        assertTrue(ServiceLoader.load(AfterUpdate.class).stream()
-                .anyMatch(provider -> provider.type().getName().equals(
+        assertTrue(Lookup.getDefault().lookupAll(AfterUpdate.class).stream()
+                .anyMatch(updater -> updater.getClass().getName().equals(
                         "org.opendcs.algorithms.update.AlgorithmAfterUpdate")));
     }
 
     @Test
-    void runsInOrderAndRollsBackOnlyTheFailingUpdater() throws Exception
+    void commitsCompletedUpdaterAndRollsBackFailingUpdater() throws Exception
     {
         String url = "jdbc:derby:memory:after_update_" + UUID.randomUUID() + ";create=true";
         Jdbi jdbi = Jdbi.create(url);
         jdbi.useHandle(handle -> handle.execute("CREATE TABLE UPDATE_MARKER (NAME VARCHAR(20))"));
         List<String> ran = new ArrayList<>();
-        AfterUpdate first = updater("first", 10, tx ->
+        AfterUpdate first = updater("first", tx ->
         {
             ran.add("first");
             insert(tx, "first");
         });
-        AfterUpdate second = updater("second", 20, tx ->
+        AfterUpdate second = updater("second", tx ->
         {
             ran.add("second");
             try (Connection connection = tx.connection(Connection.class).orElseThrow())
@@ -50,7 +50,7 @@ class AfterUpdateRunnerTest
             throw new SQLException("abort this updater");
         });
 
-        assertThrows(SQLException.class, () -> AfterUpdateRunner.run(jdbi, List.of(second, first)));
+        assertThrows(SQLException.class, () -> AfterUpdateRunner.run(jdbi, List.of(first, second)));
         assertEquals(List.of("first", "second"), ran);
         assertEquals(List.of("first"), jdbi.withHandle(handle ->
                 handle.createQuery("SELECT NAME FROM UPDATE_MARKER").mapTo(String.class).list()));
@@ -66,7 +66,7 @@ class AfterUpdateRunnerTest
         }
     }
 
-    private static AfterUpdate updater(String name, int order, Action action)
+    private static AfterUpdate updater(String name, Action action)
     {
         return new AfterUpdate()
         {
@@ -74,12 +74,6 @@ class AfterUpdateRunnerTest
             public String name()
             {
                 return name;
-            }
-
-            @Override
-            public int order()
-            {
-                return order;
             }
 
             @Override
