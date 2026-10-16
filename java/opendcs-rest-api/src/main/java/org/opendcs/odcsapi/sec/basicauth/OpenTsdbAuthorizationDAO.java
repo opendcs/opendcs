@@ -19,14 +19,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
+import org.opendcs.odcsapi.sec.OpenDcsApiRole;
 import org.slf4j.Logger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
@@ -35,10 +35,10 @@ public final class OpenTsdbAuthorizationDAO implements ApiAuthorizationDAI
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	@Override
-	public Set<OpenDcsApiRoles> getRoles(DataTransaction transaction, String username, String unused) throws DbException
+	public Set<OpenDcsApiRole> getRoles(DataTransaction transaction, String username, String unused) throws DbException
 	{
-		Set<OpenDcsApiRoles> roles = EnumSet.noneOf(OpenDcsApiRoles.class);
-		roles.add(OpenDcsApiRoles.ODCS_API_GUEST);
+		Set<OpenDcsApiRole> roles = new HashSet<>();
+		roles.add(OpenDcsApiRole.ODCS_API_GUEST);
 		// Now verify that user has appropriate privilege. This only works on Postgress currently:
 		String q = "select pm.roleid, pr.rolname from pg_auth_members pm, pg_roles pr"
 				+ " where pm.member = (select oid from pg_roles where upper(rolname) = upper(?))"
@@ -58,11 +58,11 @@ public final class OpenTsdbAuthorizationDAO implements ApiAuthorizationDAI
 						log.info("User '{}' has role {}={}", username, roleid, role);
 						if("OTSDB_ADMIN".equalsIgnoreCase(role))
 						{
-							roles.add(OpenDcsApiRoles.ODCS_API_ADMIN);
+							roles.add(OpenDcsApiRole.ODCS_API_ADMIN);
 						}
 						if("OTSDB_MGR".equalsIgnoreCase(role))
 						{
-							roles.add(OpenDcsApiRoles.ODCS_API_USER);
+							roles.add(OpenDcsApiRole.ODCS_API_USER);
 						}
 					}
 				}

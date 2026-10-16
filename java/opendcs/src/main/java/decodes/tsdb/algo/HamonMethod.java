@@ -1,9 +1,9 @@
 package decodes.tsdb.algo;
 
-import java.util.Calendar;
-import java.util.Locale;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Locale;
 
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
