@@ -328,6 +328,11 @@ public abstract class DbAlgorithmExecutive
 			for (String role: getOutputNames())
 			{
 				var parmRef = getParmRef(role);
+				if (parmRef == null || parmRef.timeSeries == null)
+				{
+					log.warn("Computation '{}' has no usable output for role '{}'; update its parameters", comp.getName(), role);
+					continue;
+				}
 				try
 				{
 					savedData.addTimeSeries(parmRef.timeSeries);

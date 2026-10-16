@@ -12,6 +12,8 @@ import javax.sql.DataSource;
 import org.flywaydb.core.api.MigrationInfo;
 import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.spi.database.MigrationProvider.MigrationProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Console;
 import java.io.FileNotFoundException;
@@ -31,6 +33,7 @@ import java.util.Properties;
  */
 public class ManageDatabaseApp
 {
+    private static final Logger log = LoggerFactory.getLogger(ManageDatabaseApp.class);
 
     public static void main(String args[]) throws Exception
     {
@@ -126,6 +129,9 @@ public class ManageDatabaseApp
             {
                 System.out.println("Database is already up-to-date.");
             }
+
+            log.info("Running after-update tasks on the existing database");
+            AfterUpdateRunner.run(DatabaseService.getDatabaseFor(ds));
         }
     }
 
