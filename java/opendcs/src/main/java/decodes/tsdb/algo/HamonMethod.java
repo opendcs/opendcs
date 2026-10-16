@@ -1,8 +1,9 @@
 package decodes.tsdb.algo;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
@@ -29,6 +30,8 @@ import ilex.var.NamedVariable;
 public class HamonMethod extends AW_AlgorithmBase
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final DateTimeFormatter DAY_OF_YEAR_FORMATTER =
+		DateTimeFormatter.ofPattern("DDD", Locale.getDefault());
 	private UnitConverter temperatureConverter;
 	private UnitConverter evaporationConverter;
 
@@ -90,12 +93,9 @@ public class HamonMethod extends AW_AlgorithmBase
 		double temperatureCelsius = convert(input, temperatureConverter, "temperature", "C");
 
 		// Hamon uses the Julian day to estimate solar declination and daylight length.
-		String dayOfYearText = new SimpleDateFormat("DDD HH:MM:SS yyyy", Locale.US)
-			.format(_timeSliceBaseTime).substring(0, 3);
-		Calendar calendar = Calendar.getInstance();
-		calendar.setTime(_timeSliceBaseTime);
-		int month = calendar.get(Calendar.MONTH);
-		int dayOfYear = Integer.parseInt(dayOfYearText);
+		ZonedDateTime localTime = _timeSliceBaseTime.toInstant().atZone(aggTZ.toZoneId());
+		int month = localTime.getMonthValue() - 1;
+		int dayOfYear = Integer.parseInt(DAY_OF_YEAR_FORMATTER.format(localTime));
 		double latitudeDegrees = parseLatitude(site);
 
 		// Solar declination and sunset hour angle are expressed in radians.
