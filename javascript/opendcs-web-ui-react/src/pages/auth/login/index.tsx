@@ -68,8 +68,7 @@ export default function Login() {
         return [key, { ...defaults, ...existing }];
       }),
     );
-  }, [loginSchemes]);
-
+  }, [loginSchemes, api]);
   return (
     <Container className="odcs-login">
       <Container className="odcs-login__bg-image" />
@@ -87,11 +86,21 @@ export default function Login() {
                   <FormLogin
                     key={key}
                     login={(credentials: Credentials) => {
+                      const selectedOrg = api.org;
                       auth
-                        .postCredentials(api.org, credentials)
+                        // /credentials only accepts the guest role, which lives under the
+                        // blank org; the selected office is applied after the session exists.
+                        .postCredentials("", credentials)
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         .then((user_value: any) => {
                           setUser(user_value);
+                          return selectedOrg
+                            ? auth
+                                .getOrganizations(selectedOrg)
+                                .catch(() => api.setOrg({}))
+                            : undefined;
+                        })
+                        .then(() => {
                           const redirectPath = location.state?.from || "/platforms";
                           navigate(redirectPath, { replace: true });
                         })
@@ -183,10 +192,8 @@ export default function Login() {
                   name="organization"
                   aria-labelledby="organization-label"
                   required
-                  defaultValue={api.org}
-                  onChange={(e) => {
-                    api.setOrg(JSON.parse(e.currentTarget.value));
-                  }}
+                  value={JSON.stringify(api.orgObj)}
+                  onChange={(e) => api.setOrg(JSON.parse(e.currentTarget.value))}
                 >
                   {orgOptions.map(({ org, depth }) => (
                     <option key={org.name} value={JSON.stringify(org)}>

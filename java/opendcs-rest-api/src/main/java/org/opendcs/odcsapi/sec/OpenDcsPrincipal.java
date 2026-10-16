@@ -22,34 +22,45 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.opendcs.database.model.User;
-import org.opendcs.odcsapi.beans.ApiOrganization;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema (description = "user principal object.")
 public final class OpenDcsPrincipal implements Principal, Serializable
 {
 	public static final String USER_PRINCIPAL_SESSION_ATTRIBUTE = "opendcs-user-principal";
 	private static final long serialVersionUID = -2116796045388257540L;
+	@JsonIgnoreProperties({"roles"})
+	@JsonUnwrapped
+	@SuppressWarnings ("java:S1948") // User is serializable just doesn't get seen as such
 	private final User user;
 
-	private final Map<ApiOrganization, ArrayList<OpenDcsApiRoles>> roles;
+	private final Map<String, ArrayList<OpenDcsApiRole>> roles;
 
-	public OpenDcsPrincipal(User user, Map<ApiOrganization, ArrayList<OpenDcsApiRoles>> roles)
+	public OpenDcsPrincipal(User user, Map<String, ArrayList<OpenDcsApiRole>> roles)
 	{
 		this.user = user;
 		this.roles = Collections.unmodifiableMap(roles);
 	}
 
+	@JsonIgnore
 	@Override
 	public String getName()
 	{
 		return user.email;
 	}
 
+	@JsonIgnore
 	public User getUser()
 	{
 		return this.user;
 	}
 
-	public Map<ApiOrganization, ArrayList<OpenDcsApiRoles>> getRoles()
+	public Map<String, ArrayList<OpenDcsApiRole>> getRoles()
 	{
 		return roles;
 	}

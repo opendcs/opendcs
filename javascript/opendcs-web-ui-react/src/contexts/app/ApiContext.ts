@@ -16,9 +16,8 @@ export const defaultValue: ApiContextType = {
   }),
   org: parseOrg(window.localStorage.getItem("organization")).name || "",
   orgObj: parseOrg(window.localStorage.getItem("organization")) || {},
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  setOrg: (_value: SetStateAction<ApiOrganization>): void => {
-    window.localStorage.setItem("organization", JSON.stringify(_value));
+  setOrg: (value: SetStateAction<ApiOrganization>): void => {
+    window.localStorage.setItem("organization", JSON.stringify(value));
   },
 };
 

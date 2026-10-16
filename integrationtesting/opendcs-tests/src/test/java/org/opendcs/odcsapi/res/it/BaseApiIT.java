@@ -23,9 +23,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
-import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
@@ -52,17 +53,14 @@ import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.fixtures.spi.Configuration;
-import org.opendcs.odcsapi.beans.ApiOrganization;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.fixtures.TomcatServer;
 import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
-import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
+import org.opendcs.odcsapi.sec.OpenDcsApiRole;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
-import org.opendcs.odcsapi.sec.OrganizationResource;
 import org.opendcs.odcsapi.sec.basicauth.Credentials;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.opendcs.data.Organization;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.database.model.UserBuilder;
 import org.opendcs.fixtures.AppTestBase;
@@ -73,6 +71,8 @@ import org.opendcs.fixtures.extensions.auth.KeyCloakTestExtension;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.joining;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.opendcs.odcsapi.util.ApiConstants.ORGANIZATION_HEADER;
 
@@ -163,8 +163,13 @@ public class BaseApiIT extends AppTestBase
 		}
 
 		var user = new UserBuilder().withEmail(username).build();
-		var roles = Map.of(OrganizationResource.map(this.configuration.getDefaultOrganization()),
-						   new ArrayList<>(EnumSet.allOf(OpenDcsApiRoles.class).stream().toList()));
+		var roles = Map.of(this.configuration.getDefaultOrganization().getName(),
+						   new ArrayList<>(List.of(
+							OpenDcsApiRole.ODCS_API_ADMIN,
+							OpenDcsApiRole.ODCS_API_GUEST,
+							OpenDcsApiRole.ODCS_API_REGISTERED,
+							OpenDcsApiRole.ODCS_API_USER
+						   )));
 		OpenDcsPrincipal mcup = new OpenDcsPrincipal(user, roles);
 		session.setAuthType("CLIENT-CERT");
 		session.setPrincipal(mcup);
@@ -182,7 +187,7 @@ public class BaseApiIT extends AppTestBase
 				.addHeader(ORGANIZATION_HEADER, organization)
 				.build();
 		//Check while passing in cookie
-		given()
+		var principal = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.spec(authSpec)
@@ -194,7 +199,11 @@ public class BaseApiIT extends AppTestBase
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.OK.getStatusCode()))
-		;
+		.extract().body();
+		final ObjectMapper mapper = new ObjectMapperContextResolver().getContext(OpenDcsPrincipal.class);
+		final var principalMapped = (JsonNode)assertDoesNotThrow(() -> mapper.valueToTree(mcup));
+		final var rolesFromMapped = assertDoesNotThrow(() -> mapper.treeToValue(principalMapped.get("roles"), Map.class));
+		assertEquals(rolesFromMapped, principal.jsonPath().getMap("roles"));
 	}
 
 	String getCookie()
