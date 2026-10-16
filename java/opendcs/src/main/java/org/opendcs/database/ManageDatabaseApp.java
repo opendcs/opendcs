@@ -131,7 +131,7 @@ public class ManageDatabaseApp
             }
 
             log.info("Running after-update tasks on the existing database");
-            AfterUpdateRunner.run(mm.getJdbiHandle());
+            AfterUpdateRunner.run(DatabaseService.getDatabaseFor(ds));
         }
     }
 
