@@ -64,6 +64,8 @@ import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.AlgorithmCatalogScanner;
 import org.opendcs.algorithms.update.AlgorithmSpec;
 import org.opendcs.algorithms.update.AlgorithmUpdater;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.opendcs.odcsapi.dao.DbException;
 
 import static java.util.Comparator.comparing;
@@ -72,6 +74,7 @@ import static java.util.stream.Collectors.toList;
 @Path("/")
 public final class AlgorithmResources extends OpenDcsResource
 {
+	private static final Logger log = LoggerFactory.getLogger(AlgorithmResources.class);
 	@POST
 	@Path("algorithmupdate")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -105,15 +108,7 @@ public final class AlgorithmResources extends OpenDcsResource
 		try (AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
 		{
 			DbCompAlgorithm algorithm = dai.getAlgorithmById(DbKey.createDbKey(algorithmId));
-			try
-			{
-				return Response.ok(AlgorithmSpec.read(algorithm.getExecClass())).build();
-			}
-			catch (ClassNotFoundException | LinkageError | IllegalArgumentException ex)
-			{
-				return Response.status(Response.Status.NOT_FOUND)
-						.entity("Installed annotated algorithm is unavailable: " + ex.getMessage()).build();
-			}
+			return installedAlgorithmSpec(algorithm);
 		}
 		catch (NoSuchObjectException ex)
 		{
@@ -121,6 +116,20 @@ public final class AlgorithmResources extends OpenDcsResource
 		}
 	}
 
+	private Response installedAlgorithmSpec(DbCompAlgorithm algorithm)
+	{
+		try
+		{
+			return Response.ok(AlgorithmSpec.read(algorithm.getExecClass())).build();
+		}
+		catch (ClassNotFoundException | LinkageError | IllegalArgumentException ex)
+		{
+			log.debug("Installed algorithm specification is unavailable for {}",
+					algorithm.getExecClass(), ex);
+			return Response.status(Response.Status.NOT_FOUND)
+					.entity("Installed annotated algorithm is unavailable: " + ex.getMessage()).build();
+		}
+	}
 	@GET
 	@Path("algorithmrefs")
 	@Produces(MediaType.APPLICATION_JSON)

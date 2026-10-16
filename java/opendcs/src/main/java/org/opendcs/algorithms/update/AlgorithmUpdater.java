@@ -8,13 +8,18 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 import javax.sql.DataSource;
+import org.jdbi.v3.core.Jdbi;
+import org.opendcs.database.JdbiTransaction;
+import org.opendcs.database.TransactionContextImpl;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,13 +29,27 @@ public final class AlgorithmUpdater
     private static final Logger log = LoggerFactory.getLogger(AlgorithmUpdater.class);
     private static final List<String> ROLE_PROPERTY_SUFFIXES = List.of("_MISSING", "_EU", "_tsname");
 
-    private AlgorithmUpdater() {}
+    private AlgorithmUpdater()
+    {
+    }
 
     public record Summary(String algorithm, int renamedParameters, int renamedProperties, int updatedTypes,
             int addedAlgorithmParameters, int removedAlgorithmParameters,
-            int addedAlgorithmProperties, int needsReview) {}
+            int addedAlgorithmProperties, int needsReview)
+    {
+        public boolean hasChanges()
+        {
+            return hasAppliedChanges() || needsReview > 0;
+        }
 
-    /** Each algorithm is updated in its own transaction. This operation is safe to repeat. */
+        public boolean hasAppliedChanges()
+        {
+            return renamedParameters + renamedProperties + updatedTypes + addedAlgorithmParameters
+                    + removedAlgorithmParameters + addedAlgorithmProperties > 0;
+        }
+    }
+
+    /** Convenience entry point for the REST API, CLI, and older callers. */
     public static List<Summary> synchronize(DataSource dataSource, boolean dryRun) throws SQLException
     {
         return synchronize(dataSource, dryRun, Set.of());
@@ -39,61 +58,135 @@ public final class AlgorithmUpdater
     /** An empty ID set synchronizes every installed annotated algorithm. */
     public static List<Summary> synchronize(DataSource dataSource, boolean dryRun, Set<Long> algorithmIds) throws SQLException
     {
-        List<Summary> result = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection())
+        try (DataTransaction transaction = new JdbiTransaction(Jdbi.create(dataSource).open(),
+                new TransactionContextImpl(null, Map.of(), DatabaseEngine.GENERIC_SQL)))
         {
-            List<AlgorithmRow> algorithms = new ArrayList<>();
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT ALGORITHM_ID, ALGORITHM_NAME, EXEC_CLASS FROM CP_ALGORITHM");
-                 ResultSet rows = statement.executeQuery())
+            try
             {
-                while (rows.next())
+                List<Summary> result = synchronize(transaction, dryRun, algorithmIds);
+                if (dryRun)
                 {
-                    algorithms.add(new AlgorithmRow(rows.getLong(1), rows.getString(2), rows.getString(3)));
+                    transaction.rollback();
                 }
+                else
+                {
+                    transaction.commit();
+                }
+                return result;
             }
-            for (AlgorithmRow algorithm : algorithms)
+            catch (SQLException | OpenDcsDataException | RuntimeException ex)
             {
-                if (!algorithmIds.isEmpty() && !algorithmIds.contains(algorithm.id())) continue;
-                if (algorithm.execClass() == null || algorithm.execClass().isBlank())
-                {
-                    continue;
-                }
-                AlgorithmSpec spec;
                 try
                 {
-                    spec = AlgorithmSpec.read(algorithm.execClass());
+                    transaction.rollback();
                 }
-                catch (ClassNotFoundException | LinkageError | IllegalArgumentException ex)
+                catch (OpenDcsDataException rollbackFailure)
                 {
-                    // Script algorithms and classes not installed on this host cannot be synchronized.
-                    log.debug("Skipping algorithm '{}' ({}) during update: {}",
-                            algorithm.name(), algorithm.execClass(), ex.toString());
-                    continue;
+                    ex.addSuppressed(rollbackFailure);
                 }
-                boolean oldAutoCommit = connection.getAutoCommit();
-                connection.setAutoCommit(false);
-                try
+                if (ex instanceof SQLException sqlException)
+                {
+                    throw sqlException;
+                }
+                if (ex instanceof OpenDcsDataException)
+                {
+                    throw new SQLException("Algorithm transaction failed", ex);
+                }
+                throw ex;
+            }
+        }
+        catch (OpenDcsDataException ex)
+        {
+            throw new SQLException("Algorithm transaction failed", ex);
+        }
+    }
+
+    /** Uses only the supplied transaction and never commits or closes it. */
+    public static List<Summary> synchronize(DataTransaction transaction, boolean dryRun)
+            throws SQLException, OpenDcsDataException
+    {
+        return synchronize(transaction, dryRun, Set.of());
+    }
+
+    /** An empty ID set synchronizes every installed annotated algorithm. */
+    public static List<Summary> synchronize(DataTransaction transaction, boolean dryRun, Set<Long> algorithmIds)
+            throws SQLException, OpenDcsDataException
+    {
+        Connection connection = transaction.connection(Connection.class)
+                .orElseThrow(() -> new OpenDcsDataException("A JDBC connection is required for algorithm updates"));
+        List<Summary> result = new ArrayList<>();
+        for (AlgorithmRow algorithm : readAlgorithms(connection))
+        {
+            if ((algorithmIds.isEmpty() || algorithmIds.contains(algorithm.id()))
+                    && algorithm.execClass() != null && !algorithm.execClass().isBlank())
+            {
+                AlgorithmSpec spec = installedSpec(algorithm);
+                if (spec != null)
                 {
                     result.add(synchronizeOne(connection, algorithm, spec, dryRun));
-                    if (dryRun) connection.rollback();
-                    else connection.commit();
-                }
-                catch (SQLException | RuntimeException ex)
-                {
-                    connection.rollback();
-                    throw ex;
-                }
-                finally
-                {
-                    connection.setAutoCommit(oldAutoCommit);
                 }
             }
         }
         return result;
     }
 
-    private record AlgorithmRow(long id, String name, String execClass) {}
+    private static AlgorithmSpec installedSpec(AlgorithmRow algorithm)
+    {
+        try
+        {
+            return AlgorithmSpec.read(algorithm.execClass());
+        }
+        catch (ClassNotFoundException | LinkageError | IllegalArgumentException ex)
+        {
+            // Script algorithms and classes not installed on this host cannot be synchronized.
+            log.debug("Skipping algorithm '{}' ({}) during update", algorithm.name(), algorithm.execClass(), ex);
+            return null;
+        }
+    }
+
+    private static List<AlgorithmRow> readAlgorithms(Connection connection) throws SQLException
+    {
+        List<AlgorithmRow> algorithms = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT ALGORITHM_ID, ALGORITHM_NAME, EXEC_CLASS FROM CP_ALGORITHM");
+             ResultSet rows = statement.executeQuery())
+        {
+            while (rows.next())
+            {
+                algorithms.add(new AlgorithmRow(rows.getLong(1), rows.getString(2), rows.getString(3)));
+            }
+        }
+        return algorithms;
+    }
+
+    private record AlgorithmRow(long id, String name, String execClass)
+    {
+    }
+
+    private static final class UpdateState
+    {
+        private final Map<String, String> oldTypes;
+        private final Map<String, String> algorithmProperties;
+        private int renamedParameters;
+        private int renamedProperties;
+        private int updatedTypes;
+        private int addedRoles;
+        private int removedRoles;
+        private int addedProperties;
+        private int needsReview;
+
+        private UpdateState(Map<String, String> oldTypes, Map<String, String> algorithmProperties)
+        {
+            this.oldTypes = oldTypes;
+            this.algorithmProperties = algorithmProperties;
+        }
+
+        private Summary summary(String algorithmName)
+        {
+            return new Summary(algorithmName, renamedParameters, renamedProperties, updatedTypes,
+                    addedRoles, removedRoles, addedProperties, needsReview);
+        }
+    }
 
     private static Summary synchronizeOne(Connection connection, AlgorithmRow algorithm,
             AlgorithmSpec spec, boolean dryRun) throws SQLException
@@ -104,139 +197,205 @@ public final class AlgorithmUpdater
             lock.setLong(1, algorithm.id());
             try (ResultSet ignored = lock.executeQuery())
             {
-                if (!ignored.next()) throw new SQLException("Algorithm disappeared during update: " + algorithm.id());
+                if (!ignored.next())
+                {
+                    throw new SQLException("Algorithm disappeared during update: " + algorithm.id());
+                }
             }
         }
-        Map<String, String> oldTypes = readNames(connection,
-                "SELECT ALGO_ROLE_NAME, PARM_TYPE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = ?", algorithm.id());
-        Map<String, String> algoProps = readNames(connection,
-                "SELECT PROP_NAME, PROP_VALUE FROM CP_ALGO_PROPERTY WHERE ALGORITHM_ID = ?", algorithm.id());
-        int renamedParameters = 0, renamedProperties = 0, updatedTypes = 0;
-        int addedRoles = 0, removedRoles = 0, addedProps = 0, review = 0;
-        Set<Long> touched = new HashSet<>();
+        UpdateState state = new UpdateState(
+                readNames(connection, "SELECT ALGO_ROLE_NAME, PARM_TYPE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = ?", algorithm.id()),
+                readNames(connection, "SELECT PROP_NAME, PROP_VALUE FROM CP_ALGO_PROPERTY WHERE ALGORITHM_ID = ?", algorithm.id()));
+        List<Long> computationIds = computationIds(connection, algorithm.id());
         for (AlgorithmSpec.Role role : spec.roles())
         {
-            for (String former : role.formerNames())
-            {
-                String formerType = oldTypes.get(key(former));
-                if (formerType != null && !role.type().equalsIgnoreCase(formerType)) continue;
-                for (long computationId : computationIds(connection, algorithm.id()))
-                {
-                    Map<String, String> parms = readNames(connection,
-                            "SELECT ALGO_ROLE_NAME, ALGO_ROLE_NAME FROM CP_COMP_TS_PARM WHERE COMPUTATION_ID = ?",
-                            computationId);
-                    if (!parms.containsKey(key(former))) continue;
-                    if (parms.containsKey(key(role.name())) || count(connection,
-                            "SELECT COUNT(*) FROM CP_COMP_TS_PARM WHERE COMPUTATION_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
-                            computationId, former) != 1)
-                    {
-                        review++;
-                        continue;
-                    }
-                    renamedParameters++;
-                    touched.add(computationId);
-                    if (!dryRun)
-                    {
-                        modify(connection, "UPDATE CP_COMP_TS_PARM SET ALGO_ROLE_NAME = ? WHERE COMPUTATION_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
-                                role.name(), computationId, former);
-                        for (String suffix : ROLE_PROPERTY_SUFFIXES)
-                        {
-                            renameProperty(connection, "CP_COMP_PROPERTY", "COMPUTATION_ID",
-                                    computationId, former + suffix, role.name() + suffix);
-                        }
-                    }
-                }
-                if (oldTypes.containsKey(key(former)) && !oldTypes.containsKey(key(role.name())))
-                {
-                    if (!dryRun)
-                    {
-                        modify(connection, "UPDATE CP_ALGO_TS_PARM SET ALGO_ROLE_NAME = ? WHERE ALGORITHM_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
-                                role.name(), algorithm.id(), former);
-                    }
-                    oldTypes.remove(key(former));
-                    oldTypes.put(key(role.name()), role.type());
-                }
-                else if (oldTypes.containsKey(key(former)))
-                {
-                    // Existing computations with both names still wait for a user's choice.
-                    removedRoles++;
-                    if (!dryRun)
-                        modify(connection, "DELETE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
-                                algorithm.id(), former);
-                    oldTypes.remove(key(former));
-                }
-            }
-            if (!oldTypes.containsKey(key(role.name())))
-            {
-                addedRoles++;
-                if (!dryRun)
-                    modify(connection, "INSERT INTO CP_ALGO_TS_PARM (ALGORITHM_ID, ALGO_ROLE_NAME, PARM_TYPE) VALUES (?, ?, ?)",
-                            algorithm.id(), role.name(), role.type());
-                oldTypes.put(key(role.name()), role.type());
-            }
-            else if (!role.type().equalsIgnoreCase(oldTypes.get(key(role.name()))))
-            {
-                updatedTypes++;
-                if (!dryRun)
-                    modify(connection, "UPDATE CP_ALGO_TS_PARM SET PARM_TYPE = ? WHERE ALGORITHM_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
-                            role.type(), algorithm.id(), role.name());
-                oldTypes.put(key(role.name()), role.type());
-            }
+            synchronizeRole(connection, algorithm.id(), computationIds, role, state, dryRun);
         }
         for (AlgorithmSpec.Property property : spec.properties())
         {
-            for (String former : property.formerNames())
-            {
-                if (algoProps.containsKey(key(former)) && !algoProps.containsKey(key(property.name())))
-                {
-                    renamedProperties++;
-                    if (!dryRun)
-                        renameProperty(connection, "CP_ALGO_PROPERTY", "ALGORITHM_ID", algorithm.id(), former, property.name());
-                    algoProps.put(key(property.name()), algoProps.remove(key(former)));
-                }
-                for (long computationId : computationIds(connection, algorithm.id()))
-                {
-                    Map<String, String> props = readNames(connection,
-                            "SELECT PROP_NAME, PROP_VALUE FROM CP_COMP_PROPERTY WHERE COMPUTATION_ID = ?", computationId);
-                    if (props.containsKey(key(former)) && !props.containsKey(key(property.name())))
-                    {
-                        renamedProperties++;
-                        touched.add(computationId);
-                        if (!dryRun)
-                            renameProperty(connection, "CP_COMP_PROPERTY", "COMPUTATION_ID", computationId, former, property.name());
-                    }
-                    else if (props.containsKey(key(former)) && props.containsKey(key(property.name()))) review++;
-                }
-            }
-            if (!algoProps.containsKey(key(property.name())))
-            {
-                addedProps++;
-                if (!dryRun)
-                    modify(connection, "INSERT INTO CP_ALGO_PROPERTY (ALGORITHM_ID, PROP_NAME, PROP_VALUE) VALUES (?, ?, ?)",
-                            algorithm.id(), property.name(), property.defaultValue());
-                algoProps.put(key(property.name()), property.defaultValue());
-            }
+            synchronizeProperty(connection, algorithm.id(), computationIds, property, state, dryRun);
         }
-        if (!dryRun && (renamedParameters + renamedProperties + updatedTypes + addedRoles + removedRoles + addedProps) > 0)
+        if (!dryRun && state.summary(algorithm.name()).hasAppliedChanges())
         {
-            // Computation processes watch this timestamp to reload changed definitions.
-            touched.addAll(computationIds(connection, algorithm.id()));
-            int sqlType = loadedDateType(connection);
-            for (long id : touched)
+            touchComputations(connection, computationIds);
+        }
+        return state.summary(algorithm.name());
+    }
+
+    private static void synchronizeRole(Connection connection, long algorithmId, List<Long> computationIds,
+            AlgorithmSpec.Role role, UpdateState state, boolean dryRun) throws SQLException
+    {
+        for (String former : role.formerNames())
+        {
+            String formerType = state.oldTypes.get(key(former));
+            if (formerType == null || role.type().equalsIgnoreCase(formerType))
             {
-                try (PreparedStatement statement = connection.prepareStatement(
-                        "UPDATE CP_COMPUTATION SET DATE_TIME_LOADED = ? WHERE COMPUTATION_ID = ?"))
+                for (long computationId : computationIds)
                 {
-                    if (sqlType == Types.BIGINT || sqlType == Types.INTEGER)
-                        statement.setLong(1, System.currentTimeMillis());
-                    else statement.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
-                    statement.setLong(2, id);
-                    statement.executeUpdate();
+                    renameComputationRole(connection, computationId, former, role.name(), state, dryRun);
                 }
+                renameAlgorithmRole(connection, algorithmId, former, role, state, dryRun);
             }
         }
-        return new Summary(algorithm.name(), renamedParameters, renamedProperties,
-                updatedTypes, addedRoles, removedRoles, addedProps, review);
+        ensureAlgorithmRole(connection, algorithmId, role, state, dryRun);
+    }
+
+    private static void renameComputationRole(Connection connection, long computationId, String former,
+            String current, UpdateState state, boolean dryRun) throws SQLException
+    {
+        Map<String, String> parms = readNames(connection,
+                "SELECT ALGO_ROLE_NAME, ALGO_ROLE_NAME FROM CP_COMP_TS_PARM WHERE COMPUTATION_ID = ?", computationId);
+        if (!parms.containsKey(key(former)))
+        {
+            return;
+        }
+        if (parms.containsKey(key(current)) || count(connection,
+                "SELECT COUNT(*) FROM CP_COMP_TS_PARM WHERE COMPUTATION_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
+                computationId, former) != 1)
+        {
+            state.needsReview++;
+            return;
+        }
+        state.renamedParameters++;
+        if (!dryRun)
+        {
+            modify(connection, "UPDATE CP_COMP_TS_PARM SET ALGO_ROLE_NAME = ? WHERE COMPUTATION_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
+                    current, computationId, former);
+            for (String suffix : ROLE_PROPERTY_SUFFIXES)
+            {
+                renameProperty(connection, "CP_COMP_PROPERTY", "COMPUTATION_ID", computationId,
+                        former + suffix, current + suffix);
+            }
+        }
+    }
+
+    private static void renameAlgorithmRole(Connection connection, long algorithmId, String former,
+            AlgorithmSpec.Role role, UpdateState state, boolean dryRun) throws SQLException
+    {
+        if (!state.oldTypes.containsKey(key(former)))
+        {
+            return;
+        }
+        if (!state.oldTypes.containsKey(key(role.name())))
+        {
+            if (!dryRun)
+            {
+                modify(connection, "UPDATE CP_ALGO_TS_PARM SET ALGO_ROLE_NAME = ? WHERE ALGORITHM_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
+                        role.name(), algorithmId, former);
+            }
+            state.oldTypes.put(key(role.name()), role.type());
+        }
+        else
+        {
+            // Existing computations with both names still wait for a user's choice.
+            state.removedRoles++;
+            if (!dryRun)
+            {
+                modify(connection, "DELETE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
+                        algorithmId, former);
+            }
+        }
+        state.oldTypes.remove(key(former));
+    }
+
+    private static void ensureAlgorithmRole(Connection connection, long algorithmId, AlgorithmSpec.Role role,
+            UpdateState state, boolean dryRun) throws SQLException
+    {
+        String storedType = state.oldTypes.get(key(role.name()));
+        if (storedType == null)
+        {
+            state.addedRoles++;
+            if (!dryRun)
+            {
+                modify(connection, "INSERT INTO CP_ALGO_TS_PARM (ALGORITHM_ID, ALGO_ROLE_NAME, PARM_TYPE) VALUES (?, ?, ?)",
+                        algorithmId, role.name(), role.type());
+            }
+            state.oldTypes.put(key(role.name()), role.type());
+        }
+        else if (!role.type().equalsIgnoreCase(storedType))
+        {
+            state.updatedTypes++;
+            if (!dryRun)
+            {
+                modify(connection, "UPDATE CP_ALGO_TS_PARM SET PARM_TYPE = ? WHERE ALGORITHM_ID = ? AND LOWER(ALGO_ROLE_NAME) = LOWER(?)",
+                        role.type(), algorithmId, role.name());
+            }
+            state.oldTypes.put(key(role.name()), role.type());
+        }
+    }
+
+    private static void synchronizeProperty(Connection connection, long algorithmId, List<Long> computationIds,
+            AlgorithmSpec.Property property, UpdateState state, boolean dryRun) throws SQLException
+    {
+        for (String former : property.formerNames())
+        {
+            if (state.algorithmProperties.containsKey(key(former))
+                    && !state.algorithmProperties.containsKey(key(property.name())))
+            {
+                state.renamedProperties++;
+                if (!dryRun)
+                {
+                    renameProperty(connection, "CP_ALGO_PROPERTY", "ALGORITHM_ID", algorithmId, former, property.name());
+                }
+                state.algorithmProperties.put(key(property.name()), state.algorithmProperties.remove(key(former)));
+            }
+            for (long computationId : computationIds)
+            {
+                renameComputationProperty(connection, computationId, former, property.name(), state, dryRun);
+            }
+        }
+        if (!state.algorithmProperties.containsKey(key(property.name())))
+        {
+            state.addedProperties++;
+            if (!dryRun)
+            {
+                modify(connection, "INSERT INTO CP_ALGO_PROPERTY (ALGORITHM_ID, PROP_NAME, PROP_VALUE) VALUES (?, ?, ?)",
+                        algorithmId, property.name(), property.defaultValue());
+            }
+            state.algorithmProperties.put(key(property.name()), property.defaultValue());
+        }
+    }
+
+    private static void renameComputationProperty(Connection connection, long computationId, String former,
+            String current, UpdateState state, boolean dryRun) throws SQLException
+    {
+        Map<String, String> props = readNames(connection,
+                "SELECT PROP_NAME, PROP_VALUE FROM CP_COMP_PROPERTY WHERE COMPUTATION_ID = ?", computationId);
+        if (props.containsKey(key(former)) && !props.containsKey(key(current)))
+        {
+            state.renamedProperties++;
+            if (!dryRun)
+            {
+                renameProperty(connection, "CP_COMP_PROPERTY", "COMPUTATION_ID", computationId, former, current);
+            }
+        }
+        else if (props.containsKey(key(former)) && props.containsKey(key(current)))
+        {
+            state.needsReview++;
+        }
+    }
+
+    private static void touchComputations(Connection connection, List<Long> computationIds) throws SQLException
+    {
+        // Computation processes watch this timestamp to reload changed definitions.
+        int sqlType = loadedDateType(connection);
+        try (PreparedStatement statement = connection.prepareStatement(
+                "UPDATE CP_COMPUTATION SET DATE_TIME_LOADED = ? WHERE COMPUTATION_ID = ?"))
+        {
+            for (long id : computationIds)
+            {
+                if (sqlType == Types.BIGINT || sqlType == Types.INTEGER)
+                {
+                    statement.setLong(1, System.currentTimeMillis());
+                }
+                else
+                {
+                    statement.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+                }
+                statement.setLong(2, id);
+                statement.executeUpdate();
+            }
+        }
     }
 
     private static int loadedDateType(Connection connection) throws SQLException
@@ -253,8 +412,10 @@ public final class AlgorithmUpdater
     {
         if (count(connection, "SELECT COUNT(*) FROM " + table + " WHERE " + idColumn + " = ? AND LOWER(PROP_NAME) = LOWER(?)",
                 id, current) == 0)
+        {
             modify(connection, "UPDATE " + table + " SET PROP_NAME = ? WHERE " + idColumn + " = ? AND LOWER(PROP_NAME) = LOWER(?)",
                     current, id, former);
+        }
     }
 
     private static Map<String, String> readNames(Connection connection, String sql, long id) throws SQLException
@@ -265,7 +426,10 @@ public final class AlgorithmUpdater
             statement.setLong(1, id);
             try (ResultSet rows = statement.executeQuery())
             {
-                while (rows.next()) result.put(key(rows.getString(1)), rows.getString(2));
+                while (rows.next())
+                {
+                    result.put(key(rows.getString(1)), rows.getString(2));
+                }
             }
         }
         return result;
@@ -280,7 +444,10 @@ public final class AlgorithmUpdater
             statement.setLong(1, algorithmId);
             try (ResultSet rows = statement.executeQuery())
             {
-                while (rows.next()) result.add(rows.getLong(1));
+                while (rows.next())
+                {
+                    result.add(rows.getLong(1));
+                }
             }
         }
         return result;
@@ -304,10 +471,16 @@ public final class AlgorithmUpdater
     {
         try (PreparedStatement statement = connection.prepareStatement(sql))
         {
-            for (int i = 0; i < values.length; i++) statement.setObject(i + 1, values[i]);
+            for (int i = 0; i < values.length; i++)
+            {
+                statement.setObject(i + 1, values[i]);
+            }
             statement.executeUpdate();
         }
     }
 
-    private static String key(String name) { return name.toLowerCase(Locale.ROOT); }
+    private static String key(String name)
+    {
+        return name.toLowerCase(Locale.ROOT);
+    }
 }

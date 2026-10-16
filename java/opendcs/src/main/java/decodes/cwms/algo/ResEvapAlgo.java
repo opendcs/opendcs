@@ -774,7 +774,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
      * Drop all but the last hour of each hourly water temperature profile once the day has been
      * appended to dailyWTP. The hourly profiles are not saved, so keeping every hour for the whole
      * compute window only consumes memory (large windows can be months of hours times every depth layer).
-     * NOTE: if hourlyWTP is ever saved (see the TODO in afterAllTimeSlices), it must be saved before
+     * If hourlyWTP is ever saved, it must be saved before
      * this trim, or this trim removed.
      */
     private void trimHourlyProfiles()
@@ -796,8 +796,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     {
         try
         {
-            //TODO save HourlyWTP
-            //		hourlyWTP.SaveProfiles(timeSeriesDAO);
+            // Hourly profiles are calculation-only; only the daily profiles are persisted.
             dailyWTP.SaveProfiles(timeSeriesDAO);
         }
         catch (DbIoException | BadTimeSeriesException ex)

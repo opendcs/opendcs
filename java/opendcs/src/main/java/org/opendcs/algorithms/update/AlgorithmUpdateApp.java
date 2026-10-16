@@ -5,14 +5,35 @@ import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import org.opendcs.database.ManageDatabaseApp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Set;
 
 /** Standalone preview/apply command for sites that upgrade their schema separately. */
 public final class AlgorithmUpdateApp
 {
-    private AlgorithmUpdateApp() {}
+    private static final Logger log = LoggerFactory.getLogger(AlgorithmUpdateApp.class);
 
-    public static void main(String[] args) throws Exception
+    private AlgorithmUpdateApp()
+    {
+    }
+
+    public static void main(String[] args)
+    {
+        try
+        {
+            run(args);
+        }
+        catch (IOException | SQLException ex)
+        {
+            log.error("Unable to update algorithms", ex);
+            throw new IllegalStateException("Unable to update algorithms", ex);
+        }
+    }
+
+    private static void run(String[] args) throws IOException, SQLException
     {
         CmdLineArgs cli = new CmdLineArgs(true, "algoupdate.log");
         BooleanToken apply = new BooleanToken("apply", "Apply updates (default is preview only)",
@@ -40,18 +61,20 @@ public final class AlgorithmUpdateApp
                 statement.setString(1, algorithm.getValue());
                 try (var rows = statement.executeQuery())
                 {
-                    if (!rows.next()) throw new IllegalArgumentException("Unknown algorithm: " + algorithm.getValue());
+                    if (!rows.next())
+                    {
+                        throw new IllegalArgumentException("Unknown algorithm: " + algorithm.getValue());
+                    }
                     ids = Set.of(rows.getLong(1));
                 }
             }
         }
         for (AlgorithmUpdater.Summary summary : AlgorithmUpdater.synchronize(dataSource, !apply.getValue(), ids))
         {
-            if (summary.renamedParameters() + summary.renamedProperties() + summary.updatedTypes()
-                    + summary.addedAlgorithmParameters() + summary.addedAlgorithmProperties()
-                    + summary.removedAlgorithmParameters()
-                    + summary.needsReview() > 0)
-                System.out.println(summary);
+            if (summary.hasChanges())
+            {
+                log.info("Algorithm update: {}", summary);
+            }
         }
     }
 }

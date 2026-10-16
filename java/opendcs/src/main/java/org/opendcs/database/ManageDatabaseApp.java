@@ -10,9 +10,10 @@ import ilex.util.Pair;
 import javax.sql.DataSource;
 
 import org.flywaydb.core.api.MigrationInfo;
-import org.opendcs.algorithms.update.AlgorithmUpdater;
 import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.spi.database.MigrationProvider.MigrationProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Console;
 import java.io.FileNotFoundException;
@@ -32,6 +33,7 @@ import java.util.Properties;
  */
 public class ManageDatabaseApp
 {
+    private static final Logger log = LoggerFactory.getLogger(ManageDatabaseApp.class);
 
     public static void main(String args[]) throws Exception
     {
@@ -128,22 +130,8 @@ public class ManageDatabaseApp
                 System.out.println("Database is already up-to-date.");
             }
 
-            System.out.println("Synchronizing installed Java algorithms and existing computations.");
-            for (AlgorithmUpdater.Summary summary : AlgorithmUpdater.synchronize(ds, false))
-            {
-                if (summary.renamedParameters() + summary.renamedProperties() + summary.updatedTypes()
-                        + summary.addedAlgorithmParameters() + summary.addedAlgorithmProperties()
-                        + summary.removedAlgorithmParameters()
-                        + summary.needsReview() > 0)
-                {
-                    System.out.printf("%s: %d parameters renamed, %d properties renamed, %d types updated, "
-                                    + "%d algorithm parameters added, %d old algorithm parameters removed, "
-                                    + "%d algorithm properties added, %d need review%n",
-                            summary.algorithm(), summary.renamedParameters(), summary.renamedProperties(), summary.updatedTypes(),
-                            summary.addedAlgorithmParameters(), summary.removedAlgorithmParameters(),
-                            summary.addedAlgorithmProperties(), summary.needsReview());
-                }
-            }
+            log.info("Running after-update tasks on the existing database");
+            AfterUpdateRunner.run(mm.getJdbiHandle());
         }
     }
 

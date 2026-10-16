@@ -15,13 +15,21 @@ import org.opendcs.utils.AnnotationHelpers;
 /** The installed Java class's declared roles and properties. */
 public record AlgorithmSpec(List<Role> roles, List<Property> properties)
 {
-    public record Role(String name, String type, List<String> formerNames) {}
-    public record Property(String name, String defaultValue, List<String> formerNames) {}
+    public record Role(String name, String type, List<String> formerNames)
+    {
+    }
+
+    public record Property(String name, String defaultValue, List<String> formerNames)
+    {
+    }
 
     public static AlgorithmSpec read(String execClass) throws ClassNotFoundException
     {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (loader == null) loader = AlgorithmSpec.class.getClassLoader();
+        if (loader == null)
+        {
+            loader = AlgorithmSpec.class.getClassLoader();
+        }
         Class<?> clazz = Class.forName(execClass, false, loader);
         List<Role> roles = new ArrayList<>();
         List<Property> properties = new ArrayList<>();
