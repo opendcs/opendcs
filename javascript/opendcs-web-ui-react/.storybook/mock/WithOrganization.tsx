@@ -37,7 +37,7 @@ export const WithOrganization: Decorator = (Story, { args }) => {
     return <div data-testid="platforms-page">Platforms Page</div>;
   }
 
-  var orgs = args.organizations || MOCK_ORGANIZATIONS;
+  const orgs = args.organizations || MOCK_ORGANIZATIONS;
 
   return (
     <ApiContext value={apiDefault}>
