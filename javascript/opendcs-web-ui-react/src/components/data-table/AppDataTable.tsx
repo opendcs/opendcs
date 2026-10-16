@@ -444,6 +444,19 @@ function nextAddNewId<T>(existing: T[], getId: (row: T) => string | number): num
   return minId - 1;
 }
 
+/** Whether `order` already leads with the first-column ascending sort that
+ *  `addNew` forces so the new row (lowest id) lands on top. */
+function isAddOrder(order: ReadonlyArray<ReadonlyArray<unknown>>): boolean {
+  return order.length > 0 && order[0][0] === 0 && order[0][1] === "asc";
+}
+
+/** The parts of DataTables' saved state this wrapper reads or adds to. */
+interface SavedTableState {
+  order?: unknown;
+  /** The initial order the state was saved under — see `orderStamp`. */
+  defaultOrder?: string;
+}
+
 /** Filter a local-items array by reference identity — extracted so callers
  *  don't have to stack `setLocalItems((prev) => prev.filter((r) => …))`
  *  (which pushes nesting depth past Sonar's limit). */
@@ -584,6 +597,11 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
 
   // Scroll-to-end scheduling (after save / import).
   const pendingNavRef = useRef(false);
+
+  // The saved-state order from just before `addNew` forced its own sort, or
+  // `null` when no forced sort is in effect. Saved in place of the forced one
+  // so an Add click doesn't change how the page loads next time.
+  const orderBeforeAddRef = useRef<unknown>(null);
 
   // --- Derived data ---------------------------------------------------------
   const tableData = useMemo(() => [...data, ...localItems], [data, localItems]);
@@ -889,14 +907,13 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     // Navigate to first page sorted ascending so the new row is visible.
     const dt = table.current?.dt();
     if (dt) {
-      const currentPage = dt.page();
-      const currentOrder = dt.order();
-      const needsNav =
-        currentPage !== 0 ||
-        currentOrder.length === 0 ||
-        currentOrder[0][0] !== 0 ||
-        currentOrder[0][1] !== "asc";
-      if (needsNav) {
+      const sortedForAdd = isAddOrder(dt.order());
+      if (!sortedForAdd) {
+        // The sort about to be applied is ours, not the user's: remember what
+        // was saved so `stateSaveParams` keeps persisting that instead.
+        orderBeforeAddRef.current = dt.state()?.order ?? null;
+      }
+      if (dt.page() !== 0 || !sortedForAdd) {
         dt.order([0, "asc"]).page("first").draw(false);
       }
     }
@@ -1001,6 +1018,8 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     return idx === -1 ? undefined : [[idx, columns[idx].defaultSort!]];
   }, [columns]);
 
+  const orderStamp = JSON.stringify(dataTableOptions?.order ?? defaultOrder ?? null);
+
   // --- DataTable options ----------------------------------------------------
   const options: DataTableProps["options"] = {
     paging: true,
@@ -1024,6 +1043,22 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     },
     initComplete: () => {
       setIsInitialized(true);
+    },
+    stateSaveParams: (_settings, data) => {
+      const state = data as SavedTableState;
+      state.defaultOrder = orderStamp;
+      if (orderBeforeAddRef.current === null) return;
+      const dt = table.current?.dt();
+      if (dt && isAddOrder(dt.order())) {
+        state.order = orderBeforeAddRef.current;
+      } else {
+        // The user has sorted the table themselves since; save their choice.
+        orderBeforeAddRef.current = null;
+      }
+    },
+    stateLoadParams: (_settings, data) => {
+      const state = data as SavedTableState;
+      if (state.defaultOrder !== orderStamp) delete state.order;
     },
     drawCallback: function () {
       // DataTables binds `this` to the Api on each callback — read it once
@@ -1120,6 +1155,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     setLocalItems([]);
     childModeRef.current = {};
     childNodesRef.current = {};
+    orderBeforeAddRef.current = null;
     // WeakMap entries are GC'd with their row objects; no reset needed.
   }, [i18n.language, i18n.isInitialized]);
 
