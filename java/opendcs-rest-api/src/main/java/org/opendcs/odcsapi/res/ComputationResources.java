@@ -74,10 +74,11 @@ import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+
+import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiCompResults;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
-import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
@@ -202,9 +203,23 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			throw new MissingParameterException("Missing required computationid parameter.");
 		}
-
-		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
+		final var tsdb = getLegacyTimeseriesDB();
+		try (ComputationDAI dai = tsdb.makeComputationDAO())
 		{
+			var comp = dai.getComputationById(DbKey.createDbKey(compId));
+			comp.getParmList()
+				.forEach(p ->
+				{
+					try
+					{
+						tsdb.expandSDI(p);
+						log.atWarn().log("Expanded {}", p.getRoleName());
+					}
+					catch (DbIoException | NoSuchObjectException ex)
+					{
+						log.atWarn().setCause(ex).log("Unable to expand {}", p.getRoleName());
+					}
+				});
 			return Response.ok()
 					.entity(DTOMappers.map(dai.getComputationById(DbKey.createDbKey(compId)))).build();
 		}
@@ -262,9 +277,30 @@ public final class ComputationResources extends OpenDcsResource
 	public Response postComputation(ApiComputation comp)
 			throws DbException
 	{
-		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
+		final var tsdb = getLegacyTimeseriesDB();
+		try (ComputationDAI dai = tsdb.makeComputationDAO();
+			 TimeSeriesDAI tsDai = tsdb.makeTimeSeriesDAO())
 		{
+			comp.getParmList()
+				.forEach(p ->
+				{
+					tsDai.findTimeSeriesIdentifier(buildTsString(p), false)
+						 .onSuccess(ts -> p.setTsKey(ts.getKey().getValue()));
+					p.setTableSelector(p.getParamType() + "." + p.getDuration() + "." + p.getVersion());
+				});
 			DbComputation dbComp = DTOMappers.map(comp);
+			dbComp.getParmList().forEach(p ->
+			{
+
+				try
+				{
+					tsdb.expandSDI(p);
+				}
+				catch (DbIoException | NoSuchObjectException ex)
+				{
+					log.atWarn().setCause(ex).log("unable to expand {}", p);
+				}
+			});
 			dai.writeComputation(dbComp);
 			return Response.status(Response.Status.CREATED).entity(DTOMappers.map(dbComp)).build();
 		}
@@ -272,6 +308,27 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			throw new DbException("Unable to store computation", ex);
 		}
+	}
+
+	/**
+	 * Stopgap to figure out a better method. This will only work for CWMS and the OpenDCS implementations.
+	 * Additionally, it's arguable this should be handled at the UI level instead of trying to hack it in here.
+	 * @param p provied ApiCompParm instance
+	 * @return a possibly invalid "time series unique string"
+	 */
+	private String buildTsString(ApiCompParm p)
+	{
+		String ret = null;
+		String siteName = p.getSiteName();
+		String dt = p.getDataType();
+		String parameter = dt != null  && dt.indexOf(":") >= 0 ? dt.split(":")[1] : null;
+		String interval = p.getInterval();
+		String duration = p.getDuration();
+		String type = p.getParamType();
+		String version = p.getVersion();
+		ret = String.format("%s.%s.%s.%s.%s.%s", siteName, parameter, type, interval, duration, version);
+		log.atWarn().log("Will search for {}", ret);
+		return ret;
 	}
 
 	@DELETE
