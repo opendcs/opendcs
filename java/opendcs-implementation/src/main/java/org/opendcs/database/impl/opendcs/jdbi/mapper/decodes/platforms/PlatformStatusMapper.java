@@ -5,14 +5,14 @@ import java.sql.SQLException;
 import java.util.Date;
 
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.db.PlatformStatus;
 import decodes.sql.DbKey;
 
-public final class PlatformStatusMapper extends PrefixRowMapper<PlatformStatus, PlatformStatusMapper.Columns>
+public final class PlatformStatusMapper extends OpenDcsTableMapper<PlatformStatus, PlatformStatusMapper.Columns>
 {
     private PlatformStatusMapper(String prefix)
     {

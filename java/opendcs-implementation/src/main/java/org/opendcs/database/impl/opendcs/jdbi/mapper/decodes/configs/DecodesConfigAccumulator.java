@@ -12,7 +12,7 @@ import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.impl.opendcs.jdbi.decodesscript.InMemoryDecodesScriptReader;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.DecodesScriptBuilderMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.scripts.FormatStatementMapper;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
 import org.opendcs.database.model.mappers.equipmentmodel.EquipmentModelMapper;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
@@ -49,7 +49,7 @@ public class DecodesConfigAccumulator implements ResultSetAccumulator<Map<Long, 
                                 DataTypeMapper dataTypeMapper, DecodesScriptBuilderMapper scriptBuilderMapper,
                                 FormatStatementMapper formatStatementMapper, UnitConverterMapper unitConverterMapper)
     {
-        this.configPrefix = PrefixRowMapper.addUnderscoreIfMissing(configPrefix);
+        this.configPrefix = OpenDcsTableMapper.addUnderscoreIfMissing(configPrefix);
         this.configMapper = configMapper;
         this.equipmentModelMapper = equipmentModelMapper;
         this.equipmentPropertiesMapper = equipmentPropertiesMapper;
