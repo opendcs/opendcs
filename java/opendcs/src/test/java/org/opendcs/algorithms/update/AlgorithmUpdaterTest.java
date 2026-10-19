@@ -7,9 +7,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.List;
+import java.util.Map;
 
+import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
+import org.opendcs.database.JdbiTransaction;
 import org.opendcs.database.SimpleDataSource;
+import org.opendcs.database.TransactionContextImpl;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.DatabaseEngine;
 
 class AlgorithmUpdaterTest
 {
@@ -34,10 +41,17 @@ class AlgorithmUpdaterTest
             statement.executeUpdate("INSERT INTO CP_COMP_PROPERTY VALUES (10, 'hourlyEvap_MISSING', 'IGNORE')");
         }
 
-        AlgorithmUpdater.synchronize(source, true);
+        try (DataTransaction transaction = newTransaction(source))
+        {
+            assertEquals(2, AlgorithmUpdater.synchronize(transaction, false).get(0).renamedParameters());
+            transaction.rollback();
+        }
         assertEquals("hourlyEvap", scalar(source, "SELECT ALGO_ROLE_NAME FROM CP_COMP_TS_PARM WHERE SITE_DATATYPE_ID = 123"));
 
-        var first = AlgorithmUpdater.synchronize(source, false);
+        synchronize(source, true);
+        assertEquals("hourlyEvap", scalar(source, "SELECT ALGO_ROLE_NAME FROM CP_COMP_TS_PARM WHERE SITE_DATATYPE_ID = 123"));
+
+        var first = synchronize(source, false);
         assertEquals(2, first.get(0).renamedParameters());
         assertEquals("hourlyEvapRate", scalar(source, "SELECT ALGO_ROLE_NAME FROM CP_COMP_TS_PARM WHERE SITE_DATATYPE_ID = 123"));
         assertEquals("dailyEvapDepth", scalar(source, "SELECT ALGO_ROLE_NAME FROM CP_COMP_TS_PARM WHERE SITE_DATATYPE_ID = 456"));
@@ -46,7 +60,7 @@ class AlgorithmUpdaterTest
         assertTrue(exists(source, "SELECT 1 FROM CP_ALGO_TS_PARM WHERE ALGO_ROLE_NAME = 'hourlyEvapDepth'"));
         assertFalse(exists(source, "SELECT 1 FROM CP_ALGO_TS_PARM WHERE ALGO_ROLE_NAME = 'hourlyEvap'"));
 
-        var second = AlgorithmUpdater.synchronize(source, false);
+        var second = synchronize(source, false);
         assertEquals(0, second.get(0).renamedParameters());
 
         // An algorithm record may have been reimported before the computation was repaired.
@@ -54,7 +68,7 @@ class AlgorithmUpdaterTest
         {
             statement.executeUpdate("UPDATE CP_COMP_TS_PARM SET ALGO_ROLE_NAME = 'hourlyEvap' WHERE SITE_DATATYPE_ID = 123");
         }
-        var reimported = AlgorithmUpdater.synchronize(source, false);
+        var reimported = synchronize(source, false);
         assertEquals(1, reimported.get(0).renamedParameters());
         assertEquals("hourlyEvapRate", scalar(source, "SELECT ALGO_ROLE_NAME FROM CP_COMP_TS_PARM WHERE SITE_DATATYPE_ID = 123"));
 
@@ -63,7 +77,7 @@ class AlgorithmUpdaterTest
         {
             statement.executeUpdate("INSERT INTO CP_COMP_TS_PARM VALUES (10, 'hourlyEvap', 789)");
         }
-        var ambiguous = AlgorithmUpdater.synchronize(source, false);
+        var ambiguous = synchronize(source, false);
         assertEquals(0, ambiguous.get(0).renamedParameters());
         assertEquals(1, ambiguous.get(0).needsReview());
         assertEquals("hourlyEvap", scalar(source, "SELECT ALGO_ROLE_NAME FROM CP_COMP_TS_PARM WHERE SITE_DATATYPE_ID = 789"));
@@ -72,9 +86,34 @@ class AlgorithmUpdaterTest
         {
             statement.executeUpdate("INSERT INTO CP_ALGO_TS_PARM VALUES (1, 'hourlyEvap', 'o')");
         }
-        var duplicateAlgorithmRole = AlgorithmUpdater.synchronize(source, false);
+        var duplicateAlgorithmRole = synchronize(source, false);
         assertEquals(1, duplicateAlgorithmRole.get(0).removedAlgorithmParameters());
         assertFalse(exists(source, "SELECT 1 FROM CP_ALGO_TS_PARM WHERE ALGO_ROLE_NAME = 'hourlyEvap'"));
+    }
+
+    private static List<AlgorithmUpdater.Summary> synchronize(SimpleDataSource source, boolean dryRun) throws Exception
+    {
+        try (DataTransaction transaction = newTransaction(source))
+        {
+            try
+            {
+                var summaries = AlgorithmUpdater.synchronize(transaction, dryRun);
+                if (dryRun) transaction.rollback();
+                else transaction.commit();
+                return summaries;
+            }
+            catch (Exception ex)
+            {
+                transaction.rollback();
+                throw ex;
+            }
+        }
+    }
+
+    private static DataTransaction newTransaction(SimpleDataSource source)
+    {
+        return new JdbiTransaction(Jdbi.create(source).open(),
+                new TransactionContextImpl(null, Map.of(), DatabaseEngine.GENERIC_SQL));
     }
 
     private static String scalar(SimpleDataSource source, String sql) throws Exception

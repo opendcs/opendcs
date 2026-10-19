@@ -4,13 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.algorithms.update.AlgorithmUpdater;
-import org.opendcs.database.AbstractJdbiOpenDcsDatabaseWrapper;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -47,7 +48,6 @@ final class AlgorithmUpdaterTestIT extends AppTestBase
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         String algorithmName = "ResEvapUpgrade" + suffix;
         String computationName = "ResEvapUpgradeComp" + suffix;
-        var dataSource = ((AbstractJdbiOpenDcsDatabaseWrapper) database).getDataSource();
 
         DbCompAlgorithm oldAlgorithm = new DbCompAlgorithm(DbKey.NullKey,
                 algorithmName, ResEvapAlgo.class.getName(), "Keep this algorithm comment");
@@ -86,14 +86,14 @@ final class AlgorithmUpdaterTestIT extends AppTestBase
             }
 
             long algorithmId = oldAlgorithm.getId().getValue();
-            AlgorithmUpdater.synchronize(dataSource, true, Set.of(algorithmId));
+            synchronize(true, algorithmId);
             try (ComputationDAI computations = tsDb.makeComputationDAO())
             {
                 assertNotNull(computations.getComputationById(computationId).getParm("hourlyEvap"),
                         "Preview must leave the old role in the database");
             }
 
-            var first = AlgorithmUpdater.synchronize(dataSource, false, Set.of(algorithmId));
+            var first = synchronize(false, algorithmId);
             assertEquals(2, first.get(0).renamedParameters());
 
             try (AlgorithmDAI algorithms = tsDb.makeAlgorithmDAO();
@@ -122,7 +122,7 @@ final class AlgorithmUpdaterTestIT extends AppTestBase
                         "The new output has no time series until a user assigns one");
             }
 
-            var second = AlgorithmUpdater.synchronize(dataSource, false, Set.of(algorithmId));
+            var second = synchronize(false, algorithmId);
             assertEquals(0, second.get(0).renamedParameters());
         }
         finally
@@ -135,6 +135,32 @@ final class AlgorithmUpdaterTestIT extends AppTestBase
                 if (!DbKey.isNull(oldAlgorithm.getId())) algorithms.deleteAlgorithm(oldAlgorithm.getId());
                 if (!DbKey.isNull(hourlyId)) series.deleteTimeSeries(hourly);
                 if (!DbKey.isNull(dailyId)) series.deleteTimeSeries(daily);
+            }
+        }
+    }
+
+    private List<AlgorithmUpdater.Summary> synchronize(boolean dryRun, long algorithmId) throws Exception
+    {
+        try (var transaction = database.newTransaction())
+        {
+            try
+            {
+                var summaries = AlgorithmUpdater.synchronize(transaction, dryRun, Set.of(algorithmId));
+                if (dryRun) transaction.rollback();
+                else transaction.commit();
+                return summaries;
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    transaction.rollback();
+                }
+                catch (OpenDcsDataException rollbackFailure)
+                {
+                    ex.addSuppressed(rollbackFailure);
+                }
+                throw ex;
             }
         }
     }

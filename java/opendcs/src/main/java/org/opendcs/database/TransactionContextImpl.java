@@ -35,7 +35,7 @@ public class TransactionContextImpl implements TransactionContext
     {
         if (KeyGenerator.class.equals(generatorClass))
         {
-            return Optional.ofNullable((T)this.keyGenerator);
+            return Optional.of((T)this.keyGenerator);
         }
         else
         {

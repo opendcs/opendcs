@@ -64,6 +64,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.AlgorithmCatalogScanner;
 import org.opendcs.algorithms.update.AlgorithmSpec;
 import org.opendcs.algorithms.update.AlgorithmUpdater;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.opendcs.odcsapi.dao.DbException;
@@ -84,12 +85,22 @@ public final class AlgorithmResources extends OpenDcsResource
 			tags = {"REST - Algorithm Methods"})
 	public Response updateAlgorithms(List<Long> algorithmIds) throws DbException
 	{
-		try
+		try (var tx = createDb().newTransaction())
 		{
-			return Response.ok(AlgorithmUpdater.synchronize(getDataSource(), false,
-					algorithmIds == null ? Set.of() : new HashSet<>(algorithmIds))).build();
+			try
+			{
+				var summaries = AlgorithmUpdater.synchronize(tx, false,
+						algorithmIds == null ? Set.of() : new HashSet<>(algorithmIds));
+				tx.commit();
+				return Response.ok(summaries).build();
+			}
+			catch (SQLException | OpenDcsDataException | RuntimeException ex)
+			{
+				rollbackQuietly(tx, ex);
+				throw ex;
+			}
 		}
-		catch (SQLException ex)
+		catch (SQLException | OpenDcsDataException ex)
 		{
 			throw new DbException("Unable to synchronize installed algorithms", ex);
 		}

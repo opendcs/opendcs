@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDao;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.spi.database.AfterUpdate;
@@ -63,7 +64,9 @@ class AfterUpdateRunnerTest
             throw new SQLException("abort this updater");
         });
 
-        assertThrows(SQLException.class, () -> AfterUpdateRunner.run(database, List.of(first, second)));
+        OpenDcsDataException failure = assertThrows(OpenDcsDataException.class,
+                () -> AfterUpdateRunner.run(database, List.of(first, second)));
+        assertTrue(failure.getCause() instanceof SQLException);
         assertEquals(2, transactionCount.get());
         assertEquals(List.of("first", "second"), ran);
         assertEquals(List.of("first"), jdbi.withHandle(handle ->

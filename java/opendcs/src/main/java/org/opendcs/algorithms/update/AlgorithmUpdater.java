@@ -13,12 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.sql.DataSource;
-import org.jdbi.v3.core.Jdbi;
-import org.opendcs.database.JdbiTransaction;
-import org.opendcs.database.TransactionContextImpl;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,58 +41,6 @@ public final class AlgorithmUpdater
         {
             return renamedParameters + renamedProperties + updatedTypes + addedAlgorithmParameters
                     + removedAlgorithmParameters + addedAlgorithmProperties > 0;
-        }
-    }
-
-    /** Convenience entry point for the REST API, CLI, and older callers. */
-    public static List<Summary> synchronize(DataSource dataSource, boolean dryRun) throws SQLException
-    {
-        return synchronize(dataSource, dryRun, Set.of());
-    }
-
-    /** An empty ID set synchronizes every installed annotated algorithm. */
-    public static List<Summary> synchronize(DataSource dataSource, boolean dryRun, Set<Long> algorithmIds) throws SQLException
-    {
-        try (DataTransaction transaction = new JdbiTransaction(Jdbi.create(dataSource).open(),
-                new TransactionContextImpl(null, Map.of(), DatabaseEngine.GENERIC_SQL)))
-        {
-            try
-            {
-                List<Summary> result = synchronize(transaction, dryRun, algorithmIds);
-                if (dryRun)
-                {
-                    transaction.rollback();
-                }
-                else
-                {
-                    transaction.commit();
-                }
-                return result;
-            }
-            catch (SQLException | OpenDcsDataException | RuntimeException ex)
-            {
-                try
-                {
-                    transaction.rollback();
-                }
-                catch (OpenDcsDataException rollbackFailure)
-                {
-                    ex.addSuppressed(rollbackFailure);
-                }
-                if (ex instanceof SQLException sqlException)
-                {
-                    throw sqlException;
-                }
-                if (ex instanceof OpenDcsDataException)
-                {
-                    throw new SQLException("Algorithm transaction failed", ex);
-                }
-                throw ex;
-            }
-        }
-        catch (OpenDcsDataException ex)
-        {
-            throw new SQLException("Algorithm transaction failed", ex);
         }
     }
 

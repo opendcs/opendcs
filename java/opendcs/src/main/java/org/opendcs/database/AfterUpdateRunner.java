@@ -1,6 +1,5 @@
 package org.opendcs.database;
 
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,13 +21,13 @@ public final class AfterUpdateRunner
     {
     }
 
-    public static void run(OpenDcsDatabase database) throws SQLException, OpenDcsDataException
+    public static void run(OpenDcsDatabase database) throws OpenDcsDataException
     {
         run(database, List.copyOf(Lookup.getDefault().lookupAll(AfterUpdate.class)));
     }
 
     /** Package visible for testing transaction isolation. */
-    static void run(OpenDcsDatabase database, List<AfterUpdate> updaters) throws SQLException, OpenDcsDataException
+    static void run(OpenDcsDatabase database, List<AfterUpdate> updaters) throws OpenDcsDataException
     {
         Set<String> names = new HashSet<>();
         for (AfterUpdate updater : updaters)
@@ -43,23 +42,7 @@ public final class AfterUpdateRunner
             log.info("Running after-update task '{}'", updater.name());
             try (DataTransaction transaction = database.newTransaction())
             {
-                try
-                {
-                    updater.run(transaction);
-                    transaction.commit();
-                }
-                catch (SQLException | OpenDcsDataException | RuntimeException ex)
-                {
-                    try
-                    {
-                        transaction.rollback();
-                    }
-                    catch (OpenDcsDataException rollbackFailure)
-                    {
-                        ex.addSuppressed(rollbackFailure);
-                    }
-                    throw ex;
-                }
+                transaction.wrapErrors(() -> updater.run(transaction));
             }
         }
     }

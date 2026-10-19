@@ -5,9 +5,13 @@ import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import org.opendcs.database.ManageDatabaseApp;
+import org.opendcs.database.DatabaseService;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import decodes.db.DatabaseException;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -26,14 +30,14 @@ public final class AlgorithmUpdateApp
         {
             run(args);
         }
-        catch (IOException | SQLException ex)
+        catch (IOException | SQLException | DatabaseException | OpenDcsDataException ex)
         {
             log.error("Unable to update algorithms", ex);
             throw new IllegalStateException("Unable to update algorithms", ex);
         }
     }
 
-    private static void run(String[] args) throws IOException, SQLException
+    private static void run(String[] args) throws IOException, SQLException, DatabaseException, OpenDcsDataException
     {
         CmdLineArgs cli = new CmdLineArgs(true, "algoupdate.log");
         BooleanToken apply = new BooleanToken("apply", "Apply updates (default is preview only)",
@@ -51,29 +55,51 @@ public final class AlgorithmUpdateApp
         cli.parseArgs(args);
         var dataSource = ManageDatabaseApp.getDataSourceFromProfileAndUserInfo(
                 cli.getProfile(), System.console(), username.getValue(), password.getValue());
-        Set<Long> ids = Set.of();
-        if (algorithm.getValue() != null)
+        var database = DatabaseService.getDatabaseFor(dataSource);
+        try (var transaction = database.newTransaction())
         {
-            try (var connection = dataSource.getConnection();
-                 var statement = connection.prepareStatement(
-                         "SELECT ALGORITHM_ID FROM CP_ALGORITHM WHERE LOWER(ALGORITHM_NAME) = LOWER(?)"))
+            try
             {
-                statement.setString(1, algorithm.getValue());
-                try (var rows = statement.executeQuery())
+                Set<Long> ids = Set.of();
+                if (algorithm.getValue() != null)
                 {
-                    if (!rows.next())
+                    Connection connection = transaction.connection(Connection.class).orElseThrow(
+                            () -> new OpenDcsDataException("A JDBC connection is required for algorithm updates"));
+                    try (var statement = connection.prepareStatement(
+                            "SELECT ALGORITHM_ID FROM CP_ALGORITHM WHERE LOWER(ALGORITHM_NAME) = LOWER(?)"))
                     {
-                        throw new IllegalArgumentException("Unknown algorithm: " + algorithm.getValue());
+                        statement.setString(1, algorithm.getValue());
+                        try (var rows = statement.executeQuery())
+                        {
+                            if (!rows.next())
+                            {
+                                throw new IllegalArgumentException("Unknown algorithm: " + algorithm.getValue());
+                            }
+                            ids = Set.of(rows.getLong(1));
+                        }
                     }
-                    ids = Set.of(rows.getLong(1));
                 }
+                for (AlgorithmUpdater.Summary summary : AlgorithmUpdater.synchronize(transaction, !apply.getValue(), ids))
+                {
+                    if (summary.hasChanges())
+                    {
+                        log.info("Algorithm update: {}", summary);
+                    }
+                }
+                if (apply.getValue()) transaction.commit();
+                else transaction.rollback();
             }
-        }
-        for (AlgorithmUpdater.Summary summary : AlgorithmUpdater.synchronize(dataSource, !apply.getValue(), ids))
-        {
-            if (summary.hasChanges())
+            catch (SQLException | OpenDcsDataException | RuntimeException ex)
             {
-                log.info("Algorithm update: {}", summary);
+                try
+                {
+                    transaction.rollback();
+                }
+                catch (OpenDcsDataException rollbackFailure)
+                {
+                    ex.addSuppressed(rollbackFailure);
+                }
+                throw ex;
             }
         }
     }
