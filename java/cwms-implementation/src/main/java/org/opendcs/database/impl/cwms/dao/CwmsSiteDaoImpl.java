@@ -256,7 +256,6 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
          try (var store = handle.createCall(storeSql);
             // office is not bound so that what ever session office is currently setup is used.
             var getCode = handle.createQuery("select cwms_loc.get_location_code(p_db_office_id => null, p_location_id => :name) id from dual");
-            var seeLocs = handle.createQuery("select db_office_id, location_code, location_id from cwms_v_loc where unit_system = 'EN'");
             var deleteProps = handle.createUpdate(DELETE_PROPS);
             var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);

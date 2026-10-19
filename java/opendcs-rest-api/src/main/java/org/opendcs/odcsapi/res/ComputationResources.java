@@ -221,7 +221,7 @@ public final class ComputationResources extends OpenDcsResource
 					}
 				});
 			return Response.ok()
-					.entity(DTOMappers.map(dai.getComputationById(DbKey.createDbKey(compId)))).build();
+					.entity(DTOMappers.map(comp)).build();
 		}
 		catch(DbIoException ex)
 		{
