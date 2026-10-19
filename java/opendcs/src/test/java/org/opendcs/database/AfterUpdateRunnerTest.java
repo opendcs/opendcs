@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import decodes.util.DecodesSettings;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
+import org.opendcs.algorithms.update.AlgorithmAfterUpdate;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDao;
@@ -33,8 +34,7 @@ class AfterUpdateRunnerTest
     void discoversAlgorithmAfterUpdater()
     {
         assertTrue(Lookup.getDefault().lookupAll(AfterUpdate.class).stream()
-                .anyMatch(updater -> updater.getClass().getName().equals(
-                        "org.opendcs.algorithms.update.AlgorithmAfterUpdate")));
+                .anyMatch(updater -> updater instanceof AlgorithmAfterUpdate));
     }
 
     @Test

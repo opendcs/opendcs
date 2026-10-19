@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.sql.SQLException;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.DbAlgoParm;
@@ -87,20 +86,11 @@ public final class AlgorithmResources extends OpenDcsResource
 	{
 		try (var tx = createDb().newTransaction())
 		{
-			try
-			{
-				var summaries = AlgorithmUpdater.synchronize(tx, false,
-						algorithmIds == null ? Set.of() : new HashSet<>(algorithmIds));
-				tx.commit();
-				return Response.ok(summaries).build();
-			}
-			catch (SQLException | OpenDcsDataException | RuntimeException ex)
-			{
-				rollbackQuietly(tx, ex);
-				throw ex;
-			}
+			var summaries = tx.wrapErrors(() -> AlgorithmUpdater.synchronize(tx, false,
+					algorithmIds == null ? Set.of() : new HashSet<>(algorithmIds)));
+			return Response.ok(summaries).build();
 		}
-		catch (SQLException | OpenDcsDataException ex)
+		catch (OpenDcsDataException ex)
 		{
 			throw new DbException("Unable to synchronize installed algorithms", ex);
 		}

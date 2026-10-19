@@ -86,8 +86,14 @@ public final class AlgorithmUpdateApp
                         log.info("Algorithm update: {}", summary);
                     }
                 }
-                if (apply.getValue()) transaction.commit();
-                else transaction.rollback();
+                if (apply.getValue())
+                {
+                    transaction.commit();
+                }
+                else
+                {
+                    transaction.rollback();
+                }
             }
             catch (SQLException | OpenDcsDataException | RuntimeException ex)
             {

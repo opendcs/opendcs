@@ -354,19 +354,21 @@ public final class AlgorithmUpdater
         try (PreparedStatement statement = connection.prepareStatement(
                 "UPDATE CP_COMPUTATION SET DATE_TIME_LOADED = ? WHERE COMPUTATION_ID = ?"))
         {
+            long loadedAt = System.currentTimeMillis();
             for (long id : computationIds)
             {
                 if (sqlType == Types.BIGINT || sqlType == Types.INTEGER)
                 {
-                    statement.setLong(1, System.currentTimeMillis());
+                    statement.setLong(1, loadedAt);
                 }
                 else
                 {
-                    statement.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+                    statement.setTimestamp(1, new Timestamp(loadedAt));
                 }
                 statement.setLong(2, id);
-                statement.executeUpdate();
+                statement.addBatch();
             }
+            statement.executeBatch();
         }
     }
 
