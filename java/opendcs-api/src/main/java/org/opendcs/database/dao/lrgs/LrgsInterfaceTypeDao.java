@@ -18,7 +18,7 @@ public interface LrgsInterfaceTypeDao extends BasicDao<LrgsDataInterfaceType>
      * @param tx DataTransaction to use for this operation.
      * @param serviceProvider name of the service provider instance to lookup
      * @return The LrgsDataInterfaceType value, or empty if one has not been stored.
-     * @throws OpenDataException
+     * @throws OpenDcsDataException
      */
     Optional<LrgsDataInterfaceType> getByServiceProvider(DataTransaction tx, String serviceProvider) throws OpenDcsDataException;    
 }
