@@ -37,6 +37,9 @@ $$ language plpgsql;
 create table lrgs_archive (
     -- okay this needs some thought
     created_at timestamptz not null default now(),
+    data_time timestamptz, -- time of the actual data. could be null if any header processing is
+                           -- unable to determine it.
+    data_header jsonb default '{}'::jsonb, -- parsed, if possible, header to aide in search.
     data_interface_id bigint references lrgs_data_interface(id) not null,
     identifier text, -- arbitrary, text encoded, identifier as used by the given source
     raw_data bytea, -- null allowed here, we may get literal nothing from a source
