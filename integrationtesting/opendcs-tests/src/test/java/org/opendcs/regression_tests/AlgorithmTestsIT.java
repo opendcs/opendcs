@@ -184,6 +184,9 @@ public class AlgorithmTestsIT extends AppTestBase
             }
             loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
 
+            // Persist supporting values without adding them to the triggering DataCollection.
+            List<CTimeSeries> databaseInputTS =
+                loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","databaseInputs"), importer);
             List<CTimeSeries> inputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","inputs"), importer);
             Collection<CTimeSeries> outputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","outputs"), importer);
             Collection<CTimeSeries> expectedOutputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","expectedOutputs"), importer);
@@ -210,6 +213,26 @@ public class AlgorithmTestsIT extends AppTestBase
             //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
             testComp.prepareForExec(tsDb);
             testComp.apply(theData, tsDb);
+
+            for (CTimeSeries databaseInput : databaseInputTS)
+            {
+                TimeSeriesIdentifier inputID = tsDao.getTimeSeriesIdentifier(databaseInput.getNameString());
+                CTimeSeries loadedInput = theData.getTimeSeriesByTsidKey(inputID);
+                if (loadedInput == null)
+                    continue;
+
+                for (int idx = 0; idx < databaseInput.size(); idx++)
+                {
+                    TimedVariable expectedContext = databaseInput.sampleAt(idx);
+                    TimedVariable loadedContext = loadedInput.findWithin(expectedContext.getTime(), 0);
+                    if (loadedContext != null)
+                    {
+                        assertEquals(0, loadedContext.getFlags()
+                            & (VarFlags.DB_ADDED | VarFlags.DB_DELETED),
+                            "Database context value was marked as a computation trigger.");
+                    }
+                }
+            }
 
             Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
             

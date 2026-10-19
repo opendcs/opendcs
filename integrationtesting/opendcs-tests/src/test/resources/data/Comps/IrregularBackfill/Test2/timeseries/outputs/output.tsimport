@@ -1,0 +1,3 @@
+SET:TZ=UTC
+SET:UNITS=cfs
+TSID:TESTSITE1.Flow.Inst.1Hour.0.irb-fallback-output

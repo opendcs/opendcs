@@ -679,6 +679,43 @@ These properties can be defined in 3 places:
 3. Settings made in a Computation Record will override other settings
    and apply to this computation only.
 
+Backfilling Stateful Irregular Inputs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An irregular input can represent state that remains effective until its
+next value, such as a gate setting. By default, correcting a historical
+value only triggers the computation at the corrected timestamp. To
+recompute the timestamps affected by the corrected state, configure the
+input as follows::
+
+   indep1_MISSING=prev
+   indep1_TRIGGER_RANGE=next-or-now
+   maxMissingTimeForFill=2592000
+
+The role name in both properties must exactly match the algorithm input
+role assigned in the computation's parameter mapping. For example, if
+the input is mapped to the algorithm role ``indep1``, the property must
+be named ``indep1_TRIGGER_RANGE``. Do not substitute a descriptive input
+name, time-series name, or other label such as ``gate``; a property whose
+role does not match the computation role is not applied.
+
+The ``rolename_TRIGGER_RANGE`` property is only valid for an irregular
+input whose ``rolename_MISSING`` property is ``prev``. This includes CWMS
+no-check intervals such as ``~15Minutes``. A newly added or overwritten
+value opens a half-open recomputation range beginning at that value and
+ending at the earliest of the next value in the same series, the current
+time, or ``maxMissingTimeForFill`` seconds after the trigger.
+
+Deleting a value from an irregular input does not support this backfill
+behavior. Instead of deleting an incorrect value, overwrite it with the
+state that should be effective at that timestamp. The replacement value
+will trigger recomputation of the affected range.
+
+Within that range, actual timestamps from the computation's other inputs
+are used as time slices. If there is no regular input, timestamps are
+generated from the regular output interval. Supporting values loaded for
+the range are not treated as new computation triggers.
+
 Handling Questionable Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
