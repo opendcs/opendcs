@@ -22,7 +22,7 @@ create table lrgs_data_interface (
 insert into lrgs_data_interface_type(name, java_class) 
     values ('archive-database', 'org.opendcs.lrgs.archive.DatabaseArchive');
 
-insert into lrgs_data_interface(name, type_id, config) 
+insert into lrgs_data_interface(name, type_id, config)
     values ('LrgsArchive', (select id from lrgs_data_interface_type where name = 'archive-database'),
             '{"length_days": 30 }'::jsonb)
 ;
