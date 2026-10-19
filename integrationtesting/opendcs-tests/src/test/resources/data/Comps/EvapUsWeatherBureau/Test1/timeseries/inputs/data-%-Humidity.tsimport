@@ -1,4 +1,4 @@
-TSID:TESTSITE1.%-Humidity.Ave.~1Day.1Day.test-hamon
+TSID:TESTSITE1.%-Humidity.Ave.~1Day.1Day.test-uswb
 SET:TZ=UTC
 SET:UNITS=%
 2025/09/02-05:00:00, 85.16749999999999, 0

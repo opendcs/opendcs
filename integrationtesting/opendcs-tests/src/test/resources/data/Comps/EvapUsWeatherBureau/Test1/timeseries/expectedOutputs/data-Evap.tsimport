@@ -1,4 +1,4 @@
-TSID:TESTSITE1.Evap.Total.~1Day.1Day.test-hamon
+TSID:TESTSITE1.Evap.Total.~1Day.1Day.test-uswb
 SET:TZ=UTC
 SET:UNITS=in
 2025/09/02-05:00:00, 0.1584006966921337, 0

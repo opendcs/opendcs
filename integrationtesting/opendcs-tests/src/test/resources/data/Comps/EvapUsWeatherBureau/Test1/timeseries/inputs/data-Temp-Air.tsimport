@@ -1,4 +1,4 @@
-TSID:TESTSITE1.Temp-Air.Ave.~1Day.1Day.test-hamon
+TSID:TESTSITE1.Temp-Air.Ave.~1Day.1Day.test-uswb
 SET:TZ=UTC
 SET:UNITS=degF
 2025/09/02-05:00:00, 74.38175000000001, 0

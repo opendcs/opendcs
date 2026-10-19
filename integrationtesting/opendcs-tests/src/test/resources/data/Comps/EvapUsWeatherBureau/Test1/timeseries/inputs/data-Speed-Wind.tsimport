@@ -1,4 +1,4 @@
-TSID:TESTSITE1.Speed-Wind.Ave.~1Day.1Day.test-hamon
+TSID:TESTSITE1.Speed-Wind.Ave.~1Day.1Day.test-uswb
 SET:TZ=UTC
 SET:UNITS=mph
 2025/09/02-05:00:00, 3.920833333333333, 0

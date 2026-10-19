@@ -11,19 +11,23 @@ import decodes.util.DecodesException;
 import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverter;
 
-@Algorithm(description =
-    "Evaporation Calculation using the Hamon Method. Only 24 hour interval data is currently support." +
-    "The equation expects the following units:\n" + //
-    "    param          |   units\n" + //
-    "  -----------------+----------\n" + //
-    "   Solar Radiation |  Watts per M^2   (enter w/m2 in the units field)\n" + //
-    "   WindSpeed       |  kilometers per hour\n" + //
-    "   Humidity        |  %\n" + //
-    "   AirTemp         |  degrees Celsius\n" + //
-    "\n" + //
-    "   Evap            |  millimeter (you may specify different units now. it will affect only the display in compedit )\n"
+@Algorithm(description = """
+    Evaporation Calculation using the US Weather Bureau Method. Only 24 hour interval data is currently support." +
+    The equation expects the following units:
+
+        param          |   units
+      -----------------+----------
+      Solar Radiation |  Watts per M^2   (enter w/m2 in the units field)
+      WindSpeed       |  kilometers per hour
+      Humidity        |  %
+      AirTemp         |  degrees Celsius
+    
+      Evap            |  millimeter (you may specify different units now. it will affect only the display in compedit )
+
+      Source of method: USGS Scientific Investigations Report 2012-5202 Appendix 2
+    """    
 )
-public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
+public class EvapUsWeatherBureau extends decodes.tsdb.algo.AW_AlgorithmBase
 {
     @Input
     public double tempAir24hour;
@@ -69,7 +73,6 @@ public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
     @Override
     protected void doAWTimeSlice() throws DbCompException
     {
-//AW:TIMESLICE
         // Enter code to be executed at each time-slice.
         //unit conversions
         final double windSpeed24hourKmD  = windSpeed24hour * 24;  //convert from kilometers per hour to Kilometers per day

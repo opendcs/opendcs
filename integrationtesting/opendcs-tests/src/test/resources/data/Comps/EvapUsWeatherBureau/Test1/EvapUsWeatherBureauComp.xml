@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <CompMetaData>
-	<Algorithm name="EvapHamon">
+	<Algorithm name="EvapUsWeatherBureau">
 		<Comment>
 
 		</Comment>
-		<ExecClass>org.opendcs.algorithms.EvapHamon</ExecClass>
+		<ExecClass>org.opendcs.algorithms.EvapUsWeatherBureau</ExecClass>
 		<AlgoParm roleName="tempAir24hour">
 			<ParmType>i</ParmType>
 		</AlgoParm>
@@ -21,10 +21,10 @@
 			<ParmType>o</ParmType>
 		</AlgoParm>
 	</Algorithm>
-	<Computation name="Test1EvapHamon">
+	<Computation name="Test1ZEvapUsWeatherBureau">
 		<Comment></Comment>
 		<Enabled>false</Enabled>
-		<AlgorithmName>EvapHamon</AlgorithmName>
+		<AlgorithmName>EvapUsWeatherBureau</AlgorithmName>
 		<LastModified>2025-01-15 05:54:55 PST</LastModified>
 		<CompProperty name="aggregateTimeZone">US/Central</CompProperty>
 		<CompProperty name="tempAir24hour_EU">degC</CompProperty>
@@ -38,7 +38,7 @@
 				<DataType Standard="CWMS" code="Temp-Air"/>
 			</SiteDataType>
 			<Interval>~1Day</Interval>
-			<TableSelector>Ave.1Day.test-hamon</TableSelector>
+			<TableSelector>Ave.1Day.test-uswb</TableSelector>
 			<DeltaT>0</DeltaT>
 			<DeltaTUnits>Seconds</DeltaTUnits>
 		</CompParm>
@@ -48,7 +48,7 @@
 				<DataType Standard="CWMS" code="Speed-Wind"/>
 			</SiteDataType>
 			<Interval>~1Day</Interval>
-			<TableSelector>Ave.1Day.test-hamon</TableSelector>
+			<TableSelector>Ave.1Day.test-uswb</TableSelector>
 			<DeltaT>0</DeltaT>
 			<DeltaTUnits>Seconds</DeltaTUnits>
 		</CompParm>
@@ -58,7 +58,7 @@
 				<DataType Standard="CWMS" code="%-Humidity"/>
 			</SiteDataType>
 			<Interval>~1Day</Interval>
-			<TableSelector>Ave.1Day.test-hamon</TableSelector>
+			<TableSelector>Ave.1Day.test-uswb</TableSelector>
 			<DeltaT>0</DeltaT>
 			<DeltaTUnits>Seconds</DeltaTUnits>
 		</CompParm>
@@ -68,7 +68,7 @@
 				<DataType Standard="CWMS" code="Irrad"/>
 			</SiteDataType>
 			<Interval>~1Day</Interval>
-			<TableSelector>Ave.1Day.test-hamon</TableSelector>
+			<TableSelector>Ave.1Day.test-uswb</TableSelector>
 			<DeltaT>0</DeltaT>
 			<DeltaTUnits>Seconds</DeltaTUnits>
 		</CompParm>
@@ -78,7 +78,7 @@
 				<DataType Standard="CWMS" code="Evap"/>
 			</SiteDataType>
 			<Interval>~1Day</Interval>
-			<TableSelector>Total.1Day.test-hamon</TableSelector>
+			<TableSelector>Total.1Day.test-uswb</TableSelector>
 			<DeltaT>0</DeltaT>
 			<DeltaTUnits>Seconds</DeltaTUnits>
 		</CompParm>

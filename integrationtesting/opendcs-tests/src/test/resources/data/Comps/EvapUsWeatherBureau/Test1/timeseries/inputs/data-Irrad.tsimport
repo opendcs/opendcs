@@ -1,4 +1,4 @@
-TSID:TESTSITE1.Irrad.Ave.~1Day.1Day.test-hamon
+TSID:TESTSITE1.Irrad.Ave.~1Day.1Day.test-uswb
 SET:TZ=UTC
 SET:UNITS=langley/min
 2025/09/02-05:00:00, 0.2688097514340345, 0
