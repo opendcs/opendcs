@@ -1,7 +1,11 @@
+-- Should we even have this table, or just move service_provider
+-- to lrgs_data_interface?
+-- I'm not really sure, though having it does allow an administrator to 
+-- limit what can be selected.
 create table lrgs_data_interface_type (
     id bigserial not null primary key,
     name text unique,
-    serviceProvider text,
+    service_provider text,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
@@ -19,13 +23,13 @@ create table lrgs_data_interface (
 );
 
 
-insert into lrgs_data_interface_type(name, java_class) 
-    values ('archive-database', 'LrgsDatabaseArchive');
+-- insert into lrgs_data_interface_type(name, java_class) 
+--     values ('archive-database', 'LrgsDatabaseArchive');
 
-insert into lrgs_data_interface(name, type_id, config)
-    values ('LrgsArchive', (select id from lrgs_data_interface_type where name = 'archive-database'),
-            '{"length_days": 30 }'::jsonb)
-;
+-- insert into lrgs_data_interface(name, type_id, config)
+--     values ('LrgsArchive', (select id from lrgs_data_interface_type where name = 'archive-database'),
+--             '{"length_days": 30 }'::jsonb)
+-- ;
 
 create function purge_archive()
 returns trigger as $$
