@@ -21,10 +21,7 @@ plugins {
     id "opendcs.version-conventions"
     id "war"
 
-    // plugin needs additional updates. Newest, while it interacts with the cache
-    // correctly, does not correctly differ processing of the sourceSets which
-    // causes issues with various bits.
-    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.26"
+    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.55"
 }
 
 configurations {
@@ -121,12 +118,12 @@ def format = providers.gradleProperty('outputFormat').getOrElse('JSON').toLowerC
 
 // task to generate OpenAPI JSON file
 resolve {
-    classpath = sourceSets.main.runtimeClasspath
-    outputFileName = fileName
-    outputFormat = format
-    prettyPrint = 'TRUE'
-    resourcePackages = ['org.opendcs.odcsapi.res', 'org.opendcs.odcsapi.beans', 'org.opendcs.odcsapi.sec']
-    outputDir = file('build/swagger/')
+    classpath.setFrom(sourceSets.main.runtimeClasspath)
+    outputFileName.set(fileName)
+    outputFormat.set(io.swagger.v3.plugins.gradle.tasks.ResolveTask.Format.valueOf(format.toUpperCase(Locale.ROOT)))
+    prettyPrint.set(true)
+    resourcePackages.set(['org.opendcs.odcsapi.res', 'org.opendcs.odcsapi.beans', 'org.opendcs.odcsapi.sec'])
+    outputDir.set(layout.buildDirectory.dir('swagger'))
 }
 
 def genSpec = tasks.register('generateOpenAPI') {
