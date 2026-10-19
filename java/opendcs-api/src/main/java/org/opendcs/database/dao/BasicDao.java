@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.opendcs.database.DatabaseKey;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 
 /**
@@ -12,7 +13,7 @@ import org.opendcs.database.api.OpenDcsDataException;
  * BasicDao
  * @param <T>
  */
-public interface BasicDao<T>
+public interface BasicDao<T> extends OpenDcsDao
 {
     /**
      * Retrieve Entry by Database identifier.

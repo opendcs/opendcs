@@ -1,0 +1,23 @@
+
+select(where, limit, offset, prefix, collate, columns) ::= <<
+    select <columns>
+     from lrgs_data_interface_type <prefix>
+     <if(where)>where <where> <endif>
+    order by <prefix>.name <collate> asc
+    <if(limit)>  <limit> <endif>
+>>
+
+merge(dual) ::= <<
+    merge into lrgs_data_interface_type ldit
+    using (select :id id, :name name, :service_provider service_provider <dual>)  input
+    on (ldit.id = input.id)
+    when matched then
+        update set name = input.name, service_provider = input.service_provider
+    when not matched then
+        insert(name, service_provider)
+        values(input.name, input.service_provider)
+>>
+
+
+delete ::= "delete from lrgs_data_interface_type where id = :id"
+
