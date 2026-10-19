@@ -7,7 +7,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dao.BasicDao;
 
-public interface LrgsInterfaceTypeDao extends BasicDao<LrgsDataInterfaceType>
+public interface LrgsDataInterfaceTypeDao extends BasicDao<LrgsDataInterfaceType>
 {
     /**
      * Lookup the entry for a given service provider, if it exists.
