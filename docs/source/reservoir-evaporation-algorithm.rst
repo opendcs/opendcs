@@ -60,6 +60,7 @@ The following tables detail the Inputs, Outputs, and Properties for the ResEvap 
     :widths: 25, 60, 15
 
     "hourlySurfaceTemp", "Hourly surface temperature", "°C"
+    "hourlyEvapRate", "Hourly evaporation rate", "mm/hr"
     "hourlyEvapDepth", "Depth of hourly evaporation", "mm"
     "dailyEvapDepth", "Depth of daily evaporation", "mm"
     "dailyEvapAsFlow", "Daily evaporation as flow", "cms"
@@ -68,6 +69,19 @@ The following tables detail the Inputs, Outputs, and Properties for the ResEvap 
     "hourlySolar", "Hourly solar radiation", "W/m²"
     "hourlyLatent", "Hourly latent heat flux", "W/m²"
     "hourlySensible", "Hourly sensible heat flux", "W/m²"
+
+Upgrading existing computations
+-------------------------------
+
+``hourlyEvapRate`` was previously named ``hourlyEvap``, and
+``dailyEvapDepth`` was previously named ``dailyEvap``. The database upgrade
+tool and ``algoupdate -apply`` rename unambiguous existing assignments while
+keeping their time series and settings. ``algoupdate`` without ``-apply``
+previews the changes; ``-algorithm ResEvapAlgo`` limits it to one algorithm.
+The updater also adds missing outputs such as ``hourlyEvapDepth``. Open the
+computation in the computation editor to assign time series to new outputs.
+If both the old and new parameter names exist, the updater preserves both
+assignments and reports that they need review; resolve them in the editor.
 
 
 **Properties**
@@ -159,4 +173,3 @@ The following tables detail the Inputs, Outputs, and Properties for the ResEvap 
 
 .. note::
    See :ref:`ResEvap Documentation <resevap-computation>` to better understand how the algorithm behaves.
-

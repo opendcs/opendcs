@@ -137,11 +137,11 @@ final public class ResEvapAlgo
     //AW:OUTPUTS
     @Output
     public NamedVariable hourlySurfaceTemp = new NamedVariable("hourlySurfaceTemp", 0);
-    @Output
+    @Output(formerNames = {"hourlyEvap"})
     public NamedVariable hourlyEvapRate = new NamedVariable(HOURLY_EVAP_RATE, 0);
     @Output
     public NamedVariable hourlyEvapDepth = new NamedVariable("hourlyEvapDepth", 0);
-    @Output
+    @Output(formerNames = {"dailyEvap"})
     public NamedVariable dailyEvapDepth = new NamedVariable(DAILY_EVAP_DEPTH, 0);
     @Output
     public NamedVariable dailyEvapAsFlow = new NamedVariable("dailyEvapAsFlow", 0);
@@ -417,10 +417,12 @@ final public class ResEvapAlgo
         totalDailyEvapDepthM = 0.0;
         count = 0;
 
-        String evapInterval = getParmRef(DAILY_EVAP_DEPTH).tsid.getInterval();
-        String flowInterval = getParmRef("dailyEvapAsFlow").tsid.getInterval();
-        boolean evapIR = Objects.equals(evapInterval, IntervalCodes.int_one_day_dst);
-        boolean flowIR = Objects.equals(flowInterval, IntervalCodes.int_one_day_dst);
+        String evapInterval = getParmRef(DAILY_EVAP_DEPTH) == null || getParmRef(DAILY_EVAP_DEPTH).tsid == null
+                ? null : getParmRef(DAILY_EVAP_DEPTH).tsid.getInterval();
+        String flowInterval = getParmRef("dailyEvapAsFlow") == null || getParmRef("dailyEvapAsFlow").tsid == null
+                ? null : getParmRef("dailyEvapAsFlow").tsid.getInterval();
+        boolean evapIR = evapInterval == null || Objects.equals(evapInterval, IntervalCodes.int_one_day_dst);
+        boolean flowIR = flowInterval == null || Objects.equals(flowInterval, IntervalCodes.int_one_day_dst);
 
 
         if (aggTZ.useDaylightTime() && !(evapIR && flowIR))
@@ -492,7 +494,8 @@ final public class ResEvapAlgo
                 }
 
                 //initialize output timeseries
-                hourlyEvapRateTS = getParmRef(HOURLY_EVAP_RATE).timeSeries;
+                hourlyEvapRateTS = getParmRef(HOURLY_EVAP_RATE) == null
+                        ? null : getParmRef(HOURLY_EVAP_RATE).timeSeries;
 
                 //initialize input timeseries
                 windSpeedTS = getParmRef("windSpeed").timeSeries;
@@ -595,6 +598,10 @@ final public class ResEvapAlgo
                 //retrieve Evaporation Rate from Previous Timestep to be used to calculate average instantaneous EvapRate over the hour
                 try
                 {
+                    if (hourlyEvapRateTS == null)
+                    {
+                        throw new IllegalStateException("hourlyEvapRate output is not assigned");
+                    }
                     CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapRateTS.getTimeSeriesIdentifier());
                     cts.setUnitsAbbr("mm/hr");
                     TimedVariable prevTv = tsdb.getPreviousValue(cts, baseTimes.first());

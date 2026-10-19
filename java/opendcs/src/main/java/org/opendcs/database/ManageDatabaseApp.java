@@ -126,6 +126,7 @@ public class ManageDatabaseApp
             {
                 System.out.println("Database is already up-to-date.");
             }
+            AfterUpdateRunner.run(ds);
         }
     }
 
