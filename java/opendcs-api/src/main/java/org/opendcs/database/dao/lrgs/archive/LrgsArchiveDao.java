@@ -17,9 +17,9 @@ public interface LrgsArchiveDao<T extends ArchiveEntry> extends BasicDao<T>
      * @param limit limit for paging
      * @param offset offset for paging
      * @param criteria given search criteria. Can be null, in which case implementations
-     * should return all data in {@link ArchiveEntry#created_at} order by default
+     * should return all data in {@link org.opendcs.data.lrgs.archive.ArchiveEntry#getCreatedAt()} order by default
      * @return
-     * @throws OpenDataException
+     * @throws OpenDcsDataException
      */
     List<T> getAllBy(DataTransaction tx, int limit, int offset, LrgsSearchCriteria criteria) throws OpenDcsDataException;
 
