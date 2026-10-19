@@ -38,6 +38,7 @@ class AlgorithmUpdaterTest
             statement.executeUpdate("INSERT INTO CP_COMPUTATION VALUES (10, 1, 1)");
             statement.executeUpdate("INSERT INTO CP_COMP_TS_PARM VALUES (10, 'hourlyEvap', 123)");
             statement.executeUpdate("INSERT INTO CP_COMP_TS_PARM VALUES (10, 'dailyEvap', 456)");
+            statement.executeUpdate("INSERT INTO CP_COMP_TS_PARM VALUES (10, 'spareOutput', 999)");
             statement.executeUpdate("INSERT INTO CP_COMP_PROPERTY VALUES (10, 'hourlyEvap_MISSING', 'IGNORE')");
         }
 
@@ -58,10 +59,13 @@ class AlgorithmUpdaterTest
         assertEquals("IGNORE", scalar(source, "SELECT PROP_VALUE FROM CP_COMP_PROPERTY WHERE PROP_NAME = 'hourlyEvapRate_MISSING'"));
         assertEquals("Keep this comment", scalar(source, "SELECT CMMNT FROM CP_ALGORITHM WHERE ALGORITHM_ID = 1"));
         assertTrue(exists(source, "SELECT 1 FROM CP_ALGO_TS_PARM WHERE ALGO_ROLE_NAME = 'hourlyEvapDepth'"));
+        assertTrue(exists(source, "SELECT 1 FROM CP_COMP_TS_PARM WHERE ALGO_ROLE_NAME = 'hourlyEvapDepth' AND SITE_DATATYPE_ID IS NULL"));
+        assertTrue(exists(source, "SELECT 1 FROM CP_COMP_TS_PARM WHERE ALGO_ROLE_NAME = 'spareOutput' AND SITE_DATATYPE_ID = 999"));
         assertFalse(exists(source, "SELECT 1 FROM CP_ALGO_TS_PARM WHERE ALGO_ROLE_NAME = 'hourlyEvap'"));
 
         var second = synchronize(source, false);
         assertEquals(0, second.get(0).renamedParameters());
+        assertEquals(0, second.get(0).addedComputationParameters());
 
         // An algorithm record may have been reimported before the computation was repaired.
         try (Connection connection = source.getConnection(); Statement statement = connection.createStatement())

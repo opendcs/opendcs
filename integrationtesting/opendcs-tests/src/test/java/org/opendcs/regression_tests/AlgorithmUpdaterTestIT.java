@@ -118,12 +118,15 @@ final class AlgorithmUpdaterTestIT extends AppTestBase
                 assertEquals(3600, hourlyUpdated.getDeltaT());
                 assertEquals("IGNORE", updatedComputation.getProperty("hourlyEvapRate_MISSING"));
                 assertNull(updatedComputation.getParm("hourlyEvap"));
-                assertNull(updatedComputation.getParm("hourlyEvapDepth"),
-                        "The new output has no time series until a user assigns one");
+                assertNotNull(updatedComputation.getParm("hourlyEvapDepth"),
+                        "The new output is added as a blank parameter");
+                assertEquals(DbKey.NullKey, updatedComputation.getParm("hourlyEvapDepth").getSiteDataTypeId(),
+                        "The user can assign a time series later");
             }
 
             var second = synchronize(false, algorithmId);
             assertEquals(0, second.get(0).renamedParameters());
+            assertEquals(0, second.get(0).addedComputationParameters());
         }
         finally
         {

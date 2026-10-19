@@ -143,6 +143,18 @@ export interface ComputationProperties {
 const roleKey = (roleName: string | undefined): string =>
   (roleName ?? "").trim().toLowerCase();
 
+const timeSeriesLabel = (parm: ApiCompParm | undefined): string => {
+  if (!parm) return "No time series assigned";
+  const details = [
+    parm.siteName,
+    parm.dataType,
+    parm.interval,
+    parm.version,
+    parm.tsKey ? `ID ${parm.tsKey}` : undefined,
+  ].filter(Boolean);
+  return details.length > 0 ? details.join(" · ") : "No time series assigned";
+};
+
 const mergeRequiredParms = (
   existingParms: ApiCompParm[],
   requiredParms: ApiCompParm[],
@@ -282,6 +294,12 @@ export const Computation: React.FC<ComputationProperties> = ({
           ),
       ),
     [installedSpec, localParms],
+  );
+  const unlinkedParms = unmatchedParms.filter(
+    (parm) =>
+      !Object.values(links).some(
+        (source) => roleKey(source) === roleKey(parm.algoRoleName),
+      ),
   );
 
   const openUpdate = () => {
@@ -757,7 +775,7 @@ export const Computation: React.FC<ComputationProperties> = ({
         onHide={() => setShowAlgorithmModal(false)}
         onSelect={handleAlgorithmSelected}
       />
-      <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)} size="lg">
+      <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)} size="xl">
         <Modal.Header closeButton>
           <Modal.Title>Update computation parameters</Modal.Title>
         </Modal.Header>
@@ -766,54 +784,146 @@ export const Computation: React.FC<ComputationProperties> = ({
             Link an existing parameter to each missing role, or add a blank parameter.
             Review the result before saving the computation.
           </p>
-          {missingRoles.map((role) => (
-            <FormGroup key={role.name} className="mb-3">
-              <Form.Label htmlFor={`link-${role.name}`}>
-                {role.name} ({role.type.includes("o") ? "output" : "input"})
-              </Form.Label>
-              <Form.Select
-                id={`link-${role.name}`}
-                value={links[role.name] ?? ""}
-                onChange={(event) =>
-                  setLinks((previous) => ({
-                    ...previous,
-                    [role.name]: event.target.value,
-                  }))
-                }
+          <Row className="g-3">
+            <Col xs={12} lg={5}>
+              <section
+                className="border rounded p-3 h-100"
+                aria-label="Current computation parameters"
               >
-                <option value="">Add as new, blank</option>
-                {unmatchedParms
-                  .filter((parm) => {
-                    const storedType =
-                      parm.algoParmType ??
-                      providedAlgorithm?.parms?.find(
-                        (candidate) =>
-                          roleKey(candidate.roleName) === roleKey(parm.algoRoleName),
-                      )?.parmType;
-                    return (
-                      (!storedType || storedType.includes(role.type)) &&
-                      (!Object.entries(links).some(
-                        ([target, source]) =>
-                          target !== role.name &&
-                          roleKey(source) === roleKey(parm.algoRoleName),
-                      ) ||
-                        roleKey(links[role.name]) === roleKey(parm.algoRoleName))
+                <h3 className="h6">Current computation parameters</h3>
+                <p className="text-muted small">
+                  Names and time series saved on this computation.
+                </p>
+                <ul className="list-unstyled mb-0">
+                  {localParms.map((parm, index) => {
+                    const linkedRole = Object.entries(links).find(
+                      ([, source]) => roleKey(source) === roleKey(parm.algoRoleName),
+                    )?.[0];
+                    const alreadyMatches = installedSpec?.roles.some(
+                      (role) => roleKey(role.name) === roleKey(parm.algoRoleName),
                     );
-                  })
-                  .map((parm) => (
-                    <option key={parm.algoRoleName} value={parm.algoRoleName}>
-                      {parm.algoRoleName}{" "}
-                      {parm.tsKey ? `(time series ${parm.tsKey})` : ""}
-                    </option>
-                  ))}
-              </Form.Select>
-            </FormGroup>
-          ))}
-          {unmatchedParms.length > 0 && (
-            <>
+                    return (
+                      <li
+                        key={`${parm.algoRoleName}-${index}`}
+                        className="border-top py-2"
+                      >
+                        <div className="fw-semibold">{parm.algoRoleName}</div>
+                        <div
+                          className="small text-muted"
+                          aria-label={`Current time series for ${parm.algoRoleName}`}
+                        >
+                          {timeSeriesLabel(parm)}
+                        </div>
+                        <div className="small">
+                          {linkedRole
+                            ? `Linked to ${linkedRole}`
+                            : alreadyMatches
+                              ? "Already matches"
+                              : "Left unlinked"}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            </Col>
+            <Col xs={12} lg={7}>
+              <section
+                className="border rounded p-3 h-100"
+                aria-label="Updated algorithm parameters"
+              >
+                <h3 className="h6">Updated algorithm parameters</h3>
+                <p className="text-muted small">
+                  Choose the existing mapping for each new name.
+                </p>
+                {installedSpec?.roles.map((role) => {
+                  const missing = missingRoles.some(
+                    (candidate) => roleKey(candidate.name) === roleKey(role.name),
+                  );
+                  const source = missing
+                    ? unmatchedParms.find(
+                        (parm) =>
+                          roleKey(parm.algoRoleName) === roleKey(links[role.name]),
+                      )
+                    : localParms.find(
+                        (parm) => roleKey(parm.algoRoleName) === roleKey(role.name),
+                      );
+                  return (
+                    <FormGroup key={role.name} className="border-top py-2 mb-0">
+                      {missing ? (
+                        <>
+                          <Form.Label
+                            htmlFor={`link-${role.name}`}
+                            className="fw-semibold"
+                          >
+                            {role.name} ({role.type.includes("o") ? "output" : "input"})
+                          </Form.Label>
+                          <Form.Select
+                            id={`link-${role.name}`}
+                            value={links[role.name] ?? ""}
+                            onChange={(event) =>
+                              setLinks((previous) => ({
+                                ...previous,
+                                [role.name]: event.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">Add as new, blank</option>
+                            {unmatchedParms
+                              .filter((parm) => {
+                                const storedType =
+                                  parm.algoParmType ??
+                                  providedAlgorithm?.parms?.find(
+                                    (candidate) =>
+                                      roleKey(candidate.roleName) ===
+                                      roleKey(parm.algoRoleName),
+                                  )?.parmType;
+                                return (
+                                  (!storedType || storedType.includes(role.type)) &&
+                                  (!Object.entries(links).some(
+                                    ([target, selected]) =>
+                                      target !== role.name &&
+                                      roleKey(selected) === roleKey(parm.algoRoleName),
+                                  ) ||
+                                    roleKey(links[role.name]) ===
+                                      roleKey(parm.algoRoleName))
+                                );
+                              })
+                              .map((parm) => (
+                                <option
+                                  key={parm.algoRoleName}
+                                  value={parm.algoRoleName}
+                                >
+                                  {parm.algoRoleName} — {timeSeriesLabel(parm)}
+                                </option>
+                              ))}
+                          </Form.Select>
+                        </>
+                      ) : (
+                        <div className="fw-semibold">
+                          {role.name} ({role.type.includes("o") ? "output" : "input"})
+                          <span className="fw-normal text-muted small ms-2">
+                            Already matches
+                          </span>
+                        </div>
+                      )}
+                      <div
+                        className="small text-muted mt-1"
+                        aria-label={`Time series for ${role.name}`}
+                      >
+                        {timeSeriesLabel(source)}
+                      </div>
+                    </FormGroup>
+                  );
+                })}
+              </section>
+            </Col>
+          </Row>
+          {unlinkedParms.length > 0 && (
+            <div className="mt-3">
               <p>
-                Unmatched existing parameters:{" "}
-                {unmatchedParms.map((parm) => parm.algoRoleName).join(", ")}
+                Parameters left unlinked:{" "}
+                {unlinkedParms.map((parm) => parm.algoRoleName).join(", ")}
               </p>
               <Form.Check
                 type="checkbox"
@@ -821,7 +931,7 @@ export const Computation: React.FC<ComputationProperties> = ({
                 checked={deleteUnlinked}
                 onChange={(event) => setDeleteUnlinked(event.target.checked)}
               />
-            </>
+            </div>
           )}
         </Modal.Body>
         <Modal.Footer>

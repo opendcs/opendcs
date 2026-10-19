@@ -29,7 +29,7 @@ public final class AlgorithmUpdater
     }
 
     public record Summary(String algorithm, int renamedParameters, int renamedProperties, int updatedTypes,
-            int addedAlgorithmParameters, int removedAlgorithmParameters,
+            int addedAlgorithmParameters, int addedComputationParameters, int removedAlgorithmParameters,
             int addedAlgorithmProperties, int needsReview)
     {
         public boolean hasChanges()
@@ -40,6 +40,7 @@ public final class AlgorithmUpdater
         public boolean hasAppliedChanges()
         {
             return renamedParameters + renamedProperties + updatedTypes + addedAlgorithmParameters
+                    + addedComputationParameters
                     + removedAlgorithmParameters + addedAlgorithmProperties > 0;
         }
     }
@@ -114,6 +115,7 @@ public final class AlgorithmUpdater
         private int renamedProperties;
         private int updatedTypes;
         private int addedRoles;
+        private int addedComputationParameters;
         private int removedRoles;
         private int addedProperties;
         private int needsReview;
@@ -127,7 +129,7 @@ public final class AlgorithmUpdater
         private Summary summary(String algorithmName)
         {
             return new Summary(algorithmName, renamedParameters, renamedProperties, updatedTypes,
-                    addedRoles, removedRoles, addedProperties, needsReview);
+                    addedRoles, addedComputationParameters, removedRoles, addedProperties, needsReview);
         }
     }
 
@@ -181,6 +183,33 @@ public final class AlgorithmUpdater
             }
         }
         ensureAlgorithmRole(connection, algorithmId, role, state, dryRun);
+        for (long computationId : computationIds)
+        {
+            ensureComputationRole(connection, computationId, role, state, dryRun);
+        }
+    }
+
+    private static void ensureComputationRole(Connection connection, long computationId,
+            AlgorithmSpec.Role role, UpdateState state, boolean dryRun) throws SQLException
+    {
+        Map<String, String> parms = readNames(connection,
+                "SELECT ALGO_ROLE_NAME, ALGO_ROLE_NAME FROM CP_COMP_TS_PARM WHERE COMPUTATION_ID = ?", computationId);
+        if (parms.containsKey(key(role.name())))
+        {
+            return;
+        }
+        // An old role that could not be renamed needs a user's choice, not a competing blank row.
+        if (role.formerNames().stream().anyMatch(former -> parms.containsKey(key(former))))
+        {
+            return;
+        }
+        state.addedComputationParameters++;
+        if (!dryRun)
+        {
+            modify(connection,
+                    "INSERT INTO CP_COMP_TS_PARM (COMPUTATION_ID, ALGO_ROLE_NAME) VALUES (?, ?)",
+                    computationId, role.name());
+        }
     }
 
     private static void renameComputationRole(Connection connection, long computationId, String former,
