@@ -1,6 +1,7 @@
 package org.opendcs.database.dai;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.opendcs.database.api.DataTransaction;
@@ -48,6 +49,17 @@ public interface UsersDao extends OpenDcsDao
      * @throws OpenDcsDataException
      */
     User updateUser(DataTransaction tx, DbKey id, User user) throws OpenDcsDataException;
+
+    /**
+     * Replace the preferences of a particular user. Unlike {@link #updateUser(DataTransaction, DbKey, User)}
+     * roles and identity provider mappings are left untouched.
+     * @param tx
+     * @param id
+     * @param preferences complete set of preferences to store
+     * @return the updated user
+     * @throws OpenDcsDataException
+     */
+    User updatePreferences(DataTransaction tx, DbKey id, Map<String, Object> preferences) throws OpenDcsDataException;
 
     /**
      * Remove a user from the database

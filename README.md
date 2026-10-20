@@ -268,7 +268,9 @@ Useful `-P` options for `runApi`:
 When running with organizations (CWMS-Oracle), select the office to sign in with on the login page (or leave the
 default and switch later via the Change Organization menu in the top bar). Credentials are sent against the blank
 organization - the selected office is applied to the session after authentication, and is reset if the user is not
-authorized there.
+authorized there. The default, "Previous session", uses the office saved in the user's profile (`/user/preferences`),
+which records the last office picked at login or through the Change Organization menu. The color mode, preferred site
+name type and language are kept in the profile the same way, so they follow the user between browsers.
 
 Example two-office run:
 

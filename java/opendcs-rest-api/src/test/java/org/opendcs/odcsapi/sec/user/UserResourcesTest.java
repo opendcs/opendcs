@@ -15,15 +15,20 @@
 
 package org.opendcs.odcsapi.sec.user;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
+import org.opendcs.database.model.UserBuilder;
 import org.opendcs.odcsapi.beans.ApiPasswordChange;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -62,5 +67,102 @@ final class UserResourcesTest
 		// A live session with no principal attribute means the session was never authenticated,
 		// which is a 401 rather than the 403 an authenticated-but-unauthorized caller gets.
 		assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), ex.getStatus());
+	}
+
+	@Test
+	void testGetPreferencesThrowsWhenSessionHasNoPrincipal()
+	{
+		UserResources resources = new UserResources();
+		HttpSession session = mock(HttpSession.class);
+		when(session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE)).thenReturn(null);
+		HttpServletRequest httpRequest = mock(HttpServletRequest.class);
+		when(httpRequest.getSession(false)).thenReturn(session);
+		resources.httpRequest = httpRequest;
+
+		WebAppException ex = assertThrows(WebAppException.class, resources::getPreferences);
+
+		assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), ex.getStatus());
+	}
+
+	@Test
+	void testUpdatePreferencesThrowsWhenNoSessionEstablished()
+	{
+		UserResources resources = new UserResources();
+		HttpServletRequest httpRequest = mock(HttpServletRequest.class);
+		when(httpRequest.getSession(false)).thenReturn(null);
+		resources.httpRequest = httpRequest;
+
+		WebAppException ex = assertThrows(WebAppException.class,
+				() -> resources.updatePreferences(Map.of("colorMode", "dark")));
+
+		assertEquals(Response.Status.FORBIDDEN.getStatusCode(), ex.getStatus());
+	}
+
+	@Test
+	void testUpdatePreferencesRejectsMissingBody()
+	{
+		UserResources resources = new UserResources();
+		HttpSession session = mock(HttpSession.class);
+		when(session.getAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE))
+				.thenReturn(new OpenDcsPrincipal(new UserBuilder().withEmail("user").build(), Map.of()));
+		HttpServletRequest httpRequest = mock(HttpServletRequest.class);
+		when(httpRequest.getSession(false)).thenReturn(session);
+		resources.httpRequest = httpRequest;
+
+		WebAppException ex = assertThrows(WebAppException.class, () -> resources.updatePreferences(null));
+
+		assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), ex.getStatus());
+	}
+
+	@Test
+	void testMergePreferencesAddsReplacesAndRemoves() throws Exception
+	{
+		Map<String, Object> current = Map.of(
+				"preferredUserName", "bob",
+				"colorMode", "light",
+				"organization", "SPK");
+		Map<String, Object> changes = new HashMap<>();
+		changes.put("colorMode", "dark");
+		changes.put("organization", null);
+		changes.put("language", "de-DE");
+
+		Map<String, Object> merged = UserResources.mergePreferences(current, changes);
+
+		assertEquals("bob", merged.get("preferredUserName"), "keys absent from the change must be kept");
+		assertEquals("dark", merged.get("colorMode"));
+		assertEquals("de-DE", merged.get("language"));
+		assertFalse(merged.containsKey("organization"), "a null value must remove the key");
+		assertEquals("SPK", current.get("organization"), "the stored map must not be modified");
+	}
+
+	@Test
+	void testMergePreferencesRejectsBlankName()
+	{
+		WebAppException ex = assertThrows(WebAppException.class,
+				() -> UserResources.mergePreferences(Map.of(), Map.of(" ", "value")));
+
+		assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), ex.getStatus());
+	}
+
+	@Test
+	void testMergePreferencesRejectsResultTooLargeToStore()
+	{
+		// {"a":"<value>"} is 8 bytes plus the value, so this lands exactly one byte over the limit.
+		String value = "x".repeat(UserResources.MAX_PREFERENCES_BYTES - 7);
+
+		WebAppException ex = assertThrows(WebAppException.class,
+				() -> UserResources.mergePreferences(Map.of(), Map.of("a", value)));
+
+		assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), ex.getStatus());
+	}
+
+	@Test
+	void testMergePreferencesAcceptsResultAtTheLimit() throws Exception
+	{
+		String value = "x".repeat(UserResources.MAX_PREFERENCES_BYTES - 8);
+
+		Map<String, Object> merged = UserResources.mergePreferences(Map.of(), Map.of("a", value));
+
+		assertEquals(value, merged.get("a"));
 	}
 }

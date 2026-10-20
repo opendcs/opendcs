@@ -37,6 +37,7 @@
   "date_time": "Datum/Uhrzeit",
   "drag_order": "Verwenden Sie diese Zelle, um die Zeile zu ziehen und neu zu ordnen",
   "organization": "Organisation",
+  "Previous session": "Vorherige Sitzung",
   "Change Organization": "Organisation wechseln",
   "Authorization Error": "Autorisierungsfehler",
   "User not authorized": "Der Benutzer ist nicht für diese Organisation autorisiert.",

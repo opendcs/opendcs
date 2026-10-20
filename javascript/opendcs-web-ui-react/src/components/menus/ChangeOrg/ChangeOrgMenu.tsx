@@ -9,6 +9,8 @@ import {
 import { type ApiContextType, useApi } from "../../../contexts/app/ApiContext.ts";
 import { useTranslation } from "react-i18next";
 import { organizationTree } from "../../../util/orgHierarchy";
+import { PreferenceKeys } from "../../../util/preferences";
+import { useSavePreferences } from "../../../hooks/useUserPreferences";
 
 interface ToggleProperties {
   org: ApiOrganization;
@@ -55,6 +57,7 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
   const [t] = useTranslation();
   const api = useApi();
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
+  const savePreferences = useSavePreferences();
   const [showErrorModal, setShowErrorModal] = useState(false);
   const changeOrgFn = (
     org: ApiOrganization,
@@ -65,7 +68,16 @@ export const ChangeOrgMenu: React.FC<ChangeOrgMenuProperties> = ({
       .getOrganizations(org.name || "")
       .then(() => {
         api.setOrg(org);
-        window.location.reload();
+        // Saved to the profile so the next login can start here. Reload only
+        // once that's done, or the reload could cut the request off.
+        return savePreferences({ [PreferenceKeys.organization]: org.name })
+          .catch((error: unknown) =>
+            console.warn(
+              "Unable to save the organization to the user's profile",
+              error,
+            ),
+          )
+          .finally(() => window.location.reload());
       })
       .catch(() => {
         setShowErrorModal(true);
