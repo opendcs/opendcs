@@ -27,8 +27,6 @@ import org.opendcs.spi.decodes.DecodesFunctionProvider;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
-import com.google.auto.service.AutoService;
-
 import decodes.db.DecodesScript;
 
 
@@ -89,6 +87,9 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 	/**
 	 * Executes the HTML Form Data parsing function by processing the key/value pair to sensor name
 	 * and value.
+	 *
+	 * NOTE: this intentionally doesn't use the netty QueryStringDecoder, if we don't individually process
+	 * the pairs we can't assign the location in the message for highlighting.
 	 *
 	 * @param dd        DataOperations object used to read data.
 	 * @param decmsg    DecodedMessage object to store the extracted sensor data.
@@ -184,7 +185,6 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 										.findFirst()
 										.orElse(-1);
 		};
-					
 
 		if (sensorNumber < 0) {
 			log.atWarn().log("could not find matching sensor for {}", key);
@@ -267,7 +267,6 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 		log.trace("Instantiated from argument '{}' -- # sensors={}", argString, sensorNumbers.size());
 	}
 
-	//@AutoService (DecodesFunctionProvider.class)
 	public static class HtmlFormEncodedFunctionProvider implements DecodesFunctionProvider
 	{
 
