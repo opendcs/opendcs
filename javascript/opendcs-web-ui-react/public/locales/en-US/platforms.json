@@ -69,7 +69,7 @@
   "transport_window": "Window (s)",
   "transport_interval": "Interval (s)",
   "time_adjustment": "Time Adjust (s)",
-  "timezone": "Timezone",
+  "timezone": "Time Zone",
   "logger_type": "Logger Type",
   "baud": "Baud",
   "stop_bits": "Stop Bits",
