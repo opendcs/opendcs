@@ -1,0 +1,111 @@
+package org.opendcs.algorithms.update;
+
+import decodes.util.CmdLineArgs;
+import ilex.cmdline.BooleanToken;
+import ilex.cmdline.StringToken;
+import ilex.cmdline.TokenOptions;
+import org.opendcs.database.ManageDatabaseApp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Set;
+import java.util.Collections;
+import javax.sql.DataSource;
+
+/** Standalone preview/apply command for sites that upgrade their schema separately. */
+public final class AlgorithmUpdateApp
+{
+    private static final Logger log = LoggerFactory.getLogger(AlgorithmUpdateApp.class);
+
+    private AlgorithmUpdateApp()
+    {
+    }
+
+    public static void main(String[] args)
+    {
+        try
+        {
+            run(args);
+        }
+        catch (IOException | SQLException ex)
+        {
+            log.error("Unable to update algorithms", ex);
+            throw new IllegalStateException("Unable to update algorithms", ex);
+        }
+    }
+
+    private static void run(String[] args) throws IOException, SQLException
+    {
+        CmdLineArgs cli = new CmdLineArgs(true, "algoupdate.log");
+        BooleanToken apply = new BooleanToken("apply", "Apply updates (default is preview only)",
+                "", TokenOptions.optSwitch, false);
+        StringToken username = new StringToken("username", "Database username", "",
+                TokenOptions.optRequired, null);
+        StringToken password = new StringToken("password", "Database password", "",
+                TokenOptions.optRequired, null);
+        StringToken algorithm = new StringToken("algorithm", "Limit update to an algorithm name", "",
+                TokenOptions.optRequired, null);
+        cli.addToken(apply);
+        cli.addToken(username);
+        cli.addToken(password);
+        cli.addToken(algorithm);
+        cli.parseArgs(args);
+        DataSource dataSource = ManageDatabaseApp.getDataSourceFromProfileAndUserInfo(
+                cli.getProfile(), System.console(), username.getValue(), password.getValue());
+        try (Connection connection = dataSource.getConnection())
+        {
+            connection.setAutoCommit(false);
+            try
+            {
+                Set<Long> ids = Collections.emptySet();
+                if (algorithm.getValue() != null)
+                {
+                    try (PreparedStatement statement = connection.prepareStatement(
+                            "SELECT ALGORITHM_ID FROM CP_ALGORITHM WHERE LOWER(ALGORITHM_NAME) = LOWER(?)"))
+                    {
+                        statement.setString(1, algorithm.getValue());
+                        try (ResultSet rows = statement.executeQuery())
+                        {
+                            if (!rows.next())
+                            {
+                                throw new IllegalArgumentException("Unknown algorithm: " + algorithm.getValue());
+                            }
+                            ids = Collections.singleton(rows.getLong(1));
+                        }
+                    }
+                }
+                for (AlgorithmUpdater.Summary summary : AlgorithmUpdater.synchronize(connection, !apply.getValue(), ids))
+                {
+                    if (summary.hasChanges())
+                    {
+                        log.info("Algorithm update: {}", summary);
+                    }
+                }
+                if (apply.getValue())
+                {
+                    connection.commit();
+                }
+                else
+                {
+                    connection.rollback();
+                }
+            }
+            catch (SQLException | RuntimeException | Error ex)
+            {
+                try
+                {
+                    connection.rollback();
+                }
+                catch (SQLException rollbackFailure)
+                {
+                    ex.addSuppressed(rollbackFailure);
+                }
+                throw ex;
+            }
+        }
+    }
+}

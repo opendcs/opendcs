@@ -32,4 +32,6 @@ public @interface Input
     Class<?> type() default Double.class;
     String typeCode() default "i";
     String description() default "";
+    /** Previous names that can be migrated without losing configured values. */
+    String[] formerNames() default {};
 }
