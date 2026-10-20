@@ -37,6 +37,8 @@ public @interface PropertySpec
     String value() default "";
     String propertySpecType() default "";
     String description() default "";
+    /** Previous property names, used when upgrading stored algorithms and computations. */
+    String[] formerNames() default {};
     
     /**
      * Marks this property as required. 

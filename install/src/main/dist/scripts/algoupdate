@@ -1,0 +1,3 @@
+#!/bin/sh
+APP_PATH="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+"${APP_PATH}/decj" org.opendcs.algorithms.update.AlgorithmUpdateApp "$@"

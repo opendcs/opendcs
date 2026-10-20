@@ -582,7 +582,7 @@ public final class ComputationResources extends OpenDcsResource
 		DataType dataType = null;
 		for(DbCompParm parm : comp.getParmList())
 		{
-			if(parm.getAlgoParmType().contains("o"))
+			if(parm.getAlgoParmType() != null && parm.getAlgoParmType().contains("o"))
 			{
 				boolean isCwms = tsDai instanceof CwmsTimeSeriesDAO;
 				TimeSeriesIdentifier identifier;
