@@ -46,15 +46,15 @@ function adjustCompParm(parm: CompParm): CompParm {
     ret.dataTypeId = -1;
   }
 
-  console.log(parm);
-  console.log(ret);
   if (
     !ret.siteName ||
     !ret.dataType ||
     !ret.duration ||
     !ret.interval ||
     !ret.paramType ||
-    !ret.version
+    !ret.version ||
+    ret.siteId === -1 ||
+    ret.dataTypeId === -1
   ) {
     ret.tsKey = -1; // make sure the backend doesn't see a stale key.
     // This would still exist if we're changing to a group computations.
