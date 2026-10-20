@@ -27,6 +27,42 @@ export interface ComputationParamsTableProps {
   onUpdate?: (oldRoleName: string, newParm: CompParm) => void;
 }
 
+/**
+ * This level of validation and understanding *SHOULD NOT* go here.
+ * However, we need something in place until ApiCompParm can be
+ * corrected for the required behavior and appropriate complexity.
+ * @param parm
+ * @returns
+ */
+function adjustCompParm(parm: CompParm): CompParm {
+  var ret = {
+    ...parm,
+  };
+
+  if (parm.siteName === undefined || parm.siteName === "") {
+    ret.siteId = -1;
+  }
+  if (parm.dataType === undefined || parm.dataType === "") {
+    ret.dataTypeId = -1;
+  }
+
+  console.log(parm);
+  console.log(ret);
+  if (
+    !ret.siteName ||
+    !ret.dataType ||
+    !ret.duration ||
+    !ret.interval ||
+    !ret.paramType ||
+    !ret.version
+  ) {
+    ret.tsKey = -1; // make sure the backend doesn't see a stale key.
+    // This would still exist if we're changing to a group computations.
+  }
+
+  return ret;
+}
+
 export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   parms,
   edit = false,
@@ -140,7 +176,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "siteName",
               row.siteName ?? "",
-              t("computations:parms.site_input"),
+              t("computations:parms.site_input", { name: row.algoRoleName ?? "new" }),
               rowId,
             ),
           read: (cell) => readOptional(cell, "input"),
@@ -161,7 +197,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "dataType",
               row.dataType ?? "",
-              t("computations:parms.dataType_input"),
+              t("computations:parms.dataType_input", { name: row.algoRoleName ?? "" }),
               rowId,
             ),
           read: (cell) => readOptional(cell, "input"),
@@ -358,7 +394,10 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
           ? {
               onSave: (original, updated) => {
                 if (!(updated.algoRoleName ?? "").trim()) return false;
-                onUpdate?.(original.algoRoleName ?? "", updated);
+
+                const adjusted = adjustCompParm(updated);
+
+                onUpdate?.(original.algoRoleName ?? "", adjusted);
               },
               onAdd: (created) => {
                 if (!(created.algoRoleName ?? "").trim()) return false;
@@ -371,8 +410,10 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                   t("computations:parms.edit_for", { name: row.algoRoleName }),
                 remove: (row) =>
                   t("computations:parms.delete_for", { name: row.algoRoleName }),
-                save: () => t("computations:parms.save_parm"),
-                cancel: () => t("computations:parms.cancel_parm"),
+                save: (row) =>
+                  t("computations:parms.save_parm", { name: row.algoRoleName }),
+                cancel: (row) =>
+                  t("computations:parms.cancel_parm", { name: row.algoRoleName }),
                 add: t("computations:parms.add_parm"),
               },
             }

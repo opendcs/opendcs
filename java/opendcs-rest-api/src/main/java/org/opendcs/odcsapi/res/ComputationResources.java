@@ -286,7 +286,19 @@ public final class ComputationResources extends OpenDcsResource
 				{
 					tsDai.findTimeSeriesIdentifier(buildTsString(p), false)
 						 .onSuccess(ts -> p.setTsKey(ts.getKey().getValue()));
-					p.setTableSelector(p.getParamType() + "." + p.getDuration() + "." + p.getVersion());
+						 // error case doesn't matter here, just means we don't have a specific unique
+						 // time series.
+					// Table select column should not have any "null" values in it,
+					// they just get represented as blank strings.
+					// NOTE: This logic *will* break HDB as this is not how that table is used.
+					// See https://github.com/opendcs/opendcs/issues/2264
+					// for the plans on how this will be addressed.
+					// This fix is a stop gap for current operations.
+					var typeVal = p.getParamType() != null ? p.getParamType() : "";
+					var durationVal = p.getDuration() != null ? p.getDuration() : "";
+					var versionVal = p.getVersion() != null ? p.getVersion() : "";
+					
+					p.setTableSelector(typeVal + "." + durationVal + "." + versionVal);
 				});
 			DbComputation dbComp = DTOMappers.map(comp);
 			dbComp.getParmList().forEach(p ->

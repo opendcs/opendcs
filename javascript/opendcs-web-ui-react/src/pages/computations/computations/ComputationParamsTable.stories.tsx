@@ -4,7 +4,7 @@ import {
   type CompParm,
   type ComputationParamsTableProps,
 } from "./ComputationParamsTable";
-import { expect, screen, waitFor } from "storybook/test";
+import { expect, fn, Mock, screen, waitFor } from "storybook/test";
 import { useCallback, useState } from "react";
 // eslint-disable-next-line storybook/use-storybook-testing-library
 import { act } from "@testing-library/react";
@@ -52,20 +52,26 @@ const sampleParms: CompParm[] = [
   { algoRoleName: "delta", algoParmType: "id", deltaT: -1, deltaTUnits: "Hours" },
 ];
 
-const EditableParamsTable: React.FC<{ initialParms: CompParm[] }> = ({
-  initialParms,
-}) => {
-  const [parms, setParms] = useState<CompParm[]>(initialParms);
+const EditableParamsTable: React.FC<{
+  initialParms: CompParm[];
+  testOnUpdate?: (role: string, parm: CompParm) => void;
+  testOnAdd?: (parm: CompParm) => void;
+  testOnRemove?: (role: string) => void;
+}> = ({ initialParms = [], testOnUpdate, testOnAdd, testOnRemove }) => {
+  const [parms, setParms] = useState<CompParm[]>(initialParms ?? []);
 
   const onAdd = useCallback((parm: CompParm) => {
+    testOnAdd?.(parm);
     setParms((prev) => [...prev, parm]);
   }, []);
 
   const onRemove = useCallback((algoRoleName: string) => {
+    testOnRemove?.(algoRoleName);
     setParms((prev) => prev.filter((p) => (p.algoRoleName ?? "") !== algoRoleName));
   }, []);
 
   const onUpdate = useCallback((oldRoleName: string, newParm: CompParm) => {
+    testOnUpdate?.(oldRoleName, newParm);
     setParms((prev) =>
       prev.map((p) => ((p.algoRoleName ?? "") === oldRoleName ? newParm : p)),
     );
@@ -84,7 +90,14 @@ const EditableParamsTable: React.FC<{ initialParms: CompParm[] }> = ({
 
 const EditableRender: ArgsStoryFn<ReactRenderer, ComputationParamsTableProps> = (
   args,
-) => <EditableParamsTable initialParms={args.parms ?? []} />;
+) => (
+  <EditableParamsTable
+    initialParms={args.parms}
+    testOnAdd={args.onAdd}
+    testOnRemove={args.onRemove}
+    testOnUpdate={args.onUpdate}
+  />
+);
 
 export const ViewEmpty: Story = {
   args: { parms: [], edit: false },
@@ -279,5 +292,96 @@ export const EditModeWithIntervals: Story = {
       name: i18n.t("computations:parms.edit_for", { name: "input1" }),
     });
     expect(editBtn).toBeInTheDocument();
+  },
+};
+
+const expandedParms: CompParm[] = [
+  {
+    // numbers below for Ids are arbitrary
+    algoRoleName: "input1",
+    algoParmType: "i",
+    siteId: 2000,
+    siteName: "TESTSITE",
+    dataType: "Stage",
+    dataTypeId: 1000,
+    tsKey: 30,
+    interval: "1Hour",
+    paramType: "Inst",
+    duration: "0",
+    version: "raw",
+    deltaT: 0,
+    deltaTUnits: "Seconds",
+    unitsAbbr: "ft",
+    ifMissing: "IGNORE",
+  },
+  {
+    algoRoleName: "output1",
+    algoParmType: "o",
+    siteName: "TESTSITE",
+    dataType: "Stage",
+    interval: "1Hour",
+    paramType: "Inst",
+    duration: "0",
+    version: "raw",
+    deltaT: 0,
+    deltaTUnits: "Seconds",
+    unitsAbbr: "ft",
+    ifMissing: "FAIL",
+  },
+  { algoRoleName: "delta", algoParmType: "id", deltaT: -1, deltaTUnits: "Hours" },
+];
+
+export const CanClearValuesForChangeToGroup: Story = {
+  args: { parms: expandedParms, onAdd: fn(), onRemove: fn(), onUpdate: fn() },
+  render: EditableRender,
+  play: async ({ mount, parameters, userEvent, args }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const editBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:parms.edit_for", { name: "input1" }),
+    });
+    expect(editBtn).toBeInTheDocument();
+
+    await act(async () => userEvent.click(editBtn));
+    const locationEdit = await canvas.findByRole("combobox", {
+      name: i18n.t("computations:parms.site_input", { name: "input1" }),
+    });
+    await act(async () => userEvent.clear(locationEdit));
+
+    const saveBtn = await canvas.findByRole("button", {
+      name: i18n.t("computations:parms.save_parm", { name: "input1" }),
+    });
+    await act(async () => userEvent.click(saveBtn));
+
+    expect(args.onUpdate).toHaveBeenCalled();
+    var mockUpdate = args.onUpdate! as Mock<(role: string, parm: CompParm) => void>;
+    const [role, parm] = mockUpdate.mock.calls[0];
+    expect(role).toStrictEqual("input1");
+    expect(parm.siteId).toStrictEqual(-1);
+    expect(parm.dataTypeId).not.toStrictEqual(-1);
+    expect(parm.tsKey).toBeOneOf([-1, null]);
+
+    mockUpdate.mockClear();
+    const editBtn2 = await canvas.findByRole("button", {
+      name: i18n.t("computations:parms.edit_for", { name: "input1" }),
+    });
+    await act(async () => userEvent.click(editBtn2));
+
+    const dataTypeBox = await canvas.findByRole("combobox", {
+      name: i18n.t("computations:parms.dataType_input", { name: "input1" }),
+    });
+    expect(dataTypeBox).toBeInTheDocument();
+
+    await act(async () => userEvent.clear(dataTypeBox));
+
+    const saveBtn2 = await canvas.findByRole("button", {
+      name: i18n.t("computations:parms.save_parm", { name: "input1" }),
+    });
+    await act(() => userEvent.click(saveBtn2));
+
+    expect(args.onUpdate).toHaveBeenCalled();
+    const [role2, parm2] = mockUpdate.mock.calls[0];
+    expect(role).toStrictEqual("input1");
+    expect(parm2.dataTypeId).toStrictEqual(-1);
   },
 };
