@@ -17,6 +17,7 @@ import type { CancelAction, CollectionActions, SaveAction } from "../../util/Act
 import { SiteReducer } from "./SiteReducer";
 import { Save, X } from "react-bootstrap-icons";
 import { DetailFade } from "../../components/data-table";
+import { TimezoneSelect } from "../../components/controls/TimezoneSelect";
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
@@ -77,28 +78,6 @@ const SITE_FIELDS = [
   "publicName",
   "description",
 ] as const;
-
-const TIMEZONES: readonly string[] = [
-  "UTC",
-  "GMT",
-  "US/Eastern",
-  "US/Central",
-  "US/Mountain",
-  "US/Pacific",
-  "US/Alaska",
-  "US/Hawaii",
-  "US/Arizona",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Phoenix",
-  "America/Anchorage",
-  "America/Honolulu",
-  "America/Puerto_Rico",
-  "Europe/London",
-];
-const SITE_TIMEZONE_LIST_ID = "site-timezone-list";
 
 export const SiteSkeleton: React.FC<{ edit?: boolean; className?: string }> = ({
   edit = false,
@@ -269,11 +248,6 @@ export const Site: React.FC<SiteProperties> = ({
 
   return (
     <DetailFade skeleton={<SiteSkeleton edit={edit} />}>
-      <datalist id={SITE_TIMEZONE_LIST_ID}>
-        {TIMEZONES.map((tz) => (
-          <option key={tz} value={tz} />
-        ))}
-      </datalist>
       <Card
         className={["site-card", edit ? "site-card--edit" : null]
           .filter(Boolean)
@@ -393,14 +367,14 @@ export const Site: React.FC<SiteProperties> = ({
                   {t("timezone")}
                 </Form.Label>
                 <Col sm={10}>
-                  <Form.Control
-                    type="text"
+                  <TimezoneSelect
+                    freeText
                     id="timezone"
-                    name="timezone"
-                    readOnly={!edit}
-                    list={SITE_TIMEZONE_LIST_ID}
-                    defaultValue={localSite.timezone ?? ""}
-                    onChange={inputChange}
+                    edit={edit}
+                    value={localSite.timezone}
+                    onChange={(timezone) =>
+                      dispatch({ type: "save", payload: { timezone } })
+                    }
                   />
                 </Col>
               </FormGroup>
