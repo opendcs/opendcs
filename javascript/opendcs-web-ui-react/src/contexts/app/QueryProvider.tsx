@@ -46,7 +46,10 @@ export const QueryProvider = ({ children }: ProviderProps) => {
     <QueryClientProvider client={client}>
       <QueryErrorBoundary>{children}</QueryErrorBoundary>
       <ToastStack />
-      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      {/* Bottom-left so it doesn't cover the toasts' close buttons. */}
+      {import.meta.env.DEV && (
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+      )}
     </QueryClientProvider>
   );
 };
