@@ -151,12 +151,13 @@ export const AddParm: Story = {
     await userEvent.click(addBtn);
 
     const roleInput = await canvas.findByRole("textbox", {
-      name: i18n.t("computations:parms.roleName_input"),
+      name: i18n.t("computations:parms.roleName_input", { name: "newRole1" }),
     });
+    await userEvent.clear(roleInput); // clear the given name
     await userEvent.type(roleInput, "myInput");
 
     const saveBtn = await canvas.findByRole("button", {
-      name: i18n.t("computations:parms.save_parm"),
+      name: i18n.t("computations:parms.save_parm", { name: "newRole1" }), // role html elements have the generated name.
     });
     await act(async () => userEvent.click(saveBtn));
 
@@ -182,14 +183,19 @@ export const RoleNameCannotBeBlank: Story = {
     await userEvent.click(addBtn);
 
     const saveBtn = await canvas.findByRole("button", {
-      name: i18n.t("computations:parms.save_parm"),
+      name: i18n.t("computations:parms.save_parm", { name: "newRole1" }),
     });
+
+    const roleInput = await canvas.findByRole("textbox", {
+      name: i18n.t("computations:parms.roleName_input", { name: "newRole1" }),
+    });
+    await act(async () => userEvent.clear(roleInput));
     await act(async () => userEvent.click(saveBtn));
 
     await waitFor(
       () => {
         const roleInput = canvas.queryByRole("textbox", {
-          name: i18n.t("computations:parms.roleName_input"),
+          name: i18n.t("computations:parms.roleName_input", { name: "newRole1" }),
         });
         expect(roleInput).toBeInTheDocument();
         expect(roleInput).toHaveClass("border-warning");
@@ -212,13 +218,13 @@ export const EditParm: Story = {
     await act(async () => userEvent.click(editBtn));
 
     const roleInput = await canvas.findByRole("textbox", {
-      name: i18n.t("computations:parms.roleName_input"),
+      name: i18n.t("computations:parms.roleName_input", { name: "input1" }),
     });
     await userEvent.clear(roleInput);
     await userEvent.type(roleInput, "renamedInput");
 
     const saveBtn = await canvas.findByRole("button", {
-      name: i18n.t("computations:parms.save_parm"),
+      name: i18n.t("computations:parms.save_parm", { name: "input1" }),
     });
     await act(async () => userEvent.click(saveBtn));
 

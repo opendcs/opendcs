@@ -62,7 +62,7 @@
     "delete_for": "Delete parameter {{name}}",
     "show_details_for": "Show details for parameter {{name}}",
     "hide_details_for": "Hide details for parameter {{name}}",
-    "roleName_input": "Parameter role name",
+    "roleName_input": "Parameter role name {{name}}",
     "parmType_input": "Parameter type",
     "site_input": "Parameter location for {{name}}",
     "dataType_input": "Parameter data type {{name}}",

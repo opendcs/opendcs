@@ -62,7 +62,7 @@
     "delete_for": "Eliminar parámetro {{name}}",
     "show_details_for": "Mostrar detalles del parámetro {{name}}",
     "hide_details_for": "Ocultar detalles del parámetro {{name}}",
-    "roleName_input": "Nombre de rol del parámetro",
+    "roleName_input": "Nombre de rol del parámetro {{name}}",
     "parmType_input": "Tipo de parámetro",
     "site_input": "Ubicación del parámetro {{name}}",
     "dataType_input": "Tipo de dato del parámetro {{name}}",

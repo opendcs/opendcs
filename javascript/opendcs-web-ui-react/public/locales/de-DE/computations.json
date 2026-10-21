@@ -62,7 +62,7 @@
     "delete_for": "Parameter {{name}} löschen",
     "show_details_for": "Details für Parameter {{name}} anzeigen",
     "hide_details_for": "Details für Parameter {{name}} ausblenden",
-    "roleName_input": "Parameter-Rollenname",
+    "roleName_input": "Parameter-Rollenname {{name}}",
     "parmType_input": "Parametertyp",
     "site_input": "Parameter-Ort {{name}}",
     "dataType_input": "Parameter-Datentyp {{name}}",

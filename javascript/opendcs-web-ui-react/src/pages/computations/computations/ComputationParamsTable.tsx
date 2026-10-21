@@ -1,4 +1,4 @@
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
@@ -83,6 +83,12 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     () => intervals.map((i) => i.name ?? "").filter((n) => n.length > 0),
     [intervals],
   );
+  const [nextId, setNextId] = useState<number>(1);
+  const nextIdRef = useRef<number>(nextId);
+
+  useEffect(() => {
+    nextIdRef.current = nextId;
+  }, [nextId]);
 
   const intervalOptions = useMemo(() => {
     const opts = new Set<string>(defaultIntervals);
@@ -135,7 +141,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 name="algoRoleName"
                 defaultValue={row.algoRoleName ?? ""}
                 size="sm"
-                aria-label={t("computations:parms.roleName_input")}
+                aria-label={t("computations:parms.roleName_input", {
+                  name: row.algoRoleName,
+                })}
               />,
             ),
           read: (cell) =>
@@ -376,12 +384,17 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     ];
   }, [t, intervalOptions, deltaTUnits, ifMissingActions, unitsReady, queryClient]);
 
-  const newTemplate = (): CompParm => ({
-    algoParmType: "i",
-    deltaT: 0,
-    deltaTUnits: "Seconds",
-    ifMissing: "FAIL",
-  });
+  const newTemplate = (id: number): CompParm => {
+    const ret: CompParm = {
+      algoRoleName: "newRole" + Math.abs(id), // we aren't using id numbers as database id, so use positive numbers
+      algoParmType: "i",
+      deltaT: 0,
+      deltaTUnits: "Seconds",
+      ifMissing: "FAIL",
+    };
+    setNextId(nextIdRef.current + 1);
+    return ret;
+  };
 
   return (
     <AppDataTable<CompParm, string>
@@ -389,6 +402,14 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       getId={(p) => p.algoRoleName ?? ""}
       columns={columns}
       actionsLabel={t("translation:actions")}
+      addNew={
+        edit
+          ? {
+              template: newTemplate,
+              ariaLabel: t("computations:parms.add_parm"),
+            }
+          : undefined
+      }
       inlineEdit={
         edit
           ? {
@@ -404,7 +425,6 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 onAdd?.(created);
               },
               onRemove: (row) => onRemove?.(row.algoRoleName ?? ""),
-              newTemplate,
               labels: {
                 edit: (row) =>
                   t("computations:parms.edit_for", { name: row.algoRoleName }),
@@ -414,7 +434,6 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                   t("computations:parms.save_parm", { name: row.algoRoleName }),
                 cancel: (row) =>
                   t("computations:parms.cancel_parm", { name: row.algoRoleName }),
-                add: t("computations:parms.add_parm"),
               },
             }
           : undefined
