@@ -375,11 +375,11 @@ public final class NetlistResources extends OpenDcsResource
         }
         catch (OpenDcsDataException ex)
         {
-            if (ex.getCause() instanceof OpenDcsConstraintException)
+            if (ex.getCause() instanceof OpenDcsConstraintException constraintEx)
             {
+                // NetworkListDao names the routing specs that still use the list.
                 return Response.status(Response.Status.CONFLICT)
-                                  .entity(new Status("Cannot delete network list with ID " + netlistId
-                                     + " because it is used by at least one routing spec"))
+                                  .entity(new Status(constraintEx.getMessage()))
                                   .type(MediaType.APPLICATION_JSON)
                                   .build();
             }

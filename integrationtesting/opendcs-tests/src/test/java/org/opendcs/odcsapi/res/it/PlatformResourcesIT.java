@@ -632,6 +632,48 @@ final class PlatformResourcesIT extends BaseApiIT
 	}
 
 	@Test
+	void testDeleteNetlistUsedByRoutingSpecFails()
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("netlistid", netListId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("netlist")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CONFLICT.getStatusCode()))
+			.body("message", equalTo("Cannot delete network list with ID " + netListId
+				+ " because it is used by the following routing specs: TestRoutingSpec"))
+		;
+	}
+
+	@Test
+	void testDeleteDataSourceUsedByRoutingSpecFails()
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("datasourceid", dataSourceId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("datasource")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CONFLICT.getStatusCode()))
+			.body("message", equalTo("Cannot delete datasource with ID " + dataSourceId
+				+ " because it is used by the following routing specs: TestRoutingSpec"))
+		;
+	}
+
+	@Test
 	void testGetPlatformStats() throws Exception
 	{
 		ScheduleEntryStatus scheduleEntryStatus = new ScheduleEntryStatus(DbKey.NullKey);

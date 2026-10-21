@@ -34,6 +34,7 @@ import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.exceptions.data.RelatedDataConstraintException;
 import org.opendcs.database.dai.NetworkListDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListEntryMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
@@ -70,6 +71,7 @@ public class NetworkListDaoImpl implements NetworkListDao
     private static final String DELETE_NETWORKLIST = "deleteNetworkList";
     private static final String DELETE_NETWORKLIST_ENTRY = "deleteNetworkListEntry";
     private static final String INSERT_NETWORKLIST_ENTRY = "insertNetworkListEntry";
+    private static final String ROUTING_SPECS_USING = "routingSpecsUsingNetworkList";
 
     private final STGroup queries;
 
@@ -197,10 +199,32 @@ public class NetworkListDaoImpl implements NetworkListDao
         {
             throw new OpenDcsDataException("Could not find template");
         }
+        // Routing specs reference network lists by name, so no foreign key stops this delete.
+        var usedBy = routingSpecsUsing(handle, id);
+        if (!usedBy.isEmpty())
+        {
+            throw new RelatedDataConstraintException("Cannot delete network list with ID " + id
+                + " because it is used by the following routing specs: " + String.join(", ", usedBy));
+        }
         deleteEntries(handle, id);
         try (var deleteList = handle.createUpdate(deleteTemplate.render()))
         {
             deleteList.bind(NetworkListMapper.Columns.ID.column(), id).execute();
+        }
+    }
+
+    private List<String> routingSpecsUsing(Handle handle, DbKey id) throws OpenDcsDataException
+    {
+        var usingTemplate = queries.getInstanceOf(ROUTING_SPECS_USING);
+        if (usingTemplate == null)
+        {
+            throw new OpenDcsDataException("Could not find template");
+        }
+        try (var query = handle.createQuery(usingTemplate.render()))
+        {
+            return query.bind(GenericColumns.ID.column(), id)
+                        .mapTo(String.class)
+                        .list();
         }
     }
 
