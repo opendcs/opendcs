@@ -7,14 +7,15 @@ import {
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { QueryErrorBoundary } from "../../components/QueryErrorBoundary";
+import { ToastStack } from "../../components/ToastStack";
+import { onMutationError, onMutationSuccess } from "./mutationToasts";
 
 interface ProviderProps {
   children: ReactNode;
 }
 
-// Single integration point for a future toast/snackbar layer.
-const logError = (scope: "query" | "mutation") => (error: unknown) => {
-  console.error(`[${scope}]`, error);
+const logQueryError = (error: unknown) => {
+  console.error("[query]", error);
 };
 
 export const QueryProvider = ({ children }: ProviderProps) => {
@@ -32,14 +33,19 @@ export const QueryProvider = ({ children }: ProviderProps) => {
             retry: 0,
           },
         },
-        queryCache: new QueryCache({ onError: logError("query") }),
-        mutationCache: new MutationCache({ onError: logError("mutation") }),
+        queryCache: new QueryCache({ onError: logQueryError }),
+        // Mutations opt into a toast through `meta` (see mutationToasts.ts).
+        mutationCache: new MutationCache({
+          onError: onMutationError,
+          onSuccess: onMutationSuccess,
+        }),
       }),
   );
 
   return (
     <QueryClientProvider client={client}>
       <QueryErrorBoundary>{children}</QueryErrorBoundary>
+      <ToastStack />
       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );

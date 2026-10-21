@@ -11,6 +11,7 @@ import {
   type ApiPlatformConfig,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { configKeys } from "./keys";
 import { invalidateThenDelegate, removeDetailOnSave } from "./mutationHelpers";
 
@@ -88,6 +89,7 @@ export const useDeleteConfigMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (configId: number) => configApi.deleteConfig(org, configId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: configKeys.all(org) });

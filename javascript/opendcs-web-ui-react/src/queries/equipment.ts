@@ -11,6 +11,7 @@ import {
   type ApiEquipmentModelRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { equipmentKeys } from "./keys";
 
 const useEquipmentApi = () => {
@@ -68,6 +69,7 @@ export const useDeleteEquipmentMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (equipmentId: number) => equipmentApi.deleteequipment(org, equipmentId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: equipmentKeys.all(org) });

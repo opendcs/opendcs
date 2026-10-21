@@ -11,6 +11,7 @@ import {
   type ApiPlatformRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { platformKeys } from "./keys";
 import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
@@ -79,6 +80,7 @@ export const useDeletePlatformMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (platformId: number) => platformApi.deletePlatform(org, platformId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: invalidateThenDelegate(
       queryClient,

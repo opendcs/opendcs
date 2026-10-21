@@ -13,6 +13,7 @@ import {
   type ApiLoadingApp,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { appKeys } from "./keys";
 import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
@@ -80,6 +81,7 @@ export const useDeleteAppMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (appId: number) => appApi.deleteApp(org, appId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: invalidateThenDelegate(
       queryClient,

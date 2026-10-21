@@ -11,6 +11,7 @@ import {
   type ApiScheduleEntryRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { scheduleKeys } from "./keys";
 
 const useScheduleApi = () => {
@@ -77,6 +78,7 @@ export const useDeleteScheduleMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (schedEntryId: number) => scheduleApi.deleteSchedule(org, schedEntryId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all(org) });
