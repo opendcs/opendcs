@@ -80,9 +80,9 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
       String msg = "Cannot perform operation because ";
       switch (ex)
       {
-         case RelatedDataConstraintException related -> msg = msg + " data in use.";
-         case UniqueConstraintViolationException unique -> msg = msg + " data already exists.";
-         case null, default -> msg = msg + " cannot perform operation due to constraint.";
+         case RelatedDataConstraintException related -> msg = msg + "the data is in use.";
+         case UniqueConstraintViolationException unique -> msg = msg + "the data already exists.";
+         case null, default -> msg = msg + "of a data constraint.";
       }
 log.atInfo().setCause(ex).log(msg);
       return Response.status(Response.Status.CONFLICT)
@@ -163,24 +163,13 @@ log.atInfo().setCause(ex).log(msg);
             .build();
    }
 
-   private static Response handle(ConstraintException dbex)
+   private static Response handle(ConstraintException ex)
    {
-      LoggingEventBuilder le = log.atWarn().setCause(dbex);
-      if(dbex.getCause() != null)
-      {
-         String tempCause = dbex.getCause().toString().toLowerCase();
-         if(tempCause.contains("duplicate key value violates unique constraint"))
-         {
-            le.log("There was an error saving this.  The most likely error is that there is a duplicate key value. " +
-                  "Please contact your system administrator for more information.");
-         }
-      }
-      else
-      {
-         le.log("Violated constraint exception thrown from request");
-      }
-      return Response.status(Response.Status.BAD_REQUEST)
-            .entity(new Status(INTERNAL_ERROR))
+      // The legacy DAOs write these messages for the user, e.g. "Cannot delete algorithm
+      // with ID=5 because 3 computations rely on it."
+      log.atInfo().setCause(ex).log("Violated constraint exception thrown from request");
+      return Response.status(Response.Status.CONFLICT)
+            .entity(new Status(ex.getMessage()))
             .type(MediaType.APPLICATION_JSON)
             .build();
    }

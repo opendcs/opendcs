@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import decodes.sql.DbKey;
+import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompAlgorithmScript;
@@ -427,6 +428,9 @@ public final class AlgorithmResources extends OpenDcsResource
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted algorithm"),
 					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required parameter"),
+					@ApiResponse(responseCode = "409", description = "Conflict - Algorithm is used by one or more computations",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
@@ -444,6 +448,15 @@ public final class AlgorithmResources extends OpenDcsResource
 			dai.deleteAlgorithm(DbKey.createDbKey(algorithmId));
 			return Response.noContent()
 					.build();
+		}
+		catch (DbIoException ex)
+		{
+			// AlgorithmDAO wraps its "computations rely on it" ConstraintException
+			if (ex.getCause() instanceof ConstraintException constraintEx)
+			{
+				throw constraintEx;
+			}
+			throw ex;
 		}
 	}
 }

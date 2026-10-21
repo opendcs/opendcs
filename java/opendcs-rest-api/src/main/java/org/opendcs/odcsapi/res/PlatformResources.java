@@ -52,6 +52,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.PlatformDao;
 import org.opendcs.database.dai.PlatformStatusDao;
 import org.opendcs.odcsapi.beans.ApiPlatform;
@@ -59,6 +60,7 @@ import org.opendcs.odcsapi.beans.ApiPlatformRef;
 import org.opendcs.odcsapi.beans.ApiPlatformSensor;
 import org.opendcs.odcsapi.beans.ApiPlatformStatus;
 import org.opendcs.odcsapi.beans.ApiTransportMedium;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -549,6 +551,9 @@ public final class PlatformResources extends OpenDcsResource
 					@ApiResponse(responseCode = "204", description = "Platform deleted successfully"),
 					@ApiResponse(responseCode = "400",
 							description = "Missing or invalid platform ID"),
+					@ApiResponse(responseCode = "409", description = "Platform is in use and cannot be deleted",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500",
 							description = "Database error occurred while deleting the platform")
 			},
@@ -579,6 +584,10 @@ public final class PlatformResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
+			if (ex.getCause() instanceof OpenDcsConstraintException constraintEx)
+			{
+				throw constraintEx;
+			}
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Unable to delete Platform", ex);
 		}
 	}

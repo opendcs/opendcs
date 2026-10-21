@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -586,6 +587,48 @@ final class PlatformResourcesIT extends BaseApiIT
 
 		// Delete the site
 		tearDownSite(newSiteId);
+	}
+
+	@Test
+	@EnableIfTsDb({"OpenDCS-Postgres"})
+	void testDeleteSiteUsedByPlatformFails()
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("siteid", siteId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("site")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CONFLICT.getStatusCode()))
+			.body("message", equalTo("Cannot perform operation because the data is in use."))
+		;
+	}
+
+	@Test
+	@EnableIfTsDb({"OpenDCS-Postgres"})
+	void testDeleteConfigUsedByPlatformFails()
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("configid", configId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("config")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CONFLICT.getStatusCode()))
+			.body("message", equalTo("Cannot perform operation because the data is in use."))
+		;
 	}
 
 	@Test

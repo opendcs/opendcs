@@ -355,13 +355,16 @@ public final class ComputationResources extends OpenDcsResource
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted computation"),
 					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter"),
+					@ApiResponse(responseCode = "409", description = "Conflict - Computation is in use and cannot be deleted",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
 	public Response deleteComputation(@Parameter(required = true, description = "Unique Computation ID",
 			schema = @Schema(implementation = Long.class, example = "4"))
 		@QueryParam("computationid") Long computationId)
-			throws DbException, WebAppException
+			throws DbException, WebAppException, ConstraintException
 	{
 		if (computationId == null)
 		{
@@ -374,7 +377,7 @@ public final class ComputationResources extends OpenDcsResource
 			return Response.noContent()
 					.entity(String.format("Computation with ID: %d deleted", computationId)).build();
 		}
-		catch(DbIoException | ConstraintException ex)
+		catch(DbIoException ex)
 		{
 			throw new DbException(String.format("Unable to delete computation by ID: %s", computationId), ex);
 		}

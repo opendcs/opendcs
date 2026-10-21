@@ -66,6 +66,7 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.opentsdb.Interval;
 
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.RoutingSpecDao;
 import org.opendcs.odcsapi.beans.ApiDacqEvent;
 import org.opendcs.odcsapi.beans.ApiRouting;
@@ -539,6 +540,9 @@ public final class RoutingResources extends OpenDcsResource
             responses = {
                     @ApiResponse(responseCode = "204", description = "Successfully deleted routing"),
                     @ApiResponse(responseCode = "400", description = "Missing required routingid parameter"),
+                    @ApiResponse(responseCode = "409", description = "Routing spec is in use and cannot be deleted",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = Status.class))),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
@@ -562,6 +566,10 @@ public final class RoutingResources extends OpenDcsResource
         }
         catch (OpenDcsDataException ex)
         {
+            if (ex.getCause() instanceof OpenDcsConstraintException constraintEx)
+            {
+                throw constraintEx;
+            }
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                                       "Unable to delete routing spec.",
                                       ex);

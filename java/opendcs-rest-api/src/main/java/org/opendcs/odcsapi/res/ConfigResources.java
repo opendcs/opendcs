@@ -64,6 +64,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.odcsapi.beans.ApiConfigRef;
@@ -73,6 +74,7 @@ import org.opendcs.odcsapi.beans.ApiConfigSensor;
 import org.opendcs.odcsapi.beans.ApiPlatformConfig;
 import org.opendcs.odcsapi.beans.ApiScriptFormatStatement;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
@@ -543,7 +545,7 @@ public final class ConfigResources extends OpenDcsResource
 	@Operation(
 			summary = "Delete Existing Config",
 			description = "Required argument configid must be passed.  \n\n"
-					+ "Error 405 will be returned if the referenced configuration is used by one "
+					+ "Error 409 will be returned if the referenced configuration is used by one "
 					+ "or more platforms and cannot be deleted.",
 			parameters = {
 					@Parameter(name = "configid", description = "The unique ID of the configuration to delete",
@@ -552,7 +554,9 @@ public final class ConfigResources extends OpenDcsResource
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted the configuration"),
 					@ApiResponse(responseCode = "400", description = "Missing or invalid configid parameter"),
-					@ApiResponse(responseCode = "405", description = "Configuration is in use and cannot be deleted"),
+					@ApiResponse(responseCode = "409", description = "Configuration is in use and cannot be deleted",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Database error occurred")
 			},
 			tags = {"REST - DECODES Platform Configurations"}
@@ -574,8 +578,6 @@ public final class ConfigResources extends OpenDcsResource
 		{
 			// no need to check if platforms use script, both the platform table
 			// has a foreign key on platformconfig that prevents deletion if used.
-			// will likely want to handle "foreign key errors" better
-			// but that should be generic to all deletes, not super specific.
 			return tx.wrapErrors(() ->
 			{
 				dao.delete(tx, DbKey.createDbKey(configId));
@@ -586,6 +588,10 @@ public final class ConfigResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
+			if (ex.getCause() instanceof OpenDcsConstraintException constraintEx)
+			{
+				throw constraintEx;
+			}
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
 						 			  "Unable to delete config", ex);
 		}
