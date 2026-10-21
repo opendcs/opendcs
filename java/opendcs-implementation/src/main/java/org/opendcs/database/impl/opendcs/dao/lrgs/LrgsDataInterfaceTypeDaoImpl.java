@@ -19,7 +19,6 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dao.lrgs.LrgsDataInterfaceTypeDao;
-import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.lrgs.LrgsDataInterfaceTypeMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
