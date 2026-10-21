@@ -7,7 +7,7 @@ create table lrgs_data_interface_type (
     name text unique,
     service_provider text,
     created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    updated_at timestamptz not null
 );
 
 -- instead of "data source" we'll just have "data interfaces"
@@ -19,7 +19,7 @@ create table lrgs_data_interface (
 	type_id bigint references lrgs_data_interface_type(id),
     config jsonb default '{}'::jsonb,
     created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    updated_at timestamptz not null
 );
 
 
@@ -34,7 +34,7 @@ create table lrgs_data_interface (
 create function purge_archive()
 returns trigger as $$
 begin
-    return new; -- re implementation will be in repeatable
+    return new; -- real implementation will be in repeatable
 end;
 $$ language plpgsql;
 
