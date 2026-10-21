@@ -35,7 +35,7 @@ export interface ComputationParamsTableProps {
  * @returns
  */
 function adjustCompParm(parm: CompParm): CompParm {
-  var ret = {
+  let ret = {
     ...parm,
   };
 
@@ -83,12 +83,6 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     () => intervals.map((i) => i.name ?? "").filter((n) => n.length > 0),
     [intervals],
   );
-  const [nextId, setNextId] = useState<number>(1);
-  const nextIdRef = useRef<number>(nextId);
-
-  useEffect(() => {
-    nextIdRef.current = nextId;
-  }, [nextId]);
 
   const intervalOptions = useMemo(() => {
     const opts = new Set<string>(defaultIntervals);
@@ -392,7 +386,6 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       deltaTUnits: "Seconds",
       ifMissing: "FAIL",
     };
-    setNextId(nextIdRef.current + 1);
     return ret;
   };
 
