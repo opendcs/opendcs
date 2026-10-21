@@ -104,10 +104,16 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 		int fieldStart = dd.getBytePos();
 		try
 		{		
-			char current = (char)dd.curByte();	
-			while(!(current == '\n' || current == '\r'))
+			
+			while (dd.moreChars())
 			{
-				if (current == '&' || !dd.moreChars())
+				char current = (char) dd.curByte();
+				if (current == '\n' || current == '\r')
+				{
+					dd.forwardspace();
+					break;
+				}
+				if (current == '&')
 				{
 					log.info("Processing {}", sb);
 					processPair(sb.toString(), decmsg, dd.getCurrentLine(), fieldStart, dd);
@@ -119,11 +125,11 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 					sb.append(current);
 				}
 				dd.forwardspace();
-				current = (char) dd.curByte();
 			}
 
 			if (!sb.isEmpty())
 			{
+				log.info("Processing {} (final)", sb);
 				processPair(sb.toString(), decmsg, dd.getCurrentLine(), fieldStart, dd);
 			}
 
@@ -131,6 +137,7 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 		catch(EndOfDataException ex)
 		{
 			if (!sb.isEmpty()) {
+				log.info("Processing {} (exception)", sb);
 				processPair(sb.toString(), decmsg, dd.getCurrentLine(), fieldStart, dd);
 			}
 			log.trace("End of message reached");
