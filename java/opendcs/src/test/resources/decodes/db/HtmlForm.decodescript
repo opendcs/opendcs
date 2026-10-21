@@ -1,2 +1,3 @@
 time: F(D,A,10,4), x, F(T,A,8), / > form
-form: htmlformdata(1,2,3)
+form: htmlformdata(1,2,3) > with_date
+with_date: htmlformdata(1,2,3)
