@@ -17,7 +17,7 @@
   "ascendingTime" : false,
   "platformIds" : [ ],
   "platformNames" : [ ],
-  "netlistNames" : [ ],
+  "netlistNames" : [ "<all>" ],
   "goesChannels" : [ ],
   "properties" : {
     "goesChannel" : "1",
