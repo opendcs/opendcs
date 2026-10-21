@@ -138,13 +138,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             registerMappers(select, allData);
             return select.bind(whereKey, whereBind)
                          .reduceRows(new RoutingSpecReducer(allData))
-                         .map(rs ->
-                         {
-                            rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
-                            rs.setProperty("RoutingSpecName", rs.getName());
-                            rs.forceSetPrepared();
-                            return rs;
-                         })
+                         .map(RoutingSpecDaoImpl::cleanUpSpec)
                          .findFirst();
         }
 
@@ -395,18 +389,25 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             }
 
             return select.reduceRows(new RoutingSpecReducer(mappers))
-                         .map(rs ->
-                         {
-                            if (rs.outputTimeZoneAbbr == null)
-                            {
-                                rs.outputTimeZoneAbbr = "UTC";
-                            }
-                            rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
-                            rs.setProperty("RoutingSpecName", rs.getName());
-                            rs.forceSetPrepared();
-                            return rs;
-                         })
+                         .map(RoutingSpecDaoImpl::cleanUpSpec)
                          .toList();
         }
+    }
+
+    /**
+     * Covers settings that may not be pulled fully from the database.
+     * @param rs
+     * @return
+     */
+    private static RoutingSpec cleanUpSpec(RoutingSpec rs)
+    {
+        if (rs.outputTimeZoneAbbr == null)
+        {
+            rs.outputTimeZoneAbbr = "UTC";
+        }
+        rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
+        rs.setProperty("RoutingSpecName", rs.getName());
+        rs.forceSetPrepared();
+        return rs;
     }
 }
