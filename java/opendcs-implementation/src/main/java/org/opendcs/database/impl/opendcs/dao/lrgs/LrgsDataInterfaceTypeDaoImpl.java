@@ -97,22 +97,28 @@ public class LrgsDataInterfaceTypeDaoImpl implements LrgsDataInterfaceTypeDao
                                    .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
-            merge.setSqlLogger(new DetailSqlLogger(log));
-            DatabaseKey id = DbKey.NullKey;
-            var existing = getByName(tx, entry.name());
-            if (existing.isPresent())
+            DbKey id = (DbKey)entry.id();
+            if (DbKey.isNull(id)) // if we have an id, we'll assume it's correct.
             {
-                // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
-                id = existing.get().id();
-                log.trace("""
-                    Using ID from existing LrgsDataInterfaceType, id={}, that was found. Provided ID was {}.
-                    """,
-                    id, entry.id());
+                var existing = getByName(tx, entry.name());
+                if (existing.isPresent())
+                {
+                    // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                    id = (DbKey)existing.get().id();
+                    log.trace("""
+                        Using ID from existing LrgsDataInterfaceType, id={}, that was found. Provided ID was {}.
+                        """,
+                        id, entry.id());
+                }
+                else
+                {
+                    id = DbKey.NullKey;
+                }
             }
             final var bindKey = id;
 
 
-            merge.bind(GenericColumns.ID.column(), (DbKey)bindKey) // this should have more type safety
+            merge.bind(GenericColumns.ID.column(), bindKey) // this should have more type safety
                                                                    // however, at present we only use
                                                                    // DbKey
                  .bind(GenericColumns.NAME.column(), entry.name())

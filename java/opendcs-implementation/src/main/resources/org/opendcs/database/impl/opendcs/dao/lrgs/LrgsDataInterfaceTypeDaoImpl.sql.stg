@@ -19,5 +19,5 @@ merge(dual) ::= <<
 >>
 
 
-delete ::= "delete from lrgs_data_interface_type where id = :id"
+delete() ::= "delete from lrgs_data_interface_type where id = :id"
 
