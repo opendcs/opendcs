@@ -49,13 +49,11 @@ class LrgsDataInterfaceTypeDaoTest extends AppTestBase
             assertEquals(typeOut, typeOutSp);
 
             var typeInUpdate = new LrgsDataInterfaceType(typeOut.id(), "updated", typeOut.serviceProvider(), null, null);
-            Thread.sleep(2000); // needs a brief amount of time to that the update_at is different
+            Thread.sleep(20); // needs a brief amount of time to that the update_at is different
             var typeOutUpdate = dao.save(tx, typeInUpdate);
             assertNotEquals(typeOut, typeOutUpdate);
             assertEquals(typeOut.createdAt(), typeOutUpdate.createdAt());
-            System.out.println(typeOut.updatedAt());
-            System.out.println(typeOutUpdate.updatedAt());
-            assertNotEquals(typeOut.updatedAt().toInstant(), typeOutUpdate.updatedAt().toInstant());
+            assertNotEquals(typeOut.updatedAt(), typeOutUpdate.updatedAt());
 
             dao.delete(tx, typeOut.id());
 
