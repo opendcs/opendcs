@@ -2,7 +2,6 @@ package org.opendcs.database.apps;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -11,6 +10,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.apps.exceptions.OpenDcsApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
  * 
  * applicationExecutor and taskExecutor <b>can</b> the same instance.
  * if taskExector is not set this will be done.
- * 
+ *
  * If appExecutor is not set a default pool will be used.
  * 
  * StandaloneApp
@@ -68,7 +68,8 @@ public abstract class StandaloneApp
      * Application loop should perform any required operations quickly and return. Most likely passing
      * operations on to the task executor.
      * 
-     * The only restriction is that {@link stop}
+     * The only restriction is that {@link stop} will wait up to {@link AppBuilder#shutdownWait} milliseconds
+     * and then call {@link java.util.concurrent.Future#cancel(true)} to force termination.
      */
     public abstract void loop();
 
@@ -120,11 +121,14 @@ public abstract class StandaloneApp
         }
     }
 
-    protected Future<?> getFuture()
-    {
-        return loopFuture;
-    }
-
+    /**
+     * Base builder to handle required elements. Applications can and should
+     * expand from this builder with additional information and objects require
+     * for their operations
+     * AppBuilder
+     * @param <T> Application Class
+     * @param <B> Application Builder Class
+     */
     public static abstract class AppBuilder<T extends StandaloneApp, B extends AppBuilder<T,B>>
     {
         private OpenDcsDatabase db;
@@ -158,6 +162,19 @@ public abstract class StandaloneApp
             return self();
         }
 
-        public abstract T build(); 
+        /**
+         * Construct new instance of StandaloneApp of type T.
+         * 
+         * NOTE: The constructor of Standalone app will handle
+         * default executors if none are set. See the class
+         * behavior to determine if the default behavior is exceptable
+         * to the application operations and set values as required
+         * in your build method implementation.
+         * 
+         * 
+         * @return
+         * @throws OpenDcsApplicationException if the configuration of the builder is invalid
+         */
+        public abstract T build() throws OpenDcsApplicationException; 
     }
 }

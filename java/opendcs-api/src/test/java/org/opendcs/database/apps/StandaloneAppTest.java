@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
+import org.opendcs.database.apps.exceptions.OpenDcsApplicationException;
 
 class StandaloneAppTest 
 {
@@ -103,7 +104,7 @@ class StandaloneAppTest
             }
 
             @Override
-            public TestApp build()
+            public TestApp build() throws OpenDcsApplicationException
             {
                 return new TestApp(this);
             }
