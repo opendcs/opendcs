@@ -24,14 +24,14 @@ import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.model.UserBuilder;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.GenericColumns;
 
 import decodes.sql.DbKey;
 
-public final class UserBuilderMapper extends PrefixRowMapper<UserBuilder,UserBuilderMapper.Columns>
+public final class UserBuilderMapper extends OpenDcsTableMapper<UserBuilder,UserBuilderMapper.Columns>
 {
     /**
      * Used for queries referencing the user id as a foreign key

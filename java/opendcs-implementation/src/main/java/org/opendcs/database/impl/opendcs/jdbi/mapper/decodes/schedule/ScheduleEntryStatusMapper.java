@@ -24,11 +24,11 @@ import java.util.Date;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
-public class ScheduleEntryStatusMapper extends PrefixRowMapper<ScheduleEntryStatus, ScheduleEntryStatusMapper.Columns>
+public class ScheduleEntryStatusMapper extends OpenDcsTableMapper<ScheduleEntryStatus, ScheduleEntryStatusMapper.Columns>
 {
     ScheduleEntryStatusMapper(String prefix)
     {
