@@ -18,7 +18,7 @@ class StandaloneAppTest
     {
         var app = new TestApp.Builder().withMessage("Test").build();
 
-        app.start();
+        assertTrue(app.start().isSuccess());
         
         Thread.sleep(400);
         app.stop();
@@ -36,10 +36,12 @@ class StandaloneAppTest
                              .withLoopWait(500)
                              .build();
         
-        app.start();
+        assertTrue(app.start().isSuccess());
         Thread.sleep(200); // let things get going
 
-        assertFalse(app.stop());
+        var result = app.stop();
+        assertTrue(result.isFailure());
+        assertTrue(result.failure().getMessage().contains("Terminating Forcibly"));
     }
 
 
@@ -61,6 +63,19 @@ class StandaloneAppTest
         public void init()
         {
             messages.push(message + messageIdx.getAndIncrement());
+        }
+
+        @Override 
+        public void terminate()
+        {
+            try
+            {
+                Thread.sleep(loopWait);
+            }
+            catch (InterruptedException ex)
+            {
+                Thread.currentThread().interrupt();
+            }
         }
 
         @Override
