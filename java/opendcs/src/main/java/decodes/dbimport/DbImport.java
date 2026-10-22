@@ -264,7 +264,18 @@ public class DbImport
 		     boolean platformRelatedOnly, boolean allowHistorical, String pdtFilePath, String newDesignator,
 			 String defaultAgency, String newPlatformOwner, List<String> files) throws DatabaseException
 	{
+		this(loadDatabaseFromProfile(profile), validateOnly, keepOld, overwriteDb, platformRelatedOnly,
+			 allowHistorical, pdtFilePath, newDesignator, defaultAgency, newPlatformOwner, files);
+	}
 
+	/**
+	 * Constructor for the REST API with a pre-loaded legacy Database.
+	 * The Profile-based constructor above delegates here after loading the database.
+	 */
+	public DbImport(Database theDb, boolean validateOnly, boolean keepOld, boolean overwriteDb, // NOSONAR - keeps parity with the legacy Profile-based constructor above (S107); signature set is fixed by the dbimport command line.
+		     boolean platformRelatedOnly, boolean allowHistorical, String pdtFilePath, String newDesignator,
+			 String defaultAgency, String newPlatformOwner, List<String> files)
+	{
 		this.files = files;
 		this.platformRelatedOnly = platformRelatedOnly;
 		this.overwriteDb = overwriteDb;
@@ -274,21 +285,9 @@ public class DbImport
 		this.newDesignator = newDesignator;
 		this.defaultAgency = defaultAgency;
 		this.newPlatformOwner = newPlatformOwner;
-		// Construct the database and the interface specified by properties.
-		try
-		{
-			DecodesSettings settings = DecodesSettings.instance();
-			// unfortunately we still need to use the global decodes settings here.
-			settings.loadFromProfile(profile);
-			OpenDcsDatabase databases = DatabaseService.getDatabaseFor(null, settings);				
-			theDb = databases.getLegacyDatabase(Database.class).get();
-			Database.setDb(theDb);
-			theDbio = theDb.getDbIo();
-		}
-		catch (IOException ex)
-		{
-			throw new DatabaseException("Unable to initialize target database.",ex);
-		}
+		Database.setDb(theDb);
+		this.theDb = theDb;
+		theDbio = theDb.getDbIo();
 
 		// Standard Database Initialization for all Apps:
 		Site.explicitList = false; // YES Sites automatically added to SiteList
@@ -312,6 +311,25 @@ public class DbImport
 		}
 
 		PlatformListIO.isDbImport = true;
+	}
+
+	private static Database loadDatabaseFromProfile(Profile profile) throws DatabaseException
+	{
+		// Construct the database and the interface specified by properties.
+		try
+		{
+			DecodesSettings settings = DecodesSettings.instance();
+			// unfortunately we still need to use the global decodes settings here.
+			settings.loadFromProfile(profile);
+			OpenDcsDatabase databases = DatabaseService.getDatabaseFor(null, settings);
+			Database theDb = databases.getLegacyDatabase(Database.class).get();
+			Database.setDb(theDb);
+			return theDb;
+		}
+		catch (IOException ex)
+		{
+			throw new DatabaseException("Unable to initialize target database.",ex);
+		}
 	}
 
 	/**
