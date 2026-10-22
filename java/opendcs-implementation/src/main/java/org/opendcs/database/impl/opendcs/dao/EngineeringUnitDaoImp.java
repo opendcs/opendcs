@@ -9,7 +9,7 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.database.model.mappers.engineeringunit.EngineeringUnitMapper;
-import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.database.model.mappers.engineeringunit.EngineeringUnitMapper.Columns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
@@ -17,6 +17,7 @@ import org.openide.util.lookup.ServiceProvider;
 import decodes.db.EngineeringUnit;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
 @ServiceProvider(service = EngineeringUnitDao.class)
 public class EngineeringUnitDaoImp implements EngineeringUnitDao
@@ -42,10 +43,10 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
         try (var query = handle.createUpdate(insertSql)
                                .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : ""))
         {
-            query.bind("unitabbr", unit.getAbbr())
-                 .bind(GenericColumns.NAME.column(), unit.getName())
-                 .bind("family", unit.getFamily())
-                 .bind("measures", unit.getMeasures())
+            query.bind(Columns.UNIT_ABBR.column(), unit.getAbbr())
+                 .bind(Columns.NAME.column(), unit.getName())
+                 .bind(Columns.FAMILY.column(), unit.getFamily())
+                 .bind(Columns.MEASURES.column(), unit.getMeasures())
                  .execute();
             return getByName(tx, unit.abbr).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Engineering Unit we just saved."));
         }
@@ -59,7 +60,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
         final var deleteDataTypeSql = "delete from engineeringunit where unitabbr = :unitabbr";
         try (var deleteDataType = handle.createUpdate(deleteDataTypeSql))
         {
-            deleteDataType.bind("unitabbr", unitAbbreviation).execute();
+            deleteDataType.bind(Columns.UNIT_ABBR.column(), unitAbbreviation).execute();
         }
     }
 
@@ -108,7 +109,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
                 query.bind(SqlKeywords.OFFSET, offset);
             }
             return query.define("limit", addLimitOffset(limit, offset))
-                        .define("collate", dbType == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY")
+                        .define("collate", collateClauseFor(dbType))
                         .registerRowMapper(EngineeringUnit.class, EngineeringUnitMapper.withPrefix(""))
                         .mapTo(EngineeringUnit.class)
                         .list();
