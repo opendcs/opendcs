@@ -15,6 +15,7 @@ dependencies {
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
     testRuntimeOnly (libs.bundles.junit.platform)
+    testRuntimeOnly (libs.org.slf4j.simple)
 }
 
 publishing {
