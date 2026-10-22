@@ -7,6 +7,7 @@ import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.apps.StandaloneApp;
+import org.opendcs.database.apps.exceptions.OpenDcsApplicationException;
 import org.opendcs.database.dai.LoadingAppDao;
 import org.opendcs.database.dai.RoutingSpecDao;
 import org.opendcs.database.dai.ScheduleEntryDao;
@@ -83,10 +84,9 @@ public class RoutingScheduler extends StandaloneApp
         }
 
         @Override
-        public RoutingScheduler build()
+        public RoutingScheduler build() throws OpenDcsApplicationException
         {
             return new RoutingScheduler(this);
         }
-
     }
 }
