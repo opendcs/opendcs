@@ -10,14 +10,14 @@ import org.opendcs.data.lrgs.LrgsDataInterface;
 import org.opendcs.data.lrgs.LrgsDataInterfaceType;
 import org.opendcs.database.DatabaseKey;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
-public class LrgsDataInterfaceMapper extends PrefixRowMapper<LrgsDataInterface, LrgsDataInterfaceMapper.Columns>
+public class LrgsDataInterfaceMapper extends OpenDcsTableMapper<LrgsDataInterface, LrgsDataInterfaceMapper.Columns>
 {
     private LrgsDataInterfaceMapper(String prefix)
     {

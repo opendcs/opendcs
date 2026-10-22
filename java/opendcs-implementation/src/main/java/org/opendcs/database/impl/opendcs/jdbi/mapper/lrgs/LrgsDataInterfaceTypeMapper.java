@@ -6,14 +6,14 @@ import java.time.ZonedDateTime;
 
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.data.lrgs.LrgsDataInterfaceType;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
-public class LrgsDataInterfaceTypeMapper extends PrefixRowMapper<LrgsDataInterfaceType, LrgsDataInterfaceTypeMapper.Columns>
+public class LrgsDataInterfaceTypeMapper extends OpenDcsTableMapper<LrgsDataInterfaceType, LrgsDataInterfaceTypeMapper.Columns>
 {
     private LrgsDataInterfaceTypeMapper(String prefix)
     {
