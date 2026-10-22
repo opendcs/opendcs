@@ -124,7 +124,17 @@ public class CwmsOracleConfiguration implements Configuration
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
             Jdbi jdbi = mm.getJdbiHandle();
             try (var handle = jdbi.open();
-                 var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)"))
+                 var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)");
+                 /**
+                  * There is a bug in the database cache removal code that interferes with our rapid delete/insert operations.
+                  * Since we don't have a large number of locations in the tests, we'll just disable those caches for the tests
+                  */
+                 var disableCaching = handle.createCall("""
+                    begin
+                     cwms_cache.disable(cwms_loc.g_location_id_cache);
+                     cwms_cache.disable(cwms_loc.g_location_code_cache);
+                    end;
+                    """))
             {
                 insertDbType.bind("name", "editDatabaseType")
                             .bind("value", getName())
@@ -135,6 +145,8 @@ public class CwmsOracleConfiguration implements Configuration
                 insertDbType.bind("name", "writeCwmsLocations")
                             .bind("value", "true")
                             .execute();
+                log.info("Disabling CWMS Location Caches");
+                disableCaching.invoke();
             }
         }
 

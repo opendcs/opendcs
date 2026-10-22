@@ -207,7 +207,6 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
         var ctx = tx.getContext();
         var settings = ctx.getSettings(DecodesSettings.class)
                           .orElseThrow(() -> new OpenDcsDataException("No DecodesSettings are available?"));
-        final var officeId = settings.CwmsOfficeId;
         if (!settings.writeCwmsLocations)
         {
             throw new OpenDcsDataException("The Current profile does not allow writing CWMS locations.");
@@ -255,7 +254,8 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                 """;
 
          try (var store = handle.createCall(storeSql);
-            var getCode = handle.createQuery("select cwms_loc.get_location_code(:cwmsofficeid, :name) id from dual");
+            // office is not bound so that what ever session office is currently setup is used.
+            var getCode = handle.createQuery("select cwms_loc.get_location_code(p_db_office_id => null, p_location_id => :name) id from dual");
             var deleteProps = handle.createUpdate(DELETE_PROPS);
             var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);
@@ -267,6 +267,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             if (existing.isPresent())
             {
                 // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                // We'll also assume that any null values should remain what is in the database
                 ignoreNulls = 'T';
                 log.trace("""
                     Updating an existing site. For Cwms Site update ignore nulls will be set to true,
@@ -301,8 +302,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                  .bind(CwmsSite.BOUNDING_OFFICE, site.getProperty(CwmsSite.BOUNDING_OFFICE))
                  .invoke();
 
-            final var idOut = getCode.bind(CwmsConstants.CWMS_OFFICE_ID, officeId)
-                                     .bind(GenericColumns.NAME.column(), cwmsName.getNameValue())
+            final var idOut = getCode.bind(GenericColumns.NAME.column(), cwmsName.getNameValue())
                                      .mapTo(DbKey.class)
                                      .findOne()
                                      .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve location code for the CWMS Location we just saved."))
