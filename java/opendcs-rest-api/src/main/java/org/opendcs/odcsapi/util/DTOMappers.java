@@ -25,8 +25,6 @@ import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
 import org.opendcs.odcsapi.beans.ApiTimeSeriesValue;
 
-import static java.util.stream.Collectors.toList;
-
 public final class DTOMappers
 {
 	private DTOMappers()
@@ -237,7 +235,6 @@ public final class DTOMappers
 		ret.setTableSelector(parm.getTableSelector());
 		ret.setInterval(parm.getInterval());
 		ret.setDeltaT(parm.getDeltaT());
-		ret.setUnitsAbbr(parm.getUnitsAbbr());
 		return ret;
 	}
 
@@ -289,7 +286,22 @@ public final class DTOMappers
 		ret.setParmList(new ArrayList<>(comp.getParmList()
 				.stream()
 				.map(DTOMappers::map)
-				.collect(toList())));
+				.map(p ->
+				{
+					var roleUnits = comp.getProperty(p.getAlgoRoleName() + "_EU");
+					if (roleUnits != null)
+					{
+						p.setUnitsAbbr(roleUnits);
+					}
+
+					var missingAction = comp.getProperty(p.getAlgoRoleName() + "_MISSING");
+					if (missingAction != null)
+					{
+						p.setIfMissing(missingAction);
+					}
+					return p;
+				})
+				.toList()));
 		return ret;
 	}
 
@@ -387,7 +399,16 @@ public final class DTOMappers
 		}
 		for (ApiCompParm parm : comp.getParmList())
 		{
-			ret.addParm(DTOMappers.map(parm));
+			var p = DTOMappers.map(parm);
+			if (parm.getUnitsAbbr() != null)
+			{
+				ret.setProperty(p.getRoleName() + "_EU", parm.getUnitsAbbr());
+			}
+			if (parm.getIfMissing() != null)
+			{
+				ret.setProperty(p.getRoleName() + "_MISSING", parm.getIfMissing());
+			}
+			ret.addParm(p);
 		}
 		return ret;
 	}

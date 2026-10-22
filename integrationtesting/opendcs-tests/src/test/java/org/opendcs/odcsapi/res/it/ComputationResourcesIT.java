@@ -616,6 +616,7 @@ final class ComputationResourcesIT extends BaseApiIT
 			assertEquals(parm.getSiteName(), actualItem.get("siteName"));
 			assertEquals(parm.getDataType(), actualItem.get("dataType"));
 			assertEquals(parm.getInterval(), actualItem.get("interval"));
+			assertEquals("cms", parm.getUnitsAbbr());
 			i++;
 		}
 
