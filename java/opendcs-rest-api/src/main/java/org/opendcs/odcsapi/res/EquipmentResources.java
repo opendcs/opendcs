@@ -38,7 +38,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.EquipmentModelDao;
 import org.opendcs.odcsapi.beans.ApiEquipmentModel;
 import org.opendcs.odcsapi.beans.ApiEquipmentModelRef;
@@ -221,10 +220,6 @@ public final class EquipmentResources extends OpenDcsResource
         }
         catch (OpenDcsDataException ex)
         {
-            if (ex.getCause() instanceof OpenDcsConstraintException constraintEx)
-            {
-                throw constraintEx;
-            }
             throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                                       "Unable to delete equipment model.", ex);
         }

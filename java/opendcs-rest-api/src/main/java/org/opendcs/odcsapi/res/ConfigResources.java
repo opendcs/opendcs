@@ -64,7 +64,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.odcsapi.beans.ApiConfigRef;
@@ -588,10 +587,6 @@ public final class ConfigResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
-			if (ex.getCause() instanceof OpenDcsConstraintException constraintEx)
-			{
-				throw constraintEx;
-			}
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
 						 			  "Unable to delete config", ex);
 		}

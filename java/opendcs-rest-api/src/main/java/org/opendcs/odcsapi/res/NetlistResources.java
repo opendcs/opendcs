@@ -47,7 +47,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.NetworkListDao;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiNetListItem;
@@ -372,18 +371,6 @@ public final class NetlistResources extends OpenDcsResource
                 dao.delete(tx, DbKey.createDbKey(netlistId));
                 return Response.noContent().entity("ID " + netlistId + " deleted").build();
             });
-        }
-        catch (OpenDcsDataException ex)
-        {
-            if (ex.getCause() instanceof OpenDcsConstraintException constraintEx)
-            {
-                // NetworkListDao names the routing specs that still use the list.
-                return Response.status(Response.Status.CONFLICT)
-                                  .entity(new Status(constraintEx.getMessage()))
-                                  .type(MediaType.APPLICATION_JSON)
-                                  .build();
-            }
-            throw ex;
         }
     }
 

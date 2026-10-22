@@ -48,7 +48,6 @@ import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.CompLockDao;
 import org.opendcs.database.dai.LoadingAppDao;
 
@@ -285,10 +284,6 @@ public final class AppResources extends OpenDcsResource
 		}
 		catch (OpenDcsDataException ex)
 		{
-			if (ex.getCause() instanceof OpenDcsConstraintException constraintEx)
-			{
-				throw constraintEx;
-			}
 			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
 									  "Unable to delete Loading APp", ex);
 		}

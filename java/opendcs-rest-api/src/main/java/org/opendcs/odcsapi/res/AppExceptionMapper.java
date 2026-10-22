@@ -15,6 +15,8 @@
 
 package org.opendcs.odcsapi.res;
 
+import java.util.Optional;
+
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.TsdbException;
 import io.opentelemetry.api.trace.Span;
@@ -44,6 +46,7 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 
    private static final Logger log = OpenDcsLoggerFactory.getLogger();
    private static final String INTERNAL_ERROR = "There was an error.  Please contact your sys admin.";
+   private static final int MAX_CAUSE_DEPTH = 5;
 
    @Override
    public Response toResponse(Throwable ex)
@@ -51,7 +54,7 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
       var span = Span.current();
       span.recordException(ex);
       span.setStatus(StatusCode.ERROR, ex.getMessage());
-      return switch(ex)
+      return switch(findConstraintViolation(ex).orElse(ex))
       {
          case WebAppException webAppException -> handle(webAppException);
          case ConstraintException constraintException -> handle(constraintException);
@@ -63,6 +66,25 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
          case OpenDcsDataRuntimeException odcs -> toResponse(odcs.getCause());
          case null, default -> handle(ex);
       };
+   }
+
+   /**
+    * Resources wrap DAO errors in WebAppException, DbException, OpenDcsDataException and the like,
+    * so a constraint violation can sit a few causes down. Finding it here answers 409 for every
+    * resource without each one unwrapping it.
+    */
+   private static Optional<Throwable> findConstraintViolation(Throwable ex)
+   {
+      Throwable cause = ex;
+      for (int depth = 0; cause != null && depth <= MAX_CAUSE_DEPTH; depth++)
+      {
+         if (cause instanceof OpenDcsConstraintException || cause instanceof ConstraintException)
+         {
+            return Optional.of(cause);
+         }
+         cause = cause.getCause();
+      }
+      return Optional.empty();
    }
 
    private static Response handle(Throwable ex)
@@ -77,18 +99,25 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 
    private static Response handle(OpenDcsConstraintException ex)
    {
-      String msg = "Cannot perform operation because ";
-      switch (ex)
-      {
-         case RelatedDataConstraintException related -> msg = msg + "the data is in use.";
-         case UniqueConstraintViolationException unique -> msg = msg + "the data already exists.";
-         case null, default -> msg = msg + "of a data constraint.";
-      }
-log.atInfo().setCause(ex).log(msg);
+      // A DAO that throws one itself writes the message for the user, e.g. which routing specs use a
+      // network list. One translated from a SQLException carries the database's text, so describe it instead.
+      String msg = ex.getCause() == null ? ex.getMessage() : describe(ex);
+      log.atInfo().setCause(ex).log(msg);
       return Response.status(Response.Status.CONFLICT)
                    .entity(new Status(msg))
                    .type(MediaType.APPLICATION_JSON)
                   .build();
+   }
+
+   private static String describe(OpenDcsConstraintException ex)
+   {
+      String msg = "Cannot perform operation because ";
+      return switch (ex)
+      {
+         case RelatedDataConstraintException related -> msg + "the data is in use.";
+         case UniqueConstraintViolationException unique -> msg + "the data already exists.";
+         default -> msg + "of a data constraint.";
+      };
    }
 
    private static Response handle(UnsupportedOperationException wae)

@@ -364,7 +364,7 @@ public final class ComputationResources extends OpenDcsResource
 	public Response deleteComputation(@Parameter(required = true, description = "Unique Computation ID",
 			schema = @Schema(implementation = Long.class, example = "4"))
 		@QueryParam("computationid") Long computationId)
-			throws DbException, WebAppException, ConstraintException
+			throws DbException, WebAppException
 	{
 		if (computationId == null)
 		{
@@ -377,7 +377,7 @@ public final class ComputationResources extends OpenDcsResource
 			return Response.noContent()
 					.entity(String.format("Computation with ID: %d deleted", computationId)).build();
 		}
-		catch(DbIoException ex)
+		catch(DbIoException | ConstraintException ex)
 		{
 			throw new DbException(String.format("Unable to delete computation by ID: %s", computationId), ex);
 		}

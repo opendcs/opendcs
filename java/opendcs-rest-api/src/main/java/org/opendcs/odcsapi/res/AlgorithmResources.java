@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import decodes.sql.DbKey;
-import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompAlgorithmScript;
@@ -448,15 +447,6 @@ public final class AlgorithmResources extends OpenDcsResource
 			dai.deleteAlgorithm(DbKey.createDbKey(algorithmId));
 			return Response.noContent()
 					.build();
-		}
-		catch (DbIoException ex)
-		{
-			// AlgorithmDAO wraps its "computations rely on it" ConstraintException
-			if (ex.getCause() instanceof ConstraintException constraintEx)
-			{
-				throw constraintEx;
-			}
-			throw ex;
 		}
 	}
 }
