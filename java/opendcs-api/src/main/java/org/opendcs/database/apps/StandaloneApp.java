@@ -25,6 +25,9 @@ import org.slf4j.LoggerFactory;
  *
  * If appExecutor is not set a default pool will be used.
  *
+ * The design is such that init, loop, and terminate do <b>NOT</b> need to synchronize objects.
+ * if one is running the anothers cannot be. 
+ * 
  * StandaloneApp
  */
 public abstract class StandaloneApp
@@ -48,10 +51,12 @@ public abstract class StandaloneApp
 
     private ScheduledFuture<?> loopFuture;
     private final long shutdownWait;
+    private final long loopWait;
 
     protected StandaloneApp(AppBuilder<?,?> builder)
     {
         this.db = builder.db;
+        this.loopWait = builder.loopWait;
         this.shutdownWait = builder.shutdownWait;
         this.appExecutor = builder.appExecutor != null ? builder.appExecutor : Executors.newScheduledThreadPool(2);
         this.taskExecutor = builder.taskExecutor != null ? builder.taskExecutor : this.appExecutor;
@@ -77,6 +82,11 @@ public abstract class StandaloneApp
 
     public abstract void terminate();
 
+    public boolean isRunning()
+    {
+        return loopFuture != null ? !loopFuture.isDone() : false;
+    }
+
     /**
      * Start applicated on the even appExecutor
      * @return Result of true if success, otherwise the cause of failure.
@@ -100,8 +110,19 @@ public abstract class StandaloneApp
                         }
                         else
                         {
-                            return appExecutor.scheduleWithFixedDelay(this::loop,0,
-                                                                      200, TimeUnit.MILLISECONDS);
+                            return appExecutor.scheduleWithFixedDelay(
+                                () ->
+                                {
+                                    try
+                                    {
+                                        this.loop();
+                                    }
+                                    catch (Throwable ex2) // NOSONAR. We have to catch everything here.
+                                    {
+                                        log.atError().setCause(ex).log("Error in application loop.");
+                                        throw ex2;
+                                    }
+                                },0,                     loopWait, TimeUnit.MILLISECONDS);
                         }
                     }, appExecutor)
                     .exceptionally(ex ->
@@ -178,6 +199,7 @@ public abstract class StandaloneApp
         private ScheduledExecutorService appExecutor;
         private ScheduledExecutorService taskExecutor;
         private long shutdownWait = 30000;
+        private long loopWait = 200;
 
         protected abstract B self();
 
@@ -209,6 +231,19 @@ public abstract class StandaloneApp
         public B withShutdownWait(long amount, TimeUnit unit)
         {
             this.shutdownWait = unit.toMillis(amount);
+            return self();
+        }
+
+        /**
+         * How long to wait between executions of the application main loop.
+         * Default is 200 miliseconds. A given application builder may use a different default.
+         * @param amount amount of time unit
+         * @param unit the time unit
+         * @return
+         */
+        public B withLoopWait(long amount, TimeUnit unit)
+        {
+            this.loopWait = unit.toMillis(amount);
             return self();
         }
 
