@@ -105,15 +105,15 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         var ret = findBy(tx, uniqueString);
         if (ret.isSuccess())
         {
-            return ret.getSuccess();
+            return ret.success();
         }
-        else if (ret.getFailure().getCause() instanceof BadTimeSeriesException btse)
+        else if (ret.failure().getCause() instanceof BadTimeSeriesException btse)
         {
             throw btse;
         }
         else
         {
-            throw ret.getFailure();
+            throw ret.failure();
         }
     }
 
@@ -124,15 +124,15 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         var ret = findBy(tx, key);
         if (ret.isSuccess())
         {
-            return ret.getSuccess();
+            return ret.success();
         }
-        else if (ret.getFailure().getCause() instanceof BadTimeSeriesException btse)
+        else if (ret.failure().getCause() instanceof BadTimeSeriesException btse)
         {
             throw btse;
         }
         else
         {
-            throw ret.getFailure();
+            throw ret.failure();
         }
     }
 

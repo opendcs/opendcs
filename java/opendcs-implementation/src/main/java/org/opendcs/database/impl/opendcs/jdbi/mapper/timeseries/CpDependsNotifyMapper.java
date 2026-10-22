@@ -6,7 +6,7 @@ import java.util.Date;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
@@ -14,7 +14,7 @@ import decodes.sql.DbKey;
 import decodes.tsdb.CpDependsNotify;
 
 @SuppressWarnings("java:S2143")
-public class CpDependsNotifyMapper extends PrefixRowMapper<CpDependsNotify, CpDependsNotifyMapper.Columns>
+public class CpDependsNotifyMapper extends OpenDcsTableMapper<CpDependsNotify, CpDependsNotifyMapper.Columns>
 {
     private static final CpDependsNotifyMapper DEFAULT_INSTANCE = new CpDependsNotifyMapper("");
 

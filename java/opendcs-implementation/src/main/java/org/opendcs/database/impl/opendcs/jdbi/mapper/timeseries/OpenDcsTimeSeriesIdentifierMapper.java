@@ -6,7 +6,7 @@ import java.util.Date;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -16,7 +16,7 @@ import decodes.sql.DbKey;
 import decodes.tsdb.TimeSeriesIdentifier;
 import opendcs.opentsdb.OffsetErrorAction;
 
-public class OpenDcsTimeSeriesIdentifierMapper extends PrefixRowMapper<TimeSeriesIdentifier,OpenDcsTimeSeriesIdentifierMapper.Columns>
+public class OpenDcsTimeSeriesIdentifierMapper extends OpenDcsTableMapper<TimeSeriesIdentifier,OpenDcsTimeSeriesIdentifierMapper.Columns>
 {
 
     protected OpenDcsTimeSeriesIdentifierMapper(String prefix)
