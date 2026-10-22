@@ -27,6 +27,42 @@ export interface ComputationParamsTableProps {
   onUpdate?: (oldRoleName: string, newParm: CompParm) => void;
 }
 
+/**
+ * This level of validation and understanding *SHOULD NOT* go here.
+ * However, we need something in place until ApiCompParm can be
+ * corrected for the required behavior and appropriate complexity.
+ * @param parm
+ * @returns
+ */
+function adjustCompParm(parm: CompParm): CompParm {
+  let ret = {
+    ...parm,
+  };
+
+  if (parm.siteName === undefined || parm.siteName === "") {
+    ret.siteId = -1;
+  }
+  if (parm.dataType === undefined || parm.dataType === "") {
+    ret.dataTypeId = -1;
+  }
+
+  if (
+    !ret.siteName ||
+    !ret.dataType ||
+    !ret.duration ||
+    !ret.interval ||
+    !ret.paramType ||
+    !ret.version ||
+    ret.siteId === -1 ||
+    ret.dataTypeId === -1
+  ) {
+    ret.tsKey = -1; // make sure the backend doesn't see a stale key.
+    // This would still exist if we're changing to a group computations.
+  }
+
+  return ret;
+}
+
 export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
   parms,
   edit = false,
@@ -99,7 +135,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 name="algoRoleName"
                 defaultValue={row.algoRoleName ?? ""}
                 size="sm"
-                aria-label={t("computations:parms.roleName_input")}
+                aria-label={t("computations:parms.roleName_input", {
+                  name: row.algoRoleName,
+                })}
               />,
             ),
           read: (cell) =>
@@ -140,7 +178,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "siteName",
               row.siteName ?? "",
-              t("computations:parms.site_input"),
+              t("computations:parms.site_input", { name: row.algoRoleName ?? "new" }),
               rowId,
             ),
           read: (cell) => readOptional(cell, "input"),
@@ -161,7 +199,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "dataType",
               row.dataType ?? "",
-              t("computations:parms.dataType_input"),
+              t("computations:parms.dataType_input", { name: row.algoRoleName ?? "" }),
               rowId,
             ),
           read: (cell) => readOptional(cell, "input"),
@@ -340,12 +378,16 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
     ];
   }, [t, intervalOptions, deltaTUnits, ifMissingActions, unitsReady, queryClient]);
 
-  const newTemplate = (): CompParm => ({
-    algoParmType: "i",
-    deltaT: 0,
-    deltaTUnits: "Seconds",
-    ifMissing: "FAIL",
-  });
+  const newTemplate = (id: number): CompParm => {
+    const ret: CompParm = {
+      algoRoleName: "newRole" + Math.abs(id), // we aren't using id numbers as database id, so use positive numbers
+      algoParmType: "i",
+      deltaT: 0,
+      deltaTUnits: "Seconds",
+      ifMissing: "FAIL",
+    };
+    return ret;
+  };
 
   return (
     <AppDataTable<CompParm, string>
@@ -353,27 +395,38 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
       getId={(p) => p.algoRoleName ?? ""}
       columns={columns}
       actionsLabel={t("translation:actions")}
+      addNew={
+        edit
+          ? {
+              template: newTemplate,
+              ariaLabel: t("computations:parms.add_parm"),
+            }
+          : undefined
+      }
       inlineEdit={
         edit
           ? {
               onSave: (original, updated) => {
                 if (!(updated.algoRoleName ?? "").trim()) return false;
-                onUpdate?.(original.algoRoleName ?? "", updated);
+
+                const adjusted = adjustCompParm(updated);
+
+                onUpdate?.(original.algoRoleName ?? "", adjusted);
               },
               onAdd: (created) => {
                 if (!(created.algoRoleName ?? "").trim()) return false;
                 onAdd?.(created);
               },
               onRemove: (row) => onRemove?.(row.algoRoleName ?? ""),
-              newTemplate,
               labels: {
                 edit: (row) =>
                   t("computations:parms.edit_for", { name: row.algoRoleName }),
                 remove: (row) =>
                   t("computations:parms.delete_for", { name: row.algoRoleName }),
-                save: () => t("computations:parms.save_parm"),
-                cancel: () => t("computations:parms.cancel_parm"),
-                add: t("computations:parms.add_parm"),
+                save: (row) =>
+                  t("computations:parms.save_parm", { name: row.algoRoleName }),
+                cancel: (row) =>
+                  t("computations:parms.cancel_parm", { name: row.algoRoleName }),
               },
             }
           : undefined
