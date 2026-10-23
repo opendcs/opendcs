@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Col, Form, FormGroup, InputGroup, Row } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { TimezoneSelect } from "../decodes/routing/RoutingSelects";
+import { TimezoneSelect } from "../../components/controls/TimezoneSelect";
 import { formatRunInterval, parseRunInterval, type RunUnit } from "./runInterval";
 
 export type RunMode = "continuously" | "once" | "every";

@@ -385,3 +385,33 @@ export const ImportViaCheckForNew: Story = {
     );
   },
 };
+
+const unsortedAlgorithmRefs: ApiAlgorithmRef[] = [
+  {
+    algorithmId: 1,
+    algorithmName: "ScalerAdder",
+    execClass: "decodes.comp.ScalerAdder",
+    description: "Multiplies by a constant and adds an offset.",
+    numCompsUsing: 0,
+  },
+  {
+    algorithmId: 2,
+    algorithmName: "CopyAlgorithm",
+    execClass: "decodes.comp.CopyAlgorithm",
+    description: "Copies one timeseries to another.",
+    numCompsUsing: 0,
+  },
+];
+
+export const SortedByNameOnFirstLoad: Story = {
+  args: { algorithms: unsortedAlgorithmRefs },
+  play: async ({ mount, canvasElement }) => {
+    await mount();
+    await waitFor(() => {
+      const names = Array.from(canvasElement.querySelectorAll("tbody tr")).map(
+        (row) => row.querySelectorAll("td")[1]?.textContent?.trim() ?? "",
+      );
+      expect(names).toEqual(["CopyAlgorithm", "ScalerAdder"]);
+    });
+  },
+};

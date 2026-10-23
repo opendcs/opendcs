@@ -28,8 +28,8 @@ import {
   DataSourceSelect,
   PresentationGroupSelect,
   RefListSelect,
-  TimezoneSelect,
 } from "./RoutingSelects";
+import { TimezoneSelect } from "../../../components/controls/TimezoneSelect";
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };

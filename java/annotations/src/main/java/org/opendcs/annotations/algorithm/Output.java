@@ -32,4 +32,6 @@ public @interface Output
     Class<?> type() default Double.class;
     String typeCode() default "o";
     String description() default "";
+    /** Previous role names, used when upgrading stored computations. */
+    String[] formerNames() default {};
 }

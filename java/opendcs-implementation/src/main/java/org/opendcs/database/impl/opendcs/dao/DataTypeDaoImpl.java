@@ -11,7 +11,7 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
-import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.database.model.mappers.datatype.DataTypeMapper.Columns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
@@ -35,7 +35,7 @@ public class DataTypeDaoImpl implements DataTypeDao
                 """;
         try (var query = handle.createQuery(querySql))
         {
-            return query.bind(GenericColumns.ID.column(), id)
+            return query.bind(Columns.ID.column(), id)
                         .registerRowMapper(DataType.class, DataTypeMapper.withPrefix(""))
                         .mapTo(DataType.class)
                         .findOne();
@@ -67,10 +67,10 @@ public class DataTypeDaoImpl implements DataTypeDao
         {
             final DbKey id = dataType.idIsSet() ? dataType.getId() : keyGen.getKey("datatype", handle.getConnection());
             query.registerRowMapper(DataType.class, DataTypeMapper.withPrefix(""))
-                 .bind(GenericColumns.ID.column(), id)
-                 .bind("standard", dataType.getStandard())
-                 .bind("code", dataType.getCode())
-                 .bind("display_name", dataType.getDisplayName())
+                 .bind(Columns.ID.column(), id)
+                 .bind(Columns.STANDARD.column(), dataType.getStandard())
+                 .bind(Columns.CODE.column(), dataType.getCode())
+                 .bind(Columns.DISPLAY_NAME.column(), dataType.getDisplayName())
                  .execute();
             return getById(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve DataType we just saved."));
         }
@@ -98,7 +98,7 @@ public class DataTypeDaoImpl implements DataTypeDao
                 """;
         Optional<DataType> ret = Optional.empty();
         try (var query = handle.createQuery(querySql);
-             var iter = query.bind("code", dataTypeCode)
+             var iter = query.bind(Columns.CODE.column(), dataTypeCode)
                              .registerRowMapper(DataType.class,
                                              DataTypeMapper.withPrefix(""))
                              .mapTo(DataType.class)
@@ -138,8 +138,8 @@ public class DataTypeDaoImpl implements DataTypeDao
                 """;
         try (var query = handle.createQuery(querySql))
         {
-            return query.bind("code", dataTypeCode)
-                        .bind("standard", standard)
+            return query.bind(Columns.CODE.column(), dataTypeCode)
+                        .bind(Columns.STANDARD.column(), standard)
                         .registerRowMapper(DataType.class,
                                            DataTypeMapper.withPrefix(""))
                         .mapTo(DataType.class)
@@ -181,7 +181,7 @@ public class DataTypeDaoImpl implements DataTypeDao
         final var deleteDataTypeSql = "delete from datatype where id = :id";
         try (var deleteDataType = handle.createUpdate(deleteDataTypeSql))
         {
-            deleteDataType.bind(GenericColumns.ID.column(), id).execute();
+            deleteDataType.bind(Columns.ID.column(), id).execute();
         }
     }
 }

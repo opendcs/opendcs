@@ -47,9 +47,9 @@ public class CwmsOracleConfiguration implements Configuration
 {
     private static Logger log = Logger.getLogger(CwmsOracleConfiguration.class.getName());
 
-    private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06");
+    private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16");
     private static final String CWMS_ORACLE_VOLUME = System.getProperty("opendcs.cwms.oracle.volume","cwms_opendcs_volume");
-    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06");
+    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16");
     private static final String CWMS_BUILDUSER_PASSWORD = System.getProperty("opendcs.cwms.build.user.password","antbuildpassword");
 
     public static final String NAME = "CWMS-Oracle";
@@ -124,7 +124,17 @@ public class CwmsOracleConfiguration implements Configuration
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
             Jdbi jdbi = mm.getJdbiHandle();
             try (var handle = jdbi.open();
-                 var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)"))
+                 var insertDbType = handle.createUpdate("insert into tsdb_property(prop_name, prop_value) values(:name, :value)");
+                 /**
+                  * There is a bug in the database cache removal code that interferes with our rapid delete/insert operations.
+                  * Since we don't have a large number of locations in the tests, we'll just disable those caches for the tests
+                  */
+                 var disableCaching = handle.createCall("""
+                    begin
+                     cwms_cache.disable(cwms_loc.g_location_id_cache);
+                     cwms_cache.disable(cwms_loc.g_location_code_cache);
+                    end;
+                    """))
             {
                 insertDbType.bind("name", "editDatabaseType")
                             .bind("value", getName())
@@ -135,6 +145,8 @@ public class CwmsOracleConfiguration implements Configuration
                 insertDbType.bind("name", "writeCwmsLocations")
                             .bind("value", "true")
                             .execute();
+                log.info("Disabling CWMS Location Caches");
+                disableCaching.invoke();
             }
         }
 

@@ -164,6 +164,12 @@
     <MaxDecimals>3</MaxDecimals>
   </DataPresentation>
   <DataPresentation>
+    <DataType Standard="CWMS" Code="Evap">
+    </DataType>
+    <UnitsAbbr>mm</UnitsAbbr>
+    <MaxDecimals>3</MaxDecimals>
+  </DataPresentation>
+  <DataPresentation>
     <DataType Standard="CWMS" Code="Elev-Pool">
     </DataType>
     <UnitsAbbr>m</UnitsAbbr>

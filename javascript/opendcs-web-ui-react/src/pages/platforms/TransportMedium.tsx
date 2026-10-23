@@ -13,37 +13,13 @@ import { Save, X } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import type { ApiRefList, ApiRefListItem, ApiTransportMedium } from "opendcs-api";
 import { DetailFade } from "../../components/data-table";
+import { TimezoneSelect } from "../../components/controls/TimezoneSelect";
 import type { CancelAction } from "../../util/Actions";
 import { useRefListsQuery } from "../../queries/refLists";
 import { TransportMediumReducer } from "./TransportMediumReducer";
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
-
-// Curated shortlist of timezones that cover the vast majority of US
-// water-data installations. The datalist is *suggestions only* — users can
-// type any IANA zone string they like and it'll save through unchanged.
-const TIMEZONES: readonly string[] = [
-  "UTC",
-  "GMT",
-  "US/Eastern",
-  "US/Central",
-  "US/Mountain",
-  "US/Pacific",
-  "US/Alaska",
-  "US/Hawaii",
-  "US/Arizona",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Phoenix",
-  "America/Anchorage",
-  "America/Honolulu",
-  "America/Puerto_Rico",
-  "Europe/London",
-];
-const TIMEZONE_LIST_ID = "tm-timezone-list";
 
 /** Sort a reflist's items map by sortNumber asc, falling back to value asc. */
 function sortItems(refList: ApiRefList | undefined): ApiRefListItem[] {
@@ -451,15 +427,14 @@ export const TransportMedium: React.FC<TransportMediumProperties> = ({
                     {t("platforms:timezone")}
                   </Form.Label>
                   <Col sm={8}>
-                    <Form.Control
-                      type="text"
+                    <TimezoneSelect
+                      freeText
                       id="timezone"
-                      name="timezone"
-                      list={edit ? TIMEZONE_LIST_ID : undefined}
-                      readOnly={!edit}
-                      autoComplete="off"
-                      defaultValue={local.timezone ?? ""}
-                      onChange={textChange}
+                      edit={edit}
+                      value={local.timezone}
+                      onChange={(timezone) =>
+                        dispatch({ type: "save", payload: { timezone } })
+                      }
                     />
                   </Col>
                 </FormGroup>
@@ -691,13 +666,6 @@ export const TransportMedium: React.FC<TransportMediumProperties> = ({
                   </Button>
                 </Col>
               </Row>
-            )}
-            {edit && (
-              <datalist id={TIMEZONE_LIST_ID}>
-                {TIMEZONES.map((tz) => (
-                  <option key={tz} value={tz} />
-                ))}
-              </datalist>
             )}
           </Form>
         </Card.Body>

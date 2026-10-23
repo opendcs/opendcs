@@ -302,3 +302,44 @@ export const EditTimezoneFiresCallback: Story = {
     });
   },
 };
+
+export const NewScheduleOffersUtcAndGmt: Story = {
+  args: {
+    startTime: new Date("2024-06-15T10:30:00"),
+  },
+  play: async ({ args, canvas, mount, parameters, userEvent }) => {
+    await mount();
+    const { i18n } = parameters;
+    const tz = (await canvas.findByLabelText(
+      i18n.t("schedule:timezone"),
+    )) as HTMLSelectElement;
+    const [blank, ...zones] = Array.from(tz.options).map((o) => o.value);
+    expect(blank).toEqual("");
+    expect(zones.filter((v) => v === "UTC")).toHaveLength(1);
+    expect(zones.filter((v) => v === "GMT")).toHaveLength(1);
+    expect(zones).toEqual([...zones].sort((a, b) => a.localeCompare(b)));
+    await userEvent.selectOptions(tz, "GMT");
+    await waitFor(() => {
+      expect(args.onTimeZoneChange).toHaveBeenCalledWith("GMT");
+    });
+  },
+};
+
+// A saved zone that isn't in the list is added in its sorted place.
+export const SavedZoneSortsIntoList: Story = {
+  args: {
+    startTime: new Date("2024-06-15T10:30:00"),
+    timeZone: "EST",
+  },
+  play: async ({ canvas, mount, parameters }) => {
+    await mount();
+    const { i18n } = parameters;
+    const tz = (await canvas.findByLabelText(
+      i18n.t("schedule:timezone"),
+    )) as HTMLSelectElement;
+    const [, ...zones] = Array.from(tz.options).map((o) => o.value);
+    expect(tz.value).toEqual("EST");
+    expect(zones.filter((v) => v === "EST")).toHaveLength(1);
+    expect(zones).toEqual([...zones].sort((a, b) => a.localeCompare(b)));
+  },
+};

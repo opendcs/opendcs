@@ -112,25 +112,18 @@
 }
 
 // -----------------------------------------------------------------------------
-// Scrollable table body with a sticky header
+// Table body overflow
 //
-// Cap each table's body height so a long list scrolls inside the panel instead
-// of pushing the paging controls off-screen, and pin the header while it does.
-// This lets larger "entries per page" sizes stay usable. `.dt-layout-table` is
-// the DataTables layout row that wraps the <table> (the toolbar rows are
-// separate siblings, so only the table body scrolls).
+// The table grows with its rows and any open detail card, so it fills the page
+// and the page scrolls instead of the table. Capping its height left the space
+// below the paging controls unused and squeezed open detail cards into a small
+// scroll box. Only sideways overflow is contained, so a table wider than its
+// panel scrolls inside the outline. Tables that need a bounded scroll area opt
+// in with DataTables' `scrollY`. `.dt-layout-table` is the DataTables layout
+// row that wraps the <table>.
 // -----------------------------------------------------------------------------
 .dt-panel .dt-layout-table {
-  max-height: 60vh;
-  overflow: auto;
-}
-
-.dt-panel .dt-layout-table thead th {
-  position: sticky;
-  top: 0;
-  // Sit above the (non-sticky) body cells and any inline-edit form controls
-  // that scroll underneath.
-  z-index: 2;
+  overflow-x: auto;
 }
 
 .dataTable td {

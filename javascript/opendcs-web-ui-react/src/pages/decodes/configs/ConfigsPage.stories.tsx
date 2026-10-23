@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { act } from "react";
 import { http, HttpResponse } from "msw";
 import type { ApiConfigRef, ApiPlatformConfig } from "opendcs-api";
-import { expect, waitFor } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 import { WithUnits } from "../../../../.storybook/mock/WithUnits";
 import { ConfigsPage } from "./ConfigsPage";
 
@@ -172,5 +172,116 @@ export const EditExistingConfigPersistsAfterSave: Story = {
       const el = canvas.getByLabelText(i18n.t("configs:name")) as HTMLInputElement;
       expect(el.value).toEqual("Renamed CFG");
     });
+  },
+};
+
+// Adding a brand-new config posts it without a configId (the REST layer treats
+// a missing id as "create") and the row closes once the save lands.
+const postedNewConfig = fn();
+export const AddNewConfig: Story = {
+  parameters: {
+    msw: {
+      handlers: (() => {
+        let posted: ApiPlatformConfig | null = null;
+        return {
+          ...baseHandlers,
+          configRefs: http.get("/odcsapi/configrefs", () =>
+            HttpResponse.json<ApiConfigRef[]>(
+              posted
+                ? [
+                    ...CONFIG_REFS,
+                    { configId: 303, name: posted.name, numPlatforms: 0 },
+                  ]
+                : CONFIG_REFS,
+            ),
+          ),
+          postConfig: http.post("/odcsapi/config", async ({ request }) => {
+            posted = (await request.json()) as ApiPlatformConfig;
+            postedNewConfig(posted);
+            return HttpResponse.json<ApiPlatformConfig>({ ...posted, configId: 303 });
+          }),
+        };
+      })(),
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    postedNewConfig.mockClear();
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    await act(async () =>
+      userEvent.click(
+        await canvas.findByRole("button", { name: i18n.t("configs:add_config") }),
+      ),
+    );
+
+    const nameInput = (await waitFor(() => {
+      const el = canvas.getByLabelText(i18n.t("configs:name")) as HTMLInputElement;
+      expect(el).toBeVisible();
+      return el;
+    })) as HTMLInputElement;
+    await userEvent.type(nameInput, "Brand New CFG");
+
+    await act(async () =>
+      userEvent.click(
+        canvas.getByRole("button", {
+          name: i18n.t("configs:save_config", { id: -1 }),
+        }),
+      ),
+    );
+
+    await waitFor(() =>
+      expect(canvas.queryByLabelText(i18n.t("configs:name"))).toBeNull(),
+    );
+    expect(await canvas.findByText("Brand New CFG")).toBeInTheDocument();
+    // The local row's placeholder id must not reach the server.
+    expect(postedNewConfig).toHaveBeenCalledOnce();
+    expect(postedNewConfig.mock.calls[0][0]).not.toHaveProperty("configId");
+  },
+};
+
+// #2199: when the server rejects the new config the Save button must not look
+// inert - the card reports the failure and keeps the entered values.
+export const AddNewConfigSaveFailureIsReported: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        ...baseHandlers,
+        postConfig: http.post("/odcsapi/config", () =>
+          HttpResponse.json({ message: "Unable to save config" }, { status: 500 }),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, userEvent, parameters }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+
+    await act(async () =>
+      userEvent.click(
+        await canvas.findByRole("button", { name: i18n.t("configs:add_config") }),
+      ),
+    );
+
+    const nameInput = (await waitFor(() => {
+      const el = canvas.getByLabelText(i18n.t("configs:name")) as HTMLInputElement;
+      expect(el).toBeVisible();
+      return el;
+    })) as HTMLInputElement;
+    await userEvent.type(nameInput, "Doomed CFG");
+
+    await act(async () =>
+      userEvent.click(
+        canvas.getByRole("button", {
+          name: i18n.t("configs:save_config", { id: -1 }),
+        }),
+      ),
+    );
+
+    // The failure is visible ...
+    expect(await canvas.findByText(i18n.t("configs:save_error"))).toBeInTheDocument();
+    // ... and the row is still open with what the user typed.
+    const stillOpen = canvas.getByLabelText(i18n.t("configs:name")) as HTMLInputElement;
+    expect(stillOpen.value).toEqual("Doomed CFG");
   },
 };

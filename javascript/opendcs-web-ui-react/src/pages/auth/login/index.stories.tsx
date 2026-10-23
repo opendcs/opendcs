@@ -8,10 +8,8 @@ import {
 } from "../../../../.storybook/mock/WithOrganization";
 import { ApiOrganization } from "opendcs-api";
 import { AuthContext } from "../../../contexts/app/AuthContext";
-import {
-  ApiContext,
-  defaultValue as apiDefault,
-} from "../../../contexts/app/ApiContext";
+import { ApiProvider } from "../../../contexts/app/ApiProvider";
+import { useApi } from "../../../contexts/app/ApiContext";
 import apiAuthSpec from "../../../../.storybook/mock/openapi-security-schemes.json";
 import { fromOpenApiData } from "../../../util/login-providers";
 import { Route, Routes } from "react-router-dom";
@@ -63,7 +61,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const authDecorator = (Story: any) => (
-  <ApiContext value={apiDefault}>
+  <ApiProvider>
     <AuthContext
       value={{
         user: undefined,
@@ -80,17 +78,55 @@ const authDecorator = (Story: any) => (
         <Route path="*" element={<Story />} />
       </Routes>
     </AuthContext>
-  </ApiContext>
+  </ApiProvider>
 );
-
+// DefaultPage and Login within Previously stored org
+// intentionally bypass the the decorator.
+// A since we are changing the local storage
+// for one of the tests we need to bypass some of the
+// behavior so that what we set is actually used.
 export const DefaultPageWithOrgs: Story = {
+  parameters: {
+    bypassGlobalDecorators: true,
+  },
   args: {
     organization: undefined,
   },
-  decorators: [authDecorator],
-  play: async ({ args, mount }) => {
+  render: () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const api = useApi();
+    api.setOrg({ name: "HQ" });
+    window.localStorage.clear();
+    window.localStorage.setItem("organization", JSON.stringify({ name: "HQ" }));
+    return authDecorator(Login);
+  },
+  play: async ({ mount }) => {
     const canvas = await mount();
-    expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
+    await expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
+  },
+};
+
+export const LoginWithPreviouslyStoredOrg: Story = {
+  parameters: {
+    bypassGlobalDecorators: true,
+  },
+  render: () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const api = useApi();
+    api.setOrg({ name: "MVP" });
+    window.localStorage.clear();
+    window.localStorage.setItem("organization", JSON.stringify({ name: "MVP" }));
+
+    return authDecorator(Login);
+  },
+  play: async ({ mount }) => {
+    const canvas = await mount();
+    await expect(await canvas.findByText("kc_idp_hint")).toBeInTheDocument();
+    const orgs = canvas.getByRole("combobox", {
+      name: "Organization",
+    }) as HTMLSelectElement;
+    console.log(orgs);
+    await expect(JSON.parse(orgs.value)).toStrictEqual({ name: "MVP" });
   },
 };
 
@@ -106,8 +142,8 @@ export const SuccessfulLogin: Story = {
     await userEvent.type(await canvas.getByPlaceholderText(/password/i), "secret");
 
     // Set the organization
-    userEvent.selectOptions(
-      await canvas.getByRole("combobox", {
+    await userEvent.selectOptions(
+      canvas.getByRole("combobox", {
         name: "Organization",
       }),
       JSON.stringify(args.organization),
@@ -117,8 +153,8 @@ export const SuccessfulLogin: Story = {
     await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // Verify the user was redirected to the platforms page
-    await waitFor(() => {
-      expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
+    await waitFor(async () => {
+      await expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
   },
 };
@@ -151,8 +187,10 @@ export const FailedLogin_BadCredentials: Story = {
     await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // The login page should still be visible (no redirect)
-    await waitFor(() => {
-      expect(canvas.getByRole("button", { name: /^login$/i })).toBeInTheDocument();
+    await waitFor(async () => {
+      await expect(
+        canvas.getByRole("button", { name: /^login$/i }),
+      ).toBeInTheDocument();
     });
   },
 };
@@ -185,8 +223,10 @@ export const FailedLogin_BadOrg: Story = {
     await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // The login page should still be visible (no redirect)
-    await waitFor(() => {
-      expect(canvas.getByRole("button", { name: /^login$/i })).toBeInTheDocument();
+    await waitFor(async () => {
+      await expect(
+        canvas.getByRole("button", { name: /^login$/i }),
+      ).toBeInTheDocument();
     });
   },
 };
@@ -202,15 +242,15 @@ export const SuccessfulLogin_HiddenOrganizations: Story = {
     await userEvent.type(canvas.getByPlaceholderText(/username/i), "admin");
     await userEvent.type(canvas.getByPlaceholderText(/password/i), "secret");
 
-    await waitFor(() => {
-      expect(canvas.queryByRole("combobox", { name: "Organization" })).toBeNull();
+    await waitFor(async () => {
+      await expect(canvas.queryByRole("combobox", { name: "Organization" })).toBeNull();
     });
 
     await userEvent.click(canvas.getByRole("button", { name: /^login$/i }));
 
     // Successful login
-    await waitFor(() => {
-      expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
+    await waitFor(async () => {
+      await expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
   },
 };
@@ -231,7 +271,7 @@ export const OrganizationsAreSortedAlphabetically: Story = {
       .getAllByRole("option")
       .map((o) => o.textContent);
 
-    expect(options).toEqual(["HQ", "LRL", "MVP", "SPK", "SWT"]);
+    await expect(options).toEqual(["HQ", "LRL", "MVP", "SPK", "SWT"]);
   },
 };
 
@@ -253,9 +293,9 @@ export const OrganizationsAreNestedUnderTheirParents: Story = {
 
     // Non-breaking space, built from its code point so the indentation
     // characters stay visible in source.
-    const NBSP = String.fromCharCode(160);
+    const NBSP = String.fromCodePoint(160);
 
-    expect(options.map((o) => o.replaceAll(NBSP, ""))).toEqual([
+    await expect(options.map((o) => o.replaceAll(NBSP, ""))).toEqual([
       "HQ",
       "MVD",
       "MVP",
@@ -265,7 +305,7 @@ export const OrganizationsAreNestedUnderTheirParents: Story = {
       "SWT",
     ]);
     // Indentation tracks depth: divisions one level in, districts two.
-    expect(options.map((o) => (o.split(NBSP).length - 1) / 4)).toEqual([
+    await expect(options.map((o) => (o.split(NBSP).length - 1) / 4)).toEqual([
       0, 1, 2, 1, 2, 1, 2,
     ]);
   },

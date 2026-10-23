@@ -155,11 +155,7 @@ public final class ReflistResources extends OpenDcsResource
 				Map<String, ApiRefListItem> items = new HashMap<>();
 				for (EnumValue val: enumVal.values())
 				{
-					ApiRefListItem refListItem = new ApiRefListItem();
-					refListItem.setDescription(val.getDescription());
-					refListItem.setValue(val.getValue());
-					refListItem.setSortNumber(val.getSortNumber());
-					items.put(val.getValue(), refListItem);
+					items.put(val.getValue(), mapItem(val));
 				}
 				refList.setItems(items);
 				ret.put(enumVal.enumName, refList);
@@ -286,17 +282,22 @@ public final class ReflistResources extends OpenDcsResource
 		ret.setReflistId(dbEnum.getId().getValue());
 		for (EnumValue val : dbEnum.values())
 		{
-			ApiRefListItem item = new ApiRefListItem();
-			item.setDescription(val.getDescription());
-			item.setValue(val.getValue());
-			item.setExecClassName(val.getExecClassName());
-			item.setEditClassName(val.getEditClassName());
-			item.setSortNumber(val.getSortNumber());
-			items.put(dbEnum.getUniqueName(), item);
+			items.put(val.getValue(), mapItem(val));
 		}
 
 		ret.setItems(items);
 		return ret;
+	}
+
+	static ApiRefListItem mapItem(EnumValue val)
+	{
+		ApiRefListItem item = new ApiRefListItem();
+		item.setDescription(val.getDescription());
+		item.setValue(val.getValue());
+		item.setExecClassName(val.getExecClassName());
+		item.setEditClassName(val.getEditClassName());
+		item.setSortNumber(val.getSortNumber());
+		return item;
 	}
 
 	@DELETE

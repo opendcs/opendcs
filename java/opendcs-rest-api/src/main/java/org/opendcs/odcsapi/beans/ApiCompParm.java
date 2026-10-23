@@ -17,6 +17,11 @@ package org.opendcs.odcsapi.beans;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * This needs to be updated to be more "I've expanded everything to so it can be rendered in the UI or saved to the database
+ * " as appropriate to a given implementation... *without* any "if this impl" checks.
+ * ApiCompParm
+ */
 @Schema(description = "Represents a computation parameter used in algorithms, including details about time series, "
 		+ "sites, data types, intervals, and HDB/CWMS specifics.")
 public final class ApiCompParm
@@ -57,9 +62,17 @@ public final class ApiCompParm
 	private String siteName = null;
 
 	// HDB-specific fields:
+	// NOTE: This field is *not* HDB specific. The simple case in the example of "R_" is hdb specific.
+	// However, due to the history of how the computation processor evolved for CWMS the parameter type, duration,
+	// and version are encoded into this field as the database table does not contain columns for them.
+	// For anyone how wants a good project... this entire class needs to be restructured to be
+	// an interface with the absolute basics, with derived classes for specific behavior.
+	// Additionally the UI itself needs to adapt. See the 7.0 Swing UI for some reference on the differences
 	@Schema(description = "HDB-specific: The table selector for this computation parameter.", example = "R_")
 	private String tableSelector = null;
 
+	// NOTE this is the only actually "HDB specific" field in this class. Other implementations
+	// Make sure of various other fields in different ways.
 	@Schema(description = "HDB-specific: The model ID associated with this computation parameter.")
 	private Integer modelId = null;
 
@@ -157,7 +170,7 @@ public final class ApiCompParm
 		this.dataType = dataType;
 	}
 
-	
+
 	public String getTableSelector()
 	{
 		return tableSelector;

@@ -19,14 +19,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
 import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
+import org.opendcs.odcsapi.sec.OpenDcsApiRole;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -35,10 +35,10 @@ public final class CwmsAuthorizationDAO implements ApiAuthorizationDAI
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	@Override
-	public Set<OpenDcsApiRoles> getRoles(DataTransaction tx, String username, String organizationId) throws DbException
+	public Set<OpenDcsApiRole> getRoles(DataTransaction tx, String username, String organizationId) throws DbException
 	{
-        Set<OpenDcsApiRoles> roles = EnumSet.noneOf(OpenDcsApiRoles.class);
-        roles.add(OpenDcsApiRoles.ODCS_API_GUEST);
+        Set<OpenDcsApiRole> roles = new HashSet<>();
+        roles.add(OpenDcsApiRole.ODCS_API_GUEST);
         String q = """
             with inputs as (select ? as username, ? as office_id from dual)
             select avsu.user_group_id
@@ -68,11 +68,11 @@ public final class CwmsAuthorizationDAO implements ApiAuthorizationDAI
 					log.info("User '{}' has role {}", username, role);
 					if("CCP Mgr".equalsIgnoreCase(role))
 					{
-						roles.add(OpenDcsApiRoles.ODCS_API_ADMIN);
+						roles.add(OpenDcsApiRole.ODCS_API_ADMIN);
 					}
 					if("CCP Proc".equalsIgnoreCase(role))
 					{
-						roles.add(OpenDcsApiRoles.ODCS_API_USER);
+						roles.add(OpenDcsApiRole.ODCS_API_USER);
 					}
 				}
 			}

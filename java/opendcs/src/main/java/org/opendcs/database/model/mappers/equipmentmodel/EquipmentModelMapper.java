@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -14,7 +14,7 @@ import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.sql.DbKey;
 
-public final class EquipmentModelMapper extends PrefixRowMapper<EquipmentModel,EquipmentModelMapper.Columns>
+public final class EquipmentModelMapper extends OpenDcsTableMapper<EquipmentModel,EquipmentModelMapper.Columns>
 {
     private EquipmentModelMapper(String prefix)
     {

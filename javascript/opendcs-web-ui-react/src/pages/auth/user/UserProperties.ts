@@ -1,5 +1,5 @@
-import type { User } from "opendcs-api";
+import type { OpenDcsPrincipal } from "opendcs-api";
 
 export default interface UserProperties {
-  user: User;
+  user: OpenDcsPrincipal;
 }

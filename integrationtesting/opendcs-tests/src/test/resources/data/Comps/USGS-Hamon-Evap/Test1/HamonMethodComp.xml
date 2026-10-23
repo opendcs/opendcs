@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="HamonMethod">
+    <Comment>
+      Calculates daily Hamon evaporation from air temperature and site latitude.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.HamonMethod</ExecClass>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+    <AlgoProperty name="jan">0.0</AlgoProperty>
+    <AlgoProperty name="feb">0.0</AlgoProperty>
+    <AlgoProperty name="mar">0.0</AlgoProperty>
+    <AlgoProperty name="apr">0.0</AlgoProperty>
+    <AlgoProperty name="may">0.0</AlgoProperty>
+    <AlgoProperty name="jun">0.0</AlgoProperty>
+    <AlgoProperty name="jul">0.0</AlgoProperty>
+    <AlgoProperty name="aug">0.0</AlgoProperty>
+    <AlgoProperty name="sep">0.0</AlgoProperty>
+    <AlgoProperty name="oct">0.0</AlgoProperty>
+    <AlgoProperty name="nov">0.0</AlgoProperty>
+    <AlgoProperty name="dec">0.0</AlgoProperty>
+  </Algorithm>
+  <Computation name="Test1USGS-Hamon-Evap">
+    <Comment></Comment>
+    <Enabled>true</Enabled>
+    <AlgorithmName>HamonMethod</AlgorithmName>
+    <CompProperty name="jan">3.37</CompProperty>
+    <CompProperty name="feb">3.22</CompProperty>
+    <CompProperty name="mar">3.13</CompProperty>
+    <CompProperty name="apr">2.92</CompProperty>
+    <CompProperty name="may">2.27</CompProperty>
+    <CompProperty name="jun">2.19</CompProperty>
+    <CompProperty name="jul">1.90</CompProperty>
+    <CompProperty name="aug">1.99</CompProperty>
+    <CompProperty name="sep">2.06</CompProperty>
+    <CompProperty name="oct">2.38</CompProperty>
+    <CompProperty name="nov">3.05</CompProperty>
+    <CompProperty name="dec">3.19</CompProperty>
+    <CompParm roleName="input">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Temp-Air"/>
+      </SiteDataType>
+      <Interval>~1Day</Interval>
+      <TableSelector>Ave.1Day.Decodes-Rev</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Evap"/>
+      </SiteDataType>
+      <Interval>~1Day</Interval>
+      <TableSelector>Total.1Day.Decodes-Comp-Hamon</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>

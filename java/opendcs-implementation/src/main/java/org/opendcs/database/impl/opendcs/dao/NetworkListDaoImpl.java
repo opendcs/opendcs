@@ -38,7 +38,7 @@ import org.opendcs.database.dai.NetworkListDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListEntryMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListReducer;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -285,7 +285,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         }
     }
 
-    private static Query registerMappers(Query query, PrefixRowMapper<?,?>... mappers)
+    private static Query registerMappers(Query query, OpenDcsTableMapper<?,?>... mappers)
     {
         for (var mapper: mappers)
         {

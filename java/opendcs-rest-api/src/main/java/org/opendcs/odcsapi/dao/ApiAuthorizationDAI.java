@@ -19,9 +19,9 @@ import java.util.Set;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
-import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
+import org.opendcs.odcsapi.sec.OpenDcsApiRole;
 
 public interface ApiAuthorizationDAI extends OpenDcsDao
 {
-	Set<OpenDcsApiRoles> getRoles(DataTransaction transaction, String username, String organizationId) throws DbException;
+	Set<OpenDcsApiRole> getRoles(DataTransaction transaction, String username, String organizationId) throws DbException;
 }

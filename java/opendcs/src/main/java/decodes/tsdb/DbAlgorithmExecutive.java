@@ -328,6 +328,11 @@ public abstract class DbAlgorithmExecutive
 			for (String role: getOutputNames())
 			{
 				var parmRef = getParmRef(role);
+				if (parmRef == null || parmRef.timeSeries == null)
+				{
+					log.warn("Computation '{}' has no usable output for role '{}'; update its parameters", comp.getName(), role);
+					continue;
+				}
 				try
 				{
 					savedData.addTimeSeries(parmRef.timeSeries);
@@ -1425,12 +1430,19 @@ public abstract class DbAlgorithmExecutive
 						parmRef.compParm.getInterval(), true);
 					TimedVariable prev = parmRef.timeSeries.findWithin(
 						(int)(qMsec/1000L), roundSec);
-					log.trace("DbAlgorithmExecutive.iterateTimeSlices: prev={}:{}, " +
-							  "this={}:{}, qMsec={}, roundSec={}",
-							  prev.getTime(), prev.getStringValue(), tv.getTime(),
-							  tv.getStringValue(), new Date(qMsec), roundSec);
+
 					if (prev != null)
 					{
+						final var logTv = tv;
+						final var logPrev = prev;
+						log.atTrace()
+						   .addArgument(() -> logPrev.getTime())
+						   .addArgument(() -> logPrev.getStringValue())
+						   .addArgument(() -> logTv.getTime())
+						   .addArgument(() -> logTv.getStringValue())
+						   .addArgument(() -> new Date(qMsec))
+						   .addArgument(() -> roundSec)
+						   .log("DbAlgorithmExecutive.iterateTimeSlices: prev={}:{}, this={}:{}, qMsec={}, roundSec={}");
 						try
 						{
 							NamedVariable d = new NamedVariable(role + "_d",

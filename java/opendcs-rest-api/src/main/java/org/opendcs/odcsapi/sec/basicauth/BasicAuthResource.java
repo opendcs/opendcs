@@ -48,6 +48,7 @@ import org.opendcs.database.dai.IdentityProviderDao;
 import org.opendcs.database.model.User;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.res.OpenDcsResource;
+import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -86,7 +87,7 @@ public final class BasicAuthResource extends OpenDcsResource
 							responseCode = "200",
 							description = "Successful authentication.",
 							content = @Content(mediaType = MediaType.APPLICATION_JSON,
-								schema = @Schema(implementation = User.class)
+								schema = @Schema(implementation = OpenDcsPrincipal.class)
 							)
 					),
 					@ApiResponse(
