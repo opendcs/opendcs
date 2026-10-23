@@ -4,12 +4,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.db.ConfigSensor;
 
-public class ConfigSensorMapper extends PrefixRowMapper<ConfigSensor,ConfigSensorMapper.Columns>
+public class ConfigSensorMapper extends OpenDcsTableMapper<ConfigSensor,ConfigSensorMapper.Columns>
 {
     protected ConfigSensorMapper(String prefix)
     {

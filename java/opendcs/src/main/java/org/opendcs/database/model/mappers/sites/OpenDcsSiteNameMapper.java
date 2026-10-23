@@ -4,12 +4,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.db.SiteName;
 
-public class OpenDcsSiteNameMapper extends PrefixRowMapper<SiteName,OpenDcsSiteNameMapper.Columns>
+public class OpenDcsSiteNameMapper extends OpenDcsTableMapper<SiteName,OpenDcsSiteNameMapper.Columns>
 {
 
     protected OpenDcsSiteNameMapper(String prefix)
