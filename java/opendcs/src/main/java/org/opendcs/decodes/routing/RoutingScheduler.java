@@ -2,9 +2,7 @@ package org.opendcs.decodes.routing;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.opendcs.database.api.OpenDcsDataException;
@@ -109,16 +107,16 @@ public class RoutingScheduler extends StandaloneApp
                         var spec = specDao.getById(tx, specId)
                                         .orElseThrow(() -> new OpenDcsDataException("No routing spec with id " + specId));
                         log.info("have spec");
-                        var consumer = DataConsumer.makeDataConsumer(name);
+                        final var consumer = DataConsumer.makeDataConsumer(name);
                         log.info("made consumer");
                         consumer.open(spec.consumerArg, spec.getProperties());
                         log.info("Starting message stream.");
                         spec.dataSource
                             .makeDelegate()
                             .stream()
-                            .peek(m -> log.info("looking at ", m))
                             .filter(m -> m.isSuccess())
                             .map(m -> m.success())
+                            .peek(m -> log.info("looking at ", m.toString()))
                             .map(m ->
                                 {
                                     try
@@ -130,8 +128,19 @@ public class RoutingScheduler extends StandaloneApp
                                         return (DecodedMessage)null;
                                     }
                                 })
-                                .filter(m -> m != null)
-                            .forEach(m -> log.info("got {}", m));
+                            .filter(m -> m != null)
+                            .peek(m -> log.info("got {}", m))
+                            .forEach(m ->
+                            {
+                                try
+                                {
+                                    consumer.startMessage(m);
+                                }
+                                catch (DataConsumerException ex)
+                                {
+                                    log.atError().setCause(ex).log("Unable to consume message.");
+                                }
+                            });
                     }
                     catch (InvalidDatabaseException | OpenDcsDataException | DataConsumerException ex)
                     {
@@ -148,6 +157,7 @@ public class RoutingScheduler extends StandaloneApp
 
         if (task != null)
         {
+            //task.
             /* something? */
         }
     }

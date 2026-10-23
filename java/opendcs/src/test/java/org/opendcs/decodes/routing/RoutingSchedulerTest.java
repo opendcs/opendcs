@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -15,21 +16,27 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.concurrent.Executors;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.LoadingAppDao;
 import org.opendcs.database.dai.RoutingSpecDao;
 import org.opendcs.database.dai.ScheduleEntryDao;
 import org.opendcs.database.dai.ScheduleEntryStatusDao;
+import org.opendcs.util.threading.WrappingScheduledExecutorService;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -54,6 +61,7 @@ import decodes.tsdb.CompAppInfo;
 )
 class RoutingSchedulerTest
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     @Mock
     OpenDcsDatabase db;
 
@@ -67,6 +75,7 @@ class RoutingSchedulerTest
     LoadingAppDao appDao;
 
     MockConsumer consumer;
+
 
     @SuppressWarnings("null")
     @BeforeEach
@@ -83,14 +92,10 @@ class RoutingSchedulerTest
             .thenReturn(Optional.of(appDao));
 
         when(db.newTransaction()).thenReturn(mock(DataTransaction.class));
-
-        var dc = mockStatic(DataConsumer.class);
-        dc.when(() -> DataConsumer.makeDataConsumer(Mockito.anyString())).thenReturn(consumer);
     }
 
-
     @SuppressWarnings("null")
-    @Test 
+    @Test
     void test_scheduler() throws Exception
     {
         var appInfo = new CompAppInfo();
@@ -99,8 +104,26 @@ class RoutingSchedulerTest
         var scheduler = new RoutingScheduler.RoutingSchedulerBuilder()
                 .withDatabase(db)
                 .withSchedulerAppName(appInfo.getAppName())
+                .withTaskExecutor(new WrappingScheduledExecutorService(Executors.newScheduledThreadPool(2)) {
+
+                    @Override
+                    public void wrappedExecute(Runnable command)
+                    {
+                        try (MockedStatic<DataConsumer> dc = mockStatic(DataConsumer.class,
+                                               withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS)))
+                        {
+                            dc.when(() -> DataConsumer.makeDataConsumer(Mockito.anyString())).thenReturn(consumer);
+                            command.run();
+                        }
+                        catch (Exception ex)
+                        {
+                            log.atError().setCause(ex).log("Failed to run task.");
+                        };
+                    }
+
+                })
                 .build();
-        
+
         when(appDao.getByName(any(), eq("test")))
             .thenReturn(Optional.of(appInfo));
 
@@ -112,20 +135,20 @@ class RoutingSchedulerTest
         when(scheduleDao.getAll(any(), anyInt(), anyInt(), eq(appInfo)))
             .thenReturn(List.of(entry));
 
-        
+
         var spec = new RoutingSpec("test-spec");
         spec.dataSource = mock(DataSource.class);
         when(spec.dataSource.makeDelegate())
             .thenReturn(new MockSourceExec(null, null));
-        
-        
+
+
         when(specDao.getById(any(), eq(entry.getRoutingSpecId())))
             .thenReturn(Optional.of(spec));
 
         assertTrue(scheduler.start().isSuccess());
 
 
-        Thread.sleep(50000);
+        Thread.sleep(5000);
         assertFalse(consumer.messages.isEmpty());
         scheduler.stop();
     }
@@ -139,20 +162,20 @@ class RoutingSchedulerTest
         @Override
         public void open(String consumerArg, Properties props) throws DataConsumerException
         {
-            log.info("Starting consumer.");            
+            log.info("Starting consumer.");
         }
 
         @Override
         public void close()
         {
-        
+
         }
 
         @Override
         public void startMessage(DecodedMessage msg) throws DataConsumerException
         {
             log.info("Got message: {}", msg);
-            messages.add(msg);   
+            messages.add(msg);
         }
 
         @Override
@@ -163,7 +186,7 @@ class RoutingSchedulerTest
         @Override
         public void endMessage()
         {
-         
+
         }
 
     }
@@ -178,9 +201,9 @@ class RoutingSchedulerTest
         }
 
         @Override
-        public void processDataSource() throws InvalidDatabaseException 
+        public void processDataSource() throws InvalidDatabaseException
         {
-            
+
         }
 
         @Override
