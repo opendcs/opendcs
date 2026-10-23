@@ -2,6 +2,8 @@ package org.opendcs.decodes.routing;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -111,6 +113,10 @@ public class RoutingScheduler extends StandaloneApp
                         log.info("made consumer");
                         consumer.open(spec.consumerArg, spec.getProperties());
                         log.info("Starting message stream.");
+                        // NOTE: the behavior here if *very* likely wrong compared to the existing routing scheduler
+                        // right now we're just structing the RoutingScheduler under this whole "StandaloneApp" concept
+                        // and modernizing the flow. This will be corrected as part of the development either before
+                        // this class gets merged or, or at least before it's provided in a way that we can run it.
                         spec.dataSource
                             .makeDelegate()
                             .stream()
@@ -139,6 +145,7 @@ public class RoutingScheduler extends StandaloneApp
                                 catch (DataConsumerException ex)
                                 {
                                     log.atError().setCause(ex).log("Unable to consume message.");
+                                    throw new RuntimeException(ex);
                                 }
                             });
                     }
@@ -157,8 +164,17 @@ public class RoutingScheduler extends StandaloneApp
 
         if (task != null)
         {
-            //task.
-            /* something? */
+            if (task.isDone())
+            {
+                try
+                {
+                    task.get();
+                }
+                catch (CancellationException | InterruptedException | ExecutionException ex)
+                {
+                    log.atError().setCause(ex).log("Abnormal termination of schedule {}", entry.getName());
+                }
+            }
         }
     }
 
