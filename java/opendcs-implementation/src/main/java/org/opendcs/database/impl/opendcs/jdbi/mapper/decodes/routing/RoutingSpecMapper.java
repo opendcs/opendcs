@@ -21,7 +21,7 @@ import java.util.Date;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -30,7 +30,7 @@ import decodes.db.RoutingSpec;
 import decodes.sql.DbKey;
 
 @SuppressWarnings("java:S2143") // to be fixed at a later date
-public final class RoutingSpecMapper extends PrefixRowMapper<RoutingSpec, RoutingSpecMapper.Columns>
+public final class RoutingSpecMapper extends OpenDcsTableMapper<RoutingSpec, RoutingSpecMapper.Columns>
 {
     private RoutingSpecMapper(String prefix)
     {
