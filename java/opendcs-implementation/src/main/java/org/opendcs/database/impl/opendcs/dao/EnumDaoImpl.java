@@ -23,7 +23,7 @@ import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
-import static org.opendcs.utils.sql.SqlQueries.fromDualClauseFor;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 @ServiceProvider(service = EnumDao.class)
 public class EnumDaoImpl implements EnumDao
@@ -138,7 +138,7 @@ public class EnumDaoImpl implements EnumDao
                 """;
 
         try (var enumMerge = handle.createUpdate(enumMergeText)
-                                   .define("dual", fromDualClauseFor(dbEngine));
+                                   .define("dual", fromDual(dbEngine));
              var removeValues = handle.createUpdate(removeValuesText);
              var addValues = handle.prepareBatch(addValueText))
         {

@@ -4,6 +4,7 @@ import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -344,7 +345,7 @@ public class PlatformDaoImpl implements PlatformDao
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         var mergeTemplate = queries.getInstanceOf(MERGE)
-                                   .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+                                   .add("dual", fromDual(dbEngine));
         var insertPlatformProperties = queries.getInstanceOf(INSERT_PLATFORM_PROPERTY).render();
         try (var merge = handle.createUpdate(mergeTemplate.render());
              var insertProperties = handle.prepareBatch(insertPlatformProperties))

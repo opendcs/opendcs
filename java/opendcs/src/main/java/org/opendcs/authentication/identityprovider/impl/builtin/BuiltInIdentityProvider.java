@@ -15,6 +15,8 @@
 */
 package org.opendcs.authentication.identityprovider.impl.builtin;
 
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
+
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +29,6 @@ import org.opendcs.authentication.InvalidCredentialsException;
 import org.opendcs.authentication.InvalidCredentialsTypeException;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.UsersDao;
@@ -193,7 +194,7 @@ public final class BuiltInIdentityProvider implements IdentityProvider
                     // We should allow some control of these settings.
                     // However, the defaults are sane, it's easy to do wrong, and this PR is already large enough
                     var hashed = Password.hash(creds.password.getBytes()).addPepper().addRandomSalt().withArgon2();
-                    pwUpdate.define("dual", tx.getContext().getDatabaseEngine() == DatabaseEngine.ORACLE ? "from dual" : "")
+                    pwUpdate.define("dual", fromDual(tx.getContext().getDatabaseEngine()))
                             .bind("id", user.id)
                             .bind("password", hashed.getResult())
                             .execute();

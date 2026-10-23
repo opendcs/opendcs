@@ -16,7 +16,7 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
-import static org.opendcs.utils.sql.SqlQueries.fromDualClauseFor;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.util.Date;
 import java.util.List;
@@ -179,7 +179,7 @@ public final class CompLockDaoImpl implements CompLockDao
                 values(input.loading_application_id, input.pid, input.hostname, input.heartbeat, input.cur_status)
                 """))
         {
-            merge.define("dual", fromDualClauseFor(dbEngine));
+            merge.define("dual", fromDual(dbEngine));
             merge.bind(Columns.APP_ID.column(), lock.getAppId())
                   .bind(Columns.PID.column(), lock.getPID())
                   .bind(Columns.HOSTNAME.column(), lock.getHost())

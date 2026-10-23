@@ -17,6 +17,7 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -27,7 +28,6 @@ import java.util.Optional;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.ScheduleEntryDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.schedule.ScheduleEntryMapper;
@@ -158,7 +158,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         var mergeTemplate = queries.getInstanceOf(MERGE)
-                                   .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+                                   .add("dual", fromDual(dbEngine));
         Object routingBind = entry.getRoutingSpecName();
         if (!DbKey.isNull(entry.getRoutingSpecId()))
         {

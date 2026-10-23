@@ -22,7 +22,7 @@ import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
-import static org.opendcs.utils.sql.SqlQueries.fromDualClauseFor;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 @ServiceProvider(service = EquipmentModelDao.class)
 public class EquipmentModelImpl implements EquipmentModelDao
@@ -158,7 +158,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         var insertPropsSql = "insert into equipmentproperty(equipmentid, name, prop_value) values (:equipmentid, :name, :value)";
         try (var emMerge = handle.createUpdate(emMergeSql)
-                                 .define("dual", fromDualClauseFor(dbEngine));
+                                 .define("dual", fromDual(dbEngine));
              var propsDelete = handle.createUpdate(PROPERTIES_DELETE_SQL);
              var insertProps = handle.prepareBatch(insertPropsSql))
         {
