@@ -5,11 +5,12 @@ import {
   Form,
   FormGroup,
   InputGroup,
+  Modal,
   Placeholder,
   Row,
 } from "react-bootstrap";
 import { PropertiesTable, type Property } from "../../../components/properties";
-import { use, useCallback, useMemo, useReducer, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import type {
   ApiAlgorithm,
   ApiAlgorithmRef,
@@ -36,8 +37,20 @@ import {
 } from "./computationTime";
 import { SaveErrorAlert } from "../../../components/forms";
 import { useSaveError } from "../../../hooks/useSaveError";
+import { useApi } from "../../../contexts/app/ApiContext";
+import { HttpMethod } from "opendcs-api";
 
 export type UiComputation = Partial<ApiComputation>;
+
+interface InstalledRole {
+  name: string;
+  type: string;
+  formerNames: string[];
+}
+
+interface InstalledAlgorithmSpec {
+  roles: InstalledRole[];
+}
 
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
@@ -130,6 +143,18 @@ export interface ComputationProperties {
 const roleKey = (roleName: string | undefined): string =>
   (roleName ?? "").trim().toLowerCase();
 
+const timeSeriesLabel = (parm: ApiCompParm | undefined): string => {
+  if (!parm) return "No time series assigned";
+  const details = [
+    parm.siteName,
+    parm.dataType,
+    parm.interval,
+    parm.version,
+    parm.tsKey ? `ID ${parm.tsKey}` : undefined,
+  ].filter(Boolean);
+  return details.length > 0 ? details.join(" · ") : "No time series assigned";
+};
+
 const mergeRequiredParms = (
   existingParms: ApiCompParm[],
   requiredParms: ApiCompParm[],
@@ -205,18 +230,138 @@ export const Computation: React.FC<ComputationProperties> = ({
     ComputationReducer,
     providedComputation,
   );
-  const [localParms, setLocalParms] = useState<ApiCompParm[]>(() =>
-    mergeRequiredParms(
-      providedComputation.parmList ?? [],
-      requiredParmsFromAlgorithm(providedAlgorithm),
-    ),
+  const [localParms, setLocalParms] = useState<ApiCompParm[]>(
+    () => providedComputation.parmList ?? [],
   );
+  const { conf, org } = useApi();
+  const [loadedSpec, setLoadedSpec] = useState<{
+    algorithmId: number;
+    spec: InstalledAlgorithmSpec | undefined;
+  }>();
+  const installedSpec =
+    loadedSpec && loadedSpec.algorithmId === localComputation.algorithmId
+      ? loadedSpec.spec
+      : undefined;
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [links, setLinks] = useState<Record<string, string>>({});
+  const [deleteUnlinked, setDeleteUnlinked] = useState(false);
   const [showAlgorithmModal, setShowAlgorithmModal] = useState(false);
   const [nameError, setNameError] = useState(false);
   const { saveError, clearSaveError, attemptSave } = useSaveError(
     t("computations:editor.save_error"),
     "Computation save failed",
   );
+
+  useEffect(() => {
+    const algorithmId = localComputation.algorithmId;
+    if (!algorithmId || algorithmId <= 0) return;
+    const controller = new AbortController();
+    const context = conf.baseServer.makeRequestContext(
+      "/algorithmupdatespec",
+      HttpMethod.GET,
+    );
+    context.setQueryParam("algorithmid", String(algorithmId));
+    fetch(context.getUrl(), {
+      credentials: "include",
+      headers: { Accept: "application/json", "X-ORGANIZATION-ID": org },
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : undefined))
+      .then((spec: InstalledAlgorithmSpec | undefined) => {
+        if (!controller.signal.aborted) setLoadedSpec({ algorithmId, spec });
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted)
+          console.warn("Cannot read installed algorithm roles", error);
+      });
+    return () => controller.abort();
+  }, [conf, org, localComputation.algorithmId]);
+
+  const missingRoles = useMemo(
+    () =>
+      installedSpec?.roles.filter(
+        (role) =>
+          !localParms.some((parm) => roleKey(parm.algoRoleName) === roleKey(role.name)),
+      ) ?? [],
+    [installedSpec, localParms],
+  );
+  const unmatchedParms = useMemo(
+    () =>
+      localParms.filter(
+        (parm) =>
+          !installedSpec?.roles.some(
+            (role) => roleKey(role.name) === roleKey(parm.algoRoleName),
+          ),
+      ),
+    [installedSpec, localParms],
+  );
+  const unlinkedParms = unmatchedParms.filter(
+    (parm) =>
+      !Object.values(links).some(
+        (source) => roleKey(source) === roleKey(parm.algoRoleName),
+      ),
+  );
+
+  const openUpdate = () => {
+    const suggested: Record<string, string> = {};
+    for (const role of missingRoles) {
+      const matches = unmatchedParms.filter((parm) =>
+        role.formerNames.some(
+          (former) => roleKey(former) === roleKey(parm.algoRoleName),
+        ),
+      );
+      if (matches.length === 1 && matches[0].algoRoleName) {
+        suggested[role.name] = matches[0].algoRoleName;
+      }
+    }
+    setLinks(suggested);
+    setDeleteUnlinked(false);
+    setShowUpdateModal(true);
+  };
+
+  const applyUpdate = () => {
+    const used = new Set(Object.values(links).filter(Boolean).map(roleKey));
+    const currentRoles = new Set(
+      installedSpec?.roles.map((role) => roleKey(role.name)),
+    );
+    const renamed = missingRoles.map((role) => {
+      const source = unmatchedParms.find(
+        (parm) => roleKey(parm.algoRoleName) === roleKey(links[role.name]),
+      );
+      return source
+        ? { ...source, algoRoleName: role.name, algoParmType: role.type }
+        : ({ algoRoleName: role.name, algoParmType: role.type } as ApiCompParm);
+    });
+    setLocalParms((previous) => [
+      ...previous.filter(
+        (parm) =>
+          !used.has(roleKey(parm.algoRoleName)) &&
+          (!deleteUnlinked || currentRoles.has(roleKey(parm.algoRoleName))),
+      ),
+      ...renamed,
+    ]);
+    const nextProps = { ...localComputation.props };
+    for (const role of missingRoles) {
+      const former = links[role.name];
+      if (!former) continue;
+      for (const suffix of ["_MISSING", "_EU", "_tsname"]) {
+        const oldKey = Object.keys(nextProps).find(
+          (name) => roleKey(name) === roleKey(former + suffix),
+        );
+        if (
+          oldKey &&
+          !Object.keys(nextProps).some(
+            (name) => roleKey(name) === roleKey(role.name + suffix),
+          )
+        ) {
+          nextProps[role.name + suffix] = nextProps[oldKey];
+          delete nextProps[oldKey];
+        }
+      }
+    }
+    dispatch({ type: "save", payload: { props: nextProps } });
+    setShowUpdateModal(false);
+  };
 
   const handleAlgorithmSelected = useCallback(
     async (ref: ApiAlgorithmRef) => {
@@ -553,6 +698,19 @@ export const Computation: React.FC<ComputationProperties> = ({
             </Row>
           </Col>
           <Col xs={12}>
+            {edit && installedSpec && (
+              <div className="d-flex align-items-center gap-2 mb-2">
+                {(missingRoles.length > 0 || unmatchedParms.length > 0) && (
+                  <span role="status">
+                    This computation has parameters that differ from the installed
+                    algorithm.
+                  </span>
+                )}
+                <Button variant="outline-primary" size="sm" onClick={openUpdate}>
+                  Update parameters…
+                </Button>
+              </div>
+            )}
             <ComputationParamsTable
               parms={localParms}
               edit={edit}
@@ -617,6 +775,174 @@ export const Computation: React.FC<ComputationProperties> = ({
         onHide={() => setShowAlgorithmModal(false)}
         onSelect={handleAlgorithmSelected}
       />
+      <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)} size="xl">
+        <Modal.Header closeButton>
+          <Modal.Title>Update computation parameters</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Link an existing parameter to each missing role, or add a blank parameter.
+            Review the result before saving the computation.
+          </p>
+          <Row className="g-3">
+            <Col xs={12} lg={5}>
+              <section
+                className="border rounded p-3 h-100"
+                aria-label="Current computation parameters"
+              >
+                <h3 className="h6">Current computation parameters</h3>
+                <p className="text-muted small">
+                  Names and time series saved on this computation.
+                </p>
+                <ul className="list-unstyled mb-0">
+                  {localParms.map((parm, index) => {
+                    const linkedRole = Object.entries(links).find(
+                      ([, source]) => roleKey(source) === roleKey(parm.algoRoleName),
+                    )?.[0];
+                    const alreadyMatches = installedSpec?.roles.some(
+                      (role) => roleKey(role.name) === roleKey(parm.algoRoleName),
+                    );
+                    return (
+                      <li
+                        key={`${parm.algoRoleName}-${index}`}
+                        className="border-top py-2"
+                      >
+                        <div className="fw-semibold">{parm.algoRoleName}</div>
+                        <div
+                          className="small text-muted"
+                          aria-label={`Current time series for ${parm.algoRoleName}`}
+                        >
+                          {timeSeriesLabel(parm)}
+                        </div>
+                        <div className="small">
+                          {linkedRole
+                            ? `Linked to ${linkedRole}`
+                            : alreadyMatches
+                              ? "Already matches"
+                              : "Left unlinked"}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            </Col>
+            <Col xs={12} lg={7}>
+              <section
+                className="border rounded p-3 h-100"
+                aria-label="Updated algorithm parameters"
+              >
+                <h3 className="h6">Updated algorithm parameters</h3>
+                <p className="text-muted small">
+                  Choose the existing mapping for each new name.
+                </p>
+                {installedSpec?.roles.map((role) => {
+                  const missing = missingRoles.some(
+                    (candidate) => roleKey(candidate.name) === roleKey(role.name),
+                  );
+                  const source = missing
+                    ? unmatchedParms.find(
+                        (parm) =>
+                          roleKey(parm.algoRoleName) === roleKey(links[role.name]),
+                      )
+                    : localParms.find(
+                        (parm) => roleKey(parm.algoRoleName) === roleKey(role.name),
+                      );
+                  return (
+                    <FormGroup key={role.name} className="border-top py-2 mb-0">
+                      {missing ? (
+                        <>
+                          <Form.Label
+                            htmlFor={`link-${role.name}`}
+                            className="fw-semibold"
+                          >
+                            {role.name} ({role.type.includes("o") ? "output" : "input"})
+                          </Form.Label>
+                          <Form.Select
+                            id={`link-${role.name}`}
+                            value={links[role.name] ?? ""}
+                            onChange={(event) =>
+                              setLinks((previous) => ({
+                                ...previous,
+                                [role.name]: event.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">Add as new, blank</option>
+                            {unmatchedParms
+                              .filter((parm) => {
+                                const storedType =
+                                  parm.algoParmType ??
+                                  providedAlgorithm?.parms?.find(
+                                    (candidate) =>
+                                      roleKey(candidate.roleName) ===
+                                      roleKey(parm.algoRoleName),
+                                  )?.parmType;
+                                return (
+                                  (!storedType || storedType.includes(role.type)) &&
+                                  (!Object.entries(links).some(
+                                    ([target, selected]) =>
+                                      target !== role.name &&
+                                      roleKey(selected) === roleKey(parm.algoRoleName),
+                                  ) ||
+                                    roleKey(links[role.name]) ===
+                                      roleKey(parm.algoRoleName))
+                                );
+                              })
+                              .map((parm) => (
+                                <option
+                                  key={parm.algoRoleName}
+                                  value={parm.algoRoleName}
+                                >
+                                  {parm.algoRoleName} — {timeSeriesLabel(parm)}
+                                </option>
+                              ))}
+                          </Form.Select>
+                        </>
+                      ) : (
+                        <div className="fw-semibold">
+                          {role.name} ({role.type.includes("o") ? "output" : "input"})
+                          <span className="fw-normal text-muted small ms-2">
+                            Already matches
+                          </span>
+                        </div>
+                      )}
+                      <div
+                        className="small text-muted mt-1"
+                        aria-label={`Time series for ${role.name}`}
+                      >
+                        {timeSeriesLabel(source)}
+                      </div>
+                    </FormGroup>
+                  );
+                })}
+              </section>
+            </Col>
+          </Row>
+          {unlinkedParms.length > 0 && (
+            <div className="mt-3">
+              <p>
+                Parameters left unlinked:{" "}
+                {unlinkedParms.map((parm) => parm.algoRoleName).join(", ")}
+              </p>
+              <Form.Check
+                type="checkbox"
+                label="Delete parameters left unlinked"
+                checked={deleteUnlinked}
+                onChange={(event) => setDeleteUnlinked(event.target.checked)}
+              />
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowUpdateModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={applyUpdate}>
+            Apply
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Card>
   );
 };

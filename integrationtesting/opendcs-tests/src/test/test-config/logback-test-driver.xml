@@ -48,6 +48,8 @@
     <logger name="lrgs" level="trace"/>
     <logger name="org.opendcs" level="trace"/>
     <logger name="opendcs" level="trace"/>
+    <logger name="io.swagger" level="ERROR"/>
+    <logger name="org.apache" level="WARN"/>
     <root level="INFO">
         <appender-ref ref="OTEL-FILE"/>
         <appender-ref ref="OTEL-STDERR"/>

@@ -119,7 +119,10 @@ const EditableRender: ArgsStoryFn<ReactRenderer, ComputationProperties> = (args)
 
 export const ViewMode: Story = {
   args: {
-    computation: sampleComputation,
+    computation: {
+      ...sampleComputation,
+      parmList: [{ algoRoleName: "input", algoParmType: "i" }],
+    },
     algorithm: sampleAlgorithm,
     edit: false,
     processOptions: sampleProcessOptions,
@@ -432,7 +435,7 @@ const compWithExtraParm: ApiComputation = {
   ],
 };
 
-export const MergesExistingParmsAndIgnoresBlankRoles: Story = {
+export const KeepsStoredParmsUntilUpdate: Story = {
   args: {
     computation: compWithExtraParm,
     algorithm: algorithmWithBlankRoles,
@@ -443,8 +446,178 @@ export const MergesExistingParmsAndIgnoresBlankRoles: Story = {
   play: async ({ mount }) => {
     const canvas = await mount();
 
-    expect(await canvas.findByText("validInput")).toBeInTheDocument();
     expect(await canvas.findByText("extraExisting")).toBeInTheDocument();
+    expect(canvas.queryByText("validInput")).not.toBeInTheDocument();
+  },
+};
+
+const computationWithSeveralOldParms: ApiComputation = {
+  ...sampleComputation,
+  computationId: 13,
+  name: "ReservoirEvaporation",
+  algorithmId: 13,
+  algorithmName: "ResEvapUpdated",
+  props: {
+    ...sampleComputation.props,
+    oldHourlyRate_MISSING: "IGNORE",
+  },
+  parmList: [
+    {
+      algoRoleName: "oldHourlyRate",
+      algoParmType: "o",
+      siteName: "TESTSITE",
+      dataType: "Evaporation",
+      interval: "1Hour",
+      tsKey: 101,
+    },
+    {
+      algoRoleName: "oldDailyDepth",
+      algoParmType: "o",
+      siteName: "TESTSITE",
+      dataType: "Evaporation",
+      interval: "1Day",
+      tsKey: 102,
+    },
+    {
+      algoRoleName: "oldElevation",
+      algoParmType: "i",
+      siteName: "TESTSITE",
+      dataType: "Elevation",
+      interval: "1Hour",
+      tsKey: 103,
+    },
+    {
+      algoRoleName: "windSpeed",
+      algoParmType: "i",
+      siteName: "TESTSITE",
+      dataType: "Wind",
+      interval: "1Hour",
+      tsKey: 104,
+    },
+    {
+      algoRoleName: "surfaceTemperature",
+      algoParmType: "o",
+      siteName: "TESTSITE",
+      dataType: "Temperature",
+      interval: "1Hour",
+      tsKey: 105,
+    },
+    {
+      algoRoleName: "spareOutput",
+      algoParmType: "o",
+      siteName: "TESTSITE",
+      dataType: "Flow",
+      interval: "1Hour",
+      tsKey: 106,
+    },
+  ],
+};
+
+export const LinksFormerParameterAndAddsNewParameter: Story = {
+  args: {
+    computation: computationWithSeveralOldParms,
+    algorithm: {
+      algorithmId: 13,
+      name: "ResEvapUpdated",
+      execClass: "decodes.cwms.algo.ResEvapAlgo",
+      description: "Reservoir evaporation calculation with updated roles.",
+      props: {},
+      parms: [
+        { roleName: "hourlyEvapRate", parmType: "o" },
+        { roleName: "dailyEvapDepth", parmType: "o" },
+        { roleName: "reservoirElevation", parmType: "i" },
+        { roleName: "hourlyEvapDepth", parmType: "o" },
+        { roleName: "airTemperature", parmType: "i" },
+        { roleName: "windSpeed", parmType: "i" },
+        { roleName: "surfaceTemperature", parmType: "o" },
+      ],
+    },
+    edit: true,
+    processOptions: sampleProcessOptions,
+    groupOptions: sampleGroupOptions,
+  },
+  render: EditableRender,
+  parameters: {
+    msw: {
+      handlers: {
+        installedSpec: http.get("/odcsapi/algorithmupdatespec", () =>
+          HttpResponse.json({
+            roles: [
+              { name: "hourlyEvapRate", type: "o", formerNames: ["oldHourlyRate"] },
+              { name: "dailyEvapDepth", type: "o", formerNames: [] },
+              { name: "reservoirElevation", type: "i", formerNames: ["oldElevation"] },
+              { name: "hourlyEvapDepth", type: "o", formerNames: [] },
+              { name: "airTemperature", type: "i", formerNames: [] },
+              { name: "windSpeed", type: "i", formerNames: [] },
+              { name: "surfaceTemperature", type: "o", formerNames: [] },
+            ],
+          }),
+        ),
+      },
+    },
+  },
+  play: async ({ mount, userEvent }) => {
+    const canvas = await mount();
+
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Update parameters…" }),
+    );
+    expect(
+      screen.getByRole("region", { name: "Current computation parameters" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Updated algorithm parameters" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Current time series for oldHourlyRate"),
+    ).toHaveTextContent("TESTSITE · Evaporation · 1Hour · ID 101");
+    expect(await screen.findByLabelText("hourlyEvapRate (output)")).toHaveValue(
+      "oldHourlyRate",
+    );
+    expect(screen.getByLabelText("Time series for hourlyEvapRate")).toHaveTextContent(
+      "TESTSITE · Evaporation · 1Hour · ID 101",
+    );
+    expect(screen.getByLabelText("reservoirElevation (input)")).toHaveValue(
+      "oldElevation",
+    );
+    expect(screen.getByLabelText("dailyEvapDepth (output)")).toHaveValue("");
+    await userEvent.selectOptions(
+      screen.getByLabelText("dailyEvapDepth (output)"),
+      "oldDailyDepth",
+    );
+    expect(screen.getByLabelText("dailyEvapDepth (output)")).toHaveValue(
+      "oldDailyDepth",
+    );
+    expect(screen.getByLabelText("Time series for dailyEvapDepth")).toHaveTextContent(
+      "TESTSITE · Evaporation · 1Day · ID 102",
+    );
+    expect(screen.getByLabelText("hourlyEvapDepth (output)")).toHaveValue("");
+    expect(screen.getByLabelText("airTemperature (input)")).toHaveValue("");
+    expect(screen.getByLabelText("Time series for airTemperature")).toHaveTextContent(
+      "No time series assigned",
+    );
+    expect(
+      screen.getByText("Parameters left unlinked: spareOutput"),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+    for (const role of [
+      "hourlyEvapRate",
+      "dailyEvapDepth",
+      "reservoirElevation",
+      "hourlyEvapDepth",
+      "airTemperature",
+      "windSpeed",
+      "surfaceTemperature",
+      "spareOutput",
+    ]) {
+      expect(await canvas.findByText(role)).toBeInTheDocument();
+    }
+    for (const oldRole of ["oldHourlyRate", "oldDailyDepth", "oldElevation"]) {
+      expect(canvas.queryByText(oldRole)).not.toBeInTheDocument();
+    }
+    expect(await canvas.findByText("hourlyEvapRate_MISSING")).toBeInTheDocument();
+    expect(canvas.queryByText("oldHourlyRate_MISSING")).not.toBeInTheDocument();
   },
 };
 

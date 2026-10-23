@@ -240,7 +240,16 @@ tasks.register('runApi', JavaExec) {
     systemProperties += project.properties.findAll { k, v -> k.toLowerCase().startsWith("testcontainer") }
     systemProperties += project.properties.findAll { k, v -> k.toLowerCase().startsWith("opendcs") }
     systemProperties.put("org.apache.tomcat.util.digester.PROPERTY_SOURCE", "org.apache.tomcat.util.digester.EnvironmentPropertySource")
-    systemProperties.put("java.util.logging.config.file", "build/tomcat/conf/logging.properties")
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/src/test/test-config/logback-test-driver.xml"
+    jvmArgs += "-DAPP_NAME=run-api"
+
+    def tmpdir = "${project.layout.buildDirectory.get()}/run-api"
+    doFirst {
+        project.mkdir(tmpdir)
+    }
+
+    jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
+
     systemProperties.put("DCSTOOL_USERDIR", "build/resources/test/tomcat/conf")
 
     def port = project.findProperty("opendcs.tomcat.port") ?: "7000"

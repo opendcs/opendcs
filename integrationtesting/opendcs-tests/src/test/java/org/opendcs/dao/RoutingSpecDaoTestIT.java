@@ -104,6 +104,30 @@ class RoutingSpecDaoTestIT extends AppTestBase
         }
     }
 
+    @Test
+    void test_network_list_names_are_saved() throws Exception
+    {
+        var dao = db.getDao(RoutingSpecDao.class).orElseThrow();
+        var dataSourceDao = db.getDao(DataSourceDao.class).orElseThrow();
+
+        try (var tx = db.newTransaction())
+        {
+            final var dataSource = dataSourceDao.getDataSource(tx, "OKVI4")
+                                                .orElseGet(() -> fail("no data source configured named OKVI4"));
+            final var specIn = new RoutingSpec("Names-Only-Spec");
+            specIn.consumerType = "pipe";
+            specIn.dataSource = dataSource;
+            specIn.outputTimeZoneAbbr = "UTC";
+            // The REST API sets only the names, never the NetworkList objects.
+            specIn.addNetworkListName("<all>");
+
+            final var specOut = dao.save(tx, specIn);
+
+            assertEquals(List.of("<all>"), new ArrayList<>(specOut.networkListNames));
+            dao.delete(tx, specOut.getId());
+        }
+    }
+
 
     @Test
     void test_pagination() throws Exception

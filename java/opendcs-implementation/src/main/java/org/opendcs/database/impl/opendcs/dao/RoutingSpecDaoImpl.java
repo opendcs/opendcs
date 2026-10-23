@@ -23,6 +23,7 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -138,13 +139,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             registerMappers(select, allData);
             return select.bind(whereKey, whereBind)
                          .reduceRows(new RoutingSpecReducer(allData))
-                         .map(rs ->
-                         {
-                            rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
-                            rs.setProperty("RoutingSpecName", rs.getName());
-                            rs.forceSetPrepared();
-                            return rs;
-                         })
+                         .map(RoutingSpecDaoImpl::cleanUpSpec)
                          .findFirst();
         }
 
@@ -173,7 +168,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             select.registerRowMapper(DataSource.class, mappers.dataSourceAccumulator().primaryMapper);
             if (mappers.dataSourceAccumulator().memberMapper != null)
             {
-                select.registerRowMapper(DataSourceAccumulator.MEMBER_SOURCE, mappers.dataSourceAccumulator().memberMapper);
+                select.registerRowMapper(DataSource.class, mappers.dataSourceAccumulator().memberMapper);
             }
         }
         return select;
@@ -289,12 +284,15 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             deleteProps(handle, bindKey);
             deleteSpecLists(handle, id);
 
-            if (!spec.networkLists.isEmpty())
+            // RoutingResources fills only networkListNames; other callers fill networkLists.
+            final var listNames = new LinkedHashSet<>(spec.networkListNames);
+            spec.networkLists.forEach(nl -> listNames.add(nl.name));
+            if (!listNames.isEmpty())
             {
-                for (var nl: spec.networkLists)
+                for (var name: listNames)
                 {
                     insertSpecList.bind(RoutingSpecNetworkListMapper.Columns.ROUTING_SPEC_ID.column(), bindKey)
-                                  .bind(RoutingSpecNetworkListMapper.Columns.NETWORK_LIST_NAME.column(), nl.name)
+                                  .bind(RoutingSpecNetworkListMapper.Columns.NETWORK_LIST_NAME.column(), name)
                                   .add();
                 }
                 insertSpecList.execute();
@@ -395,18 +393,25 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             }
 
             return select.reduceRows(new RoutingSpecReducer(mappers))
-                         .map(rs ->
-                         {
-                            if (rs.outputTimeZoneAbbr == null)
-                            {
-                                rs.outputTimeZoneAbbr = "UTC";
-                            }
-                            rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
-                            rs.setProperty("RoutingSpecName", rs.getName());
-                            rs.forceSetPrepared();
-                            return rs;
-                         })
+                         .map(RoutingSpecDaoImpl::cleanUpSpec)
                          .toList();
         }
+    }
+
+    /**
+     * Covers settings that may not be pulled fully from the database.
+     * @param rs
+     * @return
+     */
+    private static RoutingSpec cleanUpSpec(RoutingSpec rs)
+    {
+        if (rs.outputTimeZoneAbbr == null)
+        {
+            rs.outputTimeZoneAbbr = "UTC";
+        }
+        rs.outputTimeZone = TimeZone.getTimeZone(rs.outputTimeZoneAbbr);
+        rs.setProperty("RoutingSpecName", rs.getName());
+        rs.forceSetPrepared();
+        return rs;
     }
 }

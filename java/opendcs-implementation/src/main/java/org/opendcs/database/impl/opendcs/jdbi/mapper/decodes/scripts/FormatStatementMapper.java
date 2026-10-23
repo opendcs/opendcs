@@ -4,12 +4,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.db.FormatStatement;
 
-public final class FormatStatementMapper extends PrefixRowMapper<FormatStatement,FormatStatementMapper.Columns>
+public final class FormatStatementMapper extends OpenDcsTableMapper<FormatStatement,FormatStatementMapper.Columns>
 {
 
     protected FormatStatementMapper(String prefix)

@@ -20,13 +20,13 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.cwms.data.CwmsOfficeBuilder;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
-public class CwmsOfficeMapper extends PrefixRowMapper<CwmsOfficeBuilder, CwmsOfficeMapper.Columns>
+public class CwmsOfficeMapper extends OpenDcsTableMapper<CwmsOfficeBuilder, CwmsOfficeMapper.Columns>
 {
     protected CwmsOfficeMapper(String prefix)
     {
