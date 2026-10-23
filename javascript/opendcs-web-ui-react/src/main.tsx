@@ -12,6 +12,7 @@ import { AuthProvider } from "./contexts/app/AuthProvider.tsx";
 import { ApiProvider } from "./contexts/app/ApiProvider.tsx";
 import { OrganizationsProvider } from "./contexts/app/OrganizationsProvider.tsx";
 import { QueryProvider } from "./contexts/app/QueryProvider.tsx";
+import { PreferencesSync } from "./contexts/app/PreferencesSync.tsx";
 import { BrowserRouter } from "react-router-dom";
 
 import "./i18n";
@@ -25,6 +26,7 @@ createRoot(document.getElementById("root")!).render(
           <SiteNameTypeProvider>
             <ApiProvider>
               <AuthProvider>
+                <PreferencesSync />
                 <QueryProvider>
                   <OrganizationsProvider>
                     <RefListProvider>

@@ -5,18 +5,24 @@ import { useAuth } from "../../../contexts/app/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { OidcScheme } from "../../../util/login-providers/Scheme.types";
 import { oidcConfigToClient } from "../../../util/login-providers";
+import {
+  LOGIN_ORGANIZATION_KEY,
+  useApplyLoginOrganization,
+} from "../../../hooks/useUserPreferences";
 
 export const OidcCallback: React.FC = () => {
   const api = useApi();
   const { setUser, loginSchemes } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const applyLoginOrganization = useApplyLoginOrganization();
 
   // pull the saved state so we can match it to the right configuration.
   const url = new URL(globalThis.location.href);
   const state: string = url.searchParams.get("state") || "";
   const clientId = sessionStorage.getItem(state);
   const queryParameters = JSON.parse(sessionStorage.getItem("queryParameters") || "{}");
+  const orgChoice = sessionStorage.getItem(LOGIN_ORGANIZATION_KEY);
 
   let client: OidcClient | null = null;
   for (const schemeKey in loginSchemes) {
@@ -45,6 +51,9 @@ export const OidcCallback: React.FC = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((user_value: any) => {
           setUser(user_value);
+          return applyLoginOrganization(user_value, orgChoice);
+        })
+        .then(() => {
           const redirectPath = location.state?.from || "/platforms";
           navigate(redirectPath, { replace: true });
         })

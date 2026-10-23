@@ -17,6 +17,10 @@ import {
 import { oidcConfigToClient, type ParamMap } from "../../../util/login-providers";
 import type { SigninRequest } from "oidc-client-ts";
 import { AppVersion } from "../../../components/AppVersion";
+import {
+  LOGIN_ORGANIZATION_KEY,
+  useApplyLoginOrganization,
+} from "../../../hooks/useUserPreferences";
 
 // Indentation for nested offices in the organization select. Built from its
 // code point so the character stays visible in source.
@@ -35,6 +39,10 @@ export default function Login() {
   const orgOptions = useMemo(() => organizationTree(organizations), [organizations]);
   const api = useApi();
   const auth = new RESTAuthenticationAndAuthorizationApi(api.conf);
+  const applyLoginOrganization = useApplyLoginOrganization();
+  // Name of the organization picked below; empty means "Previous session",
+  // i.e. whichever one the user's profile has saved.
+  const [orgChoice, setOrgChoice] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
   const inputOptions = useRef<ParamMap>({});
 
@@ -86,7 +94,6 @@ export default function Login() {
                   <FormLogin
                     key={key}
                     login={(credentials: Credentials) => {
-                      const selectedOrg = api.org;
                       auth
                         // /credentials only accepts the guest role, which lives under the
                         // blank org; the selected office is applied after the session exists.
@@ -94,11 +101,7 @@ export default function Login() {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         .then((user_value: any) => {
                           setUser(user_value);
-                          return selectedOrg
-                            ? auth
-                                .getOrganizations(selectedOrg)
-                                .catch(() => api.setOrg({}))
-                            : undefined;
+                          return applyLoginOrganization(user_value, orgChoice);
                         })
                         .then(() => {
                           const redirectPath = location.state?.from || "/platforms";
@@ -132,6 +135,7 @@ export default function Login() {
                             "queryParameters",
                             JSON.stringify(queryParameters),
                           );
+                          sessionStorage.setItem(LOGIN_ORGANIZATION_KEY, orgChoice);
                           const oidcSessionInfo = {
                             state: r.state.id,
                             provider: key,
@@ -191,12 +195,12 @@ export default function Login() {
                   id="organization"
                   name="organization"
                   aria-labelledby="organization-label"
-                  required
-                  value={JSON.stringify(api.orgObj)}
-                  onChange={(e) => api.setOrg(JSON.parse(e.currentTarget.value))}
+                  value={orgChoice}
+                  onChange={(e) => setOrgChoice(e.currentTarget.value)}
                 >
+                  <option value="">{t("Previous session")}</option>
                   {orgOptions.map(({ org, depth }) => (
-                    <option key={org.name} value={JSON.stringify(org)}>
+                    <option key={org.name} value={org.name}>
                       {/* Browsers ignore padding on <option> in the native
                           dropdown, so the nesting has to be real characters. */}
                       {NBSP.repeat(depth * INDENT_WIDTH)}
