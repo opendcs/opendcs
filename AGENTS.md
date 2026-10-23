@@ -22,7 +22,7 @@ Prefer the newest pattern over whatever is nearest in the file you're editing.
 
 - Current DAO/DAI work: interfaces under `java/opendcs-api/src/main/java/org/opendcs/**/api`,
   implementations in `java/opendcs-implementation/.../impl` or `java/cwms-implementation/...`.
-  Jdbi3-based; services are wired with `@AutoService` / NetBeans `Lookup`.
+  Jdbi3-based; services are wired with `@AutoService` or NetBeans `Lookup`, with NetBeans 'Lookup' preferred.
 - Read `docs/source/dev-docs.rst` before writing database or REST code. It specifies
   `DataTransaction` (commit-on-close, `wrapErrors`), mapping `SQLException`s to
   `OpenDcsDataRuntimeException`/`OpenDcsDataConstraintException` in `SqlExceptionHandler`
