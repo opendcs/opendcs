@@ -11,6 +11,7 @@ import {
   type ApiPresentationRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { presentationKeys } from "./keys";
 
 const usePresentationsApi = () => {
@@ -87,6 +88,7 @@ export const useDeletePresentationMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (groupId: number) => presentationApi.deletePresentation(org, groupId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: presentationKeys.all(org) });

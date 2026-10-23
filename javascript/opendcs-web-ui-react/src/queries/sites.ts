@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { RESTDECODESSiteRecordsApi, type ApiSite, type ApiSiteRef } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { siteKeys } from "./keys";
 import { invalidateThenDelegate } from "./mutationHelpers";
 
@@ -78,6 +79,7 @@ export const useDeleteSiteMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (siteId: number) => sitesApi.deletesite(org, siteId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: invalidateThenDelegate(
       queryClient,
