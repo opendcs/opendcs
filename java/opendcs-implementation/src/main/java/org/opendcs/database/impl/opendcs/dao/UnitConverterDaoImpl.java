@@ -17,7 +17,7 @@ import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.database.dai.UnitConverterDao;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
 import org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper;
-import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.database.model.mappers.unitconverter.UnitConverterMapper.Columns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
@@ -32,6 +32,7 @@ import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 
 @ServiceProvider(service = UnitConverterDao.class)
 public class UnitConverterDaoImpl implements UnitConverterDao
@@ -55,7 +56,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                 """;
         try (var query = handle.createQuery(querySql))
         {
-            return query.bind(GenericColumns.ID.column(), id)
+            return query.bind(Columns.ID.column(), id)
                         .registerRowMapper(UnitConverterDb.class, UnitConverterMapper.withPrefix(""))
                         .mapTo(UnitConverterDb.class)
                         .findOne();
@@ -97,16 +98,16 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         {
             final DbKey id = unitConverter.idIsSet() ? unitConverter.getId() : keyGen.getKey("unitconverter", handle.getConnection());
             query.registerArgument(new NullableDoubleArgumentFactory())
-                 .bind(GenericColumns.ID.column(), id)
-                 .bind("fromunitsabbr", unitConverter.fromAbbr)
-                 .bind("tounitsabbr", unitConverter.toAbbr)
-                 .bind("algorithm", unitConverter.algorithm)
-                 .bind("a", coefficients[0])
-                 .bind("b", coefficients[1])
-                 .bind("c", coefficients[2])
-                 .bind("d", coefficients[3])
-                 .bind("e", coefficients[4])
-                 .bind("f", coefficients[5])
+                 .bind(Columns.ID.column(), id)
+                 .bind(Columns.FROM_UNITS_ABBR.column(), unitConverter.fromAbbr)
+                 .bind(Columns.TO_UNITS_ABBR.column(), unitConverter.toAbbr)
+                 .bind(Columns.ALGORITHM.column(), unitConverter.algorithm)
+                 .bind(Columns.A.column(), coefficients[0])
+                 .bind(Columns.B.column(), coefficients[1])
+                 .bind(Columns.C.column(), coefficients[2])
+                 .bind(Columns.D.column(), coefficients[3])
+                 .bind(Columns.E.column(), coefficients[4])
+                 .bind(Columns.F.column(), coefficients[5])
                  .execute();
             return getById(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Unit Converter we just saved."));
         }
@@ -124,7 +125,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         final var deleteDataTypeSql = "delete from unitconverter where id = :id";
         try (var deleteDataType = handle.createUpdate(deleteDataTypeSql))
         {
-            deleteDataType.bind(GenericColumns.ID.column(), id).execute();
+            deleteDataType.bind(Columns.ID.column(), id).execute();
         }
     }
 
@@ -151,13 +152,13 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                       from unitconverter uc
                        left join engineeringunit from_eu on from_eu.unitabbr = uc.fromunitsabbr
                        left join engineeringunit to_eu on to_eu.unitabbr = uc.tounitsabbr
-                      where upper(uc.fromunitsabbr) = upper(:from)
-                        and upper(uc.tounitsabbr) = upper(:to)
+                      where upper(uc.fromunitsabbr) = upper(:fromunitsabbr)
+                        and upper(uc.tounitsabbr) = upper(:tounitsabbr)
                 """;
         try (var query = handle.createQuery(querySql))
         {
-            ret = query.bind("from", from.abbr)
-                        .bind("to", to.abbr)
+            ret = query.bind(Columns.FROM_UNITS_ABBR.column(), from.abbr)
+                        .bind(Columns.TO_UNITS_ABBR.column(), to.abbr)
                         .registerRowMapper(UnitConverterDb.class, UnitConverterMapper.withPrefix(""))
                         .mapTo(UnitConverterDb.class)
                         .findFirst(); // there shouldn't be extras, but just in case, don't fail about it.
@@ -203,7 +204,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
         {
             query.define("limit", addLimitOffset(limit, offset))
                         .define("family", family)
-                        .define("collate", dbType == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY" );
+                        .define("collate", collateClauseFor(dbType));
             if (family != null)
             {
                 query.bind("familyValue", family);
