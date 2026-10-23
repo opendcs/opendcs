@@ -279,7 +279,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
      *
      * same note as above, mostly copied from CompositeConverter to avoid dealing the the required changes to allow the new DAOs and old access method.
      *
-     * @param solutiosn
+     * @param solutions
      * @param converters
      * @param from current source unit
      * @param to current target unit
@@ -287,7 +287,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
      * @param unitsSearch set of units we have already searched.
      */
     @SuppressWarnings({"java:S1149","java:S3047"}) // S1149copy of existing code, S3047 these loops operate in fundementally different ways.
-    private static void search(List<UnitConverter> solutions, List<UnitConverter> converters, EngineeringUnit from, EngineeringUnit to,
+    static void search(List<UnitConverter> solutions, List<UnitConverter> converters, EngineeringUnit from, EngineeringUnit to,
                                Stack<UnitConverter> callStack, HashSet<String> unitsSearched)
     {
         unitsSearched.add(from.getAbbr());
