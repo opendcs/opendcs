@@ -14,7 +14,7 @@ The rule you can't infer: code depends on a subproject's `-api` project, never i
 implementation project. (None of these are JPMS modules — no `module-info.java`.)
 
 Exception, not a violation: `:opendcs` is the legacy monolith (old `decodes.*` plus much of
-`org.opendcs`) that everything still builds on; depending on it is normal.
+`org.opendcs`) that everything still builds on; depending on it is normal. However, opendcs-api should never depend on any subprojects.
 
 ## Patterns: a migration is in progress
 
@@ -29,7 +29,7 @@ Prefer the newest pattern over whatever is nearest in the file you're editing.
   rather than in DAO methods, and `AppExceptionMapper` for REST error handling.
   Do not copy the older hand-rolled DAO style in `:opendcs`.
 - Flyway: never edit a released `V*.sql`, add a new one; number it off the highest version in
-  that engine's `schema/` dir.
+  that engine's `schema/` dir. However, It is permissible to fill in gaps. See the current OpenDCS-Oracle that's missing some specific versions. Flyway calls this an "out of order migration".
 
 ## Style
 
