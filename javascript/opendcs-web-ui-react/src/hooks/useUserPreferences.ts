@@ -59,6 +59,9 @@ export const useSavePreferences = () => {
  * falling back to this browser's last organization for profiles that don't
  * have one yet. Whatever was used is saved to the profile for next time. If the
  * user holds no role in it, no organization is selected.
+ *
+ * Call it before setting the user: that leaves the login page, and the first
+ * page shown has to load in the selected organization.
  */
 export const useApplyLoginOrganization = () => {
   const { conf, org: browserOrg, setOrg } = useApi();
@@ -81,7 +84,9 @@ export const useApplyLoginOrganization = () => {
       }
       setOrg(organizations.find((org) => org.name === name) ?? { name });
       if (name !== saved) {
-        await savePreferences({ [PreferenceKeys.organization]: name }).catch(
+        // Not awaited, so signing in doesn't wait on it. It lands once the user
+        // is set and its result is merged into them then.
+        savePreferences({ [PreferenceKeys.organization]: name }).catch(
           (error: unknown) =>
             console.warn(
               "Unable to save the organization to the user's profile",

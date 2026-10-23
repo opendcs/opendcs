@@ -99,9 +99,10 @@ export default function Login() {
                         // blank org; the selected office is applied after the session exists.
                         .postCredentials("", credentials)
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        .then((user_value: any) => {
+                        .then(async (user_value: any) => {
+                          // Organization first: setting the user leaves this page.
+                          await applyLoginOrganization(user_value, orgChoice);
                           setUser(user_value);
-                          return applyLoginOrganization(user_value, orgChoice);
                         })
                         .then(() => {
                           const redirectPath = location.state?.from || "/platforms";

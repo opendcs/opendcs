@@ -6,10 +6,12 @@ import {
   MOCK_ORG_HIERARCHY,
   WithOrganization,
 } from "../../../../.storybook/mock/WithOrganization";
-import { ApiOrganization } from "opendcs-api";
+import { ApiOrganization, type User } from "opendcs-api";
+import { useState, type ReactNode } from "react";
 import { AuthContext } from "../../../contexts/app/AuthContext";
 import { ApiProvider } from "../../../contexts/app/ApiProvider";
 import { useApi } from "../../../contexts/app/ApiContext";
+import { PublicOnlyRoute } from "../../../components/layout/PublicOnlyRoute";
 import apiAuthSpec from "../../../../.storybook/mock/openapi-security-schemes.json";
 import { fromOpenApiData } from "../../../util/login-providers";
 import { Route, Routes } from "react-router-dom";
@@ -25,12 +27,15 @@ const USER_ORGS = ["SPK", "MVP", "SWT"];
 const savedPreferences = fn();
 
 // A simple stand-in for the page the user is redirected to after login,
-// showing which organization the session ended up in.
+// showing the organization it first loaded in and the one the session ended
+// up in.
 function PlatformsPage() {
   const { org } = useApi();
+  const [loadedOrg] = useState(org);
   return (
     <div data-testid="platforms-page">
-      Platforms Page <span data-testid="session-org">{org}</span>
+      Platforms Page <span data-testid="loaded-org">{loadedOrg}</span>
+      <span data-testid="session-org">{org}</span>
     </div>
   );
 }
@@ -86,24 +91,37 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const authDecorator = (Story: any) => (
-  <ApiProvider>
+// Like the app, the login page sits behind PublicOnlyRoute, so setting the
+// user leaves it straight away.
+function AuthHarness({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | undefined>(undefined);
+  return (
     <AuthContext
       value={{
-        user: undefined,
+        user,
         isLoading: false,
         loginSchemes: authSchemes,
         setSchemes: fn(),
-        setUser: fn(),
+        setUser,
         logout: fn(),
       }}
     >
       <Routes>
-        <Route path="/login" element={<Story />} />
+        <Route element={<PublicOnlyRoute />}>
+          <Route path="/login" element={children} />
+          <Route path="*" element={children} />
+        </Route>
         <Route path="/platforms" element={<PlatformsPage />} />
-        <Route path="*" element={<Story />} />
       </Routes>
     </AuthContext>
+  );
+}
+
+const authDecorator = (Story: any) => (
+  <ApiProvider>
+    <AuthHarness>
+      <Story />
+    </AuthHarness>
   </ApiProvider>
 );
 // DefaultPage intentionally bypasses the decorator.
@@ -156,6 +174,9 @@ export const SuccessfulLogin: Story = {
     organization: { name: "SPK" },
   },
   decorators: [authDecorator],
+  beforeEach: () => {
+    window.localStorage.setItem("organization", JSON.stringify({ name: "MVP" }));
+  },
   play: async ({ args, mount }) => {
     const canvas = await mount();
 
@@ -177,9 +198,14 @@ export const SuccessfulLogin: Story = {
     await waitFor(async () => {
       await expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
+    // The office picked here, not the one this browser last used, from the
+    // first page on.
+    await expect(canvas.getByTestId("loaded-org")).toHaveTextContent("SPK");
     await expect(canvas.getByTestId("session-org")).toHaveTextContent("SPK");
     // An office picked at login is saved to the profile for next time.
-    await expect(savedPreferences).toHaveBeenCalledWith({ organization: "SPK" });
+    await waitFor(() =>
+      expect(savedPreferences).toHaveBeenCalledWith({ organization: "SPK" }),
+    );
   },
 };
 
@@ -208,6 +234,7 @@ export const PreviousSessionUsesTheProfileOrganization: Story = {
     await waitFor(async () => {
       await expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
+    await expect(canvas.getByTestId("loaded-org")).toHaveTextContent("MVP");
     await expect(canvas.getByTestId("session-org")).toHaveTextContent("MVP");
     // Already in the profile, so there is nothing to save.
     await expect(savedPreferences).not.toHaveBeenCalled();
@@ -231,13 +258,19 @@ export const PreviousSessionFallsBackToTheBrowserOrganization: Story = {
     await waitFor(async () => {
       await expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
+    await expect(canvas.getByTestId("loaded-org")).toHaveTextContent("SWT");
     await expect(canvas.getByTestId("session-org")).toHaveTextContent("SWT");
-    await expect(savedPreferences).toHaveBeenCalledWith({ organization: "SWT" });
+    await waitFor(() =>
+      expect(savedPreferences).toHaveBeenCalledWith({ organization: "SWT" }),
+    );
   },
 };
 
 export const OrganizationWithoutARoleIsNotSelected: Story = {
   decorators: [authDecorator],
+  beforeEach: () => {
+    window.localStorage.setItem("organization", JSON.stringify({ name: "SWT" }));
+  },
   play: async ({ mount }) => {
     const canvas = await mount();
 
@@ -252,6 +285,8 @@ export const OrganizationWithoutARoleIsNotSelected: Story = {
     await waitFor(async () => {
       await expect(canvas.getByTestId("platforms-page")).toBeInTheDocument();
     });
+    // Nor is the office this browser last used.
+    await expect(canvas.getByTestId("loaded-org")).toBeEmptyDOMElement();
     await expect(canvas.getByTestId("session-org")).toBeEmptyDOMElement();
     await expect(savedPreferences).not.toHaveBeenCalled();
   },
