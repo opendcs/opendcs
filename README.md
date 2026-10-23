@@ -148,27 +148,30 @@ To verify everything can work on your system run the following:
 
 ```
 # General tests
-./gradlew test
 
-# NOTE: this will flash a few interfaces onto your display, let the task finish or the tests get stuck. 
-# However, you can just run through the GUIs to finish the tests. Though be aware if you don't follow the 
-# programmed script the task may return failure.
-
-a report of tests is stored here: opendcs/java/opendcs/build/reports/tests/test
-
-# Test the GUI (NOTE: leave your hands off the keyboard and mouse or the runner gets confused.)
 ./gradlew test -Pno.docs=true
 
-# Tests of a "live" system.
-./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-XML
-# and if you have docker
-./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-Postgres
-# CWMS-Oracle (more memory hungry)
-./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=CWMS-Oracle
+# Those are the unit tests, including the LRGS tests and the web UI storybook tests. The
+# storybook tests need Playwright browsers, which Gradle does not install for you:
+#     cd javascript/opendcs-web-ui-react && npx playwright install
+# Until those are installed, skip them with:
+./gradlew test -x :opendcs-web-ui-react:testStorybook
 
-#To test the LRGS
-gradlew testing:lrgs:test -Pno.docs=true
+# Just the LRGS tests
+
+./gradlew :testing:lrgs:test -Pno.docs=true
+
+# Tests of a "live" system, one engine at a time. OpenDCS-XML needs no external database, the
+# others need docker, and CWMS-Oracle is the most memory hungry.
+./gradlew :testing:opendcs-tests:testOpenDCSXML
+./gradlew :testing:opendcs-tests:testOpenDCSPostgres
+./gradlew :testing:opendcs-tests:testOpenDCSOracle
+./gradlew :testing:opendcs-tests:testCWMSOracle
 ```
+
+Add `-Pno.docs=true` to any of these to skip building the documentation, which otherwise comes in
+as a dependency of the install distribution. Reports land under
+`<project>/build/reports/tests/test`, for example `java/opendcs/build/reports/tests/test`.
 
 This will run all of the various tests and let you know you have everything setup such that you can start development.
 
@@ -177,14 +180,15 @@ For all test tasks you can add `--debug-jvm` and the JVMs started will wait for 
 To run a specific test only use:
 
 ```
-./gradlew <test target> --tests # See [gradle documentation ](https://docs.gradle.org/current/userguide/java_testing.html#simple_name_pattern) for more detail
+./gradlew <test target> --tests <pattern> # See [gradle documentation ](https://docs.gradle.org/current/userguide/java_testing.html#simple_name_pattern) for more detail
 
 example with debugging:
 
-gradlew clean :testing:opendcs-tests:test -Pno.docs=true  -Popendcs.test.engine=OpenDCS-XML  --tests org.opendcs.regression_tests.ImportXmlNetworkListTestIT --debug-jvm
-
-
+./gradlew :opendcs:test -Pno.docs=true --tests decodes.xml.XmlDatabaseTest --debug-jvm
 ```
+
+Note that `--tests` only filters the test tasks named on the command line. Any test task pulled in as a dependency still runs in full — for
+ example `:testing:opendcs-tests:testOpenDCSXML` chains `:opendcs:test` unless the `CI` environment variable is set.
 
 It is possible a file glob will work in the tests parameter above but we have not tested this.
 

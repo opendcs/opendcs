@@ -28,7 +28,7 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
-public final class RoleMapper extends PrefixRowMapper<Role,RoleMapper.Columns>
+public final class RoleMapper extends OpenDcsTableMapper<Role,RoleMapper.Columns>
 {
     public static final String ROLE_ID = "role_id";
 

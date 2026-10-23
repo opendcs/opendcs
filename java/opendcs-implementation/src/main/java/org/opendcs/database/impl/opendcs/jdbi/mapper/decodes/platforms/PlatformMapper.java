@@ -6,7 +6,7 @@ import java.util.Date;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -15,7 +15,7 @@ import decodes.db.Platform;
 import decodes.db.PlatformConfig;
 import decodes.sql.DbKey;
 
-public class PlatformMapper extends PrefixRowMapper<Platform,PlatformMapper.Columns>
+public class PlatformMapper extends OpenDcsTableMapper<Platform,PlatformMapper.Columns>
 {
 
     protected PlatformMapper(String prefix)

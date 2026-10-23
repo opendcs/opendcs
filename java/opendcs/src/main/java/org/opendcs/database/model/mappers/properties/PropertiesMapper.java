@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import org.jdbi.v3.core.generic.GenericType;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
-import org.opendcs.database.model.mappers.PrefixRowMapper;
+import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.GenericColumns;
 
 import ilex.util.Pair;
 
-public final class PropertiesMapper extends PrefixRowMapper<Pair<String,String>,PropertiesMapper.Columns>
+public final class PropertiesMapper extends OpenDcsTableMapper<Pair<String,String>,PropertiesMapper.Columns>
 {
     private final String prop;
 
