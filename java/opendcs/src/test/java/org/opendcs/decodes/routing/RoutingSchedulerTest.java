@@ -1,6 +1,8 @@
 package org.opendcs.decodes.routing;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -16,9 +18,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -81,7 +88,7 @@ class RoutingSchedulerTest
     @BeforeEach
     void setup() throws Exception
     {
-        consumer = new MockConsumer();
+        
         when(db.getDao(ScheduleEntryDao.class))
             .thenReturn(Optional.of(scheduleDao));
         when(db.getDao(RoutingSpecDao.class))
@@ -98,26 +105,30 @@ class RoutingSchedulerTest
     @Test
     void test_scheduler() throws Exception
     {
+        consumer = new MockConsumer();
         var appInfo = new CompAppInfo();
         appInfo.setAppName("test");
 
         var scheduler = new RoutingScheduler.RoutingSchedulerBuilder()
                 .withDatabase(db)
                 .withSchedulerAppName(appInfo.getAppName())
-                .withTaskExecutor(new WrappingScheduledExecutorService(Executors.newScheduledThreadPool(2)) {
+                .withTaskExecutor(new WrappingScheduledExecutorService(Executors.newScheduledThreadPool(2))
+                {
 
                     @Override
                     public void wrappedExecute(Runnable command)
                     {
+                        // Mocked Statics are ThreadLocal. so we need to make sure this runs on the correct thread.
                         try (MockedStatic<DataConsumer> dc = mockStatic(DataConsumer.class,
                                                withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS)))
                         {
                             dc.when(() -> DataConsumer.makeDataConsumer(Mockito.anyString())).thenReturn(consumer);
                             command.run();
                         }
-                        catch (Exception ex)
+                        catch (Throwable ex)
                         {
                             log.atError().setCause(ex).log("Failed to run task.");
+                            throw ex;
                         };
                     }
 
@@ -147,10 +158,96 @@ class RoutingSchedulerTest
 
         assertTrue(scheduler.start().isSuccess());
 
+    }
 
-        Thread.sleep(5000);
-        assertFalse(consumer.messages.isEmpty());
+    @Test
+    @Timeout (value = 5, unit = TimeUnit.SECONDS)
+    void test_scheduler_error() throws Exception
+    {
+        final AtomicReference<Throwable> thrownException = new AtomicReference<>(null);
+        final CountDownLatch latch = new CountDownLatch(1);
+        var appInfo = new CompAppInfo();
+        appInfo.setAppName("test");
+
+        consumer = new MockConsumer()
+        {
+            @Override
+            public void startMessage(DecodedMessage msg) throws DataConsumerException
+            {
+                var ex = new DataConsumerException("I failed");
+                thrownException.set(ex);
+                latch.countDown();
+                throw ex;
+            }
+        };
+
+        var scheduler = new RoutingScheduler.RoutingSchedulerBuilder()
+                .withDatabase(db)
+                .withSchedulerAppName(appInfo.getAppName())
+                .withTaskExecutor(new WrappingScheduledExecutorService(Executors.newScheduledThreadPool(2))
+                {
+                    @Override
+                    public void wrappedExecute(Runnable command)
+                    {
+                        try (MockedStatic<DataConsumer> dc = mockStatic(DataConsumer.class,
+                                               withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS)))
+                        {
+                            dc.when(() -> DataConsumer.makeDataConsumer(Mockito.anyString())).thenReturn(consumer);
+                            command.run();
+                        }
+                        catch (Throwable ex)
+                        {
+                            log.atError().setCause(ex).log("Failed to run task.");
+                            throw ex;
+                        };
+                    }
+                })
+                .build();
+
+        when(appDao.getByName(any(), eq("test")))
+            .thenReturn(Optional.of(appInfo));
+
+        var entry = new ScheduleEntry("test-sched");
+        entry.setEnabled(true);
+        entry.setRoutingSpecId(DbKey.createDbKey(5L));
+        entry.setRunInterval(null);
+        entry.setStartTime(null);
+        when(scheduleDao.getAll(any(), anyInt(), anyInt(), eq(appInfo)))
+            .thenReturn(List.of(entry));
+
+
+        var spec = new RoutingSpec("test-spec");
+        spec.dataSource = mock(DataSource.class);
+        when(spec.dataSource.makeDelegate())
+            .thenReturn(new MockSourceExec(null, null));
+
+
+        when(specDao.getById(any(), eq(entry.getRoutingSpecId())))
+            .thenReturn(Optional.of(spec));
+
+        assertTrue(scheduler.start().isSuccess());
+        latch.await();
+        assertTrue(consumer.messages.isEmpty());
         scheduler.stop();
+        assertNotNull(thrownException.get());
+        var ex = thrownException.get();
+        assertChainOfCauseHas(DataConsumerException.class, ex);
+    }
+
+    <T extends Exception> void assertChainOfCauseHas(Class<T> expected, Throwable actual)
+    {
+        Throwable current = actual;
+        boolean found = expected.isInstance(current);
+
+        while (!found && current.getCause() != null && current.getCause() != current)
+        {
+            current = current.getCause();
+            found = expected.isInstance(current);
+        }
+
+        assertTrue(found, 
+            () -> String.format("Exception of type %s was not found in the chain of cause.", expected.getName()));
+
     }
 
     static class MockConsumer extends DataConsumer
