@@ -35,7 +35,7 @@ export interface ComputationParamsTableProps {
  * @returns
  */
 function adjustCompParm(parm: CompParm): CompParm {
-  let ret = {
+  const ret = {
     ...parm,
   };
 

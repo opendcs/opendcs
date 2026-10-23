@@ -13,7 +13,7 @@ import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 
 import decodes.tsdb.CompAppInfo;
 
-import static org.opendcs.database.model.mappers.PrefixRowMapper.addUnderscoreIfMissing;
+import static org.opendcs.database.model.mappers.OpenDcsTableMapper.addUnderscoreIfMissing;
 
 
 public final class CompAppInfoReducer implements BiConsumer<Map<Long, CompAppInfo>, RowView>
