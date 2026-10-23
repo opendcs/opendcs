@@ -263,7 +263,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
                     """,
                     id, spec.getId());
             }
-            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("routingspec", handle.getConnection());
+            final var bindKey = DbKey.isNull(id) ? keyGen.getKey("routingspec", handle.getConnection()) : id;
             merge.bind(RoutingSpecMapper.Columns.ID.column(), bindKey)
                  .bind(RoutingSpecMapper.Columns.NAME.column(), spec.getName())
                  .bind(RoutingSpecMapper.Columns.DATA_SOURCE_ID.column(), spec.dataSource.getId())
