@@ -395,8 +395,8 @@ export const CanClearValuesForChangeToGroup: Story = {
     await act(() => userEvent.click(saveBtn2));
 
     expect(args.onUpdate).toHaveBeenCalled();
-    const [_, parm2] = mockUpdate.mock.calls[0];
-    expect(role).toStrictEqual("input1");
+    const [role2, parm2] = mockUpdate.mock.calls[0];
+    expect(role2).toStrictEqual("input1");
     expect(parm2.dataTypeId).toStrictEqual(-1);
   },
 };
