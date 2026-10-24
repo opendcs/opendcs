@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.LoadingAppDao;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoMapper;
@@ -27,6 +26,7 @@ import decodes.sql.KeyGenerator;
 import decodes.tsdb.CompAppInfo;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 @ServiceProvider(service = LoadingAppDao.class)
 public final class LoadingAppDaoImpl implements LoadingAppDao
@@ -111,7 +111,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                     values(input.id, input.name, input.cmmnt, input.manual_edit_app)
                 """;
         try (var mergeQuery = handle.createUpdate(insertSql)
-                               .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+                               .define("dual", fromDual(dbEngine));
              var deleteProps = handle.createUpdate(DELETE_APP_PROPERTIES);
              var insertProps = handle.prepareBatch("""
                      insert into ref_loading_application_prop(loading_application_id, prop_name, prop_value)

@@ -1,12 +1,13 @@
 package org.opendcs.database.impl.opendcs.dao;
 
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
+
 import java.util.List;
 import java.util.Optional;
 
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.IntervalDurationDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.IntervalMapper;
@@ -98,7 +99,7 @@ public class OpenDcsIntervalDurationDaoImpl implements IntervalDurationDao
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
 
         try (var query = handle.createUpdate(MERGE_SQL)
-                               .define("dual", ctx.getDatabaseEngine() == DatabaseEngine.ORACLE ? " from dual " : ""))
+                               .define("dual", fromDual(ctx.getDatabaseEngine())))
         {
             DbKey id = interval.getKey();
             var existing = findIntervalByName(tx, interval.getName());

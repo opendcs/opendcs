@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.database.model.mappers.engineeringunit.EngineeringUnitMapper;
@@ -18,6 +17,7 @@ import decodes.db.EngineeringUnit;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 @ServiceProvider(service = EngineeringUnitDao.class)
 public class EngineeringUnitDaoImp implements EngineeringUnitDao
@@ -41,7 +41,7 @@ public class EngineeringUnitDaoImp implements EngineeringUnitDao
                     values(input.unitabbr, input.name, input.family, input.measures)
                 """;
         try (var query = handle.createUpdate(insertSql)
-                               .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : ""))
+                               .define("dual", fromDual(dbEngine)))
         {
             query.bind(Columns.UNIT_ABBR.column(), unit.getAbbr())
                  .bind(Columns.NAME.column(), unit.getName())

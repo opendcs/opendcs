@@ -49,7 +49,7 @@ public final class SqlQueries
     }
 
     /** Return FROM DUAL for Oracle, or an empty clause for other engines. */
-    public static String fromDualClauseFor(DatabaseEngine dbEngine)
+    public static String fromDual(DatabaseEngine dbEngine)
     {
         return dbEngine == DatabaseEngine.ORACLE ? "from dual" : "";
     }
