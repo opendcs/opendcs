@@ -913,24 +913,25 @@ public class DecodedMessage implements IDataCollection, DataMessage
      * @param v
      * @param hardTime
      */
-    public void addSampleWithTime(int sensorNumber, Variable v, Date hardTime, int lineNum)
+    public TimedVariable addSampleWithTime(int sensorNumber, Variable v, Date hardTime, int lineNum)
     {
         if (sensorNumber < 0)
         {
-            return;
+            return null;
         }
         TimeSeries ts = getTimeSeries(sensorNumber);
         if (ts == null)
         {
             log.warn("In platform {} Cannot add sample -- no time series for sensor {}",
                      platform.makeFileName(), sensorNumber);
-            return;
+            return null;
         }
         TimedVariable tv = new TimedVariable(v, hardTime);
         tv.setLineNumber(lineNum);
         ts.addSample(tv);
         ts.msecAtLastAdd = hardTime.getTime();
         ts.timeStatus = RecordedTimeStamp.COMPLETE;
+        return tv;
     }
 
     /**
