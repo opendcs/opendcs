@@ -21,7 +21,13 @@ import ilex.var.Variable;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 import org.opendcs.spi.decodes.DecodesFunctionProvider;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -48,8 +54,9 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 
 	private ArrayList<Integer> sensorNumbers = new ArrayList<Integer>();
 	private String argList = null;
-	private String delimiter = ",";
 	private String dataTypeStandard = null;
+	private String dateTimeField = null;
+	private DateTimeFormatter dateTimeFormatter = null;
 
 	/**
 	 * Default constructor for CsvFunction.
@@ -99,25 +106,23 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 	public void execute(DataOperations dd, DecodedMessage decmsg) throws DecoderException
 	{
 		var sb = new StringBuffer();
-		
 		log.trace("Executing with args '{}' #sensors={}", argList, sensorNumbers.size());
 		int fieldStart = dd.getBytePos();
+		HashMap<String,Value> pairs = new HashMap<>();
 		try
-		{		
-			
+		{
 			while (dd.moreChars())
 			{
 				char current = (char) dd.curByte();
 				if (current == '\n' || current == '\r')
 				{
-					dd.forwardspace();
 					break;
 				}
 				if (current == '&')
 				{
 					log.info("Processing {}", sb);
-					processPair(sb.toString(), decmsg, dd.getCurrentLine(), fieldStart, dd);
-					fieldStart++;
+					processPair(pairs, sb.toString(), decmsg, dd.getCurrentLine(), fieldStart, dd);
+					fieldStart=dd.getBytePos();
 					sb.setLength(0);
 				}
 				else
@@ -130,29 +135,32 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 			if (!sb.isEmpty())
 			{
 				log.info("Processing {} (final)", sb);
-				processPair(sb.toString(), decmsg, dd.getCurrentLine(), fieldStart, dd);
+				processPair(pairs, sb.toString(), decmsg, dd.getCurrentLine(), fieldStart, dd);
 			}
-
 		}
 		catch(EndOfDataException ex)
 		{
 			if (!sb.isEmpty()) {
 				log.info("Processing {} (exception)", sb);
-				processPair(sb.toString(), decmsg, dd.getCurrentLine(), fieldStart, dd);
+				processPair(pairs, sb.toString(), decmsg, dd.getCurrentLine(), fieldStart, dd);
 			}
 			log.trace("End of message reached");
 			throw ex;
 		}
+		finally
+		{
+			processPairs(pairs, decmsg, dd);
+		}
 		
 	}
 
-	private void processPair(String pair, DecodedMessage decmsg, int linenum,
+	private void processPair(HashMap<String,Value> pairs, String pair, DecodedMessage decmsg, int linenum,
 			int fieldStart, DataOperations dd)
 	{
 		var parts = pair.split("=");
 		var key = URLDecoder.decode(parts[0], StandardCharsets.UTF_8);
 		var value = URLDecoder.decode(parts[1], StandardCharsets.UTF_8);
-		processPair(key, value, decmsg, dd.getCurrentLine(), fieldStart, dd);
+		pairs.put(key, new Value(value, dd.getCurrentLine(), linenum));
 	}
 
 	/**
@@ -167,66 +175,92 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 	 * @param fieldStart  the starting byte position of the field.
 	 * @param dd          the DataOperations object for reading data.
 	 */
-	private void processPair(String key, String sample, DecodedMessage decmsg, int linenum,
-		int fieldStart, DataOperations dd)
+	private void processPairs(HashMap<String, Value> pairs, DecodedMessage decmsg, DataOperations dd) throws DecoderException
 	{
 		final DecodesScript script = formatStatement.getDecodesScript();
-		int sensorNumber = -1;
-		log.trace("Processing key '{}', value='{}'", key, sample);
-
-		sensorNumber = script.scriptSensors.stream()
-		  								   .filter(ss -> ss.getSensorName().equalsIgnoreCase(key))
-										   .map(ss -> ss.sensorNumber)
-										   .findFirst()
-										   .orElse(-1);
-		if (sensorNumber == -1)
+		
+		final var dateTimeStr = pairs.get(dateTimeField);
+		Instant dateTime = null;
+		if (dateTimeStr == null && dateTimeField != null)
 		{
-			var configSensors = script.platformConfig.getSensorVec();
-			sensorNumber = configSensors.stream()
-										.filter(cs -> 
-											cs.sensorName.equalsIgnoreCase(key) ||
-											cs.getDataTypeVec().stream()
-											.anyMatch(csDt -> csDt.getCode().equalsIgnoreCase(key))
-										)
-										.map(cs -> cs.sensorNumber)
-										.findFirst()
-										.orElse(-1);
-		};
-
-		if (sensorNumber < 0) {
-			log.atWarn().log("could not find matching sensor for {}", key);
-			return ;
+			throw new DecoderException("DateTimeField was set, but no date/time field was available in the message.");
 		}
-
-		try
+		else if (dateTimeStr != null)
 		{
-			String real = script.getReplacement(sample);
-			log.trace( "Turning {} -> {}", sample, real);
-			double x = Double.parseDouble(real); 
-			Variable v = new Variable(x);
+			dateTime = LocalDateTime.parse(dateTimeStr.value, dateTimeFormatter).atZone(ZoneId.of("UTC")).toInstant();
 			
-			TimedVariable tv = decmsg.addSample(sensorNumber, v, linenum);
-			if (tv != null && DecodesScript.trackDecoding)
-			{
-				DecodedSample ds = new DecodedSample(this, 
-					fieldStart, dd.getBytePos(),
-					tv, decmsg.getTimeSeries(sensorNumber));
-				script.addDecodedSample(ds);
-			}
-			log.trace("Added value {}", x);
 		}
-		catch (NumberFormatException ex)
+		final Date dataDate = dateTime != null ? Date.from(dateTime) : null;
+		pairs.forEach((key, sample) ->
 		{
-			log.atWarn()
-			   .setCause(ex)
-			   .log("line {} Cannot parse sample data '{}' for sensor {} -- ignored.",
-			   		linenum, sample, sensorNumber);
-			Variable v = new Variable("m");
-			v.setFlags(v.getFlags() | IFlags.IS_ERROR);
-			decmsg.addSample(sensorNumber, v, linenum);
-			log.trace("Value flagged as error");
-			return;
-		}
+			if (key.equals(dateTimeStr))
+			{
+				return;
+			}
+			log.trace("Processing key '{}', value='{}'", key, sample);
+			var sensorNumber = script.scriptSensors.stream()
+											.filter(ss -> ss.getSensorName().equalsIgnoreCase(key))
+											.map(ss -> ss.sensorNumber)
+											.findFirst()
+											.orElse(-1);
+			if (sensorNumber == -1)
+			{
+				var configSensors = script.platformConfig.getSensorVec();
+				sensorNumber = configSensors.stream()
+											.filter(cs -> 
+												cs.sensorName.equalsIgnoreCase(key) ||
+												cs.getDataTypeVec().stream()
+												.filter(dt -> dataTypeStandard == null
+													        ? true
+															: dataTypeStandard.equalsIgnoreCase(dt.getStandard()))
+												.anyMatch(csDt -> csDt.getCode().equalsIgnoreCase(key))
+											)
+											.map(cs -> cs.sensorNumber)
+											.findFirst()
+											.orElse(-1);
+			};
+
+			if (sensorNumber < 0) {
+				log.atWarn().log("could not find matching sensor for {}", key);
+				return ;
+			}
+			try
+			{
+				String real = script.getReplacement(sample.value);
+				log.trace( "Turning {} -> {}", sample, real);
+				double x = Double.parseDouble(real); 
+				Variable v = new Variable(x);
+				TimedVariable tv = null;
+				if (dataDate != null)
+				{
+					tv = decmsg.addSampleWithTime(sensorNumber, v, dataDate, sample.lineNumber);
+				}
+				else
+				{
+					tv = decmsg.addSample(sensorNumber, v, sample.lineNumber);
+				}
+				if (tv != null && DecodesScript.trackDecoding)
+				{
+					DecodedSample ds = new DecodedSample(this, 
+						sample.fieldStart, dd.getBytePos(),
+						tv, decmsg.getTimeSeries(sensorNumber));
+					script.addDecodedSample(ds);
+				}
+				log.trace("Added value {}", x);
+			}
+			catch (NumberFormatException ex)
+			{
+				log.atWarn()
+				.setCause(ex)
+				.log("line {} Cannot parse sample data '{}' for sensor {} -- ignored.",
+						sample.lineNumber, sample, sensorNumber);
+				Variable v = new Variable("m");
+				v.setFlags(v.getFlags() | IFlags.IS_ERROR);
+				decmsg.addSample(sensorNumber, v, sample.lineNumber);
+				log.trace("Value flagged as error");
+				return;
+			}
+		});
 	}
 
 	/**
@@ -244,6 +278,10 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 	{
 		argList = argString;
 		StringTokenizer st = new StringTokenizer(argString, ",");
+		dateTimeField = null;
+		sensorNumbers.clear();
+		dateTimeFormatter = null;
+		dataTypeStandard = null;
 		while(st.hasMoreTokens())
 		{
 			String t = st.nextToken();
@@ -254,6 +292,22 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 				if (parts.length > 1)
 				{
 					this.dataTypeStandard = parts[1];
+				}
+			}
+			else if (t.toLowerCase().startsWith("timefield"))
+			{
+				String[] parts = t.split("=");
+				if (parts.length > 1)
+				{
+					dateTimeField = parts[1];
+				}
+			}
+			else if (t.toLowerCase().startsWith("timeformat"))
+			{
+				String[] parts = t.split("=");
+				if (parts.length > 1)
+				{
+					dateTimeFormatter = DateTimeFormatter.ofPattern(parts[1]);
 				}
 			}
 			else
@@ -291,4 +345,8 @@ public class HtmlFormEncodedFunction extends DecodesFunction
 	
 		
 	}
+
+	public record Value(String value, int fieldStart, int lineNumber)
+	{
+	};
 }
