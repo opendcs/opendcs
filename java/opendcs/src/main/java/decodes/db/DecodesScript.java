@@ -489,7 +489,8 @@ public class DecodesScript extends IdDatabaseObject
             }
             catch(EndOfDataException ex)
             {
-                log.debug("Format statements attempted to read past the end of message.");
+                var le = log.isTraceEnabled() ? log.atTrace().setCause(ex) : log.atDebug();
+                le.log("Format statements attempted to read past the end of message. Label: {}", fs.label);
                 fs = null;
             }
             catch(SwitchFormatException ex)
