@@ -3,7 +3,6 @@ package org.opendcs.database.apps;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -18,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Replaces {@link decodes.tsdb.TsDbAppTemplate} as a new base class for applications.
+ * Replaces {@see decodes.tsdb.TsDbAppTemplate} as a new base class for applications.
  *
  * applicationExecutor and taskExecutor <b>can</b> the same instance.
  * if taskExector is not set this will be done.
@@ -76,7 +75,7 @@ public abstract class StandaloneApp
      * operations on to the task executor.
      *
      * The only restriction is that {@link stop} will wait up to {@link AppBuilder#shutdownWait} milliseconds
-     * and then call {@link java.util.concurrent.Future#cancel(true)} to force termination.
+     * and then call {@link java.util.concurrent.Future#cancel} with true to force termination.
      */
     public abstract void loop();
 
