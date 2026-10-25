@@ -22,6 +22,8 @@ import java.text.SimpleDateFormat;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import ilex.util.ByteUtil;
 import ilex.var.Variable;
 
@@ -61,9 +63,10 @@ import decodes.db.Constants;
     116 Bytes
   
 */
-public class EumetsatPMParser extends PMParser
+public class EumetsatPMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public static final String HEADER_TYPE = "eumetsat";
 	public static final String module = "EumetsatPMParser";
 	private static SimpleDateFormat eumetsatDateFormat = null;
 
@@ -172,7 +175,7 @@ public class EumetsatPMParser extends PMParser
 	/** @return "eumetsat" */
 	public String getHeaderType()
 	{
-		return "eumetsat";
+		return HEADER_TYPE;
 	}
 
 	/** @return the medium type constant for EUMETSAT DCP messages. */
@@ -189,6 +192,17 @@ public class EumetsatPMParser extends PMParser
 	public boolean containsExplicitLength()
 	{
 		return true;
+	}
+
+	@AutoService (PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new EumetsatPMParser() : null;
+		}
 	}
 }
 

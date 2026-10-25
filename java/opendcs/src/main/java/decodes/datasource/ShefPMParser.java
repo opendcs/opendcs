@@ -22,6 +22,8 @@ import java.text.SimpleDateFormat;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import ilex.var.Variable;
 
 import decodes.db.Constants;
@@ -30,9 +32,11 @@ import decodes.db.Constants;
   Concrete subclass of PMParser for parsing performance measurements
   out of SHEF messages.
 */
-public class ShefPMParser extends PMParser
+public class ShefPMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final String HEADER_TYPE = "shef";
+
 	private static final SimpleDateFormat mmdd = new SimpleDateFormat("MMdd");
 	private static final SimpleDateFormat yymmdd = new SimpleDateFormat("yyMMdd");
 	private static final SimpleDateFormat ccyymmdd = new SimpleDateFormat("yyyyMMdd");
@@ -287,7 +291,7 @@ public class ShefPMParser extends PMParser
 	/** @return "shef" */
 	public String getHeaderType()
 	{
-		return "shef";
+		return HEADER_TYPE;
 	}
 
 	/** @return data type constant for SHEF message */
@@ -303,6 +307,16 @@ public class ShefPMParser extends PMParser
 	public boolean containsExplicitLength()
 	{
 		return false;
+	}
+
+	@AutoService(PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new ShefPMParser() : null;
+		}
 	}
 }
 

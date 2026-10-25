@@ -23,6 +23,8 @@ import java.text.SimpleDateFormat;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import ilex.util.ByteUtil;
 import ilex.var.Variable;
 
@@ -32,9 +34,10 @@ import decodes.db.Constants;
   Concrete subclass of PMParser for parsing performance measurements
   out of GOES DCP messages.
 */
-public class GoesPMParser extends PMParser
+public class GoesPMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public static final String HEADER_TYPE = "goes";
 	public static final String DCP_ADDRESS = "DcpAddress";
 	public static final String MESSAGE_TIME = "Time";
 	public static final String MESSAGE_LENGTH = "Length";
@@ -220,13 +223,23 @@ public class GoesPMParser extends PMParser
 	/** @return "goes" */
 	public String getHeaderType()
 	{
-		return "goes";
+		return HEADER_TYPE;
 	}
 
 	/** @return the medium type constant for GOES DCP messages. */
 	public String getMediumType()
 	{
 		return Constants.medium_Goes;
+	}
+
+	@AutoService (PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return headerType != null && headerType.toLowerCase().startsWith(HEADER_TYPE) ? new GoesPMParser() : null;
+		}
 	}
 }
 

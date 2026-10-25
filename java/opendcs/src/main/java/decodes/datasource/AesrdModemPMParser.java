@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.datasource;
@@ -25,6 +25,8 @@ import java.util.TimeZone;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import decodes.db.Constants;
 
 /**
@@ -32,28 +34,31 @@ import decodes.db.Constants;
  * by Alberta ESRD
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class AesrdModemPMParser extends PMParser
+public class AesrdModemPMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "AesrdModemPMParser";
+	public static final String HEADER_TYPE = "AesrdModem";
 	private int headerLen = 0;
-	
-	private SimpleDateFormat sdfs[] = 
+
+	private SimpleDateFormat sdfs[] =
 	{
 		new SimpleDateFormat("yy/MM/dd HH:mm:ss"), // amasser, campbell, fts, sutron, vedas
 		new SimpleDateFormat("yyyy DDD HH:mm:ss")  // h555
 	};
-	
+
 	public AesrdModemPMParser()
 	{
 		// header time stamps are always in MST.
 		for(SimpleDateFormat sdf : sdfs)
+		{
 			sdf.setTimeZone(TimeZone.getTimeZone("GMT-07:00"));
+		}
 	}
-	
+
 	/** Returns the constant string "data-logger". */
 	@Override
-	public String getHeaderType() { return "AesrdModem"; }
+	public String getHeaderType() { return  HEADER_TYPE; }
 
 	/** Returns constant medium type for platform association. */
 	@Override
@@ -68,13 +73,13 @@ public class AesrdModemPMParser extends PMParser
 		// first line leaving us with just the date/time stamp at the end.
 		// This may be the best one so save it.
 		Date msgTime = parseDateTime(getNextLine(msg));
-		
+
 		String line = null;
 		while((line = getNextLine(msg)) != null)
 		{
 			int idx;
 			String ucLine = line.toUpperCase(); // for efficient comparisons
-			
+
 			if ((idx = ucLine.indexOf("START:")) >= 0)
 			{
 				String mediumId = line.substring(idx + 6).trim();
@@ -83,7 +88,7 @@ public class AesrdModemPMParser extends PMParser
 				msg.setPM(GoesPMParser.FAILURE_CODE, new Variable('G'));
 				msg.setMediumId(mediumId);
 				msg.setHeaderLength(headerLen);
-				msg.setPM(GoesPMParser.MESSAGE_LENGTH, 
+				msg.setPM(GoesPMParser.MESSAGE_LENGTH,
 					new Variable((long)(msg.data.length - headerLen)));
 				if (msgTime != null)
 				{
@@ -109,7 +114,7 @@ public class AesrdModemPMParser extends PMParser
 		}
 		throw new HeaderParseException("No 'START:' line found.");
 	}
-	
+
 	/**
 	 * Start at headerLen and get the next line of data. Return as a string.
 	 * Leave headerLen at the start of the next line.
@@ -152,10 +157,10 @@ public class AesrdModemPMParser extends PMParser
 			log.warn(module + " No date/time stamp on line '{}'",line);
 			return null;
 		}
-		
+
 		String dateStr = line.substring(dateStart);
 		log.trace("parsing date/time from '{}', with '{}'.", dateStr, sdfs[0].toPattern());
-		
+
 		try { return sdfs[0].parse(dateStr); }
 		catch(Exception ex)
 		{
@@ -178,5 +183,13 @@ public class AesrdModemPMParser extends PMParser
 	@Override
 	public boolean containsExplicitLength() { return false; }
 
-
+	@AutoService(PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new AesrdModemPMParser() : null;
+		}
+	}
 }
