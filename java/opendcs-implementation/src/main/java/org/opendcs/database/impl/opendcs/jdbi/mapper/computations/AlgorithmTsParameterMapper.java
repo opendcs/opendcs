@@ -17,7 +17,7 @@ public class AlgorithmTsParameterMapper extends OpenDcsTableMapper<DbAlgoParm, A
     {
         super(prefix, "cp_algo_ts_parm", Columns.class);
     }
-    
+
     @Override
     public DbAlgoParm map(ResultSet rs, StatementContext ctx) throws SQLException
     {
@@ -33,6 +33,12 @@ public class AlgorithmTsParameterMapper extends OpenDcsTableMapper<DbAlgoParm, A
             rs.getString(column(Columns.PARM_TYPE))
         );
     }
+
+    public static AlgorithmTsParameterMapper withPrefix(String prefix)
+    {
+        return new AlgorithmTsParameterMapper(prefix);
+    }
+
     public enum Columns implements TableColumnDefinition
     {
         ALGORITHM_ID,

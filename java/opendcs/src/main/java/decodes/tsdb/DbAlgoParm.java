@@ -71,4 +71,10 @@ public class DbAlgoParm
 	{
 		this.parmType = parmType;
 	}
+
+	@Override
+	public String toString()
+	{
+		return String.format("AlgoTsParm{roleName=%s, type=%s", roleName, parmType);
+	}
 }

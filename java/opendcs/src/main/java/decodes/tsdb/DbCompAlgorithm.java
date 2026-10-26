@@ -236,12 +236,21 @@ public class DbCompAlgorithm implements CompMetaData, CachableHasProperties
 	{
 		// Oracle treats empty strings as nulls. Prevent bogus "Are You Sure"
 		// messages when comment is empty and user hasn't changed anything.
+		var rhsComment = rhs.comment; // to prevent mutation during a comparison.
 		if (rhs.comment != null && rhs.comment.length() == 0 && comment == null)
-			rhs.comment = null;
+		{
+			rhsComment = null;
+		}
 
-		if (!TextUtil.strEqual(name, rhs.name)
-		 || !TextUtil.strEqual(execClass, rhs.execClass)
-		 || !TextUtil.strEqual(comment, rhs.comment))
+		if (!TextUtil.strEqual(name, rhs.name))
+		{
+			return false;
+		}
+		if (!TextUtil.strEqual(execClass, rhs.execClass))
+		{
+			return false;
+		}
+		if (!TextUtil.strEqual(comment, rhsComment))
 		{
 			return false;
 		}

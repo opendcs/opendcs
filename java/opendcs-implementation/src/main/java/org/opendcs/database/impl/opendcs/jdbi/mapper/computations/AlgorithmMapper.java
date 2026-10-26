@@ -49,7 +49,7 @@ public final class AlgorithmMapper extends OpenDcsTableMapper<DbCompAlgorithm, A
         ID("algorithm_id"),
         ALGORITHM_NAME,
         EXEC_CLASS,
-        COMMENT("CMMNT")
+        COMMENT("cmmnt")
         ;
 
         private final String column;
