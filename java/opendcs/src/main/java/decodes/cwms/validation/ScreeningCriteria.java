@@ -127,6 +127,8 @@ public class ScreeningCriteria
 		TimedVariable tv = input.findWithin(dataTime, alg.roundSec);
 		if (tv == null)
 			return;
+		if (!isUsableForScreening(tv, dataTime, alg))
+			return;
 
 		boolean setInputFlags = true;
 		boolean noOverwrite = false;
@@ -159,18 +161,19 @@ public class ScreeningCriteria
 		}
 		
 		output.setValue(v);
-		int flags = tv.getFlags();
 		
 		log.trace("Executing checks, value {} at time {}, flags initially=0x{}",
-				  v, dataTime, Integer.toHexString(flags));
+				  v, dataTime, Integer.toHexString(tv.getFlags()));
 
-		flags |= doChecks(dc, input, dataTime, alg, v);
-		
-		int mask = CwmsFlags.TEST_MASK|CwmsFlags.VALIDITY_MASK;
+		int mask = CwmsFlags.TEST_MASK | CwmsFlags.VALIDITY_MASK;
+		int flags = (tv.getFlags() & ~mask)
+			| doChecks(dc, input, dataTime, alg, v);
 		// MJM 20121002 If input & output are the same time series
 		// and the flags are unchanged. Then do nothing.
 		if (inputIsOutput)
 		{
+			if (alg instanceof ScreeningAlgorithm)
+				flags = ((ScreeningAlgorithm)alg).applyIfQuestionable(flags, tv.getFlags());
 			if ((flags&mask) != (tv.getFlags()&mask))
 				// Flags are changed as a result of validation.
 			{
@@ -186,10 +189,11 @@ public class ScreeningCriteria
 			// Also, it must only be done if the flags have changed to avoid infinite loop.
 			if (setInputFlags && (flags&mask) != (tv.getFlags()&mask))
 				alg.setInputFlagBits("input", flags, mask);
+			int outputFlags = flags;
 			
 			// Set NO_OVERWRITE if the property is set in the comp.
 			if (noOverwrite)
-				flags |= VarFlags.NO_OVERWRITE;
+				outputFlags |= VarFlags.NO_OVERWRITE;
 			
 			// The 'setRejectedMissing' property means that, if the result of the
 			// checks is that the value is 'REJECTED', then in the output, set it as MISSING.
@@ -203,12 +207,14 @@ public class ScreeningCriteria
 				}
 				else if (setRejectMissing)
 				{
-					flags = (flags & (~CwmsFlags.VALIDITY_MASK))
+					outputFlags = (outputFlags & (~CwmsFlags.VALIDITY_MASK))
 						  | CwmsFlags.VALIDITY_MISSING;
 				}
 			}
+			if (alg instanceof ScreeningAlgorithm)
+				outputFlags = ((ScreeningAlgorithm)alg).applyIfQuestionable(outputFlags, tv.getFlags());
 			alg.clearFlagBits(output, mask);
-			alg.setFlagBits(output, flags);
+			alg.setFlagBits(output, outputFlags);
 		}
 	}
 	
@@ -466,6 +472,23 @@ public class ScreeningCriteria
 		if (alg instanceof ScreeningAlgorithm)
 			return ((ScreeningAlgorithm)alg).rateComparisonTime(dataTime);
 		return new Date(dataTime.getTime() - 3600000L);
+	}
+
+	private boolean isUsableForScreening(TimedVariable value, Date valueTime,
+		AW_AlgorithmBase alg)
+	{
+		if ((value.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) != 0)
+			return false;
+		if (!(alg instanceof ScreeningAlgorithm))
+			return true;
+		ScreeningAlgorithm scrAlg = (ScreeningAlgorithm)alg;
+		if (!scrAlg.checkOutputFlags || scrAlg.inputIsOutput())
+			return true;
+		decodes.tsdb.ParmRef outputParm = alg.getParmRef("output");
+		TimedVariable outputValue = outputParm == null ? null
+			: outputParm.timeSeries.findWithin(valueTime, alg.roundSec);
+		return outputValue == null
+			|| (outputValue.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0;
 	}
 
 	private TimedVariable findPreviousUsableValue(CTimeSeries input,

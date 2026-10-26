@@ -81,7 +81,11 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		new PropertySpec("noOutputOnReject", PropertySpec.BOOLEAN, "(default=false) "
 			+ "If true and the value is REJECTED, then do not write output param at all. "
 			+ "Warning: This may leave a previous value for the output param at that time slice "
-			+ "unchanged.")
+			+ "unchanged."),
+		new PropertySpec("checkOutputFlags", PropertySpec.BOOLEAN, "(default=false) "
+			+ "If true, only screen values when neither the input nor an existing output value "
+			+ "is MISSING or REJECTED. Output flags from the database and values produced "
+			+ "earlier in this run are both considered.")
 	};
 
 	@Override
@@ -103,8 +107,9 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public boolean setInputFlags = false;
 	public boolean setRejectMissing = false;
 	public boolean noOutputOnReject = false;
+	public boolean checkOutputFlags = false;
 	String _propertyNames[] = { "noOverwrite", "setInputFlags", "setRejectMissing",
-		"noOutputOnReject" };
+		"noOutputOnReject", "checkOutputFlags" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -226,6 +231,20 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 		}
 
+		if (checkOutputFlags && !_inputIsOutput && inputParm.timeSeries.size() > 0)
+		{
+			TreeSet<Date> outputTimes = new TreeSet<Date>();
+			for (int idx = 0; idx < inputParm.timeSeries.size(); idx++)
+				outputTimes.add(inputParm.timeSeries.sampleAt(idx).getTime());
+			TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
+			try { loadOutputFlags(timeSeriesDAO, outputParm, outputTimes); }
+			catch (Exception ex)
+			{
+				throw new DbCompException("Unable to retrieve output flags for screening.", ex);
+			}
+			finally { timeSeriesDAO.close(); }
+		}
+
 		loadUsableRateHistory(inputParm, outputParm);
 
 		String euAbbr = screening.getCheckUnitsAbbr();
@@ -271,6 +290,9 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		throws DbCompException
 	{
 //AW:TIMESLICE
+		if (!canScreen(_timeSliceBaseTime))
+			return;
+
 		ScreeningCriteria crit =
 			screening != null ? screening.findForDate(_timeSliceBaseTime, aggTZ) : null;
 		if (crit == null)
@@ -293,7 +315,9 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 			output.setValue(input);
 			clearFlagBits(output, CwmsFlags.VALIDITY_MASK | CwmsFlags.TEST_MASK);
-			setFlagBits(output, CwmsFlags.SCREENED | CwmsFlags.VALIDITY_OKAY);
+			setFlagBits(output, applyIfQuestionable(
+				CwmsFlags.SCREENED | CwmsFlags.VALIDITY_OKAY,
+				_timeSliceVars.findByNameIgnoreCase("input").getFlags()));
 			log.info("Writing output flags=0x{}", Integer.toHexString(output.getFlags()));
 			return;
 		}
@@ -309,6 +333,30 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		crit.executeChecks(dc, inputParm.timeSeries, _timeSliceBaseTime, output, this);
 
 //AW:TIMESLICE_END
+	}
+
+	int applyIfQuestionable(int flags, int inputFlags)
+	{
+		if (_questionOutput
+			&& (inputFlags & CwmsFlags.VALIDITY_MASK) == CwmsFlags.VALIDITY_QUESTIONABLE)
+			return (flags & ~CwmsFlags.VALIDITY_MASK)
+				| CwmsFlags.VALIDITY_QUESTIONABLE;
+		return flags;
+	}
+
+	boolean canScreen(Date dataTime)
+	{
+		Variable inputV = _timeSliceVars.findByNameIgnoreCase("input");
+		if (inputV == null
+			|| (inputV.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) != 0)
+			return false;
+		if (!checkOutputFlags || inputIsOutput())
+			return true;
+		ParmRef outputParm = getParmRef("output");
+		TimedVariable outputV = outputParm == null ? null
+			: outputParm.timeSeries.findWithin(dataTime, roundSec);
+		return outputV == null
+			|| (outputV.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0;
 	}
 
 	private void loadUsableRateHistory(ParmRef inputParm, ParmRef outputParm)
@@ -332,10 +380,11 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 				{
 					if (timeSeriesDAO == null)
 						timeSeriesDAO = tsdb.makeTimeSeriesDAO();
-					if (!inputIsOutput() && outputParm != null)
+					if (checkOutputFlags && !inputIsOutput() && outputParm != null)
 					{
 						TreeSet<Date> outputTime = new TreeSet<Date>();
 						outputTime.add(prior.getTime());
+						loadOutputFlags(timeSeriesDAO, outputParm, outputTime);
 					}
 					if (isUsableForRateComparison(prior, outputParm))
 						break;
@@ -354,13 +403,23 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 	}
 
+	private void loadOutputFlags(TimeSeriesDAI timeSeriesDAO, ParmRef outputParm,
+		TreeSet<Date> outputTimes) throws Exception
+	{
+		if (timeSeriesDAO instanceof CwmsTimeSeriesDAO)
+			((CwmsTimeSeriesDAO)timeSeriesDAO).fillTimeSeries(
+				outputParm.timeSeries, outputTimes, true);
+		else
+			timeSeriesDAO.fillTimeSeries(outputParm.timeSeries, outputTimes);
+	}
+
 	boolean isUsableForRateComparison(TimedVariable inputValue, ParmRef outputParm)
 	{
 		if (isMissingRejected(inputValue.getFlags())
 			|| (findPreviousForQuestionable()
 				&& isQuestionable(inputValue.getFlags())))
 			return false;
-		if (inputIsOutput())
+		if (!checkOutputFlags || inputIsOutput())
 			return true;
 		TimedVariable outputValue = outputParm.timeSeries.findWithin(inputValue.getTime(), roundSec);
 		return outputValue == null
