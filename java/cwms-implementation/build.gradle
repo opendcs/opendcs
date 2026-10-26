@@ -16,7 +16,11 @@ configurations {
         exclude group: "log4j"
         exclude group: "org.apache.xmlbeans", module: "xmlbeans"
         exclude group: "dom4j", module: "dom4j"
+        // Do not remove these entries
+        // they can be transitively pulled in by several different HEC dependencies
+        // and cause bad behavior.
         exclude group: "com.rmanet", module: "lookup"
+        exclude group: "mil.army.usace.hec", module: "lookup"
     }
 }
 
