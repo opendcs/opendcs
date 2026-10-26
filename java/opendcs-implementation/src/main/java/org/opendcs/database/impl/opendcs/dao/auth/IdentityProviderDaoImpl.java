@@ -28,6 +28,8 @@ import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.IdentityProvider;
 import org.opendcs.database.model.mappers.IdentityProviderMapper;
+import org.opendcs.database.model.mappers.IdentityProviderMapper.Columns;
+import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
@@ -88,9 +90,9 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
                 handle.createQuery("insert into identity_provider (name, type, updated_at, config) " +
                                                             "values (:name, :type, now(), :config::jsonb) returning id, name, type, updated_at, config::text"))
         {
-            return addIdp.bind(GenericColumns.NAME.column(), provider.getName())
-                            .bind(IdentityProviderMapper.Columns.TYPE.column(), provider.getType())
-                            .bind(IdentityProviderMapper.Columns.CONFIG.column(), provider.configToMap())
+            return addIdp.bind(Columns.NAME.column(), provider.getName())
+                            .bind(Columns.TYPE.column(), provider.getType())
+                            .bind(Columns.CONFIG.column(), provider.configToMap())
                             .map(PROVIDER_MAPPER).one();
         }
     }
@@ -101,7 +103,7 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
         Handle handle = getHandle(tx);
         try (Query getIdp = handle.createQuery("select id, name, type, updated_at, config::text from identity_provider where id = :id"))
         {
-            return getIdp.bind(GenericColumns.ID.column(), id).map(PROVIDER_MAPPER).findOne();
+            return getIdp.bind(Columns.ID.column(), id).map(PROVIDER_MAPPER).findOne();
         }
     }
 
@@ -111,7 +113,7 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
         Handle handle = getHandle(tx);
         try (Query getIdp = handle.createQuery("select id, name, type, updated_at, config::text from identity_provider where name = :name"))
         {
-            return getIdp.bind(GenericColumns.NAME.column(), name).map(PROVIDER_MAPPER).findOne();
+            return getIdp.bind(Columns.NAME.column(), name).map(PROVIDER_MAPPER).findOne();
         }
     }
 
@@ -124,10 +126,10 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
                 handle.createQuery("update identity_provider set name = :name, type = :type, " +
                                     "config = :config::jsonb where id = :id returning id, name, type, updated_at, config::text"))
         {
-            return updateIdp.bind(GenericColumns.ID.column(), id)
-                            .bind(GenericColumns.NAME.column(), provider.getName())
-                            .bind(IdentityProviderMapper.Columns.TYPE.column(), provider.getType())
-                            .bind(GenericColumns.CONFIG.column(), provider.configToMap())
+            return updateIdp.bind(Columns.ID.column(), id)
+                            .bind(Columns.NAME.column(), provider.getName())
+                            .bind(Columns.TYPE.column(), provider.getType())
+                            .bind(Columns.CONFIG.column(), provider.configToMap())
                             .map(PROVIDER_MAPPER).one();
         }
     }
@@ -138,7 +140,7 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
         Handle handle = getHandle(tx);
         try (Update deleteIdp = handle.createUpdate("delete from identity_provider where id = :id"))
         {
-            deleteIdp.bind(GenericColumns.ID.column(), id).execute();
+            deleteIdp.bind(Columns.ID.column(), id).execute();
         }
     }
 
@@ -157,7 +159,7 @@ public class IdentityProviderDaoImpl implements IdentityProviderDao
     private Handle getHandle(DataTransaction tx) throws OpenDcsDataException
     {
         Handle h = tx.connection(Handle.class)
-                            .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Connection from transaction."));
+                            .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         h.getJdbi()
          .installPlugin(new Jackson2Plugin());
         return h.registerArgument(new ConfigArgumentFactory())

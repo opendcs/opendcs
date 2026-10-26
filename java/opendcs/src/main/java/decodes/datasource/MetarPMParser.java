@@ -24,6 +24,8 @@ import java.text.SimpleDateFormat;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import ilex.var.Variable;
 
 import decodes.db.Constants;
@@ -32,9 +34,10 @@ import decodes.db.Constants;
   Concrete subclass of PMParser for parsing performance measurements
   out of GOES DCP messages.
 */
-public class MetarPMParser extends PMParser
+public class MetarPMParser implements  PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public static final String HEADER_TYPE = "metar";
 	private static SimpleDateFormat sdf = null;
 
 	/** default constructor */
@@ -178,7 +181,7 @@ public class MetarPMParser extends PMParser
 	/** @return "metar" */
 	public String getHeaderType()
 	{
-		return "metar";
+		return HEADER_TYPE;
 	}
 
 	/** @return expected medium type for transport medium record */
@@ -194,5 +197,15 @@ public class MetarPMParser extends PMParser
 	public boolean containsExplicitLength()
 	{
 		return false;
+	}
+
+	@AutoService(PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new MetarPMParser() : null;
+		}
 	}
 }

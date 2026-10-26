@@ -1,6 +1,7 @@
 package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.util.List;
 import java.util.Optional;
@@ -8,7 +9,6 @@ import java.util.Optional;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.Query;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataSourceDao;
 import org.opendcs.database.model.mappers.datasource.DataSourceAccumulator;
@@ -107,7 +107,7 @@ public class DataSourceDaoImpl implements DataSourceDao
                     values(input.id, input.name, input.datasourcetype, input.datasourcearg)
                 """;
         try (var mergeQuery = handle.createUpdate(insertSql)
-                               .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+                               .define("dual", fromDual(dbEngine));
              var deleteGroupQuery = handle.createUpdate("delete from datasourcegroupmember where groupid = :id");
              var insertGroupQuery = handle.prepareBatch("""
                      insert into datasourcegroupmember(groupid, sequencenum, memberid)

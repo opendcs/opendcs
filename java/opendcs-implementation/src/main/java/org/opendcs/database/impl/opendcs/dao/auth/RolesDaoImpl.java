@@ -12,7 +12,8 @@ import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.Role;
 import org.opendcs.database.model.mappers.RoleMapper;
-import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.database.model.mappers.RoleMapper.Columns;
+import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 
 import decodes.sql.DbKey;
@@ -40,7 +41,7 @@ public class RolesDaoImpl implements RolesDao
         var handle = getHandle(tx);
         try (var select = handle.createQuery("select id, name, description, updated_at from opendcs_role where name = :name"))
         {
-            return select.bind(GenericColumns.NAME.column(), role)
+            return select.bind(Columns.NAME.column(), role)
                          .map(ROLE_MAPPER)
                          .findOne();
         }
@@ -76,8 +77,8 @@ public class RolesDaoImpl implements RolesDao
                 handle.createQuery("insert into opendcs_role (name, description, updated_at) " +
                                                      "values (:name, :description, now()) returning id, name, description,updated_at"))
         {
-            return addRole.bind(GenericColumns.NAME.column(), role.name())
-                          .bind(GenericColumns.DESCRIPTION.column(), role.description())
+            return addRole.bind(Columns.NAME.column(), role.name())
+                          .bind(Columns.DESCRIPTION.column(), role.description())
                           .map(ROLE_MAPPER).one();
         }
     }
@@ -88,7 +89,7 @@ public class RolesDaoImpl implements RolesDao
         Handle handle = getHandle(tx);
         try (var select = handle.createQuery("select id, name, description, updated_at from opendcs_role where id = :id"))
         {
-            return select.bind(GenericColumns.ID.column(), id)
+            return select.bind(Columns.ID.column(), id)
                          .map(ROLE_MAPPER).findOne();
         }
     }
@@ -99,9 +100,9 @@ public class RolesDaoImpl implements RolesDao
         Handle handle = getHandle(tx);
         try (var update = handle.createQuery("update opendcs_role set name =:name, description = :description where id=:id returning id, name, description,updated_at"))
         {
-            return update.bind(GenericColumns.NAME.column(), role.name())
-                         .bind(GenericColumns.DESCRIPTION.column(), role.description())
-                         .bind(GenericColumns.ID.column(), id)
+            return update.bind(Columns.NAME.column(), role.name())
+                         .bind(Columns.DESCRIPTION.column(), role.description())
+                         .bind(Columns.ID.column(), id)
                          .map(ROLE_MAPPER).one();
         }
     }
@@ -112,7 +113,7 @@ public class RolesDaoImpl implements RolesDao
         Handle handle = getHandle(tx);
         try (var delete = handle.createUpdate("delete from opendcs_role where id = :id"))
         {
-             delete.bind(GenericColumns.ID.column(), id)
+             delete.bind(Columns.ID.column(), id)
                    .execute();
         }
     }
@@ -129,7 +130,7 @@ public class RolesDaoImpl implements RolesDao
     private Handle getHandle(DataTransaction tx) throws OpenDcsDataException
     {
         var h = tx.connection(Handle.class)
-                            .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Connection from transaction."));
+                            .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         h.getJdbi()
          .installPlugin(new Jackson2Plugin());
         return h.registerArgument(new ConfigArgumentFactory())

@@ -22,15 +22,19 @@ import java.text.ParseException;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import ilex.var.Variable;
 import decodes.db.Constants;
 
 /**
 Performance Measurement Parser for USGS EDL Header Lines.
 */
-public class EdlPMParser extends PMParser
+public class EdlPMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final String HEADER_TYPE = "edl";
+	private static final String HEADER_TYPE2 = "data-logger";
 	// Private time/date stamp parsers:
 	private static SimpleDateFormat beginDateTimeSdf = 
 		new SimpleDateFormat("yyyyMMddHHmm Z");
@@ -99,7 +103,7 @@ public class EdlPMParser extends PMParser
 	}
 
 	/** Returns the constant string "data-logger". */
-	public String getHeaderType() { return "data-logger"; }
+	public String getHeaderType() { return HEADER_TYPE2; }
 
 	/** Returns constant medium type for platform association. */
 	public String getMediumType() { return Constants.medium_EDL; }
@@ -425,6 +429,19 @@ public class EdlPMParser extends PMParser
 	public boolean containsExplicitLength()
 	{
 		return false;
+	}
+
+	@AutoService (PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) || HEADER_TYPE2.equalsIgnoreCase(headerType)
+				 ? new EdlPMParser()
+				 : null;
+		}
 	}
 }
 

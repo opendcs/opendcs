@@ -1,6 +1,7 @@
 package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,7 +13,6 @@ import java.util.regex.Pattern;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.database.exceptions.RequiredSiteNameMissingException;
@@ -221,7 +221,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         try (var merge = handle.createUpdate(MERGE_SITE)
-                               .define("dual", ctx.getDatabaseEngine() == DatabaseEngine.ORACLE ? "from dual" : "");
+                               .define("dual", fromDual(ctx.getDatabaseEngine()));
             var deleteProps = handle.createUpdate(DELETE_PROPS);
             var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);

@@ -20,6 +20,8 @@ import java.util.Date;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import java.util.Calendar;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -36,9 +38,10 @@ import decodes.db.Constants;
   The vitel DRGS header differs from DOMSAT in that it does not
   contain the FAILURE_CODE field.
 */
-public class VitelDrgsPMParser extends PMParser
+public class VitelDrgsPMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public static final String HEADER_TYPE = "vitel";
 	/* Note: This class will use the label strings defined in
 	   GoesPMParser for DCP_ADDRESS, MESSAGE_TIME, MESSAGE_LENGTH,
 	   SIGNAL_STRENGTH, FREQ_OFFSET, MOD_INDEX, QUALITY, CHANNEL,
@@ -153,7 +156,7 @@ public class VitelDrgsPMParser extends PMParser
 	/** @return "vitel" */
 	public String getHeaderType()
 	{
-		return "vitel";
+		return HEADER_TYPE;
 	}
 
 	/** @return medium type constant for this kind of message. */
@@ -162,5 +165,14 @@ public class VitelDrgsPMParser extends PMParser
 		return Constants.medium_Goes;
 	}
 
+	@AutoService(PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new VitelDrgsPMParser() : null;
+		}
+	}
 }
 

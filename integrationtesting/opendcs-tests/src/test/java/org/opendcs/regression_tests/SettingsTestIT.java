@@ -1,13 +1,13 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 import java.util.Properties;
 
 import org.jdbi.v3.core.Handle;
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.AbstractJdbiOpenDcsDatabaseWrapper;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -47,7 +47,7 @@ class SettingsTestIT extends AppTestBase
                 // looks odd, need ro make surer the transaction closes it.
                 var conn = tx.connection(Handle.class).orElseThrow();
                 try (var upsertProp = conn.prepareBatch(MERGE_QUERY)
-                                          .define("dual", tx.getContext().getDatabaseEngine() == DatabaseEngine.ORACLE ? "from dual" : ""))
+                                          .define("dual", fromDual(tx.getContext().getDatabaseEngine())))
                 {
                     settings.saveToProps(props);
                     for(var k: props.keySet())

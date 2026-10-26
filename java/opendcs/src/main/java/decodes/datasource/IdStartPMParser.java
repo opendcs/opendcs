@@ -22,6 +22,8 @@ import java.util.StringTokenizer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import ilex.util.AsciiUtil;
 import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
@@ -40,9 +42,10 @@ import decodes.db.Constants;
  *   <li>headerEnd: escaped string containing header end string, default = LF</li>
  * </ul>
 */
-public class IdStartPMParser extends PMParser
+public class IdStartPMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public static final String HEADER_TYPE = "idstart";
 	public String mediumType = Constants.medium_Other;
 	public String delims = " ,";
 	public String headerEnd = "\n";
@@ -112,7 +115,7 @@ public class IdStartPMParser extends PMParser
 	/** @return "csv" */
 	public String getHeaderType()
 	{
-		return "idstart";
+		return HEADER_TYPE;
 	}
 
 	/** @return medium_OTHER. */
@@ -124,6 +127,16 @@ public class IdStartPMParser extends PMParser
 	public boolean containsExplicitLength()
 	{
 		return false;
+	}
+
+	@AutoService (PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new IdStartPMParser() : null;
+		}	
 	}
 }
 

@@ -20,6 +20,7 @@ import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -137,7 +138,7 @@ public class NetworkListDaoImpl implements NetworkListDao
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         var mergeTemplate = queries.getInstanceOf(MERGE)
-                                   .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+                                   .add("dual", fromDual(dbEngine));
         var insertNetworkListEntry = queries.getInstanceOf(INSERT_NETWORKLIST_ENTRY).render();
         try (var merge = handle.createUpdate(mergeTemplate.render());
              var insertListEntry = handle.prepareBatch(insertNetworkListEntry))
