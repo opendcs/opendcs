@@ -705,7 +705,7 @@ public final class ComputationResources extends OpenDcsResource
 				}
 				catch(NoSuchObjectException ex)
 				{
-					log.error(String.format("Unable to retrieve site name for site ID: %s", parm.getSiteId()), ex);
+					log.error("Unable to retrieve site name for site ID: {}", parm.getSiteId(), ex);
 					channel.send(channel.newEvent("ERROR")
 							.mediaType(MediaType.TEXT_PLAIN_TYPE)
 							.data(String.format("No site found with ID: %s for computation with ID: %s", parm.getSiteId().getValue(), computationId))
