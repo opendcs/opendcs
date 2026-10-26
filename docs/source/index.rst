@@ -108,6 +108,7 @@ Reminder - legacy PDFs are no longer being updated.
    DECODING <./resources-decoding.rst>
    Algorithms <./resources-algorithms.rst>
    Computations <./resources-computations.rst>
+   Updating Algorithms <./algorithm-updates.rst>
    Screening Editor <./resources-screening.rst>
 
 
