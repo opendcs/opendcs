@@ -49,7 +49,7 @@ create table lrgs_archive (
     raw_data bytea, -- null allowed here, we may get literal nothing from a source
     quality text not null, -- can be G (good), B(bad), U (unknown) interfaces that
     -- cannot determine a quality should generally use U.
-    constraint quality_value CHECK (quality in ('G', 'B', 'U'))
+    constraint quality_value CHECK (quality in ('G', 'B', 'U')),
     unique (data_time, data_interface_id, identifier)
 );
 
