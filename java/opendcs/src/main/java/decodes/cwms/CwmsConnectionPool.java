@@ -165,8 +165,13 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         return leftStr.compareTo(rightStr);
     }
 
-    protected void dumpStatus() {
-        log.warning("Pool for " + this.info + " has " + connectionsOut.size() + " open connections still");
+    // Emergency diagnostics must reach the terminal even when logging is unavailable.
+    @SuppressWarnings("java:S106")
+    protected void dumpStatus()
+    {
+        String message = "Pool for " + this.info + " has " + connectionsOut.size() + " open connections still";
+        System.err.println(message);
+        log.warning(message);
         for(WrappedConnection c: connectionsOut)
         {
             c.dumpData();
