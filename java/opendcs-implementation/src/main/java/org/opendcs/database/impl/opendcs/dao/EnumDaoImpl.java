@@ -5,13 +5,12 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.EnumDao;
 import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderMapper;
+import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderMapper.Columns;
 import org.opendcs.database.model.mappers.dbenum.DbEnumBuilderReducer;
 import org.opendcs.database.model.mappers.dbenum.EnumValueMapper;
-import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
@@ -24,6 +23,7 @@ import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 @ServiceProvider(service = EnumDao.class)
 public class EnumDaoImpl implements EnumDao
@@ -76,7 +76,7 @@ public class EnumDaoImpl implements EnumDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var query = handle.createQuery("select id from enum where upper(name) = upper(:name)"))
         {
-            var id = query.bind(GenericColumns.NAME.column(), enumName)
+            var id = query.bind(Columns.NAME.column(), enumName)
                           .mapTo(DbKey.class)
                           .findOne();
             return getEnum(tx, id.orElse(DbKey.NullKey));
@@ -102,7 +102,7 @@ public class EnumDaoImpl implements EnumDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var query = handle.createQuery(queryText))
         {
-            return query.bind(GenericColumns.ID.column(), id)
+            return query.bind(Columns.ID.column(), id)
                         .registerRowMapper(DbEnumBuilder.class, DbEnumBuilderMapper.withPrefix("e"))
                         .registerRowMapper(EnumValue.class, EnumValueMapper.withPrefix("v"))
                         .reduceRows(DbEnumBuilderReducer.DBENUM_BUILDER_REDUCER)
@@ -138,27 +138,27 @@ public class EnumDaoImpl implements EnumDao
                 """;
 
         try (var enumMerge = handle.createUpdate(enumMergeText)
-                                   .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+                                   .define("dual", fromDual(dbEngine));
              var removeValues = handle.createUpdate(removeValuesText);
              var addValues = handle.prepareBatch(addValueText))
         {
             final DbKey id = dbEnum.idIsSet() ? dbEnum.getId() : keyGen.getKey("enum", handle.getConnection());
-            enumMerge.bind(GenericColumns.ID.column(), id)
-                     .bind(GenericColumns.NAME.column(), dbEnum.enumName)
-                     .bind("defaultValue", dbEnum.getDefault())
-                     .bind(GenericColumns.DESCRIPTION.column(), dbEnum.getDescription())
+            enumMerge.bind(Columns.ID.column(), id)
+                     .bind(Columns.NAME.column(), dbEnum.enumName)
+                     .bind(Columns.DEFAULT_VALUE.column(), dbEnum.getDefault())
+                     .bind(Columns.DESCRIPTION.column(), dbEnum.getDescription())
                      .execute();
 
-            removeValues.bind(GenericColumns.ID.column(), id).execute();
+            removeValues.bind(Columns.ID.column(), id).execute();
 
             for (var enumValue: dbEnum.values())
             {
-                addValues.bind(GenericColumns.ID.column(), id)
-                         .bind("enumvalue", enumValue.getValue())
-                         .bind(GenericColumns.DESCRIPTION.column(), enumValue.getDescription())
-                         .bind("execclass", enumValue.getExecClassName())
-                         .bind("editclass", enumValue.getEditClassName())
-                         .bind("sortnumber", enumValue.getSortNumber())
+                addValues.bind(Columns.ID.column(), id)
+                         .bind(EnumValueMapper.Columns.ENUM_VALUE.column(), enumValue.getValue())
+                         .bind(EnumValueMapper.Columns.DESCRIPTION.column(), enumValue.getDescription())
+                         .bind(EnumValueMapper.Columns.EXEC_CLASS.column(), enumValue.getExecClassName())
+                         .bind(EnumValueMapper.Columns.EDIT_CLASS.column(), enumValue.getEditClassName())
+                         .bind(EnumValueMapper.Columns.SORT_NUMBER.column(), enumValue.getSortNumber())
                          .add();
             }
             addValues.execute();
@@ -184,8 +184,8 @@ public class EnumDaoImpl implements EnumDao
         try (var deleteValues = handle.createUpdate(deleteValuesSql);
              var deleteEnum = handle.createUpdate(deleteEnumSql))
         {
-            deleteValues.bind("id", dbEnumId).execute();
-            deleteEnum.bind("id", dbEnumId).execute();
+            deleteValues.bind(Columns.ID.column(), dbEnumId).execute();
+            deleteEnum.bind(Columns.ID.column(), dbEnumId).execute();
         }
     }
 }

@@ -48,6 +48,12 @@ public final class SqlQueries
         return dbEngine == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY";
     }
 
+    /** Return FROM DUAL for Oracle, or an empty clause for other engines. */
+    public static String fromDual(DatabaseEngine dbEngine)
+    {
+        return dbEngine == DatabaseEngine.ORACLE ? "from dual" : "";
+    }
+
     /**
      * Return the required keyword for recursive CTEs. At this time only oracle supports
      * the feature, but does not require the keyword.

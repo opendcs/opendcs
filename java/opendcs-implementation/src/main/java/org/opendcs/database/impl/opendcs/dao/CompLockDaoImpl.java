@@ -16,6 +16,7 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.util.Date;
 import java.util.List;
@@ -23,12 +24,12 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.CompLockDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.apps.CompLockMapper;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.apps.CompLockMapper.Columns;
 import org.opendcs.util.Result;
-import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 import org.stringtemplate.v4.STGroup;
@@ -65,9 +66,9 @@ public final class CompLockDaoImpl implements CompLockDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try (var delete = handle.createUpdate("delete from cp_comp_proc_lock where loading_application_id = :id"))
+        try (var delete = handle.createUpdate("delete from cp_comp_proc_lock where loading_application_id = :loading_application_id"))
         {
-            delete.bind(GenericColumns.ID.column(), lock.getAppId()).execute();
+            delete.bind(Columns.APP_ID.column(), lock.getAppId()).execute();
         }
     }
 
@@ -105,11 +106,11 @@ public final class CompLockDaoImpl implements CompLockDao
         {
             if (limit >= 0)
             {
-                select.bind(LIMIT_CLAUSE, limit);
+                select.bind(SqlKeywords.LIMIT, limit);
             }
             if (offset >= 0)
             {
-                select.bind("offset", offset);
+                select.bind(SqlKeywords.OFFSET, offset);
             }
             return select.map(lockMapper).list();
         }
@@ -122,10 +123,10 @@ public final class CompLockDaoImpl implements CompLockDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         try (var select = handle.createQuery(
                             queries.getInstanceOf(SELECT)
-                                  .add("where", " where lk.loading_application_id = :id ")
+                                  .add("where", " where lk.loading_application_id = :loading_application_id ")
                                   .render()))
         {
-            return select.bind(GenericColumns.ID.column(), appId)
+            return select.bind(Columns.APP_ID.column(), appId)
                          .map(lockMapper)
                          .findOne();
         }
@@ -178,12 +179,12 @@ public final class CompLockDaoImpl implements CompLockDao
                 values(input.loading_application_id, input.pid, input.hostname, input.heartbeat, input.cur_status)
                 """))
         {
-            merge.define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
-            merge.bind(CompLockMapper.Columns.APP_ID.column(), lock.getAppId())
-                  .bind(CompLockMapper.Columns.PID.column(), lock.getPID())
-                  .bind(CompLockMapper.Columns.HOSTNAME.column(), lock.getHost())
-                  .bindByType(CompLockMapper.Columns.HEARTBEAT.column(), lock.getHeartbeat(), Date.class)
-                  .bind(CompLockMapper.Columns.STATUS.column(), lock.getStatus())
+            merge.define("dual", fromDual(dbEngine));
+            merge.bind(Columns.APP_ID.column(), lock.getAppId())
+                  .bind(Columns.PID.column(), lock.getPID())
+                  .bind(Columns.HOSTNAME.column(), lock.getHost())
+                  .bindByType(Columns.HEARTBEAT.column(), lock.getHeartbeat(), Date.class)
+                  .bind(Columns.STATUS.column(), lock.getStatus())
                   .execute();
             return getLock(tx, lock.getAppId())
                     .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve lock we just saved."));

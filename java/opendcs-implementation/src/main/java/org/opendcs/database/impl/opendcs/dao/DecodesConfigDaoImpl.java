@@ -3,7 +3,6 @@ package org.opendcs.database.impl.opendcs.dao;
 import org.jdbi.v3.core.Handle;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DecodesConfigDao;
 import org.opendcs.database.dai.UnitConverterDao;
@@ -31,6 +30,7 @@ import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -221,7 +221,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                 """;
         final var dbEngine = ctx.getDatabaseEngine();
         try (var merge = handle.createUpdate(mergeSql)
-                               .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+                               .define("dual", fromDual(dbEngine));
              var deleteConfigSensorProps = handle.createUpdate(DELETE_CONFIGSENSOR_PROPERTIES);
              var deleteConfigSensorDataType = handle.createUpdate(DELETE_CONFIGSENSOR_DATATYPE);
              var deleteConfigSensor = handle.createUpdate(DELETE_CONFIGSENSOR);
