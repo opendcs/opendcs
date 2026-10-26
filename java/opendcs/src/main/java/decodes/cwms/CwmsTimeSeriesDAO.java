@@ -463,6 +463,24 @@ public class CwmsTimeSeriesDAO
     public int fillTimeSeries(CTimeSeries cts, Collection<Date> queryTimes)
         throws DbIoException, BadTimeSeriesException
     {
+        return fillTimeSeries(cts, queryTimes, false);
+    }
+
+	/**
+	 * Fills a time series with values for specific times.
+	 * Must handle any unit conversions required between the unitsAbbr
+	 * in the CTimeSeries and the storage units in the database.
+	 * @param cts the time series
+	 * @param queryTimes the set of query times.
+	 * @param includeMissing if true, add a missing value for any query time that has no value in the database. Only for regular time series.
+	 * @return number of values added to the time series.
+	 * @throws DbIoException on Database IO error.
+	 * @throws BadTimeSeriesException if time series doesn't exist.
+	 */
+    public int fillTimeSeries(CTimeSeries cts, Collection<Date> queryTimes,
+        boolean includeMissing)
+        throws DbIoException, BadTimeSeriesException
+    {
         if (!cts.isExpanded())
         {
             fillTimeSeriesMetadata(cts); // may throw BadTimeSeriesException
@@ -504,7 +522,7 @@ public class CwmsTimeSeriesDAO
                         TimedVariable tv = null;
                         try
                         {
-                            tv = rs2TimedVariable(rs);
+                            tv = rs2TimedVariable(rs, includeMissing);
                             if (tv == null)
                             {
                                 return;
@@ -997,6 +1015,12 @@ public class CwmsTimeSeriesDAO
     private TimedVariable rs2TimedVariable(ResultSet rs)
         throws SQLException
     {
+        return rs2TimedVariable(rs, false);
+    }
+
+    private TimedVariable rs2TimedVariable(ResultSet rs, boolean includeMissing)
+        throws SQLException
+    {
         Date timeStamp = db.getFullDate(rs, 1);
         double value = rs.getDouble(2);
 
@@ -1007,7 +1031,7 @@ public class CwmsTimeSeriesDAO
         }
         long lf = rs.getLong(3);
         int f =    CwmsFlags.cwmsQuality2flag(lf);
-        if ((f & CwmsFlags.VALIDITY_MISSING) != 0)
+        if (!includeMissing && (f & CwmsFlags.VALIDITY_MISSING) != 0)
         {
             return null;
         }
