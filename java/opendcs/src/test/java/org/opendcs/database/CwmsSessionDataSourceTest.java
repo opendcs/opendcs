@@ -82,6 +82,15 @@ class CwmsSessionDataSourceTest
     }
 
     @Test
+    void fatalInitializationFailureStillClosesTheConnection() throws Exception
+    {
+        RecordingSource source = new RecordingSource();
+        source.fatalFailure = new AssertionError("Initialization failed");
+        assertSame(source.fatalFailure, assertThrows(AssertionError.class, source::getConnection));
+        assertTrue(source.lastConnection.isClosed());
+    }
+
+    @Test
     void afterUpdateRunnerInitializesTheSessionBeforeStartingEachUpdaterTransaction() throws Exception
     {
         RecordingSource source = new RecordingSource();
@@ -131,6 +140,7 @@ class CwmsSessionDataSourceTest
         final List<ConnectionLoginInfo> logins = new ArrayList<>();
         Connection lastConnection;
         SQLException failure;
+        AssertionError fatalFailure;
 
         RecordingSource()
         {
@@ -144,6 +154,7 @@ class CwmsSessionDataSourceTest
             lastConnection = connection;
             logins.add(loginInfo);
             if (failure != null) throw failure;
+            if (fatalFailure != null) throw fatalFailure;
         }
     }
 }

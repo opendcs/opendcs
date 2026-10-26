@@ -59,6 +59,7 @@ public final class AlgorithmUpdateApp
         try (Connection connection = dataSource.getConnection())
         {
             connection.setAutoCommit(false);
+            boolean completed = false;
             try
             {
                 Set<Long> ids = Collections.emptySet();
@@ -93,18 +94,21 @@ public final class AlgorithmUpdateApp
                 {
                     connection.rollback();
                 }
+                completed = true;
             }
-            catch (SQLException | RuntimeException | Error ex)
+            finally
             {
-                try
+                if (!completed)
                 {
-                    connection.rollback();
+                    try
+                    {
+                        connection.rollback();
+                    }
+                    catch (SQLException rollbackFailure)
+                    {
+                        log.error("Unable to roll back algorithm updates", rollbackFailure);
+                    }
                 }
-                catch (SQLException rollbackFailure)
-                {
-                    ex.addSuppressed(rollbackFailure);
-                }
-                throw ex;
             }
         }
     }

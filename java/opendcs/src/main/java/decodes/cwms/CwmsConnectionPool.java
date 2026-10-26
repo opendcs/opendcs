@@ -52,21 +52,51 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
  */
 public final class CwmsConnectionPool implements ConnectionPoolMXBean
 {
-    private static Logger log = Logger.getLogger(CwmsConnectionPool.class.getName());
+    private static final Logger log = Logger.getLogger(CwmsConnectionPool.class.getName());
 
-    private static TreeMap<CwmsConnectionInfo,CwmsConnectionPool> pools = new TreeMap<>((left,right)->{
+    private static final TreeMap<CwmsConnectionInfo,CwmsConnectionPool> pools = new TreeMap<>((left,right)->{
         return mapCompare(left,right);
     });
 
-    //private HashSet<WrappedConnection> connectionsOut = new HashSet<>();
-    private Set<WrappedConnection> connectionsOut = Collections.synchronizedSet(new HashSet<>());
-    private CwmsConnectionInfo info = null;
+    private final Set<WrappedConnection> connectionsOut = Collections.synchronizedSet(new HashSet<>());
+    private final CwmsConnectionInfo info;
 	private int connectionsRequested = 0;
 	private int connectionsFreed = 0;
 	private int unknownConnReturned = 0;
     private int connectionsClosedDuringGet = 0;
-    //private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
-    private DataSource pool;
+    private final DataSource pool;
+    private final String poolName;
+
+    /**
+     * Initializes the Pool on first open
+     * @param info info object with baseline info (URL,user,password). Additional information will be added.
+     * @throws SQLException Anything wrong with configuring the UCP Pool
+     */
+    private CwmsConnectionPool(CwmsConnectionInfo info) throws SQLException
+    {
+        this.info = info;
+        this.poolName =
+            String.format("CwmsConnectionPool(%s/%s)",
+            info.getLoginInfo().getUrl().replace("?","\\?").replace(":","-"),
+            info.getLoginInfo().getUser());
+        PoolDataSource ds = PoolDataSourceFactory.getPoolDataSource();
+        OracleDataSource.registerMBean();
+        ds.setConnectionFactoryClassName("oracle.jdbc.datasource.impl.OracleDataSource");
+        ds.setURL(info.getLoginInfo().getUrl());
+        ds.setUser(info.getLoginInfo().getUser());
+        ds.setPassword(info.getLoginInfo().getPassword());
+        ds.setInitialPoolSize(2);
+        ds.setMinIdle(2);
+        ds.setMaxPoolSize(10);
+        ds.setValidateConnectionOnBorrow(true);
+        ds.setAbandonedConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(10));
+        ds.setConnectionPoolName(poolName);
+        ds.setMaxConnectionReuseTime(TimeUnit.HOURS.toSeconds(2));
+        ds.setInactiveConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(1));
+        ds.setConnectionWaitDuration(Duration.ofSeconds(5));
+        ds.setMaxIdleTime((int)TimeUnit.MINUTES.toSeconds(1));
+        this.pool = ds;
+    }
 
     /**
      * Get a Pool for a given database.
@@ -84,6 +114,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 			{
                 fillOutConnectionInfo(info,conn);
                 ret = new CwmsConnectionPool(info);
+                ret.registerTrackingBean();
                 pools.put(info,ret);
 
                 if (SqlSettings.TRACE_CONNECTIONS)
@@ -104,6 +135,20 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         return ret;
     }
 
+    private void registerTrackingBean()
+    {
+        try
+        {
+            ManagementFactory.getPlatformMBeanServer().registerMBean(this,
+                    new ObjectName("org.opendcs:type=ConnectionPool,name=\"" + poolName
+                            + "\",hashCode=" + this.hashCode()));
+        }
+        catch (JMException ex)
+        {
+            log.log(Level.WARNING, "Unable to register tracking bean.", ex);
+        }
+    }
+
     /**
      * The instance connection info will have been initialized
      * The version sent to getConnectionFor may not, but it's only checked on
@@ -121,7 +166,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
     }
 
     protected void dumpStatus() {
-        System.err.println("Pool for " + this.info.toString() + " has " + connectionsOut.size() + " open Connections still");
+        log.warning("Pool for " + this.info + " has " + connectionsOut.size() + " open connections still");
         for(WrappedConnection c: connectionsOut)
         {
             c.dumpData();
@@ -167,49 +212,6 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         CwmsConnectionInfo info = new CwmsConnectionInfo();
         info.setLoginInfo(loginInfo);
         fillOutConnectionInfo(info, conn);
-    }
-
-    /**
-     * Initializes the Pool on first open
-     * @param info info object with baseline info (URL,user,password). Additional information will be added.
-     * @param conn a valid open connection from the CwmsDbConnectionPool
-     * @throws BadConnectException Unable to lookup baseline information or set VPD context.
-     * @throws SQLException Anything wrong with configuring the UCP Pool
-     */
-    private CwmsConnectionPool(CwmsConnectionInfo info) throws SQLException
-    {
-        this.info = info;
-        final String poolName =
-            String.format("CwmsConnectionPool(%s/%s)",
-            info.getLoginInfo().getUrl().replace("?","\\?").replace(":","-"),
-            info.getLoginInfo().getUser());
-        PoolDataSource ds = PoolDataSourceFactory.getPoolDataSource();
-        OracleDataSource.registerMBean();
-        ds.setConnectionFactoryClassName("oracle.jdbc.datasource.impl.OracleDataSource");
-        ds.setURL(info.getLoginInfo().getUrl());
-        ds.setUser(info.getLoginInfo().getUser());
-        ds.setPassword(info.getLoginInfo().getPassword());
-        ds.setInitialPoolSize(2);
-        ds.setMinIdle(2);
-        ds.setMaxPoolSize(10);
-        ds.setValidateConnectionOnBorrow(true);
-        ds.setAbandonedConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(10));
-        ds.setConnectionPoolName(poolName);
-        ds.setMaxConnectionReuseTime(TimeUnit.HOURS.toSeconds(2));
-        ds.setInactiveConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(1));
-        ds.setConnectionWaitDuration(Duration.ofSeconds(5));
-        ds.setMaxIdleTime((int)TimeUnit.MINUTES.toSeconds(1));
-        this.pool = ds; 
-
-        try
-		{            
-			ManagementFactory.getPlatformMBeanServer()
-							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+poolName+"\",hashCode=" + this.hashCode()));
-		}
-		catch(JMException ex)
-		{
-            log.log(Level.WARNING,"Unable to register tracking bean.",ex);
-		}
     }
 
     @Override
@@ -278,6 +280,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         for(int i = 0; i < 3; i++)
         {
             Connection conn = null;
+            boolean handedOff = false;
             try
             {
                 conn = pool.getConnection();
@@ -288,6 +291,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
                     this.returnConnection(c);
                 },SqlSettings.TRACE_CONNECTIONS);
                 connectionsOut.add(wc);
+                handedOff = true;
                 return wc;
             }
             catch(SQLException ex)
@@ -295,19 +299,36 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
                 if (isTimeoutError(ex))
                 {
                     connectionsClosedDuringGet++;
-                    if (conn != null) {
-                        conn.close();
-                        conn = null;
-                    }
                 }
                 else if (isFullPoolError(ex))
                 {
-                    // we don't care if interrupted or just done.
-                    try{Thread.sleep(500);} catch( InterruptedException iex) {}
+                    try
+                    {
+                        Thread.sleep(500);
+                    }
+                    catch (InterruptedException iex)
+                    {
+                        Thread.currentThread().interrupt();
+                        throw new SQLException("Interrupted while waiting for a CWMS connection", iex);
+                    }
                 }
                 else
                 {
                     throw ex;
+                }
+            }
+            finally
+            {
+                if (!handedOff && conn != null)
+                {
+                    try
+                    {
+                        conn.close();
+                    }
+                    catch (SQLException closeFailure)
+                    {
+                        log.log(Level.WARNING, "Unable to close an uninitialized CWMS connection", closeFailure);
+                    }
                 }
             }
         }
