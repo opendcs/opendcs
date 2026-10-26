@@ -2,6 +2,7 @@
 package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -13,7 +14,6 @@ import java.util.Vector;
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.DatabaseQuerySettings;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.database.impl.opendcs.jdbi.column.numeric.NullableDoubleArgumentFactory;
@@ -186,7 +186,7 @@ public class PresentationGroupDaoImpl implements PresentationGroupDao
                 """;
         try (var merge = handle.createUpdate(mergeSql)
                                .define("numeric_date", numericDate)
-                               .define("dual", ctx.getDatabaseEngine() == DatabaseEngine.ORACLE ? " from dual " : ""))
+                               .define("dual", fromDual(ctx.getDatabaseEngine())))
         {
             DbKey id = group.getId();
             var existing = getByName(tx, group.groupName);

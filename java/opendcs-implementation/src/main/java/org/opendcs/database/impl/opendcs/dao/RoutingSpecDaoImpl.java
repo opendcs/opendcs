@@ -19,6 +19,7 @@ import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.OFFSET_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -32,7 +33,6 @@ import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.RoutingSpecDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.networklist.NetworkListEntryMapper;
@@ -245,7 +245,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         var mergeTemplate = queries.getInstanceOf(MERGE)
-                                   .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+                                   .add("dual", fromDual(dbEngine));
         var insertPropsTemplate = queries.getInstanceOf(INSERT_SPEC_PROPS);
         var insertSpecListTemplate = queries.getInstanceOf(INSERT_SPEC_LIST);
         try (var merge = handle.createUpdate(mergeTemplate.render());
@@ -263,7 +263,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
                     """,
                     id, spec.getId());
             }
-            final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("routingspec", handle.getConnection());
+            final var bindKey = DbKey.isNull(id) ? keyGen.getKey("routingspec", handle.getConnection()) : id;
             merge.bind(RoutingSpecMapper.Columns.ID.column(), bindKey)
                  .bind(RoutingSpecMapper.Columns.NAME.column(), spec.getName())
                  .bind(RoutingSpecMapper.Columns.DATA_SOURCE_ID.column(), spec.dataSource.getId())

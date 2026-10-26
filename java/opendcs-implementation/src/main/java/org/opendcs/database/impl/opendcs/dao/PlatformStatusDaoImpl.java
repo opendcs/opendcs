@@ -18,6 +18,7 @@ package org.opendcs.database.impl.opendcs.dao;
 import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.util.Date;
 import java.util.List;
@@ -27,7 +28,6 @@ import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDataRuntimeException;
 import org.opendcs.database.dai.PlatformDao;
@@ -136,7 +136,7 @@ public class PlatformStatusDaoImpl implements PlatformStatusDao
         {
             throw new OpenDcsDataException("Could not find template");
         }
-        mergeTemplate.add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
+        mergeTemplate.add("dual", fromDual(dbEngine));
 
 
         try (var merge = handle.createUpdate(mergeTemplate.render()))
