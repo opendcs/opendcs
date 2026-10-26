@@ -50,7 +50,7 @@ create table lrgs_archive (
     quality text not null, -- can be G (good), B(bad), U (unknown) interfaces that
     -- cannot determine a quality should generally use U.
     constraint quality_value CHECK (quality in ('G', 'B', 'U'))
-    unique (stored_at, data_interface_id, identifier)
+    unique (data_time, data_interface_id, identifier)
 );
 
 create trigger trigger_purge_archive

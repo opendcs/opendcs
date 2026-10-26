@@ -23,7 +23,7 @@ public interface LrgsArchiveDao extends OpenDcsDao
      * the storeTime set by the implementation.
      *
      * Implementations may handle message merge conflicts however they determine is best. If the message was not
-     * saved, return the result as an OpenDCsConstraintException.
+     * saved, return the result as a failure of type OpenDCsConstraintException.
      *
      * @param tx DataTransaction to use.
      * @param entry entry to store.
