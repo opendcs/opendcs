@@ -14,8 +14,10 @@ import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.spi.database.MigrationProvider.MigrationProperty;
 
 import java.io.Console;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.SQLException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -31,8 +33,9 @@ import java.util.Properties;
  */
 public class ManageDatabaseApp
 {
+    private static final Logger log = LoggerFactory.getLogger(ManageDatabaseApp.class);
 
-    public static void main(String args[]) throws Exception
+    public static void main(String args[]) throws IOException, NoMigrationProvider, SQLException
     {
         StringToken implementation = new StringToken("I","which database type are we installing? Examples: 'CWMS-Oracle', 'OpenDCS-Oracle',  'OpenDCS-Postgres' ",
                                                      "",TokenOptions.optRequired,"");
@@ -64,7 +67,7 @@ public class ManageDatabaseApp
         cliArgs.addToken(appUsername);
         cliArgs.parseArgs(args);
 
-        System.out.println("Migrating Database:");
+        log.info("Migrating database");
         String impl = implementation.getValue();
         Profile profile = cliArgs.getProfile();
         Console console = System.console();
@@ -79,54 +82,54 @@ public class ManageDatabaseApp
         MigrationInfo[] applied = mm.currentVersion();
         if (applied.length == 0)
         {
-            System.out.println("Installing fresh database");
+            log.info("Installing fresh database");
 
             mm.migrate();
             Pair<String,String> credentials = createInitialUser(mm, appUsername.getValue(), appPassword.getValue(), console);
-            System.out.printf("Now loading baseline data.%s", System.lineSeparator());
+            log.info("Now loading baseline data.");
             mp.loadBaselineData(profile, credentials.first, credentials.second);
-            System.out.printf("Base line data has been imported. You may now begin using the software.%s", System.lineSeparator());
-            System.out.printf("If you will be running background apps such as CompProc and the RoutingScheduler,%s", System.lineSeparator());
-            System.out.printf("you should create a separate user. This is not currently covered in this application.%s", System.lineSeparator());
+            log.info("Baseline data has been imported. You may now begin using the software.");
+            log.info("If you will be running background apps such as CompProc and the RoutingScheduler,");
+            log.info("you should create a separate user. This is not currently covered in this application.");
         }
         else
         {
-            System.out.printf("Applying migrations to existing database. Current version is:");
+            log.info("Applying migrations to existing database. Current version is:");
             for (int i = applied.length -1; i >= 0; i--)
             {
                 if (applied[i].isVersioned())
                 {
-                    System.out.println(applied[i].getVersion());
+                    log.info("{}", applied[i].getVersion());
                     break; // exit the loop, we're done.
                 }
             }
 
             MigrationInfo[] pending = mm.pendingUpdates();
-            System.out.println("The following migrations will be performed (only versioned migrations listed):");
+            log.info("The following migrations will be performed (only versioned migrations listed):");
             if (pending.length > 0 )
             {
                 for (MigrationInfo mi: pending)
                 {
-                    System.out.printf("%s - %s%s", mi.getVersion(), mi.getDescription(), System.lineSeparator());
+                    log.info("{} - {}", mi.getVersion(), mi.getDescription());
                 }
-                System.out.println();
                 final String doMigration = console != null ? console.readLine("Proceed? (y/N)") : "y";
                 if (doMigration.toLowerCase().startsWith("y"))
                 {
-                    System.out.println("Performing migration.");
+                    log.info("Performing migration.");
                     mm.migrate();
                 }
                 else
                 {
-                    System.out.println("Exiting application.");
+                    log.info("Exiting application.");
                     System.exit(0);
                 }
             }
             else
             {
-                System.out.println("Database is already up-to-date.");
+                log.info("Database is already up-to-date.");
             }
-            AfterUpdateRunner.run(ds);
+            AfterUpdateRunner.run(getDataSourceForAfterUpdates(
+                    profile, console, username.getValue(), password.getValue()));
         }
     }
 
@@ -140,8 +143,7 @@ public class ManageDatabaseApp
      */
     private static Pair<String,String> createInitialUser(MigrationManager mm, String appUsername, String appPassword, Console console)
     {
-        System.out.printf("A default admin username will be created to allow initial data import and GUI configuration.%s",
-        System.lineSeparator());
+        log.info("A default admin username will be created to allow initial data import and GUI configuration.");
         String user = appUsername;
         String password = appPassword;
         if (user == null)
@@ -170,7 +172,20 @@ public class ManageDatabaseApp
         return Pair.of(user, password);
     }
 
-    public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c, String username, String password) throws IOException, FileNotFoundException
+    public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c, String username, String password) throws IOException
+    {
+        return getDataSource(p, c, username, password, false);
+    }
+
+    /** Schema migrations use a raw connection; after-updates also need CWMS session context. */
+    public static DataSource getDataSourceForAfterUpdates(Profile p, Console c, String username, String password)
+            throws IOException
+    {
+        return getDataSource(p, c, username, password, true);
+    }
+
+    private static DataSource getDataSource(Profile p, Console c, String username, String password,
+            boolean initializeCwmsSession) throws IOException
     {
         DecodesSettings settings = DecodesSettings.fromProfile(p);
         if (username == null)
@@ -183,6 +198,10 @@ public class ManageDatabaseApp
             password = new String(pw);
         }
 
+        if (initializeCwmsSession && settings.editDatabaseTypeCode == DecodesSettings.DB_CWMS)
+        {
+            return new CwmsSessionDataSource(settings.editDatabaseLocation, username, password, settings.CwmsOfficeId);
+        }
         return new SimpleDataSource(settings.editDatabaseLocation,username,password);
     }
 
@@ -218,13 +237,13 @@ public class ManageDatabaseApp
             }
             else if (!remaining.isEmpty() && c == null)
             {
-                System.err.println("Not all placeholder values have been configured.");
-                System.err.println("Please define the following:");
+                log.error("Not all placeholder values have been configured.");
+                log.error("Please define the following:");
                 remaining.forEach(p ->
                 {
-                    System.err.printf("%s: %s%s", p.name, p.description, System.lineSeparator());
+                    log.error("{}: {}", p.name, p.description);
                 });
-                throw new RuntimeException("Incomplete Placeholder configuration.");
+                throw new IllegalStateException("Incomplete placeholder configuration.");
             }
         }
 

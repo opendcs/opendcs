@@ -48,17 +48,18 @@ public final class AlgorithmUpdateApp
         StringToken password = new StringToken("password", "Database password", "",
                 TokenOptions.optRequired, null);
         StringToken algorithm = new StringToken("algorithm", "Limit update to an algorithm name", "",
-                TokenOptions.optRequired, null);
+                0, null);
         cli.addToken(apply);
         cli.addToken(username);
         cli.addToken(password);
         cli.addToken(algorithm);
         cli.parseArgs(args);
-        DataSource dataSource = ManageDatabaseApp.getDataSourceFromProfileAndUserInfo(
+        DataSource dataSource = ManageDatabaseApp.getDataSourceForAfterUpdates(
                 cli.getProfile(), System.console(), username.getValue(), password.getValue());
         try (Connection connection = dataSource.getConnection())
         {
             connection.setAutoCommit(false);
+            boolean completed = false;
             try
             {
                 Set<Long> ids = Collections.emptySet();
@@ -93,18 +94,21 @@ public final class AlgorithmUpdateApp
                 {
                     connection.rollback();
                 }
+                completed = true;
             }
-            catch (SQLException | RuntimeException | Error ex)
+            finally
             {
-                try
+                if (!completed)
                 {
-                    connection.rollback();
+                    try
+                    {
+                        connection.rollback();
+                    }
+                    catch (SQLException rollbackFailure)
+                    {
+                        log.error("Unable to roll back algorithm updates", rollbackFailure);
+                    }
                 }
-                catch (SQLException rollbackFailure)
-                {
-                    ex.addSuppressed(rollbackFailure);
-                }
-                throw ex;
             }
         }
     }
