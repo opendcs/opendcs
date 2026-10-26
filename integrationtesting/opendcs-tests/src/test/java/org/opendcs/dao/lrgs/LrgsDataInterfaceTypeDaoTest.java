@@ -3,6 +3,7 @@ package org.opendcs.dao.lrgs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,38 @@ class LrgsDataInterfaceTypeDaoTest extends AppTestBase
                 {
                     fail("Type was not deleted");
                 });
+            tx.rollback();
+        }
+        
+    }
+
+    @Test
+    void test_paging() throws Exception
+    {
+        var dao = db.getDao(LrgsDataInterfaceTypeDao.class).orElseThrow();
+        try (var tx = db.newTransaction())
+        {
+            final int COUNT = 50;
+            for (int i = 0; i < COUNT; i++)
+            {
+                var typeName = String.format("AAA-Type-%03d", i);
+                var providerName = String.format("AAA-Provider-%03d", i);
+                var typeIn = new LrgsDataInterfaceType(null, typeName, providerName, null, null);
+                dao.save(tx, typeIn);
+            }
+
+            var all = dao.getAll(tx, -1, -1);
+
+            assertTrue(all.size() >= COUNT);
+
+            var first10 = dao.getAll(tx, 10, 0);
+            var second10 = dao.getAll(tx, 10, 10);
+
+            assertEquals(all.getFirst(), first10.getFirst());
+            assertEquals(all.get(9), first10.getLast());
+
+            assertEquals(all.get(10), second10.getFirst());
+            assertEquals(all.get(19), second10.getLast());
 
             tx.rollback();
         }
