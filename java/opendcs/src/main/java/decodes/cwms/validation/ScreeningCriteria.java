@@ -100,6 +100,11 @@ public class ScreeningCriteria
 	{
 		rocPerHourChecks.add(rocPerHourCheck);
 	}
+
+	public boolean hasRocPerHourChecks()
+	{
+		return !rocPerHourChecks.isEmpty();
+	}
 	
 	public void addDurCheckPeriod(DurCheckPeriod durCheckPeriod)
 	{
@@ -346,9 +351,9 @@ public class ScreeningCriteria
 		{
 			// RATE checks
 			TimedVariable prevtv = input.findWithin(
-				new Date(dataTime.getTime()-3600000L), alg.roundSec);
-			if (prevtv != null 
-			 && (prevtv.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0)
+				rateComparisonTime(dataTime, alg), alg.roundSec);
+			prevtv = findPreviousUsableValue(input, prevtv, alg);
+			if (prevtv != null)
 			{
 				for(RocPerHourCheck chk : rocPerHourChecks)
 				{
@@ -371,8 +376,8 @@ public class ScreeningCriteria
 					}
 				}
 			}
-			else if (rocPerHourChecks.size() > 0) 
-				log.debug("Not checking dataTime={} because prev is missing or rejected.", dataTime);
+			else if (rocPerHourChecks.size() > 0)
+				log.debug("Not checking dataTime={} because no usable previous value was found.", dataTime);
 				
 		}
 		
@@ -455,6 +460,39 @@ public class ScreeningCriteria
 		
 		return resultFlags;
 	}
+
+	private Date rateComparisonTime(Date dataTime, AW_AlgorithmBase alg)
+	{
+		if (alg instanceof ScreeningAlgorithm)
+			return ((ScreeningAlgorithm)alg).rateComparisonTime(dataTime);
+		return new Date(dataTime.getTime() - 3600000L);
+	}
+
+	private TimedVariable findPreviousUsableValue(CTimeSeries input,
+		TimedVariable candidate, AW_AlgorithmBase alg)
+	{
+		if (candidate == null)
+			return null;
+		int idx = 0;
+		for (; idx < input.size() && input.sampleAt(idx) != candidate; idx++);
+		if (idx == input.size())
+			return null;
+		for (; idx >= 0; idx--)
+		{
+			TimedVariable value = input.sampleAt(idx);
+			if (isUsableForRateComparison(value, alg))
+				return value;
+		}
+		return null;
+	}
+
+	private boolean isUsableForRateComparison(TimedVariable value, AW_AlgorithmBase alg)
+	{
+		if (alg instanceof ScreeningAlgorithm)
+			return ((ScreeningAlgorithm)alg).isUsableForRateComparison(value,
+				alg.getParmRef("output"));
+		return (value.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0;
+	}
 	
 	/**
 	 * Compare value but only to 3 decimal places
@@ -512,7 +550,7 @@ public class ScreeningCriteria
 				aggCal,needed, alg, inputIrregular);
 		}
 
-		// ROC checks need the previous hour for each trigger value
+		// ROC checks need the previous output interval for each trigger value.
 		if (rocPerHourChecks.size() > 0)
 		{
 			log.trace("Adding dates for ROC checks");
@@ -526,9 +564,7 @@ public class ScreeningCriteria
 					continue;
 				// Get this sample's time and subtract duration
 				Date sampleTime = tv.getTime();
-				aggCal.setTime(sampleTime);
-				aggCal.add(Calendar.HOUR_OF_DAY, -1);
-				Date d = aggCal.getTime();
+				Date d = rateComparisonTime(sampleTime, alg);
 				addToNeeded(d, needed, inputIrregular);
 			}
 		}

@@ -37,6 +37,7 @@ import ilex.var.TimedVariable;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.IntervalIncrement;
 import decodes.cwms.CwmsFlags;
+import decodes.cwms.CwmsTimeSeriesDAO;
 import decodes.db.Site;
 import decodes.tsdb.TimeSeriesIdentifier;
 //AW:IMPORTS_END
@@ -225,6 +226,8 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 		}
 
+		loadUsableRateHistory(inputParm, outputParm);
+
 		String euAbbr = screening.getCheckUnitsAbbr();
 		if (euAbbr != null
 		 && TextUtil.strCompareIgnoreCase(euAbbr, inputParm.timeSeries.getUnitsAbbr()) != 0)
@@ -306,6 +309,88 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		crit.executeChecks(dc, inputParm.timeSeries, _timeSliceBaseTime, output, this);
 
 //AW:TIMESLICE_END
+	}
+
+	private void loadUsableRateHistory(ParmRef inputParm, ParmRef outputParm)
+		throws DbCompException
+	{
+		TimeSeriesDAI timeSeriesDAO = null;
+		try
+		{
+			for (int idx = 0; idx < inputParm.timeSeries.size(); idx++)
+			{
+				TimedVariable inputValue = inputParm.timeSeries.sampleAt(idx);
+				if (!VarFlags.wasAdded(inputValue))
+					continue;
+				ScreeningCriteria criteria = screening.findForDate(inputValue.getTime(), aggTZ);
+				if (criteria == null || !screening.isRocActive()
+					|| !criteria.hasRocPerHourChecks())
+					continue;
+				TimedVariable prior = inputParm.timeSeries.findWithin(
+					rateComparisonTime(inputValue.getTime()), roundSec);
+				while (prior != null)
+				{
+					if (timeSeriesDAO == null)
+						timeSeriesDAO = tsdb.makeTimeSeriesDAO();
+					if (!inputIsOutput() && outputParm != null)
+					{
+						TreeSet<Date> outputTime = new TreeSet<Date>();
+						outputTime.add(prior.getTime());
+					}
+					if (isUsableForRateComparison(prior, outputParm))
+						break;
+					prior = timeSeriesDAO.getPreviousValue(inputParm.timeSeries, prior.getTime());
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new DbCompException("Unable to retrieve RATE comparison history.", ex);
+		}
+		finally
+		{
+			if (timeSeriesDAO != null)
+				timeSeriesDAO.close();
+		}
+	}
+
+	boolean isUsableForRateComparison(TimedVariable inputValue, ParmRef outputParm)
+	{
+		if (isMissingRejected(inputValue.getFlags())
+			|| (findPreviousForQuestionable()
+				&& isQuestionable(inputValue.getFlags())))
+			return false;
+		if (inputIsOutput())
+			return true;
+		TimedVariable outputValue = outputParm.timeSeries.findWithin(inputValue.getTime(), roundSec);
+		return outputValue == null
+			|| (!isMissingRejected(outputValue.getFlags())
+				&& (!findPreviousForQuestionable()
+					|| !isQuestionable(outputValue.getFlags())));
+	}
+
+	Date rateComparisonTime(Date dataTime)
+	{
+		ParmRef outputParm = getParmRef("output");
+		TimeSeriesIdentifier outputTsid = outputParm == null ? null
+			: outputParm.timeSeries.getTimeSeriesIdentifier();
+		IntervalIncrement outputInterval = outputTsid == null ? null
+			: IntervalCodes.getIntervalCalIncr(outputTsid.getInterval());
+		if (outputInterval == null || outputInterval.getCount() <= 0)
+			return new Date(dataTime.getTime() - 3600000L);
+		aggCal.setTime(dataTime);
+		aggCal.add(outputInterval.getCalConstant(), -outputInterval.getCount());
+		return aggCal.getTime();
+	}
+
+	private boolean isMissingRejected(int flags)
+	{
+		return (flags & CwmsFlags.FLAG_MISSING_OR_REJECTED) != 0;
+	}
+
+	private boolean isQuestionable(int flags)
+	{
+		return (flags & CwmsFlags.VALIDITY_MASK) == CwmsFlags.VALIDITY_QUESTIONABLE;
 	}
 
 	/**
