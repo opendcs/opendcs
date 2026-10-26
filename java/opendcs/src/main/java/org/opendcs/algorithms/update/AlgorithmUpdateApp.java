@@ -48,13 +48,13 @@ public final class AlgorithmUpdateApp
         StringToken password = new StringToken("password", "Database password", "",
                 TokenOptions.optRequired, null);
         StringToken algorithm = new StringToken("algorithm", "Limit update to an algorithm name", "",
-                TokenOptions.optRequired, null);
+                0, null);
         cli.addToken(apply);
         cli.addToken(username);
         cli.addToken(password);
         cli.addToken(algorithm);
         cli.parseArgs(args);
-        DataSource dataSource = ManageDatabaseApp.getDataSourceFromProfileAndUserInfo(
+        DataSource dataSource = ManageDatabaseApp.getDataSourceForAfterUpdates(
                 cli.getProfile(), System.console(), username.getValue(), password.getValue());
         try (Connection connection = dataSource.getConnection())
         {

@@ -159,6 +159,17 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
     }
 
     /**
+     * Initialize a non-pooled connection with the same office and CCP privilege
+     * context as the normal CWMS connection pool. Call before starting a transaction.
+     */
+    public static void initializeSession(Connection conn, ConnectionLoginInfo loginInfo) throws SQLException
+    {
+        CwmsConnectionInfo info = new CwmsConnectionInfo();
+        info.setLoginInfo(loginInfo);
+        fillOutConnectionInfo(info, conn);
+    }
+
+    /**
      * Initializes the Pool on first open
      * @param info info object with baseline info (URL,user,password). Additional information will be added.
      * @param conn a valid open connection from the CwmsDbConnectionPool

@@ -74,14 +74,17 @@ Upgrading existing computations
 -------------------------------
 
 ``hourlyEvapRate`` was previously named ``hourlyEvap``, and
-``dailyEvapDepth`` was previously named ``dailyEvap``. The database upgrade
-tool and ``algoupdate -apply`` rename unambiguous existing assignments while
-keeping their time series and settings. ``algoupdate`` without ``-apply``
-previews the changes; ``-algorithm ResEvapAlgo`` limits it to one algorithm.
-The updater also adds missing outputs such as ``hourlyEvapDepth``. Open the
-computation in the computation editor to assign time series to new outputs.
-If both the old and new parameter names exist, the updater preserves both
-assignments and reports that they need review; resolve them in the editor.
+``dailyEvapDepth`` was previously named ``dailyEvap``. The algorithm updater
+renames unambiguous existing assignments while keeping their time series and
+settings. See :ref:`algorithm-updates` for complete preview/apply commands,
+required credentials, and CWMS office configuration.
+
+``hourlyEvapDepth`` is a new output. The updater adds missing output parameters;
+assign a time series if you want to save that output. If both an old and a new
+parameter name already exist, the updater preserves the assignments and reports
+that they need review.
+
+The 7.0 computation editor does not have an **Update parameters** action.
 
 
 **Properties**

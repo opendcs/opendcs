@@ -126,7 +126,8 @@ public class ManageDatabaseApp
             {
                 System.out.println("Database is already up-to-date.");
             }
-            AfterUpdateRunner.run(ds);
+            AfterUpdateRunner.run(getDataSourceForAfterUpdates(
+                    profile, console, username.getValue(), password.getValue()));
         }
     }
 
@@ -172,6 +173,19 @@ public class ManageDatabaseApp
 
     public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c, String username, String password) throws IOException, FileNotFoundException
     {
+        return getDataSource(p, c, username, password, false);
+    }
+
+    /** Schema migrations use a raw connection; after-updates also need CWMS session context. */
+    public static DataSource getDataSourceForAfterUpdates(Profile p, Console c, String username, String password)
+            throws IOException
+    {
+        return getDataSource(p, c, username, password, true);
+    }
+
+    private static DataSource getDataSource(Profile p, Console c, String username, String password,
+            boolean initializeCwmsSession) throws IOException
+    {
         DecodesSettings settings = DecodesSettings.fromProfile(p);
         if (username == null)
         {
@@ -183,6 +197,10 @@ public class ManageDatabaseApp
             password = new String(pw);
         }
 
+        if (initializeCwmsSession && settings.editDatabaseTypeCode == DecodesSettings.DB_CWMS)
+        {
+            return new CwmsSessionDataSource(settings.editDatabaseLocation, username, password, settings.CwmsOfficeId);
+        }
         return new SimpleDataSource(settings.editDatabaseLocation,username,password);
     }
 
