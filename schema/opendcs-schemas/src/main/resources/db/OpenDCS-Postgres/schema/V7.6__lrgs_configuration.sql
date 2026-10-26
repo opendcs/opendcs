@@ -1,6 +1,6 @@
 -- Should we even have this table, or just move service_provider
 -- to lrgs_data_interface?
--- I'm not really sure, though having it does allow an administrator to 
+-- I'm not really sure, though having it does allow an administrator to
 -- limit what can be selected.
 create table lrgs_data_interface_type (
     id bigserial not null primary key,
@@ -14,7 +14,7 @@ create table lrgs_data_interface_type (
 -- Those could be input, output, or both
 
 create table lrgs_data_interface (
-	id bigserial not null primary key,	
+	id bigserial not null primary key,
 	name varchar(64) not null unique,
 	type_id bigint references lrgs_data_interface_type(id),
     config jsonb default '{}'::jsonb,
@@ -23,7 +23,7 @@ create table lrgs_data_interface (
 );
 
 
--- insert into lrgs_data_interface_type(name, java_class) 
+-- insert into lrgs_data_interface_type(name, java_class)
 --     values ('archive-database', 'LrgsDatabaseArchive');
 
 -- insert into lrgs_data_interface(name, type_id, config)
@@ -40,15 +40,17 @@ $$ language plpgsql;
 
 create table lrgs_archive (
     -- okay this needs some thought
-    created_at timestamptz not null default now(),
+    stored_at timestamptz not null default now(),
     data_time timestamptz, -- time of the actual data. could be null if any header processing is
                            -- unable to determine it.
     data_header jsonb default '{}'::jsonb, -- parsed, if possible, header to aide in search.
     data_interface_id bigint references lrgs_data_interface(id) not null,
     identifier text, -- arbitrary, text encoded, identifier as used by the given source
     raw_data bytea, -- null allowed here, we may get literal nothing from a source
-
-    unique (created_at, data_interface_id, identifier)
+    quality text not null, -- can be G (good), B(bad), U (unknown) interfaces that
+    -- cannot determine a quality should generally use U.
+    constraint quality_value CHECK (quality in ('G', 'B', 'U'))
+    unique (stored_at, data_interface_id, identifier)
 );
 
 create trigger trigger_purge_archive
