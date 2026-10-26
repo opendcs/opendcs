@@ -997,7 +997,9 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 	public void clearFlagBits(NamedVariable v, int bits)
 	{
 		v.setFlags(v.getFlags() & (~bits));
+		setFlagBitsCalled = true;
 		saveOutput(v);
+		setFlagBitsCalled = false;
 	}
 
 	/**
