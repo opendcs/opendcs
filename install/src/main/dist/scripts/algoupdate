@@ -1,3 +1,8 @@
 #!/bin/sh
 APP_PATH="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-"${APP_PATH}/decj" org.opendcs.algorithms.update.AlgorithmUpdateApp "$@"
+# Keep -algorithm and -apply out of decj's -a launcher option handling.
+# Accept the explicit separator used with older versions of this launcher too.
+if [ "${1-}" = "--" ]; then
+    shift
+fi
+"${APP_PATH}/decj" org.opendcs.algorithms.update.AlgorithmUpdateApp -- "$@"
