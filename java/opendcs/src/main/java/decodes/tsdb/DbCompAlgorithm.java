@@ -264,16 +264,14 @@ public class DbCompAlgorithm implements CompMetaData, CachableHasProperties
 		{
 			return false;
 		}
-		for(int i=0; i<parms.size(); i++)
+
+		// The exact order doesn't matter. However, the comparison must
+		// be true in both directions.
+		if (!(parms.containsAll(rhs.parms) && rhs.parms.containsAll(parms)))
 		{
-			DbAlgoParm p1 = parms.get(i);
-			DbAlgoParm p2 = rhs.parms.get(i);
-			if (!TextUtil.strEqual(p1.getRoleName(), p2.getRoleName())
-			 || !TextUtil.strEqual(p1.getParmType(), p2.getParmType()))
-			{
-				return false;
-			}
+			return false;
 		}
+
 		if (!this.algoScripts.equals(rhs.algoScripts))
 		{
 			return false;

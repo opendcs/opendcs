@@ -2,7 +2,10 @@ package org.opendcs.database.impl.opendcs.dao.computation;
 
 import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
+import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.OFFSET_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
@@ -78,7 +81,7 @@ public class AlgorithmDaoImpl implements AlgorithmDao
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
 
-        var selectTemplate = getTemplate(SELECT);        
+        var selectTemplate = getTemplate(SELECT);
 
         selectTemplate.add(WHERE_CLAUSE, whereClause)
                       .add("algo_columns", allData.algoMapper().columnsForSelect())
@@ -150,7 +153,7 @@ public class AlgorithmDaoImpl implements AlgorithmDao
                         id, algo.getId());
                 }
             }
-            final var comment = algo.getComment() != null 
+            final var comment = algo.getComment() != null
                               ? algo.getComment()
                                     .substring(0,
                                                // The column currently only allows 1000 characters
@@ -165,7 +168,7 @@ public class AlgorithmDaoImpl implements AlgorithmDao
             deleteParms(handle, bindKey);
             deleteScripts(handle, bindKey);
             deleteProps(handle, bindKey);
-            
+
             algo.getParms()
                 .forEachRemaining(p ->
                 {
@@ -183,7 +186,7 @@ public class AlgorithmDaoImpl implements AlgorithmDao
                               .bind(PropertiesMapper.Columns.NAME.column(), k)
                               .bind(PropertiesMapper.Columns.VALUE.column(), v)
                               .add();
-                }); 
+                });
             insertProp.execute();
 
             // other bits
@@ -199,7 +202,7 @@ public class AlgorithmDaoImpl implements AlgorithmDao
     private void deleteParms(Handle handle, DatabaseKey id) throws OpenDcsDataException
     {
         doDelete(handle, "deleteParms", id);
-        
+
     }
 
     private void deleteScripts(Handle handle, DatabaseKey id) throws OpenDcsDataException
@@ -217,7 +220,6 @@ public class AlgorithmDaoImpl implements AlgorithmDao
         var template = getTemplate(templateName).render();
         try (var delete = handle.createUpdate(template))
         {
-            delete.setSqlLogger(new DetailSqlLogger(log));
             delete.bind("id", id).execute();
         }
     }
@@ -238,10 +240,64 @@ public class AlgorithmDaoImpl implements AlgorithmDao
     public List<DbCompAlgorithm> getAll(DataTransaction tx, int limit, int offset, boolean expand)
             throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAll'");
+        var handle = tx.connection(Handle.class)
+                            .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
+
+        var selectTemplate = getTemplate(SELECT);
+
+        selectTemplate.add("algo_columns", allData.algoMapper().columnsForSelect())
+                      .add("parm_columns", allData.parmMapper().columnsForSelect())
+                      .add("parm_join", allData.parmMapper()
+                                .joinStatement(LEFT_OUTER, AlgorithmTsParameterMapper.Columns.ALGORITHM_ID,
+                                               allData.algoMapper().getPrefix(), AlgorithmMapper.Columns.ID.column()))
+                      .add("algo_prefix", allData.algoMapper().getPrefix())
+                      .add("parm_prefix", allData.parmMapper().getPrefix())
+                      .add(COLLATE_CLAUSE, collateClauseFor(dbEngine))
+                      .add(LIMIT_CLAUSE, addLimitOffset(limit, offset));
+
+        if (expand)
+        {
+            selectTemplate.add("script_columns", allData.scriptMapper().columnsForSelect())
+                      .add("prop_columns", allData.propertiesMapper().columnsForSelect())
+                      .add("script_join", allData.scriptMapper()
+                                .joinStatement(LEFT_OUTER, AlgorithmScriptMapper.Columns.ALGORITHM_ID,
+                                               allData.algoMapper().getPrefix(), AlgorithmMapper.Columns.ID.column()))
+                      .add("prop_join",
+                            String.format("left outer join cp_algo_property %s on %s.algorithm_id = %s.algorithm_id",
+                                            allData.propertiesMapper().getPrefix(),
+                                            allData.algoMapper().getPrefix(),
+                                            allData.propertiesMapper().getPrefix()
+                            )
+                      )
+                      .add("script_prefix", allData.scriptMapper().getPrefix())
+                      .add("prop_prefix", allData.propertiesMapper().getPrefix())
+                      ;
+        }
+
+        try (var select = handle.createQuery(selectTemplate.render()))
+        {
+            if (limit > -1)
+            {
+                select.bind(LIMIT_CLAUSE, limit);
+            }
+            if (offset > -1)
+            {
+                select.bind(OFFSET_CLAUSE, offset);
+            }
+            select.registerRowMapper(allData.algoMapper())
+                  .registerRowMapper(allData.parmMapper());
+            if (expand)
+            {
+                select.registerRowMapper(allData.scriptMapper())
+                      .registerRowMapper(allData.propertiesMapper());
+            }
+
+            return select.reduceRows(new AlgorithmReducer(expand ? allData : refData))
+                         .toList();
+        }
     }
-    
 
     private ST getTemplate(String templateName) throws OpenDcsDataException
     {
