@@ -2025,3 +2025,45 @@ GG176. and therefore an error will occur.
 +-----------------+-------------------------------------------+
 | get_sensor      | 1x,F(S,A,6,1)                             |
 +-----------------+-------------------------------------------+
+
+
+HTML Form operations
+====================
+
+Data that arrives as htmlform encoding can be handled with the `htmlformdata` operation.
+`htmlformdata` works similar to `csv`. Data is processed until the end of the line and can be limited to search
+for specific sensors, have retrieve time from the encoded values.
+
+Given the following data ::
+
+   stage=1.5&temp%20air=78.5&date=2026-10-27+14:00:00
+
+The following can be used to extract those values ::
+
+   htmlformdata(dateField=date,timeFormat=yyyy-MM-dd HH:mm:ss)
+
+In this case stage is a key, with 1.5 as the value. The extracted keys are used to lookup the appropriate data type by 
+matching the key to a defined sensor type of the configuration.
+
+the following options are available
+
++------------------+----------------------------------------------------------------------------+
+| argument         | description                                                                |
++------------------+----------------------------------------------------------------------------+
+| digit            | Which sensors number to keep. If not specified will attempt to process all |
++------------------+----------------------------------------------------------------------------+
+| dateField        | Which key, if any, defines a date field. timeFormat is required if set.    |
++------------------+----------------------------------------------------------------------------+
+| timeFormat       | Format used to parse the dateTime. Java DateFormat Patterns are expected.  |
+|                  | If transfering this configuraiton to a system that doesn't use Java        |
+|                  | is is likely the format will need to be changed.                           |
++------------------+----------------------------------------------------------------------------+
+| dateTypeStandard | Limit key to sensor mapping to a specific data type standard               |
++------------------+----------------------------------------------------------------------------+
+
+
+.. WARNING::
+
+   At the time of this writing the above statements of behavior may not entirely be accurate; however,
+   they are the intended behavior. If you use this feature and are not seeing expected results please
+   open an issue with your example.
