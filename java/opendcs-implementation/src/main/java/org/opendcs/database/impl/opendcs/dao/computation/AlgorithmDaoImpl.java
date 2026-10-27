@@ -15,6 +15,7 @@ import org.opendcs.database.DatabaseKey;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.AlgorithmDao;
+import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.AlgorithmMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.AlgorithmMappers;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.AlgorithmReducer;
@@ -43,7 +44,7 @@ public class AlgorithmDaoImpl implements AlgorithmDao
 
     private static final String SELECT = "select";
     private static final String MERGE = "merge";
-    private static final String DELETE = "delete";
+    private static final String DELETE = "deleteAlgo";
 
     public AlgorithmDaoImpl()
     {
@@ -168,7 +169,6 @@ public class AlgorithmDaoImpl implements AlgorithmDao
             algo.getParms()
                 .forEachRemaining(p ->
                 {
-                    log.info("Inserting {}", p);
                     insertParm.bind(AlgorithmTsParameterMapper.Columns.ALGORITHM_ID.column(), bindKey)
                               .bind(AlgorithmTsParameterMapper.Columns.ALGO_ROLE_NAME.column(), p.getRoleName())
                               .bind(AlgorithmTsParameterMapper.Columns.PARM_TYPE.column(), p.getParmType())
@@ -214,9 +214,10 @@ public class AlgorithmDaoImpl implements AlgorithmDao
 
     private void doDelete(Handle handle, String templateName, DatabaseKey id) throws OpenDcsDataException
     {
-        var template = getTemplate("deleteParms").render();
+        var template = getTemplate(templateName).render();
         try (var delete = handle.createUpdate(template))
         {
+            delete.setSqlLogger(new DetailSqlLogger(log));
             delete.bind("id", id).execute();
         }
     }

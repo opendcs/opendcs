@@ -29,7 +29,7 @@ public class AlgorithmTsParameterMapper extends OpenDcsTableMapper<DbAlgoParm, A
             return null;
         }
         return new DbAlgoParm(
-            rs.getString(column(Columns.ALGORITHM_ID)),
+            rs.getString(column(Columns.ALGO_ROLE_NAME)),
             rs.getString(column(Columns.PARM_TYPE))
         );
     }

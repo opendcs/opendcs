@@ -11,7 +11,9 @@ import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.data.computations.algorithms.AlgorithmScriptPart;
 import org.opendcs.database.DatabaseKey;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
+import org.slf4j.Logger;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.DbAlgoParm;
@@ -19,8 +21,7 @@ import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompAlgorithmScript;
 
 public class AlgorithmReducer implements LinkedHashMapRowReducer<DatabaseKey, DbCompAlgorithm>
-{
-
+{   
     private final AlgorithmMapper algoMapper;
     private final AlgorithmTsParameterMapper parmMapper;
     private final AlgorithmScriptMapper scriptMapper;

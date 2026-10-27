@@ -207,4 +207,20 @@ public final class DbKey implements Comparable<DbKey>, Serializable, DatabaseKey
 	{
 		return key == null || key.isNull();
 	}
+
+	/**
+	 * Equality for DbKey values. If either or both are null false is returned.
+	 * Otherwise true if the keys are the same instance or have equivalent values.
+	 * @param left
+	 * @param right
+	 * @return
+	 */
+	public static boolean areEqual(DbKey left, DbKey right)
+	{
+		if (left == null || right == null)
+		{
+			return false;
+		}
+		return left == right || (left.value == right.value);
+	}
 }

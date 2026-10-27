@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Objects;
 
 import opendcs.dao.CachableHasProperties;
 import ilex.util.PropertiesUtil;
@@ -280,6 +281,21 @@ public class DbCompAlgorithm implements CompMetaData, CachableHasProperties
 		return true;
 	}
 
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (obj instanceof DbCompAlgorithm rhs)
+		{
+			return this == obj || (DbKey.areEqual(algorithmId, rhs.algorithmId) && equalsNoId(rhs));
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(algorithmId, name, execClass, comment, parms, props, algoScripts);
+	}
 
 	@Override
 	public DbKey getKey()
