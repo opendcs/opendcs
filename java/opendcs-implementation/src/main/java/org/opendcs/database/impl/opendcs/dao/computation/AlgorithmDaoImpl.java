@@ -18,7 +18,8 @@ import org.opendcs.database.DatabaseKey;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.AlgorithmDao;
-import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
+import org.opendcs.database.impl.opendcs.jdbi.column.text.Base64ColumnMapper;
+import org.opendcs.database.impl.opendcs.jdbi.column.text.Base64String;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.AlgorithmMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.AlgorithmMappers;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.AlgorithmReducer;
@@ -36,18 +37,22 @@ import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 import decodes.tsdb.DbCompAlgorithm;
+import ilex.util.Base64;
 
 @ServiceProvider(service = AlgorithmDao.class)
 public class AlgorithmDaoImpl implements AlgorithmDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
-    private AlgorithmMappers allData;
-    private AlgorithmMappers refData;
-    private STGroup queries;
-
     private static final String SELECT = "select";
     private static final String MERGE = "merge";
     private static final String DELETE = "deleteAlgo";
+
+    private final AlgorithmMappers allData;
+    private final AlgorithmMappers refData;
+    private final STGroup queries;
+
+    private final Base64ColumnMapper base64Mapper = new Base64ColumnMapper();
+
 
     public AlgorithmDaoImpl()
     {
@@ -109,7 +114,8 @@ public class AlgorithmDaoImpl implements AlgorithmDao
 
         try (var select = handle.createQuery(selectTemplate.render()))
         {
-            return select.registerRowMapper(allData.algoMapper())
+            return select.registerColumnMapper(Base64String.class, base64Mapper)
+                         .registerRowMapper(allData.algoMapper())
                          .registerRowMapper(allData.parmMapper())
                          .registerRowMapper(allData.scriptMapper())
                          .registerRowMapper(allData.propertiesMapper())
@@ -189,13 +195,41 @@ public class AlgorithmDaoImpl implements AlgorithmDao
                 });
             insertProp.execute();
 
-            // other bits
+            saveScripts(handle, algo, bindKey);
+
             return getById(tx, bindKey)
                 .orElseThrow(() -> new OpenDcsDataException("Could not retrieve algorithm we just saved."));
         }
         catch (DatabaseException ex)
         {
             throw new OpenDcsDataException("Unable to generator new key for algorithm", ex);
+        }
+    }
+
+    protected void saveScripts(Handle handle, DbCompAlgorithm algo, DatabaseKey id) throws OpenDcsDataException
+    {
+        var scriptTemplate = getTemplate("insertScript");
+        try (var scriptInsert = handle.prepareBatch(scriptTemplate.render()))
+        {
+            var scripts = algo.getScripts();
+            for (var script: scripts)
+            {
+                int blockNum = 1;
+                var text = script.getText();
+                var b64text = new String(Base64.encodeBase64(text.getBytes()));
+                while (b64text != null)
+                {
+                    var block = b64text.length() < 4000 ? b64text : b64text.substring(0, 4000);
+                    b64text = (block == b64text) ? null : b64text.substring(4000);
+                    scriptInsert.bind(AlgorithmScriptMapper.Columns.ALGORITHM_ID.column(), id)
+                                .bind(AlgorithmScriptMapper.Columns.SCRIPT_TYPE.column(), script.getScriptType().getDbChar())
+                                .bind(AlgorithmScriptMapper.Columns.BLOCK_NUM.column(), blockNum)
+                                .bind(AlgorithmScriptMapper.Columns.SCRIPT_DATA.column(), block)
+                                .add();
+                    blockNum++;
+                }
+            }
+            scriptInsert.execute();
         }
     }
 
@@ -286,7 +320,8 @@ public class AlgorithmDaoImpl implements AlgorithmDao
             {
                 select.bind(OFFSET_CLAUSE, offset);
             }
-            select.registerRowMapper(allData.algoMapper())
+            select.registerColumnMapper(Base64String.class, base64Mapper)
+                  .registerRowMapper(allData.algoMapper())
                   .registerRowMapper(allData.parmMapper());
             if (expand)
             {

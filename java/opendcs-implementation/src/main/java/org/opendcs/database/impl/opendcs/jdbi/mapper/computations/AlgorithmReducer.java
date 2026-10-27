@@ -1,20 +1,16 @@
 package org.opendcs.database.impl.opendcs.jdbi.mapper.computations;
 
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
-import org.jdbi.v3.core.mapper.RowViewMapper;
 import org.jdbi.v3.core.result.LinkedHashMapRowReducer;
-import org.jdbi.v3.core.result.RowReducer;
 import org.jdbi.v3.core.result.RowView;
 import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.opendcs.data.computations.algorithms.AlgorithmScriptPart;
 import org.opendcs.database.DatabaseKey;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
-import org.opendcs.utils.logging.OpenDcsLoggerFactory;
-import org.opendcs.utils.sql.SqlErrorMessages;
-import org.slf4j.Logger;
-
 import decodes.sql.DbKey;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
@@ -26,6 +22,8 @@ public class AlgorithmReducer implements LinkedHashMapRowReducer<DatabaseKey, Db
     private final AlgorithmTsParameterMapper parmMapper;
     private final AlgorithmScriptMapper scriptMapper;
     private final PropertiesMapper propertiesMapper;
+
+    private final HashMap<DatabaseKey, HashSet<AlgorithmScriptPart>> scriptParts = new HashMap<>();
 
     public AlgorithmReducer(AlgorithmMappers mappers)
     {
@@ -56,14 +54,19 @@ public class AlgorithmReducer implements LinkedHashMapRowReducer<DatabaseKey, Db
 
             if (scriptPart != null)
             {
-                var script = algo.getScript(scriptPart.type());
-                if (script == null)
+                var list = scriptParts.computeIfAbsent(key, newKey -> new HashSet<>());
+                if (!list.contains(scriptPart))
                 {
-                    // NOTE: this assumes the rows were sorted by script_type, block_num ascending and are thus consistent.
-                    algo.putScript(new DbCompAlgorithmScript(algo, scriptPart.type()));
-                    script = algo.getScript(scriptPart.type());
+                    list.add(scriptPart);
+                    var script = algo.getScript(scriptPart.type());
+                    if (script == null)
+                    {
+                        // NOTE: this assumes the rows were sorted by script_type, block_num ascending and are thus consistent.
+                        algo.putScript(new DbCompAlgorithmScript(algo, scriptPart.type()));
+                        script = algo.getScript(scriptPart.type());
+                    }
+                    script.addToText(scriptPart.scriptData());
                 }
-                script.addToText(scriptPart.scriptData());
             }
 
             var prop = propertiesMapper != null

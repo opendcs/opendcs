@@ -5,6 +5,7 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.data.computations.algorithms.AlgorithmScriptPart;
+import org.opendcs.database.impl.opendcs.jdbi.column.text.Base64String;
 import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -24,6 +25,8 @@ public class AlgorithmScriptMapper extends OpenDcsTableMapper<AlgorithmScriptPar
     {
         var keyMapper = ctx.findColumnMapperFor(DbKey.class)
                            .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
+        var scriptMapper = ctx.findColumnMapperFor(Base64String.class)
+                           .orElseThrow(() -> new SQLException(SqlErrorMessages.BASE64STRING_MAPPER_NOT_FOUND));
         var key = keyMapper.map(rs, column(Columns.ALGORITHM_ID), ctx);
         if (key == null || rs.wasNull())
         {
@@ -34,7 +37,7 @@ public class AlgorithmScriptMapper extends OpenDcsTableMapper<AlgorithmScriptPar
             key,
             ScriptType.fromDbChar(rs.getString(column(Columns.SCRIPT_TYPE)).charAt(0)),
             rs.getInt(column(Columns.BLOCK_NUM)),
-            rs.getString(column(Columns.SCRIPT_DATA))
+            scriptMapper.map(rs, column(Columns.SCRIPT_DATA), ctx).value()
         );
 
     }
