@@ -7,7 +7,7 @@ begin
         from lrgs_data_interface
         where name = 'LrgsArchive';
     delete from lrgs_archive
-    where created_at < now() - (days || ' days')::interval;
+    where stored_at < now() - (days || ' days')::interval;
     return new;
 end;
 $$ language plpgsql;

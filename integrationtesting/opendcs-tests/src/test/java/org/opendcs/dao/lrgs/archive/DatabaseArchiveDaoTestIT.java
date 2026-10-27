@@ -1,7 +1,9 @@
 package org.opendcs.dao.lrgs.archive;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -42,12 +44,16 @@ class DatabaseArchiveDaoTestIT extends AppTestBase
             var dataInterfaceIn = new LrgsDataInterface(null, "LrgsArchive", typeOut, Map.of("length_days", "1"), null, null);
             var dataInterfaceOut = interfaceDao.save(tx, dataInterfaceIn);
 
-            var messageIn = new ArchiveEntry(dataInterfaceOut, "TEST_ID_1", null, 
-                                             "Test Message".getBytes(StandardCharsets.UTF_8), null,
+            var messageIn = new ArchiveEntry(dataInterfaceOut, dataInterfaceOut.id(), "TEST_ID_1", null,
+                                             ByteBuffer.wrap("Test Message".getBytes(StandardCharsets.UTF_8)), null,
                                              null, Quality.GOOD);
             var messageOut = archiveDao.archive(tx, messageIn);
             assertTrue(messageOut.isSuccess());
 
+
+            var messageOut2 = archiveDao.getAllBy(tx, -1, -1, null);
+            assertEquals(1, messageOut2.size());
+            assertEquals(messageOut.success(), messageOut2.getFirst());
         }
     }
 }
