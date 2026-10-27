@@ -56,7 +56,7 @@ public interface LrgsArchiveDao extends OpenDcsDao
      * @param limit limit for paging
      * @param offset offset for paging
      * @param criteria given search criteria. Can be null, in which case implementations
-     * should return all data in {@link {@link OrderBy#STORE_TIME}} order by default
+     * should return all data in {@link OrderBy#STORE_TIME} order by default
      * @return
      * @throws OpenDcsDataException
      */
