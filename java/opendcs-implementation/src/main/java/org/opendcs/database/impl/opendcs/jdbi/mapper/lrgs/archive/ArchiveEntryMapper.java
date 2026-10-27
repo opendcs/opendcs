@@ -1,5 +1,6 @@
 package org.opendcs.database.impl.opendcs.jdbi.mapper.lrgs.archive;
 
+import java.nio.ByteBuffer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
@@ -13,6 +14,8 @@ import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
+import decodes.sql.DbKey;
+
 public class ArchiveEntryMapper extends OpenDcsTableMapper<ArchiveEntry,ArchiveEntryMapper.Columns>
 {
     protected ArchiveEntryMapper(String prefix)
@@ -23,18 +26,22 @@ public class ArchiveEntryMapper extends OpenDcsTableMapper<ArchiveEntry,ArchiveE
     @Override
     public ArchiveEntry map(ResultSet rs, StatementContext ctx) throws SQLException
     {
+        var keyMapper = ctx.findColumnMapperFor(DbKey.class)
+                           .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
         var zdtMapper = ctx.findColumnMapperFor(ZonedDateTime.class)
                            .orElseThrow(() -> new SQLException(SqlErrorMessages.ZDT_MAPPER_NOT_FOUND));
         var configMapper = ctx.findColumnMapperFor(ConfigColumnMapper.CONFIG_TYPE)
                               .orElseThrow(() -> new SQLException(SqlErrorMessages.CONFIG_MAPPER_NOT_FOUND));
+        var byteBufferMapper = ctx.findColumnMapperFor(ByteBuffer.class)
+                                  .orElseThrow(() -> new SQLException("No ByteBuffer Mapper Found."));
         var storedAt = zdtMapper.map(rs, column(Columns.STORED_AT), ctx);
         var dateTime = zdtMapper.map(rs, column(Columns.DATA_TIME), ctx);
         var id = rs.getString(column(Columns.IDENTIFIER));
-        var rawData = rs.getBytes(column(Columns.IDENTIFIER));
+        var rawData = byteBufferMapper.map(rs, column(Columns.RAW_DATA), ctx);
         var quality = rs.getString(column(Columns.QUALITY));
+        var dataInterfaceId = keyMapper.map(rs, column(Columns.DATA_INTERFACE_ID), ctx);
         var header = (Map<String,Object>)configMapper.map(rs, column(Columns.DATA_HEADER), ctx);
-        // var interface = // todo
-        return new ArchiveEntry(null, id, header, rawData, storedAt, dateTime, Quality.valueOf(quality));
+        return new ArchiveEntry(null, dataInterfaceId, id, header, rawData, storedAt, dateTime, Quality.fromDbChar(quality));
     }
 
     public static ArchiveEntryMapper withPrefix(String prefix)
@@ -48,6 +55,7 @@ public class ArchiveEntryMapper extends OpenDcsTableMapper<ArchiveEntry,ArchiveE
         DATA_TIME,
         DATA_HEADER,
         DATA_INTERFACE,
+        DATA_INTERFACE_ID,
         IDENTIFIER,
         RAW_DATA,
         QUALITY
