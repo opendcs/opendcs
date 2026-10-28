@@ -314,7 +314,8 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                                 return spec;
                             }
                            )
-                           .findOne()
+                           .stream()
+                           .findFirst()
                            .orElseThrow(() -> new OpenDcsDataException("No storage tables available!"));
 
             ret.setStorageTable(storageTable.getTableNum());
