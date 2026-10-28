@@ -50,8 +50,12 @@ public class ComputationTsParameterMapper extends OpenDcsTableMapper<DbCompParm,
         ret.setModelId(rs.getInt(column(Columns.MODEL_ID)));
         ret.setDataTypeId(keyMapper.map(rs, column(Columns.DATATYPE_ID), ctx));
         ret.setSiteId(keyMapper.map(rs, column(Columns.SITE_ID), ctx));
-        /** should we decide this always pull things in or join elements? */
         return ret;
+    }
+
+    public static ComputationTsParameterMapper withPrefix(String prefix)
+    {
+        return new ComputationTsParameterMapper(prefix);
     }
 
     public static enum Columns implements TableColumnDefinition

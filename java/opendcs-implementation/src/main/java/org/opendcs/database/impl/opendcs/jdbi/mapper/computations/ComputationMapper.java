@@ -57,10 +57,10 @@ public class ComputationMapper extends OpenDcsTableMapper<DbComputation, Computa
         ID("computation_id"),
         COMPUTATION_NAME,
         ALGORITHM_ID,
-        ALGORITHM_NAME,
+        ALGORITHM_NAME(false),
         COMMENT("cmmnt"),
         LOADING_APPLICATION_ID,
-        APP_NAME,
+        APP_NAME(false),
         DATE_TIME_LOADED,
         ENABLED,
         EFFECTIVE_START("effective_start_date_time"),
@@ -69,15 +69,24 @@ public class ComputationMapper extends OpenDcsTableMapper<DbComputation, Computa
         ;
 
         private final String column;
+        private boolean include;
 
         Columns()
         {
             this.column = this.name().toLowerCase();
+            include = true;
+        }
+
+        Columns(boolean includeInSelect)
+        {
+            this.column = this.name().toLowerCase();
+            include = includeInSelect;
         }
 
         Columns(String column)
         {
             this.column = column;
+            include = true;
         }
 
         @Override
@@ -86,5 +95,10 @@ public class ComputationMapper extends OpenDcsTableMapper<DbComputation, Computa
             return this.column;
         }
         
+        @Override
+        public boolean includeInSelect()
+        {
+            return include;
+        }
     }
 }

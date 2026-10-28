@@ -2,8 +2,7 @@ group ComputationDaoImpl;
 
 select(comp_columns, algo_columns, parm_columns, parm_join, algo_join, algo_parm_columns, algo_parm_join,
        algo_prop_columns, algo_prop_join, prop_columns, prop_join, where, limit, collate, dual, comp_prefix,
-       algo_prefix, algo_parm_prefix, parm_prefix, script_prefix, algo_prop_prefix, prop_prefix,
-       app_columns, app_prefix, app_join, app_prop_columns, app_prop_join, app_prop_prefix) ::= <<
+       algo_prefix, algo_parm_prefix, parm_prefix, script_prefix, algo_prop_prefix, prop_prefix, app_columns) ::= <<
 with comps(id, name) as (
     select computation_id, computation_name
       from cp_algorithm <comp_prefix>
@@ -13,16 +12,20 @@ with comps(id, name) as (
 )
 select 
     <comp_columns>,
+    -- these are intentionally pull in separate, to ease the use of the 
+    -- "don't expand" feature while still retaining some useful information.
+    local_algo.algorithm_name <comp_prefix>_algorithm_name,
+    local_app.loading_application_name <comp_prefix>_app_name,
     <parm_columns>
     <if(algo_columns)>, <algo_columns <endif>
     <if(algo_parm_columns)>, <algo_parm_columns> <endif>
     <if(algo_prop_columns)>, <algo_prop_columns> <endif>
     <if(script_columns)>, <script_columns> <endif>
     <if(prop_columns)>, <prop_columns> <endif>
-    <if(app_columns)>, <app_columns> <endif>
-    <if(app_prop_columns)>, <app_prop_columns> <endif>
 from comps
 join cp_computation <comp_prefix> on <comp_prefix>.computation_id = comps.id
+left outer join cp_algorithm local_algo on local_algo.algorithm_id on comps.id
+left outer join hdb_loading_application_name local_app on local_app.loading_application_id = <comp_prefix>.loading_application_id
 <parm_join>
 <if(script_join)> <script_join> <endif>
 <if(algo_join)> <algo_join> <endif>
@@ -30,7 +33,6 @@ join cp_computation <comp_prefix> on <comp_prefix>.computation_id = comps.id
 <if(algo_parm_join)> <algo_parm_join> <endif>
 <if(prop_join)> <prop_join> <endif>
 <if(app_join)> <app_join> <endif>
-<if(app_prop_join)> <app_prop_join> <endif>
 order by <comp_prefix>.computation_name <collate> asc, <parm_prefix>.algo_role_name <collate> asc
 <if(script_join)> , <script_prefix>.script_type <collate> asc, <script_prefix>.block_num asc <endif>
 

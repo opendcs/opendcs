@@ -31,7 +31,7 @@ public interface BasicDao<T> extends OpenDcsDao
      * @return The value, or empty if not found.
      * @throws OpenDcsDataException if any errors during data operations
      */
-    Optional<T> getByName(DataTransaction tx, String name) throws OpenDcsDataException;    
+    Optional<T> getByName(DataTransaction tx, String name) throws OpenDcsDataException;
     
     /**
      * Save a new value of type T to the database. Returning the expanded saved value.

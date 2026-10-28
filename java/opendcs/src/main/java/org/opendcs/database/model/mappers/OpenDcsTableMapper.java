@@ -92,7 +92,11 @@ public abstract class OpenDcsTableMapper<T,E extends Enum<E> & TableColumnDefini
         final String prefixNoUnderscore = prefix.substring(0, prefix.length() - 1);
         final Predicate<E> excludeColumn = column ->
         {
-            if (excluding == null || excluding.length == 0)
+            if (!column.includeInSelect())
+            {
+                return true;
+            }
+            else if (excluding == null || excluding.length == 0)
             {
                 return false;
             }
