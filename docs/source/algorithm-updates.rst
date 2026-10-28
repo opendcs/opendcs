@@ -122,12 +122,27 @@ For example, on Unix:
 The ``--`` separator prevents the Unix launcher from interpreting the
 ``-appUsername`` and ``-appPassword`` arguments as its own ``-a`` option.
 The current database-manager parser requires all four credential arguments,
-even for an existing database. ``-appUsername`` and ``-appPassword`` are used
-when creating the initial application account on a fresh installation.
+even for an existing database. On a fresh installation, ``-appUsername`` and
+``-appPassword`` create the initial application account and load baseline data.
+On an existing database, they identify the account used for after-update tasks;
+supply an existing application account with permission to update the affected
+records in the configured office.
+Replace any placeholder application credentials previously supplied by upgrade
+scripts with a valid application login; those arguments are now used during
+upgrades as well as fresh installations.
 
 Schema migrations use the ``-username`` account and require the corresponding
-schema-migration permissions. After-update tasks also use that account, with
-CWMS office/security context initialized from the profile and its assigned
-privileges. The ``-appUsername`` account is not substituted for after-update
-tasks. To update algorithms using an application account without running
-schema migrations, use ``algoupdate`` instead.
+schema-migration permissions. After-update tasks use the separate
+``-appUsername`` account, with CWMS office/security context initialized from
+the profile and that account's assigned privileges. A migration account's DDL
+permissions do not imply permission to modify CWMS application data. Do not
+grant it application privileges merely to run after-update tasks. An invalid
+application login or insufficient office permissions will fail the after-update
+stage, even if schema migrations have already succeeded. Correct the application
+credentials or permissions and rerun the manager; it runs after-update tasks
+even when no schema migrations remain.
+
+The standalone ``algoupdate`` command still accepts just one credential pair:
+its ``-username`` and ``-password`` must identify the application account. It
+does not run schema migrations or accept the manager's ``-appUsername`` and
+``-appPassword`` options.

@@ -45,9 +45,9 @@ The migration container supports all of the below items as well as additional va
 | -------- | ------- | ----------- |
 | MIGRATION_USER | <not set> | Database Schema owning or user permitted to perform Data Definition Language changes |
 | MIGRATION_PASSWORD | <not set> | Password for the migration user |
-| APP_USER | <not set> | User name for the initial dbimport and compimport as all as other applications that will connect |
-| APP_PASSWORD | <not set> | Password for the app users |
-| PLACEHOLDER_\* | <not set> | The SQL files of each implementation may contain Flyway Placeholder values. Any variable starting with PLACEHOLDER_ will have the PLACEHOLDER_ prefix striped and passed along to flyway for use. |
+| APP_USER | <not set> | Application account used for initial data import and for after-update tasks on existing databases |
+| APP_PASSWORD | <not set> | Password for the application account |
+| placeholder_\* | <not set> | The SQL files of each implementation may contain Flyway Placeholder values. Any variable starting with placeholder_ will have the placeholder_ prefix stripped and passed along to flyway for use. |
 
 ## Variables
 
@@ -79,3 +79,27 @@ note: These variables (except username and password) are used when creating a co
 # Tags
 
 7.5, 7.5, latest
+
+## CWMS migration container regression test
+
+Run `bash compose_files/cwms/test.sh` from the repository root. Docker Compose
+and at least 4 GiB of memory available for Oracle are required. The test uses
+`docker-compose.cwms-test.yaml`, builds the migration image from this checkout,
+and starts an isolated CWMS database. Its example passwords are test fixtures.
+Use a regular Git clone for the image build: the shared Dockerfile cannot resolve
+a linked worktree's Git metadata outside its build context.
+
+The test installs CCP with `builduser`, creates a separate application user with
+CCP manager permissions in SPK, and inserts an old ResEvap algorithm definition.
+It runs the real migration entry point again against the existing database and
+checks that the algorithm roles were updated and committed. A database trigger
+records the session user, and the test requires that every recorded write used
+the application account. A further run checks that repeating the update succeeds.
+An attempt with an invalid application password must exit unsuccessfully even
+though the migration credentials are valid.
+`builduser` has migration permissions but no
+CCP office membership; after-update tasks must use `APP_USER`/`APP_PASSWORD`.
+The script prints logs on failure and removes its containers on exit.
+
+This test also runs as the CWMS job in `.github/workflows/container-tests.yml`.
+It does not connect to an external database or publish images.
