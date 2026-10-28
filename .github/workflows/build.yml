@@ -32,7 +32,7 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
@@ -101,7 +101,7 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
@@ -207,7 +207,7 @@ jobs:
         with:
           java-version: ${{matrix.jdk}}
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
@@ -320,7 +320,7 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
@@ -394,7 +394,7 @@ jobs:
         with:
           java-version: ${{ env.sonarJdk }}
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle

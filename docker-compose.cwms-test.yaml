@@ -1,0 +1,43 @@
+services:
+  db:
+    image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16
+    environment:
+      ORACLE_PASSWORD: testsyspassword
+      CWMS_PASSWORD: testcwmspassword
+      BUILDUSER_PASSWORD: antbuildpassword
+      OFFICE_ID: SPK
+      OFFICE_EROC: l2
+    mem_limit: 4g
+    volumes:
+      - ./compose_files/cwms/bootstrap.sh:/container-entrypoint-startdb.d/zz-opendcs.sh:ro
+      - ./compose_files/cwms:/test:ro
+      - ./integrationtesting/fixtures/src/main/resources/database/admin_user.sql:/admin_user.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh && test -f /tmp/opendcs-cwms-ready"]
+      interval: 10s
+      timeout: 10s
+      retries: 90
+      start_period: 30s
+  migration:
+    build:
+      context: .
+      target: migration
+    environment:
+      DATABASE_IMPLEMENTATION: CWMS-Oracle
+      DATABASE_TYPE: CWMS
+      DATABASE_URL: jdbc:oracle:thin:@//db:1521/FREEPDB1
+      DATABASE_DRIVER: oracle.jdbc.OracleDriver
+      KEYGENERATOR: decodes.sql.OracleSequenceKeyGenerator
+      CWMS_OFFICE: SPK
+      MIGRATION_USER: builduser
+      MIGRATION_PASSWORD: antbuildpassword
+      APP_USER: updater_app
+      APP_PASSWORD: updater_app_password
+      placeholder_CWMS_SCHEMA: CWMS_20
+      placeholder_CCP_SCHEMA: CCP
+      placeholder_DEFAULT_OFFICE_CODE: "44"
+      placeholder_DEFAULT_OFFICE: SPK
+      placeholder_TABLE_SPACE_SPEC: tablespace CCP_DATA
+    depends_on:
+      db:
+        condition: service_healthy
