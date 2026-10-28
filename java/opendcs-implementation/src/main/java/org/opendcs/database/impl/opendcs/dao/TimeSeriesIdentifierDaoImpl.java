@@ -207,8 +207,8 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
             throws OpenDcsDataException, BadTimeSeriesException
     {
         var existing = (CwmsTsId)getByUniqueString(tx, cwmsTsId.getUniqueString())
-                                    .orElse(cwmsTsId);
-        final var existingId = existing.getKey();
+                                    .orElse(null);
+        final var existingId = existing == null ? cwmsTsId.getKey() : existing.getKey();
         final var siteId = getSiteId(tx, cwmsTsId);
         final var dataTypeId = getDataTypeId(tx, cwmsTsId);
 
@@ -225,13 +225,13 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
 
         var toSave = cwmsTsId;
-        if (!existing.equals(cwmsTsId)) // some field should not be updated
+        if (existing == null)
         {
-            validateChanges(existing, cwmsTsId);
+            toSave = allocateTable(handle, (CwmsTsId)cwmsTsId.copyNoKey());
         }
         else
         {
-            toSave = allocateTable(handle, (CwmsTsId)cwmsTsId.copyNoKey());
+            validateChanges(existing, cwmsTsId);
         }
 
 

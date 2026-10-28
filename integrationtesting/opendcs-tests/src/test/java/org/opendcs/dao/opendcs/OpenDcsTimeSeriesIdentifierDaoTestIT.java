@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.opendcs.fixtures.helpers.TestResources.getResource;
 
 import java.util.TimeZone;
@@ -30,7 +29,6 @@ import decodes.sql.DbKey;
 import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsImporter;
-import opendcs.opentsdb.OpenTimeSeriesDAO;
 
 @EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
 @DecodesConfigurationRequired({
@@ -43,7 +41,7 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
     OpenDcsDatabase db;
 
     @ConfiguredField
-    TimeSeriesDb tsDb;
+    TimeSeriesDb tsDb; // until save is implemented
 
     @Test
     void updating_description_preserves_storage_table() throws Exception
@@ -51,8 +49,6 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
         var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
         try (var timeSeriesDao = tsDb.makeTimeSeriesDAO())
         {
-            assumeTrue(((OpenTimeSeriesDAO)timeSeriesDao).getTableSpecs('N').size() >= 2,
-                "Run with -Popendcs.test.numTsTables=2 to demonstrate storage-table reassignment");
             TsImporter.importTimeSeriesFile(tsDb,
                 getResource(configuration, "Comps/ToIrregular/Test1/timeseries/inputs/test1-inst-input.tsimport"),
                 null, TimeZone.getTimeZone("UTC"), Constants.snt_CWMS);

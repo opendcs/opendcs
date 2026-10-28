@@ -150,7 +150,7 @@ public class OpenDCSOracleConfiguration implements Configuration
 
         MigrationManager mm = new MigrationManager(ds,OpenDcsOracleProvider.NAME);
         MigrationProvider mp = mm.getMigrationProvider();
-        mp.setPlaceholderValue("NUM_TS_TABLES", System.getProperty("opendcs.test.numTsTables", "1"));
+        mp.setPlaceholderValue("NUM_TS_TABLES", "2");
         mp.setPlaceholderValue("NUM_TEXT_TABLES","1");
         mp.setPlaceholderValue("TSDB_ADM_SCHEMA",SCHEMA_OWNING_USER);
         mp.setPlaceholderValue("TSDB_ADM_PASSWORD",SCHEMA_OWNING_USER_PASSWORD);
