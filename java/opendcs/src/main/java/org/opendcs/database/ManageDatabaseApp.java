@@ -134,7 +134,7 @@ public class ManageDatabaseApp
 
             log.info("Running after-update tasks on the existing database");
             AfterUpdateRunner.run(getDatabaseForAfterUpdates(
-                    profile, console, username.getValue(), password.getValue()));
+                    profile, console, appUsername.getValue(), appPassword.getValue()));
         }
     }
 
