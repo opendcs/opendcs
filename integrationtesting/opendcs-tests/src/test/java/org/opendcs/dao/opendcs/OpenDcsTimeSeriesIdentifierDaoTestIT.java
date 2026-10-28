@@ -1,5 +1,6 @@
 package org.opendcs.dao.opendcs;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -7,6 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.opendcs.fixtures.helpers.TestResources.getResource;
+
+import java.util.TimeZone;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -24,6 +28,7 @@ import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TsImporter;
 
 @EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
 @DecodesConfigurationRequired({
@@ -37,6 +42,51 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
 
     @ConfiguredField
     TimeSeriesDb tsDb; // until save is implemented
+
+    @Test
+    void updating_description_preserves_storage_table() throws Exception
+    {
+        var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
+        try (var timeSeriesDao = tsDb.makeTimeSeriesDAO())
+        {
+            TsImporter.importTimeSeriesFile(tsDb,
+                getResource(configuration, "Comps/ToIrregular/Test1/timeseries/inputs/test1-inst-input.tsimport"),
+                null, TimeZone.getTimeZone("UTC"), Constants.snt_CWMS);
+
+            var original = timeSeriesDao.getTimeSeriesIdentifier("TESTSITE1.Precip.Inst.1Hour.0.input");
+            try (var tx = db.newTransaction())
+            {
+                try
+                {
+                    var tsId = (CwmsTsId)dao.getById(tx, original.getKey()).orElseThrow();
+                    var before = timeSeriesDao.makeTimeSeries(tsId);
+                    timeSeriesDao.fillTimeSeries(before, null, null);
+                    assertEquals(14, before.size());
+
+                    tsId.setDescription("Updated description");
+                    var updated = (CwmsTsId)dao.save(tx, tsId);
+                    var after = timeSeriesDao.makeTimeSeries(updated);
+                    after.setTimeSeriesIdentifier(updated);
+                    timeSeriesDao.fillTimeSeries(after, null, null);
+
+                    assertEquals("Updated description", updated.getDescription());
+                    assertAll(
+                        () -> assertEquals(tsId.getStorageTable(), updated.getStorageTable(),
+                            "Changing a description must not move the series to another storage table"),
+                        () -> org.opendcs.fixtures.assertions.TimeSeries.assertEquals(before, after,
+                            "Changing a description must preserve access to the stored values"));
+                }
+                finally
+                {
+                    tx.rollback();
+                }
+            }
+            finally
+            {
+                timeSeriesDao.deleteTimeSeries(original);
+            }
+        }
+    }
 
     @Test
     void test_basic_operations() throws Exception
