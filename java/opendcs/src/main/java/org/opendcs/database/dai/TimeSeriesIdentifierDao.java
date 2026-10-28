@@ -216,7 +216,7 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
 		if (paren > 0 && uniqueString.trim().endsWith(")"))
 		{
 			displayName = uniqueString.substring(paren+1);
-			retUniqueString = uniqueString.substring(0,  paren);
+			retUniqueString = uniqueString.substring(0,  paren).trim();
 			int endParen = displayName.indexOf(')');
 			if (endParen > 0)
 			{
