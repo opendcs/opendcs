@@ -10,6 +10,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.util.Result;
+import org.opendcs.utils.TimeSeriesIdentifierParser;
 
 import decodes.db.DataType;
 import decodes.sql.DbKey;
@@ -210,19 +211,6 @@ public interface TimeSeriesIdentifierDao extends OpenDcsDao
      */
     default Pair<String,Optional<String>> extractDisplayName(String uniqueString)
     {
-        String displayName = null;
-        String retUniqueString = uniqueString;
-        int paren = uniqueString.lastIndexOf('(');
-		if (paren > 0 && uniqueString.trim().endsWith(")"))
-		{
-			displayName = uniqueString.substring(paren+1);
-			retUniqueString = uniqueString.substring(0,  paren).trim();
-			int endParen = displayName.indexOf(')');
-			if (endParen > 0)
-			{
-				displayName = displayName.substring(0,  endParen);
-			}
-		}
-        return Pair.of(retUniqueString,Optional.ofNullable(displayName));
+        return TimeSeriesIdentifierParser.extractDisplayName(uniqueString);
     }
 }
