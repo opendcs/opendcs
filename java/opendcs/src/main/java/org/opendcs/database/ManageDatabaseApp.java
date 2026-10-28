@@ -37,7 +37,22 @@ public class ManageDatabaseApp
 {
     private static final Logger log = LoggerFactory.getLogger(ManageDatabaseApp.class);
 
-    public static void main(String args[]) throws Exception
+    public static void main(String args[])
+    {
+        try
+        {
+            run(args);
+        }
+        catch (Exception ex)
+        {
+            log.error("Database migration or after-update tasks failed", ex);
+            System.exit(1);
+        }
+        // Oracle's connection pool can leave executor threads running after the work completes.
+        System.exit(0);
+    }
+
+    private static void run(String args[]) throws Exception
     {
         StringToken implementation = new StringToken("I","which database type are we installing? Examples: 'CWMS-Oracle', 'OpenDCS-Oracle',  'OpenDCS-Postgres' ",
                                                      "",TokenOptions.optRequired,"");
