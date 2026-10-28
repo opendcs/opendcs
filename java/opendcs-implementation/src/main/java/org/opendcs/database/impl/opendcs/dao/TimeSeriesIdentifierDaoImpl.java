@@ -55,6 +55,7 @@ import opendcs.opentsdb.StorageTableSpec;
  */
 @ServiceProviders({
     @ServiceProvider(service = TimeSeriesIdentifierDao.class, path = "dao/OpenDCS-Postgres"),
+    @ServiceProvider(service = TimeSeriesIdentifierDao.class, path = "dao/OpenDCS-Oracle"),
     @ServiceProvider(service = TimeSeriesIdentifierDao.class, path = "dao/OPENTSDB")
 })
 @SuppressWarnings("java:S2143")
@@ -321,7 +322,8 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
             ret.setStorageTable(storageTable.getTableNum());
 
             updateTable.bind("num_ts_present", storageTable.getNumTsPresent() + 1)
-                       .bind("est_annual_values", OpenTimeSeriesDAO.interval2estAnnualValues(inputTs.getIntervalOb()))
+                       .bind("est_annual_values", storageTable.getEstAnnualValues()
+                                               + OpenTimeSeriesDAO.interval2estAnnualValues(inputTs.getIntervalOb()))
                        .bind("storage_type", storageTable.getStorageType())
                        .bind("table_num", storageTable.getTableNum())
                        .execute();

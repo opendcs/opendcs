@@ -39,9 +39,10 @@ public class CompDependsNotifyDaoImpl implements CompDependsNotifyDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try (var deleteRecord = handle.createUpdate("delete from cp_depends_notify = record_num = :id"))
+        try (var deleteRecord = handle.createUpdate("delete from cp_depends_notify where record_num = :id"))
         {
-            deleteRecord.bind(GenericColumns.ID.column(), notificationRecord.getRecordNum());
+            deleteRecord.bind(GenericColumns.ID.column(), notificationRecord.getRecordNum())
+                        .execute();
         }
     }
 
@@ -67,6 +68,7 @@ public class CompDependsNotifyDaoImpl implements CompDependsNotifyDao
         {
             return selectAll.registerRowMapper(CpDependsNotifyMapper.withNoPrefix())
                             .bind(LIMIT_CLAUSE, 1)
+                            .bind("offset", 0)
                             .mapTo(CpDependsNotify.class)
                             .findFirst();
         }

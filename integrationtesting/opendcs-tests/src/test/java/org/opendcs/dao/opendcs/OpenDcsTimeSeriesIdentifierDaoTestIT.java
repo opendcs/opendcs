@@ -12,6 +12,7 @@ import static org.opendcs.fixtures.helpers.TestResources.getResource;
 
 import java.util.TimeZone;
 
+import org.jdbi.v3.core.Handle;
 import org.junit.jupiter.api.Test;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.CompDependsNotifyDao;
@@ -29,6 +30,8 @@ import decodes.sql.DbKey;
 import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsImporter;
+import opendcs.opentsdb.OpenTimeSeriesDAO;
+import opendcs.opentsdb.StorageTableSpec;
 
 @EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
 @DecodesConfigurationRequired({
@@ -89,6 +92,60 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
     }
 
     @Test
+    void allocating_series_preserves_existing_annual_load() throws Exception
+    {
+        var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
+        try (var tx = db.newTransaction();
+             var storageDao = (OpenTimeSeriesDAO)tsDb.makeTimeSeriesDAO())
+        {
+            storageDao.setManualConnection(tx.connection(Handle.class).orElseThrow().getConnection());
+            int tableCount = storageDao.getTableSpecs('N').size();
+            assertTrue(tableCount > 0);
+            for (int i = 0; i < tableCount; i++)
+            {
+                dao.save(tx, dao.makeTsId(tx, "TESTSITE1.Precip.Total.1Hour.1Hour.loadseed" + i));
+            }
+            int before = storageDao.getTableSpecs('N').stream()
+                                   .mapToInt(StorageTableSpec::getEstAnnualValues).sum();
+
+            var input = (CwmsTsId)dao.makeTsId(tx, "TESTSITE1.Precip.Total.1Hour.1Hour.loadtest");
+            dao.save(tx, input);
+            int after = storageDao.getTableSpecs('N').stream()
+                                  .mapToInt(StorageTableSpec::getEstAnnualValues).sum();
+
+            assertEquals(before + OpenTimeSeriesDAO.interval2estAnnualValues(input.getIntervalOb()), after,
+                         "Allocation must add to the existing annual load");
+            tx.rollback();
+        }
+    }
+
+    @Test
+    void fetching_next_notification() throws Exception
+    {
+        var notificationDao = db.getDao(CompDependsNotifyDao.class).orElseThrow();
+        try (var tx = db.newTransaction())
+        {
+            for (var record : notificationDao.getAllNotifyRecords(tx))
+            {
+                notificationDao.deleteNotifyRecord(tx, record);
+            }
+            assertTrue(notificationDao.getNextRecord(tx).isEmpty());
+
+            var record = new CpDependsNotify();
+            record.setKey(DbKey.createDbKey(123));
+            record.setEventType(CpDependsNotify.TS_MODIFIED);
+            notificationDao.saveRecord(tx, record);
+
+            var next = notificationDao.getNextRecord(tx).orElseThrow();
+            assertEquals(record.getKey(), next.getKey());
+            assertEquals(record.getEventType(), next.getEventType());
+            notificationDao.deleteNotifyRecord(tx, next);
+            assertTrue(notificationDao.getNextRecord(tx).isEmpty());
+            tx.rollback();
+        }
+    }
+
+    @Test
     void test_basic_operations() throws Exception
     {
         var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
@@ -123,6 +180,9 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
                                                   ;
 
             notificationDao.deleteNotifyRecord(tx, tsModifiedRecord);
+            assertTrue(notificationDao.getAllNotifyRecords(tx).stream()
+                           .noneMatch(record -> record.getRecordNum() == tsModifiedRecord.getRecordNum()),
+                       "Deleted notification must no longer be present");
 
             assertEquals(tsi, tsOutByTsi);
             assertEquals(tsi, tsOutById);
