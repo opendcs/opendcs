@@ -6,7 +6,6 @@ import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
 import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
-import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -41,6 +40,7 @@ import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.sql.PropertyBindings;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
@@ -382,23 +382,11 @@ public class PlatformDaoImpl implements PlatformDao
 
             insertTransportMediums(handle, bindKey, platform.transportMedia);
             insertPlatformSensors(handle, bindKey, platform.platformSensors);
-            final var propMapper = allData.platformPropsMapper;
-            final var propName = propMapper.column(PropertiesMapper.Columns.NAME);
-            final var propValue = propMapper.column(PropertiesMapper.Columns.VALUE);
-            platform.getProperties()
-                    .forEach((k,v) ->
-                        insertProperties.bind(PlatformMapper.Columns.ID.column(), bindKey)
-                                        .bind(propName, (String)k)
-                                        .bind(propValue, (String)v)
-                                        .add()
-                    );
+            PropertyBindings.addProperties(insertProperties, PlatformMapper.Columns.ID.column(), bindKey,
+                                           platform.getProperties());
 
             insertProperties.execute();
             return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve Platform we just saved."));
-        }
-        catch (SQLException ex)
-        {
-            throw new OpenDcsDataException("Unable to retrieve proper column name", ex);
         }
         catch (DatabaseException ex)
         {
@@ -422,14 +410,10 @@ public class PlatformDaoImpl implements PlatformDao
                        .bind(PlatformSensorMapper.Columns.DD_NU.column(), ps.getUsgsDdno())
                        .add();
 
-                ps.getProperties()
-                  .forEach((k,v) ->
-                      pspBatch.bind(PlatformSensorPropertyMapper.Columns.PLATFORM_ID.column(), bindKey)
-                              .bind(PlatformSensorPropertyMapper.Columns.SENSOR_NUMBER.column(), ps.sensorNumber)
-                              .bind(PlatformSensorPropertyMapper.Columns.PROP_NAME.column(), (String)k)
-                              .bind(PlatformSensorPropertyMapper.Columns.PROP_VALUE.column(), (String)v)
-                              .add()
-                  );
+                PropertyBindings.addProperties(pspBatch,
+                                               PlatformSensorPropertyMapper.Columns.PLATFORM_ID.column(), bindKey,
+                                               PlatformSensorPropertyMapper.Columns.SENSOR_NUMBER.column(), ps.sensorNumber,
+                                               ps.getProperties());
             }
             psBatch.execute();
             pspBatch.execute();

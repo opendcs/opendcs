@@ -18,6 +18,7 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.ConfigSenso
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigAccumulator;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.utils.sql.PropertyBindings;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
@@ -305,7 +306,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             var insertSensorProps = handle.prepareBatch("""
                     insert into
                      configsensorproperty(configid, sensornumber, prop_name, prop_value)
-                     values (:configid, :sensornumber, :prop_name, :prop_value)
+                     values (:configid, :sensornumber, :name, :prop_value)
                     """);
             var insertSensorDataType = handle.prepareBatch("""
                     insert into configsensordatatype (configid, sensornumber, datatypeid)
@@ -334,13 +335,8 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                                         .add();
                 }
 
-                sensor.getProperties().forEach((k,v) ->
-                    insertSensorProps.bind(CONFIGID, configId)
-                                     .bind(SENSORNUMBER, sensor.sensorNumber)
-                                     .bind("prop_name", k)
-                                     .bind("prop_value", v)
-                                     .add()
-                );
+                PropertyBindings.addProperties(insertSensorProps, CONFIGID, configId,
+                                               SENSORNUMBER, sensor.sensorNumber, sensor.getProperties());
             }
 
             insertSensor.execute();

@@ -37,6 +37,7 @@ import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
 import org.opendcs.model.cwms.CwmsSite;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.utils.sql.PropertyBindings;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
@@ -257,7 +258,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             // office is not bound so that what ever session office is currently setup is used.
             var getCode = handle.createQuery("select cwms_loc.get_location_code(p_db_office_id => null, p_location_id => :name) id from dual");
             var deleteProps = handle.createUpdate(DELETE_PROPS);
-            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
+            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :prop_value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);
             var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)")
             )
@@ -325,18 +326,8 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             });
             insertNames.execute();
 
-            site.getProperties().forEach((k,v) ->
-            {
-                if (CwmsSite.CWMS_SITE_PROPERTIES.contains(k))
-                {
-                    return;
-                }
-                insertProps.bind(GenericColumns.ID.column(), idOut);
-                insertProps.bind(GenericColumns.NAME.column(), k.toString());
-                var toSave = v != null ? v.toString() : "";
-                insertProps.bind("value", toSave);
-                insertProps.add();
-            });
+            PropertyBindings.addProperties(insertProps, GenericColumns.ID, idOut,
+                                           site.getProperties(), key -> !CwmsSite.CWMS_SITE_PROPERTIES.contains(key));
             insertProps.execute();
 
             return getById(tx, idOut).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve site we just saved."));

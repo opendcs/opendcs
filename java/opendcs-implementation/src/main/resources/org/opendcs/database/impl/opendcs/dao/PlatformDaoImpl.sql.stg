@@ -98,10 +98,10 @@ insert into platformsensorproperty (
     platformid, sensornumber, prop_name, prop_value
 )
 values (
-    :platformid, :sensornumber, :prop_name, :prop_value
+    :platformid, :sensornumber, :name, :prop_value
 )
 >>
 
 insertPlatformProperty() ::= <<
-insert into platformproperty(platformid, prop_name, prop_value) values (:id, :prop_name, :prop_value)
+insert into platformproperty(platformid, prop_name, prop_value) values (:id, :name, :prop_value)
 >>

@@ -45,6 +45,7 @@ import org.opendcs.database.model.mappers.datasource.DataSourceAccumulator;
 import org.opendcs.database.model.mappers.datasource.DataSourceMapper;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.opendcs.utils.sql.PropertyBindings;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
@@ -301,12 +302,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             final var props = spec.getProperties();
             if (!props.isEmpty())
             {
-                props.forEach((k,v) ->
-                    insertProps.bind("routingspecid", bindKey)
-                               .bind("prop_name", k)
-                               .bind("prop_value", v)
-                               .add()
-                );
+                PropertyBindings.addProperties(insertProps, RoutingSpecMapper.Columns.ID, bindKey, props);
                 insertProps.execute();
             }
 
