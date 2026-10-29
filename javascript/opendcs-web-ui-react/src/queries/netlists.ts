@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { RESTNetworkListsApi, type ApiNetList, type ApiNetlistRef } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { netlistKeys } from "./keys";
 
 const useNetlistsApi = () => {
@@ -70,6 +71,7 @@ export const useDeleteNetlistMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (netlistId: number) => netlistApi.deleteNetlist(org, netlistId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: netlistKeys.all(org) });
