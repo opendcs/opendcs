@@ -11,6 +11,7 @@ import {
   type ApiComputationRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { computationKeys } from "./keys";
 import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
@@ -77,6 +78,7 @@ export const useDeleteComputationMutation = (
   return useMutation({
     mutationFn: (computationId: number) =>
       computationApi.deleteComputation(org, computationId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: invalidateThenDelegate(
       queryClient,
