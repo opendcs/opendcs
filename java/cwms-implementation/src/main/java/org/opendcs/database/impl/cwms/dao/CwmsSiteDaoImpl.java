@@ -134,7 +134,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
                  .bind(GenericColumns.ID.column(), id);
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
                         .registerColumnMapper(Date.class, (r, columnNumber, stmtCtx) -> new Date())
                         .reduceRows(new OpenDcsSiteReducer("s"))
@@ -258,7 +258,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             // office is not bound so that what ever session office is currently setup is used.
             var getCode = handle.createQuery("select cwms_loc.get_location_code(p_db_office_id => null, p_location_id => :name) id from dual");
             var deleteProps = handle.createUpdate(DELETE_PROPS);
-            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :prop_value)");
+            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :prop_name, :prop_value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);
             var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)")
             )
@@ -326,7 +326,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             });
             insertNames.execute();
 
-            PropertyBindings.addProperties(insertProps, GenericColumns.ID, idOut,
+            PropertyBindings.addProperties(insertProps, GenericColumns.ID.column(), idOut,
                                            site.getProperties(), key -> !CwmsSite.CWMS_SITE_PROPERTIES.contains(key));
             insertProps.execute();
 
@@ -386,7 +386,7 @@ public final class CwmsSiteDaoImpl extends OpenDcsSiteDaoImpl
             }
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
                         .registerColumnMapper(Date.class, (r, columnNumber, stmtCtx) -> new Date())
                         .reduceRows(new OpenDcsSiteReducer("s"))

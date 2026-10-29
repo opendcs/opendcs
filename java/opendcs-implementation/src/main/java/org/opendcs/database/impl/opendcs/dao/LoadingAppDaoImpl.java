@@ -64,7 +64,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                         .define(SqlQueries.LIMIT_CLAUSE, "")
                         .bind(Columns.APP_ID.column(), id)
                         .registerRowMapper(CompAppInfoMapper.withPrefix("a"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .reduceRows(new CompAppInfoReducer())
                         .map(m -> m)
                         .findFirst();
@@ -85,7 +85,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                         .define(SqlQueries.LIMIT_CLAUSE, "")
                         .bind(Columns.APP_NAME.column(), name)
                         .registerRowMapper(CompAppInfoMapper.withPrefix("a"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .reduceRows(new CompAppInfoReducer())
                         .map(m -> m)
                         .findFirst();
@@ -116,7 +116,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
              var deleteProps = handle.createUpdate(DELETE_APP_PROPERTIES);
              var insertProps = handle.prepareBatch("""
                      insert into ref_loading_application_prop(loading_application_id, prop_name, prop_value)
-                      values (:loading_application_id, :name, :prop_value)
+                      values (:loading_application_id, :prop_name, :prop_value)
                      """)
              )
         {
@@ -190,7 +190,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
             }
 
             return query.registerRowMapper(CompAppInfoMapper.withPrefix("a"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .reduceRows(new CompAppInfoReducer())
                         .map(m -> m)
                         .toList();

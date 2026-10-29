@@ -8,7 +8,6 @@ import java.util.function.Predicate;
 
 import org.jdbi.v3.core.statement.PreparedBatch;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
-import org.opendcs.database.sql.TableColumnDefinition;
 
 import decodes.sql.DbKey;
 
@@ -22,34 +21,15 @@ public final class PropertyBindings
     {
     }
 
-    public static void addLastModified(PreparedBatch batch, TableColumnDefinition idColumn, DbKey ownerId)
-    {
-        addLastModified(batch, idColumn.column(), ownerId);
-    }
-
     public static void addLastModified(PreparedBatch batch, String idColumnName, DbKey ownerId)
     {
         addProperty(batch, idColumnName, ownerId, LAST_MODIFIED, LAST_MODIFIED_FORMATTER.format(Instant.now()));
     }
 
     /** Adds text properties, converting null values to empty strings. Callers must format date/time values. */
-    public static void addProperties(PreparedBatch batch, TableColumnDefinition idColumn, DbKey ownerId,
-                                     Map<?, ?> properties)
-    {
-        addProperties(batch, idColumn.column(), ownerId, properties);
-    }
-
-    /** Adds text properties, converting null values to empty strings. Callers must format date/time values. */
     public static void addProperties(PreparedBatch batch, String idColumnName, DbKey ownerId, Map<?, ?> properties)
     {
         addProperties(batch, idColumnName, ownerId, properties, key -> true);
-    }
-
-    /** Adds properties identified by an owner ID and a second key, such as a sensor number. */
-    public static void addProperties(PreparedBatch batch, TableColumnDefinition idColumn, DbKey ownerId,
-                                     TableColumnDefinition secondaryIdColumn, int secondaryId, Map<?, ?> properties)
-    {
-        addProperties(batch, idColumn.column(), ownerId, secondaryIdColumn.column(), secondaryId, properties);
     }
 
     /** Adds properties identified by an owner ID and a second key, such as a sensor number. */
@@ -61,13 +41,6 @@ public final class PropertyBindings
             batch.bind(secondaryIdColumnName, secondaryId);
             addProperty(batch, idColumnName, ownerId, key.toString(), value);
         });
-    }
-
-    /** Adds only properties whose keys match includeProperty, using the same value conversion as addProperties. */
-    public static <K> void addProperties(PreparedBatch batch, TableColumnDefinition idColumn, DbKey ownerId,
-                                         Map<K, ?> properties, Predicate<? super K> includeProperty)
-    {
-        addProperties(batch, idColumn.column(), ownerId, properties, includeProperty);
     }
 
     /** Adds only properties whose keys match includeProperty, using the same value conversion as addProperties. */
@@ -84,14 +57,7 @@ public final class PropertyBindings
     }
 
     /** Adds one text property using the same conversion as addProperties. */
-    public static void addProperty(PreparedBatch batch, TableColumnDefinition idColumn, DbKey ownerId,
-                                   String name, Object value)
-    {
-        addProperty(batch, idColumn.column(), ownerId, name, value);
-    }
-
-    /** Adds one text property using the same conversion as addProperties. */
-    public static void addProperty(PreparedBatch batch, String idColumnName, DbKey ownerId, String name, Object value)
+    private static void addProperty(PreparedBatch batch, String idColumnName, DbKey ownerId, String name, Object value)
     {
         batch.bind(idColumnName, ownerId)
              .bind(PropertiesMapper.Columns.NAME.column(), name)

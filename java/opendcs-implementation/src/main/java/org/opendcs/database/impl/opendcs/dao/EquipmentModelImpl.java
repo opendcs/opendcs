@@ -44,10 +44,10 @@ public class EquipmentModelImpl implements EquipmentModelDao
                       <limit>
                   )
                   select em.id e_id, em.name e_name, em.company e_company, em.model e_model, em.description e_description,
-                       em.equipmentType e_equipmentType, p.name p_name, p.prop_value p_prop_value
+                       em.equipmentType e_equipmentType, p.prop_name p_prop_name, p.prop_value p_prop_value
                   from em
                   left outer join equipmentproperty p on p.equipmentid = em.id
-                  order by em.id, p.name
+                  order by em.id, p.prop_name
                 """;
 
         try (var query = handle.createQuery(queryText))
@@ -80,11 +80,11 @@ public class EquipmentModelImpl implements EquipmentModelDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         final var emQuerySQL = """
                 select em.id e_id, em.name e_name, em.company e_company, em.model e_model, em.description e_description,
-                       em.equipmentType e_equipmentType, p.name p_name, p.prop_value p_prop_value
+                       em.equipmentType e_equipmentType, p.prop_name p_prop_name, p.prop_value p_prop_value
                   from equipmentmodel em
                   left outer join equipmentproperty p on p.equipmentid = em.id
                   where id = :id
-                  order by em.id, p.name
+                  order by em.id, p.prop_name
                 """;
         try (var emQuery = handle.createQuery(emQuerySQL))
         {
@@ -104,11 +104,11 @@ public class EquipmentModelImpl implements EquipmentModelDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         final var emQuerySQL = """
                 select em.id e_id, em.name e_name, em.company e_company, em.model e_model, em.description e_description,
-                       em.equipmentType e_equipmentType, p.name p_name, p.prop_value p_prop_value
+                       em.equipmentType e_equipmentType, p.prop_name p_prop_name, p.prop_value p_prop_value
                   from equipmentmodel em
                   left outer join equipmentproperty p on p.equipmentid = em.id
                   where upper(em.name) = upper(:name)
-                  order by em.id, p.name
+                  order by em.id, p.prop_name
                 """;
         try (var emQuery = handle.createQuery(emQuerySQL))
         {
@@ -156,7 +156,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
         var dbEngine = ctx.getDatabaseEngine();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                         .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
-        var insertPropsSql = "insert into equipmentproperty(equipmentid, name, prop_value) values (:id, :name, :prop_value)";
+        var insertPropsSql = "insert into equipmentproperty(equipmentid, prop_name, prop_value) values (:id, :prop_name, :prop_value)";
         try (var emMerge = handle.createUpdate(emMergeSql)
                                  .define("dual", fromDual(dbEngine));
              var propsDelete = handle.createUpdate(PROPERTIES_DELETE_SQL);
@@ -171,7 +171,7 @@ public class EquipmentModelImpl implements EquipmentModelDao
             emMerge.bind(Columns.EQUIPMENT_TYPE.column(), em.equipmentType);
             emMerge.execute();
             propsDelete.bind(Columns.ID.column(), id).execute();
-            PropertyBindings.addProperties(insertProps, Columns.ID, id, em.properties);
+            PropertyBindings.addProperties(insertProps, Columns.ID.column(), id, em.properties);
             insertProps.execute();
 
             return getEquipmentModel(tx, id).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve equipment model we just saved."));

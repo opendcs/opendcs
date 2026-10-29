@@ -58,7 +58,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             )
             select pc.id pc_id, pc.name pc_name, pc.description pc_description, pc.equipmentId pc_equipmentId,
                     em.id e_id, em.name e_name, em.company e_company, em.model e_model, em.description e_description,
-                    em.equipmentType e_equipmentType, ep.name ep_name, ep.prop_value ep_prop_value,
+                    em.equipmentType e_equipmentType, ep.prop_name ep_prop_name, ep.prop_value ep_prop_value,
 
                     cs.sensornumber cs_sensornumber, cs.sensorname cs_sensorname, cs.recordingmode cs_recordingmode,
                     cs.recordinginterval cs_recordinginterval, cs.timeoffirstsample cs_timeoffirstsample,
@@ -148,7 +148,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
                                             EquipmentModelMapper.withPrefix("e"), PropertiesMapper.withPrefix("ep"),
-                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
+                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp"),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
                                             FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
                                          )
@@ -185,7 +185,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
                                             EquipmentModelMapper.withPrefix("e"), PropertiesMapper.withPrefix("ep"),
-                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
+                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp"),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
                                             FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
                                          )
@@ -306,7 +306,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             var insertSensorProps = handle.prepareBatch("""
                     insert into
                      configsensorproperty(configid, sensornumber, prop_name, prop_value)
-                     values (:configid, :sensornumber, :name, :prop_value)
+                     values (:configid, :sensornumber, :prop_name, :prop_value)
                     """);
             var insertSensorDataType = handle.prepareBatch("""
                     insert into configsensordatatype (configid, sensornumber, datatypeid)
@@ -508,7 +508,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
                                             EquipmentModelMapper.withPrefix("e"), PropertiesMapper.withPrefix("ep"),
-                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
+                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp"),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
                                             FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
                                          )

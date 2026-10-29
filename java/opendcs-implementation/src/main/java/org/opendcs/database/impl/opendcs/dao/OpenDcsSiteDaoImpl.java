@@ -167,7 +167,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
                  .bind(GenericColumns.ID.column(), id);
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
                         .reduceRows(new OpenDcsSiteReducer("s"))
                         .findFirst();
@@ -239,7 +239,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
         try (var merge = handle.createUpdate(MERGE_SITE)
                                .define("dual", fromDual(ctx.getDatabaseEngine()));
             var deleteProps = handle.createUpdate(DELETE_PROPS);
-            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :prop_value)");
+            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :prop_name, :prop_value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);
             var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)")
             )
@@ -346,7 +346,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
             }
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
                         .reduceRows(new OpenDcsSiteReducer("s"))
                         .map(s -> s)

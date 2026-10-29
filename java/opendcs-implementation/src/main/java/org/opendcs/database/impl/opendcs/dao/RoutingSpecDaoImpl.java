@@ -89,7 +89,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
         allData = new RoutingSpecMappers(
             RoutingSpecMapper.withPrefix("rs"),
             RoutingSpecNetworkListMapper.withPrefix("rnl"),
-            PropertiesMapper.withPrefix("rp", true),
+            PropertiesMapper.withPrefix("rp"),
             NetworkListMapper.withPrefix("nl"),
             NetworkListEntryMapper.withPrefix("nle"),
             new DataSourceAccumulator(DataSourceMapper.withPrefix("ds"),
@@ -302,7 +302,7 @@ public class RoutingSpecDaoImpl implements RoutingSpecDao
             final var props = spec.getProperties();
             if (!props.isEmpty())
             {
-                PropertyBindings.addProperties(insertProps, RoutingSpecMapper.Columns.ID, bindKey, props);
+                PropertyBindings.addProperties(insertProps, RoutingSpecMapper.Columns.ID.column(), bindKey, props);
                 insertProps.execute();
             }
 
