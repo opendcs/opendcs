@@ -156,7 +156,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 name="algoParmType"
                 defaultValue={row.algoParmType ?? "i"}
                 size="sm"
-                aria-label={t("computations:parms.parmType_input")}
+                aria-label={t("computations:parms.parmType_input", {
+                  name: row.algoRoleName,
+                })}
               >
                 {PARM_TYPES.map((pt) => (
                   <option key={pt.value} value={pt.value}>
@@ -178,7 +180,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "siteName",
               row.siteName ?? "",
-              t("computations:parms.site_input", { name: row.algoRoleName ?? "new" }),
+              t("computations:parms.site_input", { name: row.algoRoleName }),
               rowId,
             ),
           read: (cell) => readOptional(cell, "input"),
@@ -199,7 +201,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "dataType",
               row.dataType ?? "",
-              t("computations:parms.dataType_input", { name: row.algoRoleName ?? "" }),
+              t("computations:parms.dataType_input", { name: row.algoRoleName }),
               rowId,
             ),
           read: (cell) => readOptional(cell, "input"),
@@ -215,7 +217,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "interval",
               row.interval ?? "",
-              t("computations:parms.interval_input"),
+              t("computations:parms.interval_input", { name: row.algoRoleName }),
               rowId,
               intervalOptions,
             ),
@@ -232,7 +234,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "paramType",
               row.paramType ?? "",
-              t("computations:parms.paramType_input"),
+              t("computations:parms.paramType_input", { name: row.algoRoleName }),
               rowId,
             ),
           read: (cell) => readOptional(cell, "input"),
@@ -248,7 +250,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "duration",
               row.duration ?? "",
-              t("computations:parms.duration_input"),
+              t("computations:parms.duration_input", { name: row.algoRoleName }),
               rowId,
             ),
           read: (cell) => readOptional(cell, "input"),
@@ -264,7 +266,7 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
             combobox(
               "version",
               row.version ?? "",
-              t("computations:parms.version_input"),
+              t("computations:parms.version_input", { name: row.algoRoleName }),
               rowId,
             ),
           read: (cell) => readOptional(cell, "input"),
@@ -283,7 +285,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 name="deltaT"
                 defaultValue={row.deltaT ?? 0}
                 size="sm"
-                aria-label={t("computations:parms.deltaT_input")}
+                aria-label={t("computations:parms.deltaT_input", {
+                  name: row.algoRoleName,
+                })}
               />,
             ),
           read: (cell) => {
@@ -305,7 +309,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 name="deltaTUnits"
                 defaultValue={row.deltaTUnits ?? "Seconds"}
                 size="sm"
-                aria-label={t("computations:parms.deltaTUnits_input")}
+                aria-label={t("computations:parms.deltaTUnits_input", {
+                  name: row.algoRoleName,
+                })}
               >
                 {deltaTUnits.map((option) => (
                   <option key={option} value={option}>
@@ -334,7 +340,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                       size="sm"
                       name="unitsAbbr"
                       current={row.unitsAbbr ?? ""}
-                      aria-label={t("computations:parms.units_input")}
+                      aria-label={t("computations:parms.units_input", {
+                        name: row.algoRoleName,
+                      })}
                     />
                   </QueryClientProvider>,
                 )
@@ -344,7 +352,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                     size="sm"
                     name="unitsAbbr"
                     defaultValue={row.unitsAbbr ?? ""}
-                    aria-label={t("computations:parms.units_input")}
+                    aria-label={t("computations:parms.units_input", {
+                      name: row.algoRoleName,
+                    })}
                   />,
                 ),
           read: (cell) => readOptional(cell, "select, input"),
@@ -362,7 +372,9 @@ export const ComputationParamsTable: React.FC<ComputationParamsTableProps> = ({
                 name="ifMissing"
                 defaultValue={row.ifMissing ?? "FAIL"}
                 size="sm"
-                aria-label={t("computations:parms.ifMissing_input")}
+                aria-label={t("computations:parms.ifMissing_input", {
+                  name: row.algoRoleName,
+                })}
               >
                 {ifMissingActions.map((option) => (
                   <option key={option} value={option}>
