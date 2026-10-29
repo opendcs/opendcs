@@ -4,6 +4,9 @@ import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
+
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +18,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.ComputationDao;
 import org.opendcs.database.impl.opendcs.jdbi.column.text.Base64ColumnMapper;
 import org.opendcs.database.impl.opendcs.jdbi.column.text.Base64String;
+import org.opendcs.database.impl.opendcs.jdbi.logging.DetailSqlLogger;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.AlgorithmMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.AlgorithmMappers;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.AlgorithmScriptMapper;
@@ -24,16 +28,23 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.ComputationMap
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.ComputationReducer;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.computations.ComputationTsParameterMapper;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.openide.util.lookup.ServiceProvider;
+import org.slf4j.Logger;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 
+import decodes.db.DatabaseException;
+import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 import decodes.tsdb.DbComputation;
 
 @ServiceProvider(service = ComputationDao.class)
 public class ComputationDaoImpl implements ComputationDao
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
     private static final ComputationMappers allData =
         new ComputationMappers(
             ComputationMapper.withPrefix("c"),
@@ -94,11 +105,14 @@ public class ComputationDaoImpl implements ComputationDao
                                        allData.comp().getPrefix(), ComputationMapper.Columns.ID.column()))
                       .add("prop_join",
                             String.format("left outer join cp_comp_property %s on %s.computation_id = %s.computation_id",
-                                            allData.algoMappers().propertiesMapper().getPrefix(),
-                                            allData.algoMappers().algoMapper().getPrefix(),
-                                            allData.algoMappers().propertiesMapper().getPrefix()
+                                            allData.compProps().getPrefix(),
+                                            allData.comp().getPrefix(),
+                                            allData.compProps().getPrefix()
                             )
                       )
+                      .add("algo_join", allData.algoMappers().algoMapper()
+                                .joinStatement(LEFT_OUTER, AlgorithmMapper.Columns.ID,
+                                               allData.comp().getPrefix(), ComputationMapper.Columns.ALGORITHM_ID.column()))
                       .add("algo_parm_join", allData.algoMappers().parmMapper()
                                 .joinStatement(LEFT_OUTER, AlgorithmTsParameterMapper.Columns.ALGORITHM_ID,
                                                allData.algoMappers().algoMapper().getPrefix(), AlgorithmMapper.Columns.ID.column()))
@@ -112,6 +126,9 @@ public class ComputationDaoImpl implements ComputationDao
                                             allData.algoMappers().propertiesMapper().getPrefix()
                             )
                       )
+                      .add("comp_prefix", allData.comp().getPrefix())
+                      .add("parm_prefix", allData.compParms().getPrefix())
+                      .add("prop_prefix", allData.compProps().getPrefix())
                       .add("algo_prefix", allData.algoMappers().algoMapper().getPrefix())
                       .add("algo_parm_prefix", allData.algoMappers().parmMapper().getPrefix())
                       .add("script_prefix", allData.algoMappers().scriptMapper().getPrefix())
@@ -132,10 +149,56 @@ public class ComputationDaoImpl implements ComputationDao
     }
 
     @Override
-    public DbComputation save(DataTransaction tx, DbComputation entry) throws OpenDcsDataException
+    public DbComputation save(DataTransaction tx, DbComputation comp) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'save'");
+        var handle = tx.connection(Handle.class)
+                            .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
+        var ctx = tx.getContext();
+        var dbEngine = ctx.getDatabaseEngine();
+        var template = getTemplate("merge");
+        var keyGen = ctx.getGenerator(KeyGenerator.class)
+                        .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
+        try (var merge = handle.createUpdate(template.add("dual", fromDual(dbEngine)).render()))
+        {
+             DbKey id = (DbKey)comp.getId();
+            if (DbKey.isNull(id)) // if we have an id, we'll assume it's correct.
+            {
+                var existing = getByName(tx, comp.getName());
+                if (existing.isPresent())
+                {
+                    // If there's an existing app with this name, we'll just assume the provided id, if any, was in error
+                    id = (DbKey)existing.get().getId();
+                    log.trace("""
+                        Using ID from existing LrgsDataInterface, id={}, that was found. Provided ID was {}.
+                        """,
+                        id, comp.getId());
+                }
+            }
+            final var comment = comp.getComment() != null
+                              ? comp.getComment()
+                                    .substring(0,
+                                               // The column currently only allows 1000 characters
+                                               Math.min(1000, comp.getComment().length()))
+                              : null;
+            final var bindKey = DbKey.isNull(id) ? keyGen.getKey("cp_computation", handle.getConnection()) : id;
+
+            merge.bind(ComputationMapper.Columns.ID.column(), bindKey)
+                 .bind(ComputationMapper.Columns.LOADING_APPLICATION_ID.column(), comp.getAppId())
+                 .bind(ComputationMapper.Columns.ALGORITHM_ID.column(), comp.getAlgorithmId())
+                 .bind(ComputationMapper.Columns.COMMENT.column(), comment)
+                 .bindByType(ComputationMapper.Columns.DATE_TIME_LOADED.column(), new Date(), Date.class)
+                 .bind(ComputationMapper.Columns.ENABLED.column(), comp.isEnabled())
+                 .bindByType(ComputationMapper.Columns.EFFECTIVE_START.column(), comp.getValidStart(), Date.class)
+                 .bindByType(ComputationMapper.Columns.EFFECTIVE_END.column(), comp.getValidEnd(), Date.class)
+                 .bind(ComputationMapper.Columns.GROUP_ID.column(), comp.getGroupId())
+                 .execute();
+
+            return getById(tx, DbKey.NullKey).orElseThrow(() -> new OpenDcsDataException("Could not retrieve computation we just saved."));
+        }
+        catch (DatabaseException ex)
+        {
+            throw new OpenDcsDataException("Unable to generator new key for algorithm", ex);
+        }
     }
 
     @Override
@@ -169,11 +232,14 @@ public class ComputationDaoImpl implements ComputationDao
                                        allData.comp().getPrefix(), ComputationMapper.Columns.ID.column()))
                       .add("prop_join",
                             String.format("left outer join cp_comp_property %s on %s.computation_id = %s.computation_id",
-                                            allData.algoMappers().propertiesMapper().getPrefix(),
-                                            allData.algoMappers().algoMapper().getPrefix(),
-                                            allData.algoMappers().propertiesMapper().getPrefix()
+                                            allData.compProps().getPrefix(),
+                                            allData.comp().getPrefix(),
+                                            allData.compProps().getPrefix()
                             )
                       )
+                      .add("algo_join", allData.algoMappers().algoMapper()
+                                .joinStatement(LEFT_OUTER, AlgorithmMapper.Columns.ID,
+                                               allData.comp().getPrefix(), ComputationMapper.Columns.ID.column()))
                       .add("algo_parm_join", allData.algoMappers().parmMapper()
                                 .joinStatement(LEFT_OUTER, AlgorithmTsParameterMapper.Columns.ALGORITHM_ID,
                                                allData.algoMappers().algoMapper().getPrefix(), AlgorithmMapper.Columns.ID.column()))
@@ -187,6 +253,9 @@ public class ComputationDaoImpl implements ComputationDao
                                             allData.algoMappers().propertiesMapper().getPrefix()
                             )
                       )
+                      .add("comp_prefix", allData.comp().getPrefix())
+                      .add("parm_prefix", allData.compParms().getPrefix())
+                      .add("prop_prefix", allData.compProps().getPrefix())
                       .add("algo_prefix", allData.algoMappers().algoMapper().getPrefix())
                       .add("algo_parm_prefix", allData.algoMappers().parmMapper().getPrefix())
                       .add("script_prefix", allData.algoMappers().scriptMapper().getPrefix())
@@ -195,6 +264,7 @@ public class ComputationDaoImpl implements ComputationDao
 
         try (var select = handle.createQuery(selectTemplate.render()))
         {
+            select.setSqlLogger(new DetailSqlLogger(log));
             return select.registerColumnMapper(Base64String.class, base64Mapper)
                          .registerRowMapper(allData.algoMappers().algoMapper())
                          .registerRowMapper(allData.algoMappers().parmMapper())

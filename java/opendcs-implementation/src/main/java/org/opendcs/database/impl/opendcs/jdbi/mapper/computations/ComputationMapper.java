@@ -65,7 +65,8 @@ public class ComputationMapper extends OpenDcsTableMapper<DbComputation, Computa
         ENABLED,
         EFFECTIVE_START("effective_start_date_time"),
         EFFECTIVE_END("effective_start_date_time"),
-        GROUP_ID
+        GROUP_ID,
+        // GROUP NAME not own column, can't set individually.
         ;
 
         private final String column;
