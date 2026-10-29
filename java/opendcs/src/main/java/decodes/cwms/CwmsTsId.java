@@ -124,6 +124,10 @@ public class CwmsTsId implements TimeSeriesIdentifier
 			utcOffset, storageUnits);
 		ret.setSite(site);
 		ret.setSiteDisplayName(siteDisplayName);
+		ret.setStorageType(storageType);
+		ret.setActive(active);
+		ret.setAllowDstOffsetVariation(allowDstOffsetVariation);
+		ret.setOffsetErrorAction(offsetErrorAction);
 		
 		return ret;
 	}
