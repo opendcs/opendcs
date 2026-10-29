@@ -611,7 +611,6 @@ final class PlatformResourcesIT extends BaseApiIT
 	}
 
 	@Test
-	@EnableIfTsDb({"OpenDCS-Postgres"})
 	void testDeleteConfigUsedByPlatformFails()
 	{
 		given()
