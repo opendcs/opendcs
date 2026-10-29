@@ -3,7 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
 import { PARM_TYPES, parmTypeLabel } from "../common/parmTypes";
-import { AppDataTable, type ColumnDef } from "../../../components/data-table";
+import {
+  AppDataTable,
+  rowLabelId,
+  type ColumnDef,
+} from "../../../components/data-table";
 
 export type AlgoParm = { roleName: string; parmType: string };
 // Preserve the legacy re-exports from this module; callers import PARM_TYPES /
@@ -21,7 +25,7 @@ export interface AlgorithmParamsTableProps {
 }
 
 const parmDisplayName = (row: AlgoParm, rowId: string): string =>
-  row.roleName || rowId.replace("__appdt_new_", "");
+  row.roleName || rowLabelId(rowId);
 
 export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   parms,

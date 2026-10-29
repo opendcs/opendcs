@@ -4,7 +4,7 @@ import { renderToString } from "react-dom/server";
 import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import type { CollectionActions } from "../../util/Actions";
-import { AppDataTable, type ColumnDef } from "../data-table";
+import { AppDataTable, isNewRowId, rowLabelId, type ColumnDef } from "../data-table";
 
 /**
  * NOTE: this should primarily be extracted from the API spec with the state value
@@ -30,7 +30,7 @@ export interface PropertiesTableProps {
 
 /** Returns the property name, falling back to the new-row counter when the name is blank. */
 function propDisplayName(row: Property, rowId: string): string {
-  return row.name || rowId.replace("__appdt_new_", "") || "";
+  return row.name || rowLabelId(rowId);
 }
 
 /**
@@ -131,7 +131,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
                   save: (r, rowId) =>
                     t("properties:save_prop", { name: propDisplayName(r, rowId) }),
                   cancel: (r, rowId) =>
-                    rowId.startsWith("__appdt_new_")
+                    isNewRowId(rowId)
                       ? t("properties:delete_prop", { name: propDisplayName(r, rowId) })
                       : t("translation:cancel"),
                   add: t("properties:add_prop"),

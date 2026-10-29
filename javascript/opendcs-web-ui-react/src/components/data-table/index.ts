@@ -16,6 +16,7 @@ export {
   type RowMode,
 } from "./AppDataTable";
 export { dateColumn, idColumn, textColumn } from "./columns";
+export { isNewRowId, rowLabelId } from "./newRowId";
 export { TableCaption, type CaptionButton } from "./TableCaption";
 export {
   ChooserTable,

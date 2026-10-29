@@ -4,7 +4,12 @@ import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import type { ApiPresentationElement } from "opendcs-api";
-import { AppDataTable, type ColumnDef } from "../../../components/data-table";
+import {
+  AppDataTable,
+  isNewRowId,
+  rowLabelId,
+  type ColumnDef,
+} from "../../../components/data-table";
 import UnitSelect from "../../../components/controls/UnitSelector";
 import { useUnitListQuery } from "../../../queries/units";
 import { useDataTypeListQuery } from "../../../queries/dataTypes";
@@ -18,7 +23,7 @@ export interface PresentationElementsTableProperties {
 }
 
 const elementDisplayName = (row: ApiPresentationElement, rowId: string): string =>
-  row.dataTypeCode || row.dataTypeStd || rowId.replace("__appdt_new_", "") || "";
+  row.dataTypeCode || row.dataTypeStd || rowLabelId(rowId);
 
 // Parse a number cell value back to a number or undefined when blank.
 const readNumber = (raw: string | undefined): number | undefined => {
@@ -288,7 +293,7 @@ export const PresentationElementsTable: React.FC<
                     name: elementDisplayName(r, rowId),
                   }),
                 cancel: (r, rowId) =>
-                  rowId.startsWith("__appdt_new_")
+                  isNewRowId(rowId)
                     ? t("presentations:elements.remove", {
                         name: elementDisplayName(r, rowId),
                       })
