@@ -14,6 +14,7 @@ package decodes.cwms.validation;
  * Primarily used for rainfall.
  */
 public class DurCheckPeriod
+	implements ScreeningCheck
 {
 	private char flag;
 	private String duration;
@@ -36,9 +37,16 @@ public class DurCheckPeriod
 		this.high = high;
 	}
 
+	@Override
 	public char getFlag()
 	{
 		return flag;
+	}
+
+	@Override
+	public Category getCategory()
+	{
+		return Category.DURATION_MAGNITUDE;
 	}
 
 	public String getDuration()
