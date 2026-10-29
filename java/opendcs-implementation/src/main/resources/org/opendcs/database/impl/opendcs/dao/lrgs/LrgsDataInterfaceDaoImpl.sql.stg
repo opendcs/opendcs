@@ -1,0 +1,24 @@
+
+select(where, limit, offset, prefix, collate, columns, type_columns, type_join) ::= <<
+    select <columns>, <prefix>.config::text as <prefix>_config, <type_columns>
+     from lrgs_data_interface <prefix>
+     <type_join>
+     <if(where)>where <where> <endif>
+    order by <prefix>.name <collate> asc
+    <if(limit)>  <limit> <endif>
+>>
+
+merge(dual) ::= <<
+    merge into lrgs_data_interface ldi
+    using (select :id id, :name name, :type_id type_id, :config::jsonb config <dual>)  input
+    on (ldi.id = input.id)
+    when matched then
+        update set name = input.name, type_id = input.type_id, config = input.config
+    when not matched then
+        insert(name, type_id, config)
+        values(input.name, input.type_id, input.config)
+>>
+
+
+delete() ::= "delete from lrgs_data_interface where id = :id"
+
