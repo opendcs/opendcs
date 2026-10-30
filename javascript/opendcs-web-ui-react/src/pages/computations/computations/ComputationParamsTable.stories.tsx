@@ -269,24 +269,30 @@ export const RowInputsLabeledByRole: Story = {
   play: async ({ mount, parameters, userEvent }) => {
     const canvas = await mount();
     const { i18n } = parameters;
-    const roles = ["input1", "output1"];
 
-    for (const name of roles) {
+    const openRow = async (name: string) => {
       const editBtn = await canvas.findByRole("button", {
         name: i18n.t("computations:parms.edit_for", { name }),
       });
       await act(() => userEvent.click(editBtn));
-    }
+    };
+    await openRow("input1");
+    await openRow("output1");
 
-    for (const name of roles) {
-      for (const key of ROW_INPUT_KEYS) {
-        expect(
-          await canvas.findByLabelText(
-            i18n.t(`computations:parms.${key}_input`, { name }),
-          ),
-        ).toBeInTheDocument();
-      }
-    }
+    await waitFor(
+      () => {
+        for (const name of ["input1", "output1"]) {
+          for (const key of ROW_INPUT_KEYS) {
+            expect(
+              canvas.getByLabelText(
+                i18n.t(`computations:parms.${key}_input`, { name }),
+              ),
+            ).toBeInTheDocument();
+          }
+        }
+      },
+      { timeout: 5000 },
+    );
   },
 };
 
