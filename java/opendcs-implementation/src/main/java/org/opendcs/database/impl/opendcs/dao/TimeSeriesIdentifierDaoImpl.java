@@ -352,7 +352,7 @@ public class TimeSeriesIdentifierDaoImpl implements TimeSeriesIdentifierDao
         {
             throw new OpenDcsDataException("Cannot change stastics code of data.");
         }
-        if (existing.getStorageTable() != input.getStorageTable())
+        if (input.getStorageTable() != -1 && existing.getStorageTable() != input.getStorageTable())
         {
             throw new OpenDcsDataException("Cannot alter storage table of data using this method.");
         }
