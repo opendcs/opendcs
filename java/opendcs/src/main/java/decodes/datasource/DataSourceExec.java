@@ -247,7 +247,8 @@ public abstract class DataSourceExec implements PropertiesOwner
 
 	/**
 	 * Returns the next message from this data source as a DataMessage.
-	 * Higher level DataSources may override this method to return a DecodedMessage, for example
+	 * Higher level DataSources may override this method to return a DecodedMessage, for example from a Api
+	 * that requires no additional decoding.
 	 *
 	 * @return the next DataMessage, or null
 	 * @throws DataSourceException on error.
