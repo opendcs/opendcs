@@ -18,6 +18,7 @@ import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.ConfigSenso
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.configs.DecodesConfigAccumulator;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.utils.sql.PropertyBindings;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
@@ -57,7 +58,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
             )
             select pc.id pc_id, pc.name pc_name, pc.description pc_description, pc.equipmentId pc_equipmentId,
                     em.id e_id, em.name e_name, em.company e_company, em.model e_model, em.description e_description,
-                    em.equipmentType e_equipmentType, ep.name ep_name, ep.prop_value ep_prop_value,
+                    em.equipmentType e_equipmentType, ep.prop_name ep_prop_name, ep.prop_value ep_prop_value,
 
                     cs.sensornumber cs_sensornumber, cs.sensorname cs_sensorname, cs.recordingmode cs_recordingmode,
                     cs.recordinginterval cs_recordinginterval, cs.timeoffirstsample cs_timeoffirstsample,
@@ -147,7 +148,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
                                             EquipmentModelMapper.withPrefix("e"), PropertiesMapper.withPrefix("ep"),
-                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
+                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp"),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
                                             FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
                                          )
@@ -184,7 +185,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
                                             EquipmentModelMapper.withPrefix("e"), PropertiesMapper.withPrefix("ep"),
-                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
+                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp"),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
                                             FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
                                          )
@@ -334,13 +335,8 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                                         .add();
                 }
 
-                sensor.getProperties().forEach((k,v) ->
-                    insertSensorProps.bind(CONFIGID, configId)
-                                     .bind(SENSORNUMBER, sensor.sensorNumber)
-                                     .bind("prop_name", k)
-                                     .bind("prop_value", v)
-                                     .add()
-                );
+                PropertyBindings.addProperties(insertSensorProps, CONFIGID, configId,
+                                               SENSORNUMBER, sensor.sensorNumber, sensor.getProperties());
             }
 
             insertSensor.execute();
@@ -512,7 +508,7 @@ public class DecodesConfigDaoImpl implements DecodesConfigDao
                                          new DecodesConfigAccumulator(
                                             "pc", DecodesConfigMapper.withPrefix("pc"),
                                             EquipmentModelMapper.withPrefix("e"), PropertiesMapper.withPrefix("ep"),
-                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp", true),
+                                            ConfigSensorMapper.withPrefix("cs"), PropertiesMapper.withPrefix("csp"),
                                             DataTypeMapper.withPrefix("dt"), DecodesScriptBuilderMapper.withPrefix("ds"),
                                             FormatStatementMapper.withPrefix("fs"), UnitConverterMapper.withPrefix("uc")
                                          )

@@ -31,6 +31,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.JdbiException;
 import org.jdbi.v3.core.statement.SqlStatements;
 import org.opendcs.annotations.api.InjectDao;
+import org.opendcs.annotations.api.InjectOperations;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDao;
@@ -42,6 +43,8 @@ import org.opendcs.database.impl.opendcs.jdbi.column.chrono.OpenDcsTimeColumnArg
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.databasekey.DatabaseKeyColumnMapper;
 import org.opendcs.database.impl.opendcs.jdbi.plugins.OpenDcsBaseSqlExceptionHandler;
+import org.opendcs.operations.OpenDcsOperations;
+import org.opendcs.operations.OpenDcsOperationsConfigurationException;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.utils.AnnotationHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -72,7 +75,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
     protected AbstractJdbiOpenDcsDatabaseWrapper(
             Map<Class<? extends OpenDcsSettings>, OpenDcsSettings> settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
-        Objects.requireNonNull(settings.get(DecodesSettings.class), 
+        Objects.requireNonNull(settings.get(DecodesSettings.class),
                                "All implementations are required to provide a `DecodesSettings` instance.");
         this.settingsMap.putAll(settings);
         this.decodesDb = decodesDb;
@@ -199,7 +202,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
     @SuppressWarnings("unchecked")
     private <T,K> DaoWrapper<T> makeDaoWrapper(Supplier<K> instance, Method method)
     {
-        return new DaoWrapper<T>(() ->
+        return new DaoWrapper<>(() ->
         {
             try
             {
@@ -244,11 +247,35 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         {
             final var tmp = instance;
             injectDaos(tmp);
+            injectOperations(tmp);
             return Optional.of(new DaoWrapper<>(() -> tmp));
         }
         else
         {
             log.trace("No DAO instance of '{}' found for implementation '{}' or as default", dao.getName(), impl);
+            return Optional.empty();
+        }
+    }
+
+    public <T extends OpenDcsOperations> Optional<T> operationsFromLookup(Class<T> operations)
+    {
+        final String impl = ((DecodesSettings)this.settingsMap.get(DecodesSettings.class)).editDatabaseType;
+        final var implLookup = Lookups.forPath("operations/"+impl);
+        var instance = implLookup.lookup(operations);
+        if (instance == null)
+        {
+            instance = Lookup.getDefault().lookup(operations);
+        }
+
+        if (instance != null)
+        {
+            final var tmp = instance;
+            injectOperations(tmp);
+            return Optional.of(tmp);
+        }
+        else
+        {
+            log.trace("No Operations instance of '{}' found for implementation '{}' or as default", operations.getName(), impl);
             return Optional.empty();
         }
     }
@@ -294,11 +321,47 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
             {
                 throw new OpenDcsDaoConfigurationException("An instance Required DAO " + daoClass.getName() + " is not available.");
             }
-
-
         }
+    }
 
+    /** Inject any required operations instances */
+    @SuppressWarnings({"unchecked","java:S3011"}) // unchecked -> we check manually, java:S3001 -> Our current setup does not allow for constructor based injection and
+                                                  // we want to allow for private/protected fields.
+    private void injectOperations(Object obj)
+    {
+        var fieldPairs = AnnotationHelpers.getFieldsWithAnnotation(obj.getClass(), InjectOperations.class);
+        for (var pair: fieldPairs)
+        {
+            var anno = pair.second;
+            var field = pair.first;
 
+            var fieldClass = field.getType();
+            if (!OpenDcsOperations.class.isAssignableFrom(fieldClass))
+            {
+                throw new OpenDcsOperationsConfigurationException(
+                    "Field " + field.getName() +
+                    " in class " + fieldClass.getName() +
+                    " is not a type of " + OpenDcsOperations.class.getName());
+            }
+            var opsClass = (Class<? extends OpenDcsOperations>)fieldClass;
+            var instance = operationsFromLookup(opsClass);
+            if (instance.isPresent())
+            {
+                field.setAccessible(true);
+                try
+                {
+                    field.set(obj, instance.get());
+                }
+                catch (IllegalArgumentException | IllegalAccessException ex)
+                {
+                    throw new OpenDcsDaoConfigurationException("Unable to assign DAO to this instance", ex);
+                }
+            }
+            else if (!anno.optional())
+            {
+                throw new OpenDcsOperationsConfigurationException("An instance Required Operations '" + opsClass.getName() + "'' is not available.");
+            }
+        }
     }
 
     @Override
