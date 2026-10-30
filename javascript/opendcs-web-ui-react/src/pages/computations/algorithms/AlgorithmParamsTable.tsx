@@ -20,6 +20,9 @@ export interface AlgorithmParamsTableProps {
   onUpdate?: (oldRoleName: string, newParm: AlgoParm) => void;
 }
 
+const parmDisplayName = (row: AlgoParm, rowId: string): string =>
+  row.roleName || rowId.replace("__appdt_new_", "");
+
 export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   parms,
   edit = false,
@@ -35,13 +38,15 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
         data: "roleName",
         header: t("algorithms:parms.roleName"),
         edit: {
-          render: (row) =>
+          render: (row, rowId) =>
             renderToString(
               <Form.Control
                 type="text"
                 name="roleName"
                 defaultValue={row.roleName}
-                aria-label={t("algorithms:parms.roleName_input")}
+                aria-label={t("algorithms:parms.roleName_input", {
+                  name: parmDisplayName(row, rowId),
+                })}
               />,
             ),
           read: (cell) =>
@@ -56,9 +61,15 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
         render: (_data, type, row) =>
           type === "display" ? parmTypeLabel(row.parmType ?? "") : (row.parmType ?? ""),
         edit: {
-          render: (row) =>
+          render: (row, rowId) =>
             renderToString(
-              <Form.Select name="parmType" defaultValue={row.parmType ?? "i"}>
+              <Form.Select
+                name="parmType"
+                defaultValue={row.parmType ?? "i"}
+                aria-label={t("algorithms:parms.parmType_input", {
+                  name: parmDisplayName(row, rowId),
+                })}
+              >
                 {PARM_TYPES.map((pt) => (
                   <option key={pt.value} value={pt.value}>
                     {pt.label}
@@ -98,8 +109,12 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
               labels: {
                 edit: (r) => t("algorithms:parms.edit_for", { name: r.roleName }),
                 remove: (r) => t("algorithms:parms.delete_for", { name: r.roleName }),
-                save: () => t("algorithms:parms.save_parm"),
-                cancel: () => t("algorithms:parms.cancel_parm"),
+                save: (r, rowId) =>
+                  t("algorithms:parms.save_parm", { name: parmDisplayName(r, rowId) }),
+                cancel: (r, rowId) =>
+                  t("algorithms:parms.cancel_parm", {
+                    name: parmDisplayName(r, rowId),
+                  }),
                 add: t("algorithms:parms.add_parm"),
               },
             }

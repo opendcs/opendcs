@@ -36,11 +36,11 @@
     "input": "Input",
     "output": "Output",
     "add_parm": "Add Parameter",
-    "save_parm": "Save parameter",
-    "cancel_parm": "Cancel parameter edit",
+    "save_parm": "Save parameter {{name}}",
+    "cancel_parm": "Cancel parameter edit {{name}}",
     "edit_for": "Edit parameter {{name}}",
     "delete_for": "Delete parameter {{name}}",
-    "roleName_input": "Parameter role name",
-    "parmType_input": "Parameter type"
+    "roleName_input": "Parameter role name for {{name}}",
+    "parmType_input": "Parameter type for {{name}}"
   }
 }

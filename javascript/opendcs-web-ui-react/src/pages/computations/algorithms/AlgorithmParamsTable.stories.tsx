@@ -107,13 +107,14 @@ export const AddParm: Story = {
     });
     await userEvent.click(addBtn);
 
+    // A new row has no role name yet, so its labels use the table's new-row number.
     const roleInput = await canvas.findByRole("textbox", {
-      name: i18n.t("algorithms:parms.roleName_input"),
+      name: i18n.t("algorithms:parms.roleName_input", { name: "1" }),
     });
     await userEvent.type(roleInput, "myInput");
 
     const saveBtn = await canvas.findByRole("button", {
-      name: i18n.t("algorithms:parms.save_parm"),
+      name: i18n.t("algorithms:parms.save_parm", { name: "1" }),
     });
     await act(async () => userEvent.click(saveBtn));
 
@@ -140,7 +141,7 @@ export const RoleNameCannotBeBlank: Story = {
 
     // Attempt to save without filling in a role name
     const saveBtn = await canvas.findByRole("button", {
-      name: i18n.t("algorithms:parms.save_parm"),
+      name: i18n.t("algorithms:parms.save_parm", { name: "1" }),
     });
     await act(async () => userEvent.click(saveBtn));
 
@@ -149,7 +150,7 @@ export const RoleNameCannotBeBlank: Story = {
     await waitFor(
       () => {
         const roleInput = canvas.queryByRole("textbox", {
-          name: i18n.t("algorithms:parms.roleName_input"),
+          name: i18n.t("algorithms:parms.roleName_input", { name: "1" }),
         });
         expect(roleInput).toBeInTheDocument();
       },
@@ -171,13 +172,18 @@ export const EditParm: Story = {
     await act(async () => userEvent.click(editBtn));
 
     const roleInput = await canvas.findByRole("textbox", {
-      name: i18n.t("algorithms:parms.roleName_input"),
+      name: i18n.t("algorithms:parms.roleName_input", { name: "input1" }),
     });
+    expect(
+      canvas.getByRole("combobox", {
+        name: i18n.t("algorithms:parms.parmType_input", { name: "input1" }),
+      }),
+    ).toBeInTheDocument();
     await userEvent.clear(roleInput);
     await userEvent.type(roleInput, "renamedInput");
 
     const saveBtn = await canvas.findByRole("button", {
-      name: i18n.t("algorithms:parms.save_parm"),
+      name: i18n.t("algorithms:parms.save_parm", { name: "input1" }),
     });
     await act(async () => userEvent.click(saveBtn));
 

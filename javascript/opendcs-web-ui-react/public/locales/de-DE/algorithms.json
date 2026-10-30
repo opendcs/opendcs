@@ -36,11 +36,11 @@
     "input": "Eingabe",
     "output": "Ausgabe",
     "add_parm": "Parameter hinzufügen",
-    "save_parm": "Parameter speichern",
-    "cancel_parm": "Parameterbearbeitung abbrechen",
+    "save_parm": "Parameter speichern {{name}}",
+    "cancel_parm": "Parameterbearbeitung abbrechen {{name}}",
     "edit_for": "Parameter {{name}} bearbeiten",
     "delete_for": "Parameter {{name}} löschen",
-    "roleName_input": "Parameter-Rollenname",
-    "parmType_input": "Parametertyp"
+    "roleName_input": "Parameter-Rollenname für {{name}}",
+    "parmType_input": "Parametertyp für {{name}}"
   }
 }
