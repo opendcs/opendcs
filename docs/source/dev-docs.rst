@@ -960,6 +960,13 @@ if you think you have a superior organization for these data.
 
 
 
+Property tables and bindings
+----------------------------
+
+Property tables use ``prop_name`` and ``prop_value`` for the key and value;
+owner columns vary by table. Equipment properties follow this convention after
+migration V7.6 for OpenDCS-Postgres and OpenDCS-Oracle, or V7.8 for CWMS-Oracle.
+
 Database/Rest API Error handling
 ================================
 
