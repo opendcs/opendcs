@@ -3,6 +3,7 @@ import { Button, Card, Col, Form, FormGroup, Placeholder, Row } from "react-boot
 import { Save, X } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import type { ApiDecodedMessage, ApiPlatformConfig } from "opendcs-api";
+import { EquipmentModelSelect } from "../../../components/controls/EquipmentModelSelect";
 import { DetailFade } from "../../../components/data-table";
 import { SaveErrorAlert } from "../../../components/forms";
 import { useSaveError } from "../../../hooks/useSaveError";
@@ -14,7 +15,7 @@ import ConfigScriptsTable from "./ConfigScriptsTable";
 const INPUT_H = { height: "2.25rem" };
 const LABEL_H = { height: "1rem" };
 
-const CONFIG_FIELDS = ["name", "numPlatforms", "description"] as const;
+const CONFIG_FIELDS = ["name", "numPlatforms", "equipmentId", "description"] as const;
 
 const EMPTY_DECODED: ApiDecodedMessage = {} as ApiDecodedMessage;
 
@@ -102,7 +103,7 @@ export const Config: React.FC<ConfigProperties> = ({
   edit = false,
   decodeData,
 }) => {
-  const [t] = useTranslation(["configs", "translation"]);
+  const [t] = useTranslation(["configs", "translation", "equipment"]);
   const resolved = details instanceof Promise ? use(details) : details;
   const provided = resolved.config;
   const [local, dispatch] = useReducer(ConfigReducer, provided);
@@ -168,6 +169,21 @@ export const Config: React.FC<ConfigProperties> = ({
                     readOnly
                     id="numPlatforms"
                     value={local.numPlatforms ?? 0}
+                  />
+                </Col>
+              </FormGroup>
+              <FormGroup as={Row} className="mb-3">
+                <Form.Label column sm={3} htmlFor="equipmentId">
+                  {t("equipment:equipment_model")}
+                </Form.Label>
+                <Col sm={9}>
+                  <EquipmentModelSelect
+                    id="equipmentId"
+                    value={local.equipmentId}
+                    disabled={!edit}
+                    onChange={(equipmentId) =>
+                      dispatch({ type: "save", payload: { equipmentId } })
+                    }
                   />
                 </Col>
               </FormGroup>

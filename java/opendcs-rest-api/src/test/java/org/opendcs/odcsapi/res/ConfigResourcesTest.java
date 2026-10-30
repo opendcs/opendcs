@@ -13,6 +13,7 @@ import decodes.db.ConfigSensor;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.DecodesScript;
+import decodes.db.EquipmentModel;
 import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
 import decodes.db.ScriptSensor;
@@ -37,6 +38,7 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.ConfigResources.coefficientMap;
@@ -76,6 +78,8 @@ final class ConfigResourcesTest
 		config.configName = "Test config";
 		config.description = "Platform description";
 		config.setId(DbKey.createDbKey(5899L));
+		config.equipmentModel = new EquipmentModel("Test equipment");
+		config.equipmentModel.setId(DbKey.createDbKey(42L));
 		Vector<DecodesScript> scripts = new Vector<>();
 		PlatformConfig scriptConfig = new PlatformConfig();
 		scriptConfig.numPlatformsUsing = 1;
@@ -109,6 +113,7 @@ final class ConfigResourcesTest
 		assertEquals(config.configName, apiConfig.getName());
 		assertEquals(config.description, apiConfig.getDescription());
 		assertEquals(config.getId().getValue(), apiConfig.getConfigId());
+		assertEquals(42L, apiConfig.getEquipmentId());
 		assertEquals(config.decodesScripts.size(), apiConfig.getScripts().size());
 		assertEquals(config.decodesScripts.get(0).scriptName, apiConfig.getScripts().get(0).getName());
 		assertEquals(config.decodesScripts.get(0).scriptType, apiConfig.getScripts().get(0).getHeaderType());
@@ -130,6 +135,7 @@ final class ConfigResourcesTest
 		apiConfig.setDescription("Platform description");
 		apiConfig.setScripts(scriptListBuilder());
 		apiConfig.setConfigId(5899L);
+		apiConfig.setEquipmentId(42L);
 		List<ApiConfigSensor> configSensors = new ArrayList<>();
 		ApiConfigSensor configSensor = new ApiConfigSensor();
 		configSensor.setAbsoluteMax(100.0);
@@ -158,6 +164,7 @@ final class ConfigResourcesTest
 		assertEquals(apiConfig.getName(), config.configName);
 		assertEquals(apiConfig.getDescription(), config.description);
 		assertEquals(apiConfig.getConfigId(), config.getId().getValue());
+		assertEquals(apiConfig.getEquipmentId(), config.getEquipmentModel().getId().getValue());
 		for (Iterator<DecodesScript> scriptName = config.getScripts(); scriptName.hasNext(); )
 		{
 			DecodesScript script = scriptName.next();
@@ -186,6 +193,19 @@ final class ConfigResourcesTest
 			}
 			assertEquals(apiConfig.getConfigSensors().get(0).getProperties(), sensorConfig.getProperties());
 		}
+	}
+
+	@Test
+	void testUnassignedEquipmentModelMapsToNull() throws Exception
+	{
+		PlatformConfig config = new PlatformConfig();
+		config.configName = "Test config";
+		config.setId(DbKey.createDbKey(5899L));
+		assertNull(map(config).getEquipmentId());
+
+		ApiPlatformConfig apiConfig = new ApiPlatformConfig();
+		apiConfig.setName("Test config");
+		assertNull(map(apiConfig, dataTypeDao, null).getEquipmentModel());
 	}
 
 	@Test
