@@ -24,12 +24,12 @@ public class PlatformSensorPropertyMapper extends OpenDcsTableMapper<PlatformSen
     {
         ColumnMapper<DbKey> columnMapperForKey = ctx.findColumnMapperFor(DbKey.class)
                                                     .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
-        var name = rs.getString(column(Columns.PROP_NAME));
+        var name = rs.getString(column(Columns.NAME));
         if (rs.wasNull())
         {
             return null;
         }
-        var value = rs.getString(column(Columns.PROP_VALUE));
+        var value = rs.getString(column(Columns.VALUE));
         var platformId = columnMapperForKey.map(rs, column(Columns.PLATFORM_ID), ctx);
         var sensorNumber = rs.getInt(column(Columns.SENSOR_NUMBER));
         return new PlatformSensorProperty(platformId, sensorNumber, name, value);
@@ -44,8 +44,8 @@ public class PlatformSensorPropertyMapper extends OpenDcsTableMapper<PlatformSen
     {
         PLATFORM_ID("platformid"),
         SENSOR_NUMBER("sensornumber"),
-        PROP_NAME("prop_name"),
-        PROP_VALUE("prop_value")
+        NAME("prop_name"),
+        VALUE("prop_value")
         ;
 
         private final String column;

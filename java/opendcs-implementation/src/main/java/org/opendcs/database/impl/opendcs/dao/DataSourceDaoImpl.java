@@ -13,6 +13,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataSourceDao;
 import org.opendcs.database.model.mappers.datasource.DataSourceAccumulator;
 import org.opendcs.database.model.mappers.datasource.DataSourceMapper;
+import org.opendcs.database.model.mappers.datasource.DataSourceMapper.Columns;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
@@ -62,7 +63,7 @@ public class DataSourceDaoImpl implements DataSourceDao
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                         .define(SqlQueries.WHERE_CLAUSE, "where id = :id")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
-                        .bind(GenericColumns.ID.column(), id)
+                        .bind(Columns.ID.column(), id)
                         .reduceRows(new DataSourceAccumulator(sourceMapper, memberMapper))
                         .findFirst();
         }
@@ -81,7 +82,7 @@ public class DataSourceDaoImpl implements DataSourceDao
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
                         .define(SqlQueries.WHERE_CLAUSE, "where name = :name")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
-                        .bind(GenericColumns.NAME.column(), name)
+                        .bind(Columns.NAME.column(), name)
                         .reduceRows(new DataSourceAccumulator(sourceMapper, memberMapper))
                         .findFirst();
         }
@@ -116,10 +117,10 @@ public class DataSourceDaoImpl implements DataSourceDao
              )
         {
             final DbKey id = dataSource.idIsSet() ? dataSource.getId() : keyGen.getKey("datasource", handle.getConnection());
-            mergeQuery.bind("id", id)
-                 .bind(GenericColumns.NAME.column(), dataSource.getName())
-                 .bind("datasourcetype", dataSource.dataSourceType)
-                 .bind("datasourcearg", dataSource.getDataSourceArg())
+            mergeQuery.bind(Columns.ID.column(), id)
+                 .bind(Columns.NAME.column(), dataSource.getName())
+                 .bind(Columns.SOURCE_TYPE.column(), dataSource.dataSourceType)
+                 .bind(Columns.SOURCE_ARGS.column(), dataSource.getDataSourceArg())
                  .execute();
 
             deleteGroupQuery.bind(GenericColumns.ID.column(), id).execute();
@@ -169,7 +170,7 @@ public class DataSourceDaoImpl implements DataSourceDao
             )
         {
             deleteMembers.bind(GenericColumns.ID.column(), id).execute();
-            deleteSource.bind(GenericColumns.ID.column(), id).execute();
+            deleteSource.bind(Columns.ID.column(), id).execute();
         }
     }
 
