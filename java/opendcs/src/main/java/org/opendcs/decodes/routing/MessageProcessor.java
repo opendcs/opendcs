@@ -24,6 +24,11 @@ public class MessageProcessor implements Function<DataMessage, Result<DecodedMes
         this.attemptDecode = attemptDecode;
     }
 
+    /**
+     * Determine and performance required decoding operations.
+     * @param msg RawMessage or DecodedMessage to either process or pass-through.
+     * @return DecodedMessage or reason for failure
+     */
     @Override
     public Result<DecodedMessage, DecoderException> apply(DataMessage msg)
     {
@@ -37,7 +42,11 @@ public class MessageProcessor implements Function<DataMessage, Result<DecodedMes
         };
     }
 
-
+    /**
+     * Wrap the case of providing only a RawMessage inside of a DecodedMessage instance.
+     * @param rm the RawMessage
+     * @return the DecodedMessage wrapped RawMessage, or the extremely unlikey failure result.
+     */
     private Result<DecodedMessage, DecoderException> noDecode(RawMessage rm)
     {
         try
@@ -51,9 +60,12 @@ public class MessageProcessor implements Function<DataMessage, Result<DecodedMes
     }
 
     /**
-     *
-     * @param rm
-     * @return
+     * TODO: Attempt to Decode the actual message.
+     * At this time we're still building the general application structure and revising
+     * how data is retrieved by the various components, at this time is not practical
+     * to actually decode the mssage.
+     * @param rm The RawMessage
+     * @return The DecodedMessage, or the reason for failure.
      */
     private Result<DecodedMessage, DecoderException> decodeMessage(RawMessage rm)
     {

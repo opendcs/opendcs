@@ -8,10 +8,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,17 +16,13 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Answers;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -40,7 +33,8 @@ import org.opendcs.database.dai.PresentationGroupDao;
 import org.opendcs.database.dai.RoutingSpecDao;
 import org.opendcs.database.dai.ScheduleEntryDao;
 import org.opendcs.database.dai.ScheduleEntryStatusDao;
-import org.opendcs.util.threading.WrappingScheduledExecutorService;
+import org.opendcs.operations.enums.EnumOperations;
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -83,6 +77,9 @@ class RoutingSchedulerTest
     @Mock
     PresentationGroupDao presDao;
 
+    @Mock
+    EnumOperations enumOperations;
+
     MockConsumer consumer;
 
     @Mock
@@ -103,10 +100,16 @@ class RoutingSchedulerTest
             .thenReturn(Optional.of(appDao));
         when(db.getDao(PresentationGroupDao.class))
             .thenReturn(Optional.of(presDao));
+        when(db.getOperations(EnumOperations.class))
+            .thenReturn(Optional.of(enumOperations));
 
         when(presDao.getByName(eq(tx), anyString())).thenReturn(Optional.empty());
 
         when(db.newTransaction()).thenReturn(tx);
+
+        when(enumOperations.instanceFromEnum(eq("OutputFormat"), anyString(),
+                                             eq(OutputFormatter.class), any(Object[].class)))
+                           .thenReturn(Result.success(new NullFormatter()));
     }
 
     @SuppressWarnings("null")
@@ -126,38 +129,13 @@ class RoutingSchedulerTest
         var appInfo = new CompAppInfo();
         appInfo.setAppName("test");
 
+        when(enumOperations.instanceFromEnum(eq("DataConsumer"), anyString(),
+                                             any(), any(Object[].class)))
+                           .thenReturn(Result.success(consumer));
+
         var scheduler = new RoutingScheduler.RoutingSchedulerBuilder()
                 .withDatabase(db)
                 .withSchedulerAppName(appInfo.getAppName())
-                .withTaskExecutor(new WrappingScheduledExecutorService(Executors.newScheduledThreadPool(2))
-                {
-
-                    @Override
-                    public void wrappedExecute(Runnable command)
-                    {
-                        // Mocked Statics are ThreadLocal. so we need to make sure this runs on the correct thread.
-                        try (MockedStatic<DataConsumer> dc = mockStatic(DataConsumer.class,
-                                               withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS));
-                             MockedStatic<OutputFormatter> of = mockStatic(OutputFormatter.class,
-                                                withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS)
-                             ))
-                        {
-                            log.info("I'm on thread {}/{}",
-                                     Thread.currentThread().getName(),
-                                     Thread.currentThread().threadId());
-                            dc.when(() -> DataConsumer.makeDataConsumer(anyString())).thenReturn(consumer);
-                            dc.when(() -> OutputFormatter.makeOutputFormatter(anyString(), any(), any(), any(), any()))
-                              .thenReturn(new NullFormatter());
-                            command.run();
-                        }
-                        catch (Throwable ex)
-                        {
-                            log.atError().setCause(ex).log("Failed to run task.");
-                            throw ex;
-                        }
-                    }
-
-                })
                 .build();
 
         when(appDao.getByName(any(), eq("test")))
@@ -174,6 +152,7 @@ class RoutingSchedulerTest
 
         var spec = new RoutingSpec("test-spec");
         spec.dataSource = mock(DataSource.class);
+        spec.consumerType = "test-consumer";
         when(spec.dataSource.makeDelegate())
             .thenReturn(new MockSourceExec(null, null));
 
@@ -182,14 +161,14 @@ class RoutingSchedulerTest
             .thenReturn(Optional.of(spec));
 
         assertTrue(scheduler.start().isSuccess());
-        latch.await();
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
 
         assertFalse(consumer.messages.isEmpty());
+        scheduler.stop();
     }
 
     @SuppressWarnings("null")
     @Test
-    @Timeout (value = 5, unit = TimeUnit.SECONDS)
     void test_scheduler_error() throws Exception
     {
         final AtomicReference<Throwable> thrownException = new AtomicReference<>(null);
@@ -202,43 +181,18 @@ class RoutingSchedulerTest
             @Override
             public void startMessage(DecodedMessage msg) throws DataConsumerException
             {
-                log.info("Error from thread {}/{}",
-                                     Thread.currentThread().getName(), Thread.currentThread().threadId());
                 var ex = new DataConsumerException("I failed");
                 thrownException.set(ex);
                 latch.countDown();
                 throw ex;
             }
         };
-
+        when(enumOperations.instanceFromEnum(eq("DataConsumer"), anyString(),
+                                             eq(DataConsumer.class), eq(new Object[0])))
+                           .thenReturn(Result.success(consumer));
         var scheduler = new RoutingScheduler.RoutingSchedulerBuilder()
                 .withDatabase(db)
                 .withSchedulerAppName(appInfo.getAppName())
-                .withTaskExecutor(new WrappingScheduledExecutorService(Executors.newScheduledThreadPool(2))
-                {
-                    @Override
-                    public void wrappedExecute(Runnable command)
-                    {
-                        try (MockedStatic<DataConsumer> dc = mockStatic(DataConsumer.class,
-                                               withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS));
-                             MockedStatic<OutputFormatter> of = mockStatic(OutputFormatter.class,
-                                               withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS)
-                             ))
-                        {
-                            log.info("I'm on thread {}/{}",
-                                     Thread.currentThread().getName(), Thread.currentThread().threadId());
-                            dc.when(() -> DataConsumer.makeDataConsumer(anyString())).thenReturn(consumer);
-                            dc.when(() -> OutputFormatter.makeOutputFormatter(anyString(), any(), any(), any(), any()))
-                              .thenReturn(new NullFormatter());
-                            command.run();
-                        }
-                        catch (Throwable ex)
-                        {
-                            log.atError().setCause(ex).log("Failed to run task.");
-                            throw ex;
-                        }
-                    }
-                })
                 .build();
 
         when(appDao.getByName(any(), eq("test-error")))
@@ -255,6 +209,7 @@ class RoutingSchedulerTest
 
         var spec = new RoutingSpec("test-spec-error");
         spec.dataSource = mock(DataSource.class);
+        spec.consumerType = "test-consumer-will-file";
         when(spec.dataSource.makeDelegate())
             .thenReturn(new MockSourceExec(null, null));
 
@@ -263,7 +218,7 @@ class RoutingSchedulerTest
             .thenReturn(Optional.of(spec));
 
         assertTrue(scheduler.start().isSuccess());
-        latch.await();
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         assertTrue(consumer.messages.isEmpty());
         scheduler.stop();
         assertNotNull(thrownException.get());
@@ -297,14 +252,12 @@ class RoutingSchedulerTest
         public void open(String consumerArg, Properties props) throws DataConsumerException
         {
             log.info("Starting consumer.");
-            log.info("Consumer open is on thread {}/{}",
-                     Thread.currentThread().getName(), Thread.currentThread().threadId());
         }
 
         @Override
         public void close()
         {
-            /** not used. */
+            log.info("Closing consumer");
         }
 
         @Override
@@ -359,9 +312,6 @@ class RoutingSchedulerTest
         @Override
         protected RawMessage getSourceRawMessage() throws DataSourceException
         {
-            log.info("Raw Message from {}/{}",
-                                     Thread.currentThread().getName(), Thread.currentThread().threadId());
-
             if (count > 0)
             {
                 count--;

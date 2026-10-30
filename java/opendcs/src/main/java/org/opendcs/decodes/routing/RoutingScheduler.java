@@ -62,6 +62,10 @@ public final class RoutingScheduler extends StandaloneApp
         log.info("Starting scheduler for application name '{}'", schedulerAppName);
     }
 
+    /**    (non-Javadoc)
+     * Process the scheduled on the defined interval/wait for this application.
+     * @see org.opendcs.database.apps.StandaloneApp#loop()
+     */
     @Override
     public void loop()
     {
@@ -95,7 +99,10 @@ public final class RoutingScheduler extends StandaloneApp
         });
     }
 
-
+    /**
+     * Given a specific scheduled entry, determine how or if it should be scheduled or terminated.
+     * @param entry
+     */
     private void enableEntry(ScheduleEntry entry)
     {
         if (DbKey.isNull(entry.getRoutingSpecId()))
@@ -140,7 +147,10 @@ public final class RoutingScheduler extends StandaloneApp
         }
     }
 
-
+    /**
+     * Construct a new routing scheduler with sensible defaults or changed settings.
+     * RoutingSchedulerBuilder
+     */
     public static class RoutingSchedulerBuilder extends StandaloneApp.AppBuilder<RoutingScheduler,RoutingSchedulerBuilder>
     {
         private String schedulerAppName;
