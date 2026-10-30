@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Objects;
 
 import opendcs.dao.CachableHasProperties;
 import ilex.util.PropertiesUtil;
@@ -236,12 +237,21 @@ public class DbCompAlgorithm implements CompMetaData, CachableHasProperties
 	{
 		// Oracle treats empty strings as nulls. Prevent bogus "Are You Sure"
 		// messages when comment is empty and user hasn't changed anything.
+		var rhsComment = rhs.comment; // to prevent mutation during a comparison.
 		if (rhs.comment != null && rhs.comment.length() == 0 && comment == null)
-			rhs.comment = null;
+		{
+			rhsComment = null;
+		}
 
-		if (!TextUtil.strEqual(name, rhs.name)
-		 || !TextUtil.strEqual(execClass, rhs.execClass)
-		 || !TextUtil.strEqual(comment, rhs.comment))
+		if (!TextUtil.strEqual(name, rhs.name))
+		{
+			return false;
+		}
+		if (!TextUtil.strEqual(execClass, rhs.execClass))
+		{
+			return false;
+		}
+		if (!TextUtil.strEqual(comment, rhsComment))
 		{
 			return false;
 		}
@@ -254,16 +264,14 @@ public class DbCompAlgorithm implements CompMetaData, CachableHasProperties
 		{
 			return false;
 		}
-		for(int i=0; i<parms.size(); i++)
+
+		// The exact order doesn't matter. However, the comparison must
+		// be true in both directions.
+		if (!(parms.containsAll(rhs.parms) && rhs.parms.containsAll(parms)))
 		{
-			DbAlgoParm p1 = parms.get(i);
-			DbAlgoParm p2 = rhs.parms.get(i);
-			if (!TextUtil.strEqual(p1.getRoleName(), p2.getRoleName())
-			 || !TextUtil.strEqual(p1.getParmType(), p2.getParmType()))
-			{
-				return false;
-			}
+			return false;
 		}
+
 		if (!this.algoScripts.equals(rhs.algoScripts))
 		{
 			return false;
@@ -271,6 +279,21 @@ public class DbCompAlgorithm implements CompMetaData, CachableHasProperties
 		return true;
 	}
 
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (obj instanceof DbCompAlgorithm rhs)
+		{
+			return this == obj || (DbKey.areEqual(algorithmId, rhs.algorithmId) && equalsNoId(rhs));
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(algorithmId, name, execClass, comment, parms, props, algoScripts);
+	}
 
 	@Override
 	public DbKey getKey()

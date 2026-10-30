@@ -553,14 +553,8 @@ public class DbComputation implements CompMetaData, CachableHasProperties
 		if (parmList.size() != rhs.parmList.size())
 			return false;
 
-		for(int i=0; i<parmList.size(); i++)
-		{
-			DbCompParm p1 = parmList.get(i);
-			DbCompParm p2 = rhs.getParm(p1.getRoleName());
-			if (!p1.equals(p2))
-				return false;
-		}
-
+		/** order doesn't matter, but each needs to contain all the elements of the other */
+		if (parmList.containsAll(rhs.getParmList()) && rhs.parmList.containsAll(parmList))
 
 		if (this.groupId != rhs.groupId)
 			return false;
