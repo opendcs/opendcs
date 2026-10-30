@@ -100,6 +100,11 @@ public class ScreeningCriteria
 	{
 		rocPerHourChecks.add(rocPerHourCheck);
 	}
+
+	public boolean hasRocPerHourChecks()
+	{
+		return !rocPerHourChecks.isEmpty();
+	}
 	
 	public void addDurCheckPeriod(DurCheckPeriod durCheckPeriod)
 	{
@@ -121,6 +126,8 @@ public class ScreeningCriteria
 	{
 		TimedVariable tv = input.findWithin(dataTime, alg.roundSec);
 		if (tv == null)
+			return;
+		if (!isUsableForScreening(tv, dataTime, alg))
 			return;
 
 		boolean setInputFlags = true;
@@ -154,18 +161,19 @@ public class ScreeningCriteria
 		}
 		
 		output.setValue(v);
-		int flags = tv.getFlags();
 		
 		log.trace("Executing checks, value {} at time {}, flags initially=0x{}",
-				  v, dataTime, Integer.toHexString(flags));
+				  v, dataTime, Integer.toHexString(tv.getFlags()));
 
-		flags |= doChecks(dc, input, dataTime, alg, v);
-		
-		int mask = CwmsFlags.TEST_MASK|CwmsFlags.VALIDITY_MASK;
+		int mask = CwmsFlags.TEST_MASK | CwmsFlags.VALIDITY_MASK;
+		int flags = (tv.getFlags() & ~mask)
+			| doChecks(dc, input, dataTime, alg, v);
 		// MJM 20121002 If input & output are the same time series
 		// and the flags are unchanged. Then do nothing.
 		if (inputIsOutput)
 		{
+			if (alg instanceof ScreeningAlgorithm)
+				flags = ((ScreeningAlgorithm)alg).applyIfQuestionable(flags, tv.getFlags());
 			if ((flags&mask) != (tv.getFlags()&mask))
 				// Flags are changed as a result of validation.
 			{
@@ -181,10 +189,11 @@ public class ScreeningCriteria
 			// Also, it must only be done if the flags have changed to avoid infinite loop.
 			if (setInputFlags && (flags&mask) != (tv.getFlags()&mask))
 				alg.setInputFlagBits("input", flags, mask);
+			int outputFlags = flags;
 			
 			// Set NO_OVERWRITE if the property is set in the comp.
 			if (noOverwrite)
-				flags |= VarFlags.NO_OVERWRITE;
+				outputFlags |= VarFlags.NO_OVERWRITE;
 			
 			// The 'setRejectedMissing' property means that, if the result of the
 			// checks is that the value is 'REJECTED', then in the output, set it as MISSING.
@@ -198,12 +207,14 @@ public class ScreeningCriteria
 				}
 				else if (setRejectMissing)
 				{
-					flags = (flags & (~CwmsFlags.VALIDITY_MASK))
+					outputFlags = (outputFlags & (~CwmsFlags.VALIDITY_MASK))
 						  | CwmsFlags.VALIDITY_MISSING;
 				}
 			}
+			if (alg instanceof ScreeningAlgorithm)
+				outputFlags = ((ScreeningAlgorithm)alg).applyIfQuestionable(outputFlags, tv.getFlags());
 			alg.clearFlagBits(output, mask);
-			alg.setFlagBits(output, flags);
+			alg.setFlagBits(output, outputFlags);
 		}
 	}
 	
@@ -346,9 +357,9 @@ public class ScreeningCriteria
 		{
 			// RATE checks
 			TimedVariable prevtv = input.findWithin(
-				new Date(dataTime.getTime()-3600000L), alg.roundSec);
-			if (prevtv != null 
-			 && (prevtv.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0)
+				rateComparisonTime(dataTime, alg), alg.roundSec);
+			prevtv = findPreviousUsableValue(input, prevtv, alg);
+			if (prevtv != null)
 			{
 				for(RocPerHourCheck chk : rocPerHourChecks)
 				{
@@ -371,8 +382,8 @@ public class ScreeningCriteria
 					}
 				}
 			}
-			else if (rocPerHourChecks.size() > 0) 
-				log.debug("Not checking dataTime={} because prev is missing or rejected.", dataTime);
+			else if (rocPerHourChecks.size() > 0)
+				log.debug("Not checking dataTime={} because no usable previous value was found.", dataTime);
 				
 		}
 		
@@ -455,6 +466,56 @@ public class ScreeningCriteria
 		
 		return resultFlags;
 	}
+
+	private Date rateComparisonTime(Date dataTime, AW_AlgorithmBase alg)
+	{
+		if (alg instanceof ScreeningAlgorithm)
+			return ((ScreeningAlgorithm)alg).rateComparisonTime(dataTime);
+		return new Date(dataTime.getTime() - 3600000L);
+	}
+
+	private boolean isUsableForScreening(TimedVariable value, Date valueTime,
+		AW_AlgorithmBase alg)
+	{
+		if ((value.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) != 0)
+			return false;
+		if (!(alg instanceof ScreeningAlgorithm))
+			return true;
+		ScreeningAlgorithm scrAlg = (ScreeningAlgorithm)alg;
+		if (!scrAlg.checkOutputFlags || scrAlg.inputIsOutput())
+			return true;
+		decodes.tsdb.ParmRef outputParm = alg.getParmRef("output");
+		TimedVariable outputValue = outputParm == null ? null
+			: outputParm.timeSeries.findWithin(valueTime, alg.roundSec);
+		return outputValue == null
+			|| (outputValue.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0;
+	}
+
+	private TimedVariable findPreviousUsableValue(CTimeSeries input,
+		TimedVariable candidate, AW_AlgorithmBase alg)
+	{
+		if (candidate == null)
+			return null;
+		int idx = 0;
+		for (; idx < input.size() && input.sampleAt(idx) != candidate; idx++);
+		if (idx == input.size())
+			return null;
+		for (; idx >= 0; idx--)
+		{
+			TimedVariable value = input.sampleAt(idx);
+			if (isUsableForRateComparison(value, alg))
+				return value;
+		}
+		return null;
+	}
+
+	private boolean isUsableForRateComparison(TimedVariable value, AW_AlgorithmBase alg)
+	{
+		if (alg instanceof ScreeningAlgorithm)
+			return ((ScreeningAlgorithm)alg).isUsableForRateComparison(value,
+				alg.getParmRef("output"));
+		return (value.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0;
+	}
 	
 	/**
 	 * Compare value but only to 3 decimal places
@@ -512,7 +573,7 @@ public class ScreeningCriteria
 				aggCal,needed, alg, inputIrregular);
 		}
 
-		// ROC checks need the previous hour for each trigger value
+		// ROC checks need the previous output interval for each trigger value.
 		if (rocPerHourChecks.size() > 0)
 		{
 			log.trace("Adding dates for ROC checks");
@@ -526,9 +587,7 @@ public class ScreeningCriteria
 					continue;
 				// Get this sample's time and subtract duration
 				Date sampleTime = tv.getTime();
-				aggCal.setTime(sampleTime);
-				aggCal.add(Calendar.HOUR_OF_DAY, -1);
-				Date d = aggCal.getTime();
+				Date d = rateComparisonTime(sampleTime, alg);
 				addToNeeded(d, needed, inputIrregular);
 			}
 		}

@@ -45,6 +45,7 @@ import ilex.var.NamedVariableList;
 import ilex.var.NoConversionException;
 import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
+import decodes.cwms.CwmsFlags;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -1613,6 +1614,12 @@ public abstract class DbAlgorithmExecutive
 				if (statefulInput && tv != null && VarFlags.wasDeleted(tv))
 					tv = null;
 
+				if (tv != null
+					&& tsdb.isCwms()
+					&& (tv.getFlags() & CwmsFlags.VALIDITY_MISSING) != 0)
+				{
+					tv = null;
+				}
 
 				if (tv == null) // Time series missing value for this slice?
 				{
