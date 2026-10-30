@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+docker ps > /dev/null
+run_dir=$(mktemp -d /tmp/opendcs-oracle-test.XXXXXX)
+echo "Logs and Oracle diagnostics: $run_dir"
+
+bash .github/scripts/monitor-oracle.sh "$run_dir/diagnostics" > "$run_dir/monitor.log" 2>&1 &
+monitor_pid=$!
+trap 'kill "$monitor_pid" 2>/dev/null || true; wait "$monitor_pid" 2>/dev/null || true' EXIT
+
+CI=true ./gradlew \
+    :testing:opendcs-tests:cleanTestOpenDCSOracle \
+    :testing:opendcs-tests:testOpenDCSOracle \
+    -Popendcs.test.engine=OpenDCS-Oracle -Pno.docs=true --info "$@" \
+    2>&1 | tee "$run_dir/gradle.log"
