@@ -96,6 +96,56 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
         }
     }
 
+    /** Verifies saving stale identifier metadata preserves the writer's storage assignment and access to stored values. */
+    @Test
+    void saving_stale_identifier_preserves_writer_storage_assignment() throws Exception
+    {
+        var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
+        try (var writer = tsDb.makeTimeSeriesDAO())
+        {
+            var id = (CwmsTsId)tsDb.makeTsId("TESTSITE1.Precip.Total.1Hour.1Hour.stale-metadata");
+            id.setStorageUnits("in");
+            writer.createTimeSeries(id);
+            try
+            {
+                CwmsTsId stale;
+                try (var tx = db.newTransaction())
+                {
+                    stale = (CwmsTsId)dao.getById(tx, id.getKey()).orElseThrow();
+                    assertEquals(-1, stale.getStorageTable());
+                }
+
+                var input = new CTimeSeries(id);
+                input.setUnitsAbbr("in");
+                input.addSample(new TimedVariable(Date.from(Instant.parse("2012-01-01T00:00:00Z")),
+                    12.5, VarFlags.TO_WRITE));
+                writer.saveTimeSeries(input); // Assigns storage_table
+
+                try (var tx = db.newTransaction())
+                {
+                    var assigned = (CwmsTsId)dao.getById(tx, id.getKey()).orElseThrow();
+                    assertNotEquals(-1, assigned.getStorageTable());
+                    stale.setDescription("Updated stale metadata");
+                    var updated = (CwmsTsId)dao.save(tx, stale);
+                    assertEquals(assigned.getStorageTable(), updated.getStorageTable());
+                    assertEquals("Updated stale metadata", updated.getDescription());
+                }
+
+                try (var reader = tsDb.makeTimeSeriesDAO())
+                {
+                    var output = new CTimeSeries(stale);
+                    output.setUnitsAbbr("in");
+                    assertEquals(1, reader.fillTimeSeries(output, null, null));
+                    assertEquals(12.5, output.sampleAt(0).getDoubleValue());
+                }
+            }
+            finally
+            {
+                writer.deleteTimeSeries(id);
+            }
+        }
+    }
+
     @Test
     void allocating_series_preserves_existing_annual_load() throws Exception
     {
