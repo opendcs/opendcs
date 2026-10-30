@@ -14,10 +14,9 @@ import org.slf4j.Logger;
 public abstract class WrappingScheduledExecutorService extends WrappingExecutorService implements ScheduledExecutorService
 {
 
-    public WrappingScheduledExecutorService(ScheduledExecutorService service)
+    protected WrappingScheduledExecutorService(ScheduledExecutorService service)
     {
         super(service);
-    
     }
 
     @Override

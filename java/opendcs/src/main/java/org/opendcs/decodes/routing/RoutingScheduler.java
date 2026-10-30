@@ -15,6 +15,7 @@ import org.opendcs.database.dai.LoadingAppDao;
 import org.opendcs.database.dai.RoutingSpecDao;
 import org.opendcs.database.dai.ScheduleEntryDao;
 import org.opendcs.database.dai.ScheduleEntryStatusDao;
+import org.opendcs.util.Result;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -27,7 +28,14 @@ import decodes.db.ScheduleEntry;
 import decodes.decoder.DecodedMessage;
 import decodes.sql.DbKey;
 
-public class RoutingScheduler extends StandaloneApp
+/**
+ * Handles scheduled and real-time schedule Routing Specs.
+ *
+ * Does not currently handle cli-oneshot routing specs. We are currently focused on the primary logic.
+ *
+ * RoutingScheduler
+ */
+public final class RoutingScheduler extends StandaloneApp
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
@@ -94,67 +102,20 @@ public class RoutingScheduler extends StandaloneApp
         {
             log.warn("Unable to start entry '{}', routing spec is not defined.", entry.getName());
         }
-        var task = activeTasks.computeIfAbsent(entry.getName(), (name) ->
+        var task = activeTasks.computeIfAbsent(entry.getName(), name ->
         {
-            if (entry.getRunInterval() == null)
+            log.info("Starting {}", name);
+            if (entry.getRunInterval() == null) // continuous, just submit
             {
-                log.info("Starting {}", entry.getName());
-                return taskExecutor.submit(() ->
+                try
                 {
-                    log.info("Running");
-                    try (var tx = db.newTransaction())
-                    {
-                        log.info("have tx");
-                        var specId = entry.getRoutingSpecId();
-                        var spec = specDao.getById(tx, specId)
-                                        .orElseThrow(() -> new OpenDcsDataException("No routing spec with id " + specId));
-                        log.info("have spec");
-                        final var consumer = DataConsumer.makeDataConsumer(name);
-                        log.info("made consumer");
-                        consumer.open(spec.consumerArg, spec.getProperties());
-                        log.info("Starting message stream.");
-                        // NOTE: the behavior here if *very* likely wrong compared to the existing routing scheduler
-                        // right now we're just structing the RoutingScheduler under this whole "StandaloneApp" concept
-                        // and modernizing the flow. This will be corrected as part of the development either before
-                        // this class gets merged or, or at least before it's provided in a way that we can run it.
-                        spec.dataSource
-                            .makeDelegate()
-                            .stream()
-                            .filter(m -> m.isSuccess())
-                            .map(m -> m.success())
-                            .peek(m -> log.info("looking at ", m.toString()))
-                            .map(m ->
-                                {
-                                    try
-                                    {
-                                        return new DecodedMessage((RawMessage)m, false);
-                                    }
-                                    catch (UnknownPlatformException ex)
-                                    {
-                                        return (DecodedMessage)null;
-                                    }
-                                })
-                            .filter(m -> m != null)
-                            .peek(m -> log.info("got {}", m))
-                            .forEach(m ->
-                            {
-                                try
-                                {
-                                    consumer.startMessage(m);
-                                }
-                                catch (DataConsumerException ex)
-                                {
-                                    log.atError().setCause(ex).log("Unable to consume message.");
-                                    throw new RuntimeException(ex);
-                                }
-                            });
-                    }
-                    catch (InvalidDatabaseException | OpenDcsDataException | DataConsumerException ex)
-                    {
-                        log.atError().setCause(ex).log("not great");
-                        throw new RuntimeException("Could not retrieve and run routing spec.", ex);
-                    }
-                });
+                    return taskExecutor.submit(Router.createRouter(db, entry.getRoutingSpecId()));
+                }
+                catch (OpenDcsDataRuntimeException ex)
+                {
+                    log.atError().setCause(ex).log("Unable to create Router for entry.");
+                    return null;
+                }
             }
             else
             {
@@ -162,18 +123,19 @@ public class RoutingScheduler extends StandaloneApp
             }
         });
 
-        if (task != null)
+        if (task != null && task.isDone())
         {
-            if (task.isDone())
+            try
             {
-                try
+                task.get();
+            }
+            catch (CancellationException | InterruptedException | ExecutionException ex)
+            {
+                if (ex instanceof InterruptedException)
                 {
-                    task.get();
+                    Thread.currentThread().interrupt();
                 }
-                catch (CancellationException | InterruptedException | ExecutionException ex)
-                {
-                    log.atError().setCause(ex).log("Abnormal termination of schedule {}", entry.getName());
-                }
+                log.atError().setCause(ex).log("Abnormal termination of schedule {}", entry.getName());
             }
         }
     }

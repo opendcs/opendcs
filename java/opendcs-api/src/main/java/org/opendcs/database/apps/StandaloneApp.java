@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
  * If appExecutor is not set a default pool will be used.
  *
  * The design is such that init, loop, and terminate do <b>NOT</b> need to synchronize objects.
- * if one is running the anothers cannot be. 
- * 
+ * if one is running the anothers cannot be.
+ *
  * StandaloneApp
  */
 public abstract class StandaloneApp
@@ -118,10 +118,10 @@ public abstract class StandaloneApp
                                     }
                                     catch (Throwable ex2) // NOSONAR. We have to catch everything here.
                                     {
-                                        log.atError().setCause(ex).log("Error in application loop.");
+                                        log.atError().setCause(ex2).log("Error in application loop.");
                                         throw ex2;
                                     }
-                                },0,                     loopWait, TimeUnit.MILLISECONDS);
+                                },0, loopWait, TimeUnit.MILLISECONDS);
                         }
                     }, appExecutor)
                     .exceptionally(ex ->
@@ -192,7 +192,7 @@ public abstract class StandaloneApp
      * @param <T> Application Class
      * @param <B> Application Builder Class
      */
-    public static abstract class AppBuilder<T extends StandaloneApp, B extends AppBuilder<T,B>>
+    public abstract static class AppBuilder<T extends StandaloneApp, B extends AppBuilder<T,B>>
     {
         private OpenDcsDatabase db;
         private ScheduledExecutorService appExecutor;
