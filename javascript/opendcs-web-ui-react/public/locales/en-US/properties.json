@@ -1,6 +1,7 @@
 {
   "PropertiesTitle": "Properties",
   "add_prop": "Add new property",
+  "new_prop": "new property {{n}}",
   "edit_prop": "Edit property named {{name}}",
   "delete_prop": "Delete property named {{name}}",
   "save_prop": "Save property named {{name}}",

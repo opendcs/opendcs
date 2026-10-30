@@ -1,9 +1,9 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
 import { PARM_TYPES, parmTypeLabel } from "../common/parmTypes";
-import { AppDataTable, type ColumnDef } from "../../../components/data-table";
+import { AppDataTable, rowLabel, type ColumnDef } from "../../../components/data-table";
 
 export type AlgoParm = { roleName: string; parmType: string };
 // Preserve the legacy re-exports from this module; callers import PARM_TYPES /
@@ -29,19 +29,27 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
 }) => {
   const [t] = useTranslation(["algorithms", "translation"]);
 
+  const parmDisplayName = useCallback(
+    (row: AlgoParm, rowId: string): string =>
+      row.roleName || rowLabel(rowId, (n) => t("algorithms:parms.new_role", { n })),
+    [t],
+  );
+
   const columns = useMemo<ColumnDef<AlgoParm>[]>(
     () => [
       {
         data: "roleName",
         header: t("algorithms:parms.roleName"),
         edit: {
-          render: (row) =>
+          render: (row, rowId) =>
             renderToString(
               <Form.Control
                 type="text"
                 name="roleName"
                 defaultValue={row.roleName}
-                aria-label={t("algorithms:parms.roleName_input")}
+                aria-label={t("algorithms:parms.roleName_input", {
+                  name: parmDisplayName(row, rowId),
+                })}
               />,
             ),
           read: (cell) =>
@@ -56,9 +64,15 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
         render: (_data, type, row) =>
           type === "display" ? parmTypeLabel(row.parmType ?? "") : (row.parmType ?? ""),
         edit: {
-          render: (row) =>
+          render: (row, rowId) =>
             renderToString(
-              <Form.Select name="parmType" defaultValue={row.parmType ?? "i"}>
+              <Form.Select
+                name="parmType"
+                defaultValue={row.parmType ?? "i"}
+                aria-label={t("algorithms:parms.parmType_input", {
+                  name: parmDisplayName(row, rowId),
+                })}
+              >
                 {PARM_TYPES.map((pt) => (
                   <option key={pt.value} value={pt.value}>
                     {pt.label}
@@ -72,7 +86,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
         },
       },
     ],
-    [t],
+    [t, parmDisplayName],
   );
 
   return (
@@ -98,8 +112,12 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
               labels: {
                 edit: (r) => t("algorithms:parms.edit_for", { name: r.roleName }),
                 remove: (r) => t("algorithms:parms.delete_for", { name: r.roleName }),
-                save: () => t("algorithms:parms.save_parm"),
-                cancel: () => t("algorithms:parms.cancel_parm"),
+                save: (r, rowId) =>
+                  t("algorithms:parms.save_parm", { name: parmDisplayName(r, rowId) }),
+                cancel: (r, rowId) =>
+                  t("algorithms:parms.cancel_parm", {
+                    name: parmDisplayName(r, rowId),
+                  }),
                 add: t("algorithms:parms.add_parm"),
               },
             }
