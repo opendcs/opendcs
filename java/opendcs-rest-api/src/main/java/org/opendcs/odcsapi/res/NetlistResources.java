@@ -47,7 +47,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.opendcs.database.api.OpenDcsDataException;
-import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
 import org.opendcs.database.dai.NetworkListDao;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiNetListItem;
@@ -344,7 +343,9 @@ public final class NetlistResources extends OpenDcsResource
             responses = {
                     @ApiResponse(responseCode = "204", description = "Successfully deleted network list"),
                     @ApiResponse(responseCode = "409",
-                            description = "Conflict - Network list is used by one or more routing specs"),
+                            description = "Conflict - Network list is used by one or more routing specs",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = Status.class))),
                     @ApiResponse(responseCode = "400", description = "Missing required netlistid parameter"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             },
@@ -370,17 +371,6 @@ public final class NetlistResources extends OpenDcsResource
                 dao.delete(tx, DbKey.createDbKey(netlistId));
                 return Response.noContent().entity("ID " + netlistId + " deleted").build();
             });
-        }
-        catch (OpenDcsDataException ex)
-        {
-            if (ex.getCause() instanceof OpenDcsConstraintException)
-            {
-                return Response.status(Response.Status.CONFLICT)
-                                  .entity(" Cannot delete network list with ID " + netlistId
-                                     + " because it is used by at least one routing spec"
-                                ).build();
-            }
-            throw ex;
         }
     }
 
