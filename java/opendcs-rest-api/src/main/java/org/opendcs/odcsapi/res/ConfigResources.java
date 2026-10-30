@@ -31,6 +31,7 @@ import decodes.db.DatabaseException;
 import decodes.db.DecodesScript;
 import decodes.db.DecodesScriptException;
 import decodes.db.EngineeringUnit;
+import decodes.db.EquipmentModel;
 import decodes.db.FormatStatement;
 import decodes.db.LinearConverter;
 import decodes.db.NullConverter;
@@ -212,6 +213,11 @@ public final class ConfigResources extends OpenDcsResource
 		apiConfig.setName(config.getName());
 		apiConfig.setNumPlatforms(config.numPlatformsUsing);
 		apiConfig.setDescription(config.description);
+		EquipmentModel em = config.getEquipmentModel();
+		if (em != null && !DbKey.isNull(em.getId()))
+		{
+			apiConfig.setEquipmentId(em.getId().getValue());
+		}
 		List<ApiConfigSensor> sensors = new ArrayList<>();
 		config.getSensors().forEachRemaining(sensor -> {
 			ApiConfigSensor apiSensor = new ApiConfigSensor();
@@ -359,6 +365,11 @@ public final class ConfigResources extends OpenDcsResource
 			pc.numPlatformsUsing = config.getNumPlatforms();
 
 			pc.configName = config.getName();
+			if (config.getEquipmentId() != null)
+			{
+				pc.equipmentModel = new EquipmentModel();
+				pc.equipmentModel.setId(DbKey.createDbKey(config.getEquipmentId()));
+			}
 			pc.decodesScripts = map(config.getScripts(), pc);
 			mapSensors(config.getConfigSensors(), pc, dataTypeDao, tx);
 
