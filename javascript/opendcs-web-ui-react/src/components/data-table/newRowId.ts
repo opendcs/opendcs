@@ -11,9 +11,12 @@ export function isNewRowId(rowId: string): boolean {
 }
 
 /**
- * `rowId` as it should read in a row's labels: a new row has no name of its own
- * yet, so it is labeled by its counter ("1", "2", ...).
+ * `rowId` as it should read in a row's labels. A new row has no name of its own
+ * yet and its synthetic id means nothing to a screen reader, so `newRowLabel`
+ * turns its counter into a friendly name, e.g. "new property 1".
  */
-export function rowLabelId(rowId: string): string {
-  return rowId.replace(NEW_ROW_ID_PREFIX, "");
+export function rowLabel(rowId: string, newRowLabel: (n: number) => string): string {
+  return isNewRowId(rowId)
+    ? newRowLabel(Number(rowId.slice(NEW_ROW_ID_PREFIX.length)))
+    : rowId;
 }

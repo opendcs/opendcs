@@ -36,6 +36,7 @@
     "input": "Input",
     "output": "Output",
     "add_parm": "Add Parameter",
+    "new_role": "new role {{n}}",
     "save_parm": "Save parameter {{name}}",
     "cancel_parm": "Cancel parameter edit {{name}}",
     "edit_for": "Edit parameter {{name}}",

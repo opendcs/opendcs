@@ -1,13 +1,9 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
 import { PARM_TYPES, parmTypeLabel } from "../common/parmTypes";
-import {
-  AppDataTable,
-  rowLabelId,
-  type ColumnDef,
-} from "../../../components/data-table";
+import { AppDataTable, rowLabel, type ColumnDef } from "../../../components/data-table";
 
 export type AlgoParm = { roleName: string; parmType: string };
 // Preserve the legacy re-exports from this module; callers import PARM_TYPES /
@@ -24,9 +20,6 @@ export interface AlgorithmParamsTableProps {
   onUpdate?: (oldRoleName: string, newParm: AlgoParm) => void;
 }
 
-const parmDisplayName = (row: AlgoParm, rowId: string): string =>
-  row.roleName || rowLabelId(rowId);
-
 export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   parms,
   edit = false,
@@ -35,6 +28,12 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
   onUpdate,
 }) => {
   const [t] = useTranslation(["algorithms", "translation"]);
+
+  const parmDisplayName = useCallback(
+    (row: AlgoParm, rowId: string): string =>
+      row.roleName || rowLabel(rowId, (n) => t("algorithms:parms.new_role", { n })),
+    [t],
+  );
 
   const columns = useMemo<ColumnDef<AlgoParm>[]>(
     () => [
@@ -87,7 +86,7 @@ export const AlgorithmParamsTable: React.FC<AlgorithmParamsTableProps> = ({
         },
       },
     ],
-    [t],
+    [t, parmDisplayName],
   );
 
   return (

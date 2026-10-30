@@ -30,6 +30,7 @@
     "min_input": "Valor mínimo para {{name}}",
     "max_input": "Valor máximo para {{name}}",
     "add": "Agregar elemento",
+    "new_element": "nuevo elemento {{n}}",
     "edit": "Editar elemento {{name}}",
     "remove": "Eliminar elemento {{name}}",
     "save_edit": "Guardar elemento {{name}}",

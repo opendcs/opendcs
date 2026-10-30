@@ -36,6 +36,7 @@
     "input": "Eingabe",
     "output": "Ausgabe",
     "add_parm": "Parameter hinzufügen",
+    "new_role": "neue Rolle {{n}}",
     "save_parm": "Parameter speichern {{name}}",
     "cancel_parm": "Parameterbearbeitung abbrechen {{name}}",
     "edit_for": "Parameter {{name}} bearbeiten",

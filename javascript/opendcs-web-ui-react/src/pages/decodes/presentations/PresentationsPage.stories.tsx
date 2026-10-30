@@ -352,7 +352,7 @@ export const AddAndSaveElement: Story = {
       name: i18n.t("presentations:elements.add"),
     });
     await act(async () => userEvent.click(addElementBtn));
-    // New-row aria-labels include a counter suffix (e.g. "…for 1"); match by prefix.
+    // New-row aria-labels end in a counted name (e.g. "…for new element 1"); match by prefix.
     // dataTypeStd renders as a <select> (role "combobox"); dataTypeCode is a text input.
     const stdInput = (await canvas.findByRole("combobox", {
       name: new RegExp(
@@ -410,7 +410,7 @@ export const AddDuplicateElementRejected: Story = {
       name: i18n.t("presentations:elements.add"),
     });
     await act(async () => userEvent.click(addElementBtn));
-    // New-row aria-labels include a counter suffix (e.g. "…for 1"); match by prefix.
+    // New-row aria-labels end in a counted name (e.g. "…for new element 1"); match by prefix.
     // dataTypeStd renders as a <select> (role "combobox"); dataTypeCode is a text input.
     const stdInput = (await canvas.findByRole("combobox", {
       name: new RegExp(
@@ -427,7 +427,7 @@ export const AddDuplicateElementRejected: Story = {
       await userEvent.selectOptions(stdInput, "SHEF-PE");
       await userEvent.type(codeInput, "HG");
     });
-    // Save button label is counter-based ("Save element 1"), not the typed code.
+    // Save button label is counter-based ("Save element new element 1"), not the typed code.
     const saveElementBtn = await canvas.findByRole("button", {
       name: new RegExp(
         i18n.t("presentations:elements.save_edit", { name: "" }).trimEnd(),
