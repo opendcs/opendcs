@@ -82,8 +82,15 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     {
         Object testInstance = ctx.getRequiredTestInstance();
         setupStubs(ctx);
-        applyPerInstanceConfig(ctx);
-        assignFields(testInstance);
+        try
+        {
+            applyPerInstanceConfig(ctx);
+            assignFields(testInstance);
+        }
+        finally
+        {
+            configuration.logDiagnostics("before " + ctx.getRequiredTestClass().getName());
+        }
     }
 
     /**
@@ -353,6 +360,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     @Override
     public void afterAll(ExtensionContext ctx) throws Exception
     {
+        configuration.logDiagnostics("after " + ctx.getRequiredTestClass().getName());
         EnvironmentVariables environment = (EnvironmentVariables)getStub(ctx,EnvironmentVariables.class);
         SystemProperties properties = (SystemProperties)getStub(ctx,SystemProperties.class);
         environment.teardown();

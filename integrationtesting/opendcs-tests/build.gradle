@@ -155,6 +155,10 @@ testEngines.each { engine ->
         systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
         systemProperties += project.properties.findAll {k, v -> k.startsWith("testcontainer")}
         systemProperties += ["opendcs.test.engine": engine]
+        if (engine == "OpenDCS-Oracle")
+        {
+            systemProperty "opendcs.connection.pool.trace", "true"
+        }
 
         jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
         jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"

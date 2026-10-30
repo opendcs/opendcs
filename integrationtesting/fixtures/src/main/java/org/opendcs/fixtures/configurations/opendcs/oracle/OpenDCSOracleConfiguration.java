@@ -3,6 +3,7 @@ package org.opendcs.fixtures.configurations.opendcs.oracle;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.lang.management.ManagementFactory;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
@@ -17,6 +18,8 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
+import javax.management.JMX;
+import javax.management.ObjectName;
 
 import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
@@ -27,6 +30,8 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.spi.Configuration;
+import org.opendcs.jmx.ConnectionPoolMXBean;
+import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -101,6 +106,81 @@ public class OpenDCSOracleConfiguration implements Configuration
     public boolean isTsdb()
     {
         return true;
+    }
+
+    @Override
+    public void logDiagnostics(String context)
+    {
+        log.info("Oracle connection diagnostics: {}", context);
+        logConnectionPools();
+        if (db == null || !db.isRunning())
+        {
+            return;
+        }
+        // Local SYSDBA access still works when the listener cannot accept another TCP connection.
+        String script = String.join("\n",
+            "timeout 15s sqlplus -L -s / as sysdba <<'SQL'",
+            "whenever sqlerror exit failure",
+            "set linesize 240 pagesize 1000 trimspool on",
+            "select resource_name, current_utilization, max_utilization, limit_value",
+            "from v$resource_limit where resource_name in ('processes', 'sessions');",
+            "select con_id, username, status, program, process, machine, count(*) session_count,",
+            "max(last_call_et) max_idle_seconds from v$session where type = 'USER'",
+            "group by con_id, username, status, program, process, machine",
+            "order by session_count desc, con_id, username;",
+            "exit",
+            "SQL");
+        try
+        {
+            var result = db.execInContainer("bash", "-c", script);
+            log.info("Oracle resource/session snapshot ({}), exit={}:\n{}\n{}",
+                context, result.getExitCode(), result.getStdout(), result.getStderr());
+        }
+        catch (InterruptedException ex)
+        {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while collecting Oracle diagnostics: {}", context, ex);
+        }
+        catch (Exception ex)
+        {
+            log.warn("Unable to collect Oracle diagnostics: {}", context, ex);
+        }
+    }
+
+    private void logConnectionPools()
+    {
+        try
+        {
+            var server = ManagementFactory.getPlatformMBeanServer();
+            int total = 0;
+            for (ObjectName name : server.queryNames(new ObjectName("org.opendcs:type=ConnectionPool,*"), null))
+            {
+                try
+                {
+                    var pool = JMX.newMXBeanProxy(server, name, ConnectionPoolMXBean.class);
+                    int outstanding = pool.getConnectionsOut();
+                    total += outstanding;
+                    log.info("Connection pool {}: outstanding={}, requested={}, returned={}",
+                        name, outstanding, pool.getGetConnCalled(), pool.getFreeConnCalled());
+                    for (WrappedConnectionMBean connection : pool.getConnectionsList())
+                    {
+                        log.info("Outstanding connection {}: age={}s, opened={}, thread={}, allocation:\n{}",
+                            connection.getRealConnectionHashCode(), connection.getConnectionLifetimeSeconds(),
+                            connection.getConnectionOpened(), connection.getOpeningThreadName(),
+                            String.join("\n", connection.getOpenStackTrace()));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.warn("Unable to inspect connection pool {}", name, ex);
+                }
+            }
+            log.info("Total outstanding connections in test JVM: {}", total);
+        }
+        catch (Exception ex)
+        {
+            log.warn("Unable to collect test JVM connection diagnostics", ex);
+        }
     }
 
     @Override

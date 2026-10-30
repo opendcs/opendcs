@@ -39,6 +39,10 @@ public interface Configuration
      */
     boolean isRunning();
 
+    default void logDiagnostics(String context)
+    {
+    }
+
     /**
      * Close files, shutdown databases, etc
      * @throws Exception if error occurs
