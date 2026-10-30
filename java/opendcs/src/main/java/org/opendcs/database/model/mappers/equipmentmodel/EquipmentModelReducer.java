@@ -27,7 +27,7 @@ public class EquipmentModelReducer implements BiConsumer<Map<Long, EquipmentMode
     {
         var em = map.computeIfAbsent(rowView.getColumn(equipmentModelPrefix+GenericColumns.ID, Long.class),
                                      emId -> rowView.getRow(EquipmentModel.class));
-        var propName = rowView.getColumn(propertyPrefix+GenericColumns.NAME, String.class);
+        var propName = rowView.getColumn(propertyPrefix+PropertiesMapper.Columns.NAME.column(), String.class);
         if (propName != null)
         {
             var prop = rowView.getRow(PropertiesMapper.PAIR_STRING_STRING);

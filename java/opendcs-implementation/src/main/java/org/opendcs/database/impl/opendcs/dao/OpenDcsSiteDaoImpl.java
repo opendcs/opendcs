@@ -23,6 +23,7 @@ import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteReducer;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.utils.sql.PropertyBindings;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
@@ -166,7 +167,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
                  .bind(GenericColumns.ID.column(), id);
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
                         .reduceRows(new OpenDcsSiteReducer("s"))
                         .findFirst();
@@ -238,7 +239,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
         try (var merge = handle.createUpdate(MERGE_SITE)
                                .define("dual", fromDual(ctx.getDatabaseEngine()));
             var deleteProps = handle.createUpdate(DELETE_PROPS);
-            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :name, :value)");
+            var insertProps = handle.prepareBatch("insert into site_property(site_id, prop_name, prop_value) values (:id, :prop_name, :prop_value)");
             var deleteNames = handle.createUpdate(DELETE_NAMES);
             var insertNames = handle.prepareBatch("insert into sitename(siteid, nametype, sitename, dbnum, agency_cd) values (:id, :nametype, :sitename, :dbnum, :agency_code)")
             )
@@ -291,14 +292,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
             insertNames.execute();
 
 
-            site.getProperties().forEach((k,v) ->
-            {
-                insertProps.bind(GenericColumns.ID.column(), bindKey);
-                insertProps.bind(GenericColumns.NAME.column(), k.toString());
-                var toSave = v != null ? v.toString() : "";
-                insertProps.bind("value", toSave);
-                insertProps.add();
-            });
+            PropertyBindings.addProperties(insertProps, OpenDcsSiteMapper.Columns.ID.column(), bindKey, site.getProperties());
             insertProps.execute();
             return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve site we just saved."));
         }
@@ -352,7 +346,7 @@ public class OpenDcsSiteDaoImpl implements SiteDao
             }
 
             return query.registerRowMapper(OpenDcsSiteMapper.withPrefix("s"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .registerRowMapper(OpenDcsSiteNameMapper.withPrefix("sn"))
                         .reduceRows(new OpenDcsSiteReducer("s"))
                         .map(s -> s)

@@ -1,6 +1,5 @@
 package org.opendcs.database.impl.opendcs.dao;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,9 +8,11 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.LoadingAppDao;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoMapper;
+import org.opendcs.database.model.mappers.compapp.CompAppInfoMapper.Columns;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoReducer;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
 import org.opendcs.utils.sql.GenericColumns;
+import org.opendcs.utils.sql.PropertyBindings;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
@@ -59,11 +60,11 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                        .define(SqlQueries.WHERE_CLAUSE, "where loading_application_id = :id")
+                        .define(SqlQueries.WHERE_CLAUSE, "where loading_application_id = :loading_application_id")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
-                        .bind(GenericColumns.ID.column(), id)
+                        .bind(Columns.APP_ID.column(), id)
                         .registerRowMapper(CompAppInfoMapper.withPrefix("a"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .reduceRows(new CompAppInfoReducer())
                         .map(m -> m)
                         .findFirst();
@@ -80,11 +81,11 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
         try (var query = handle.createQuery(SELECT_QUERY))
         {
             return query.define(SqlQueries.COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                        .define(SqlQueries.WHERE_CLAUSE, "where upper(loading_application_name) = upper(:name)")
+                        .define(SqlQueries.WHERE_CLAUSE, "where upper(loading_application_name) = upper(:loading_application_name)")
                         .define(SqlQueries.LIMIT_CLAUSE, "")
-                        .bind(GenericColumns.NAME.column(), name)
+                        .bind(Columns.APP_NAME.column(), name)
                         .registerRowMapper(CompAppInfoMapper.withPrefix("a"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .reduceRows(new CompAppInfoReducer())
                         .map(m -> m)
                         .findFirst();
@@ -102,7 +103,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
         final String insertSql = """
                 merge into hdb_loading_application app
-                using (select :id id, :name name, :comment cmmnt, :manual_edit_app manual_edit_app <dual>) input
+                using (select :loading_application_id id, :loading_application_name name, :cmmnt cmmnt, :manual_edit_app manual_edit_app <dual>) input
                 on (app.loading_application_id = input.id)
                 when matched then
                     update set loading_application_name = input.name, cmmnt = input.cmmnt, manual_edit_app = input.manual_edit_app
@@ -115,7 +116,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
              var deleteProps = handle.createUpdate(DELETE_APP_PROPERTIES);
              var insertProps = handle.prepareBatch("""
                      insert into ref_loading_application_prop(loading_application_id, prop_name, prop_value)
-                      values (:id, :name, :value)
+                      values (:loading_application_id, :prop_name, :prop_value)
                      """)
              )
         {
@@ -133,27 +134,16 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
             }
             final var bindKey = !DbKey.isNull(id) ? id : keyGen.getKey("hdb_loading_application", handle.getConnection());
 
-            mergeQuery.bind(GenericColumns.ID.column(), bindKey)
-                 .bind(GenericColumns.NAME.column(), appInfo.getAppName())
-                 .bind("manual_edit_app", appInfo.getManualEditApp() ? "Y" : "N")
-                 .bind("comment", appInfo.getComment())
+            mergeQuery.bind(Columns.APP_ID.column(), bindKey)
+                 .bind(Columns.APP_NAME.column(), appInfo.getAppName())
+                 .bind(Columns.MANUAL_EDIT_APP.column(), appInfo.getManualEditApp() ? "Y" : "N")
+                 .bind(Columns.COMMENT.column(), appInfo.getComment())
                  .execute();
 
             deleteProps.bind(GenericColumns.ID.column(), bindKey).execute();
 
-            insertProps.bind(GenericColumns.ID.column(), bindKey)
-                       .bind(GenericColumns.NAME.column(), "LastModified")
-                       .bind("value", CompAppInfoReducer.LAST_MODIFIED_SDF.format(new Date().toInstant()))
-                       .add();
-            appInfo.getProperties()
-                   .forEach((k,v) ->
-                   {
-                        insertProps.bind(GenericColumns.ID.column(), bindKey);
-                        insertProps.bind(GenericColumns.NAME.column(), k.toString());
-                        var toSave = v != null ? v.toString() : "";
-                        insertProps.bind("value", toSave);
-                        insertProps.add();
-                   });
+            PropertyBindings.addLastModified(insertProps, Columns.APP_ID.column(), bindKey);
+            PropertyBindings.addProperties(insertProps, Columns.APP_ID.column(), bindKey, appInfo.getProperties());
             insertProps.execute();
 
             return getById(tx, bindKey).orElseThrow(() -> new OpenDcsDataException("Unable to retrieve computation app info that we just saved."));
@@ -169,12 +159,12 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        try (var deleteApp = handle.createUpdate("delete from hdb_loading_application where loading_application_id = :id");
+        try (var deleteApp = handle.createUpdate("delete from hdb_loading_application where loading_application_id = :loading_application_id");
              var deleteProperties = handle.createUpdate(DELETE_APP_PROPERTIES)
             )
         {
             deleteProperties.bind(GenericColumns.ID.column(), id).execute();
-            deleteApp.bind(GenericColumns.ID.column(), id).execute();
+            deleteApp.bind(Columns.APP_ID.column(), id).execute();
         }
     }
 
@@ -200,7 +190,7 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
             }
 
             return query.registerRowMapper(CompAppInfoMapper.withPrefix("a"))
-                        .registerRowMapper(PropertiesMapper.withPrefix("p", true))
+                        .registerRowMapper(PropertiesMapper.withPrefix("p"))
                         .reduceRows(new CompAppInfoReducer())
                         .map(m -> m)
                         .toList();

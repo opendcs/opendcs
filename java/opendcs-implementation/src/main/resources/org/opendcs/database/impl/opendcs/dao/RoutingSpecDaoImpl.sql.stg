@@ -68,7 +68,7 @@ deleteSpec() ::= "delete from routingspec where id = :id"
 deleteSpecProps() ::= "delete from routingspecproperty where routingspecid = :id"
 insertSpecProps() ::= <<
 insert into routingspecproperty(routingspecid, prop_name, prop_value)
-values (:routingspecid, :prop_name, :prop_value)
+values (:id, :prop_name, :prop_value)
 >>
 
 deleteSpecLists() ::= "delete from routingspecnetworklist where routingspecid = :id"
