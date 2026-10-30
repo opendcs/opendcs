@@ -63,6 +63,7 @@ final class AuthorizationTestIT extends BaseApiIT
 				case GET -> spec.get(path);
 				case POST -> spec.post(path);
 				case PUT -> spec.put(path);
+				case PATCH -> spec.patch(path);
 				case DELETE -> spec.delete(path);
 				default -> throw new IllegalArgumentException("Unsupported method: " + method);
 			};
