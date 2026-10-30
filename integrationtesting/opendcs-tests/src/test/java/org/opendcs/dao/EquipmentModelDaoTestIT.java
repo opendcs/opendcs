@@ -69,6 +69,42 @@ class EquipmentModelDaoTestIT  extends AppTestBase
     }
 
     @Test
+    void test_property_round_trip() throws Exception
+    {
+        var dao = db.getDao(EquipmentModelDao.class).orElseThrow();
+
+        try (var tx = db.newTransaction())
+        {
+            try
+            {
+                var equipment = new EquipmentModel("property_round_trip");
+                equipment.properties.setProperty("solar-panel-1", "400w");
+                equipment.properties.setProperty("solar-total-export", "-0.01kwh");
+                var saved = dao.saveEquipmentModel(tx, equipment);
+                assertEquals(equipment.properties, saved.properties);
+
+                assertEquals(equipment.properties,
+                             dao.getEquipmentModel(tx, equipment.name).orElseThrow().properties);
+                var listed = dao.getEquipmentModels(tx, -1, -1).stream()
+                                .filter(model -> model.getId().equals(saved.getId()))
+                                .findFirst().orElseThrow();
+                assertEquals(equipment.properties, listed.properties);
+
+                saved.properties.setProperty("solar-total-export", "-0.02kwh");
+                saved.properties.remove("solar-panel-1");
+                assertEquals(saved.properties, dao.saveEquipmentModel(tx, saved).properties);
+
+                saved.properties.clear();
+                assertTrue(dao.saveEquipmentModel(tx, saved).properties.isEmpty());
+            }
+            finally
+            {
+                tx.rollback();
+            }
+        }
+    }
+
+    @Test
     void test_pagination() throws Exception
     {
         var dao = db.getDao(EquipmentModelDao.class).orElseThrow();
