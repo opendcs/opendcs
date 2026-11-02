@@ -1,0 +1,86 @@
+group TsGroupDaoImpl;
+
+//! The groups that make up the group named by :group_id, along with the association
+//! that pulled each one in. The root is its own parent so that the anchor doesn't have
+//! to provide a null of a particular type, and UNION (rather than UNION ALL) drops
+//! diamonds and stops the recursion when the data contains a loop.
+closure(recursive_cte) ::= <<
+with <recursive_cte> grp(group_id, parent_group_id, include_group) as (
+    select tg.group_id, tg.group_id, cast('A' as char(1))
+      from tsdb_group tg
+     where tg.group_id = :group_id
+
+    union
+
+    select m.child_group_id, grp.group_id, m.include_group
+      from tsdb_group_member_group m
+      join grp on grp.group_id = m.parent_group_id
+)
+>>
+
+headers(where, collate, limit, group_columns) ::= <<
+select <group_columns>
+  from tsdb_group tg
+<where>
+ order by tg.group_name <collate> asc
+<limit>
+>>
+
+//! One row per group *and* per the association that pulled it in, which is what we need to
+//! rebuild the hierarchy: a group with two parents gets two rows.
+groups(closure, collate, group_columns) ::= <<
+<closure>
+select <group_columns>,
+       grp.parent_group_id parent_group_id, grp.include_group include_group
+  from grp
+  join tsdb_group tg on tg.group_id = grp.group_id
+ order by tg.group_name <collate> asc, grp.parent_group_id
+>>
+
+//! Members are matched to the hierarchy with IN, not a join: a group that has more than one
+//! parent has more than one row in grp, and joining would return its members once per path.
+members(closure, table, column) ::= <<
+<closure>
+select m.group_id group_id, m.<column> member_id
+  from <table> m
+ where m.group_id in (select group_id from grp)
+ order by m.group_id, m.<column>
+>>
+
+otherMembers(closure) ::= <<
+<closure>
+select m.group_id group_id, m.member_type member_type, m.member_value member_value
+  from tsdb_group_member_other m
+ where m.group_id in (select group_id from grp)
+ order by m.group_id, m.member_type, m.member_value
+>>
+
+//! Time series members, with their data type and site joined in, as in members above.
+tsMembers(closure, collate, site_columns, site_name_columns) ::= <<
+<closure>
+select mts.group_id group_id, mts.ts_id ts_id,
+       case when tsi.id is null then 0 else 1 end ts_exists,
+       tsi.id tsi_id, tsi.ts_version tsi_version, tsi.site_name tsi_site_name,
+       tsi.unique_string tsi_unique_string, tsi.interval tsi_interval, tsi.duration tsi_duration,
+       tsi.active_flag tsi_active_flag, tsi.storage_units tsi_storage_units,
+       tsi.storage_table tsi_storage_table, tsi.storage_type tsi_storage_type,
+       tsi.modify_time tsi_modify_time, tsi.description tsi_description,
+       tsi.utc_offset tsi_utc_offset, tsi.allow_dst_offset_variation tsi_allow_dst_offset_variation,
+       tsi.offset_error_action tsi_offset_error_action,
+
+       dt.id dt_id, dt.standard dt_standard, dt.code dt_code, dt.display_name dt_display_name,
+
+       <site_columns>,
+
+       <site_name_columns>
+
+  from tsdb_group_member_ts mts
+  left outer join time_series_identifier tsi on tsi.id = mts.ts_id
+  left outer join datatype dt on dt.id = tsi.datatype_id
+  left outer join site s on s.id = tsi.site_id
+  left outer join sitename sn on sn.siteid = tsi.site_id
+
+ where mts.group_id in (select group_id from grp)
+
+ order by mts.group_id, tsi.unique_string <collate> asc, sn.nametype
+>>
