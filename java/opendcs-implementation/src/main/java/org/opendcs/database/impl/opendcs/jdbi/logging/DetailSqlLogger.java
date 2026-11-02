@@ -27,4 +27,12 @@ public final class DetailSqlLogger implements SqlLogger
         log.atError().log("args {}", ctx.getAttributes());
         log.atError().log("bindings {}", ctx.getBinding());
     }    
+
+    @Override
+    public void logAfterExecution(StatementContext ctx)
+    {
+        log.atError().log(ctx.getRenderedSql());
+        log.atError().log("args {}", ctx.getAttributes());
+        log.atError().log("bindings {}", ctx.getBinding());
+    }
 }
