@@ -94,6 +94,30 @@ class CwmsRatingMultIndepTest
     }
 
     @Test
+    void aGapInMappedParametersEndsTheIndependentList()
+        throws DbCompException
+    {
+        TestAlgorithm algo = new TestAlgorithm();
+        algo.map("indep1", "Loc", "Stage");
+        algo.mapUnused("indep2");
+        algo.map("indep3", "Loc", "Storage");
+
+        assertEquals("Stage", algo.buildIndepSpec());
+        assertEquals(1, algo.numIndeps);
+    }
+
+    @Test
+    void unmappedParameterWithFailMissingActionAbortsTheRun()
+    {
+        TestAlgorithm algo = new TestAlgorithm();
+        algo.map("indep1", "Loc", "Stage");
+        algo.indep2_MISSING = "fail";
+
+        DbCompException ex = assertThrows(DbCompException.class, () -> algo.buildIndepSpec());
+        assertTrue(ex.getMessage().contains("indep2"), ex.getMessage());
+    }
+
+    @Test
     void ratingParameterCountWinsOverMappedInputs()
         throws DbCompException
     {

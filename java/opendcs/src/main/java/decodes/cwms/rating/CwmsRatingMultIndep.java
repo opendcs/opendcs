@@ -74,123 +74,42 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 	
 	/**
 	 * Builds the comma-separated list of independent parameter codes from the time series
-	 * mapped to the indep roles, and sets numIndeps to the number found.
+	 * mapped to the indep roles, and sets numIndeps to the number found. Parameters are used
+	 * up to the first role that isn't mapped to a time series, unless its own indepN_MISSING
+	 * property demands one.
 	 */
 	String buildIndepSpec()
 		throws DbCompException
 	{
-		numIndeps = 1;
-		TimeSeriesIdentifier tsid = getParmTsId("indep1");
-		if (tsid == null)
+		String missingAction[] =
+		{
+			indep1_MISSING, indep2_MISSING, indep3_MISSING, indep4_MISSING, indep5_MISSING,
+			indep6_MISSING, indep7_MISSING, indep8_MISSING, indep9_MISSING
+		};
+
+		StringBuilder indepSpecId = new StringBuilder();
+		numIndeps = 0;
+		for (int idx = 0; idx < missingAction.length; idx++)
+		{
+			String role = "indep" + (idx + 1);
+			TimeSeriesIdentifier tsid = getParmTsId(role);
+			if (tsid == null)
+			{
+				if (!missingAction[idx].equalsIgnoreCase("ignore"))
+					throw new DbCompException("No time series mapped to " + role);
+				break;
+			}
+			if (numIndeps == 0)
+				indep1SiteName = tsid.getSiteName();
+			else
+				indepSpecId.append(',');
+			indepSpecId.append(tsid.getDataType().getCode());
+			numIndeps++;
+		}
+
+		if (numIndeps == 0)
 			throw new DbCompException("No time series mapped to indep1");
-		
-		indep1SiteName = tsid.getSiteName();
-		String indepSpecId = tsid.getDataType().getCode();
-		
-		ParmRef parmRef = getParmRef("indep2");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep2_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep2");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 2;
-		
-		parmRef = getParmRef("indep3");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep3_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep3");
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 3;
-
-		parmRef = getParmRef("indep4");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep4_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep4");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 4;
-
-		parmRef = getParmRef("indep5");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep5_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep5");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 5;
-
-		parmRef = getParmRef("indep6");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep6_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep6");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 6;
-
-		parmRef = getParmRef("indep7");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep7_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep7");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 7;
-
-		parmRef = getParmRef("indep8");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep8_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep8");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 8;
-
-		parmRef = getParmRef("indep9");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep9_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep9");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 9;
-
-		return indepSpecId;
+		return indepSpecId.toString();
 	}
 
 	/**
