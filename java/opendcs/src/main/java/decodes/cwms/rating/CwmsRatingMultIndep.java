@@ -72,20 +72,22 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 	private ArrayList<ArrayList<Double>> valueSetsA = null;
 
 	
-	private String buildIndepSpec()
+	/**
+	 * Builds the comma-separated list of independent parameter codes from the time series
+	 * mapped to the indep roles, and sets numIndeps to the number found.
+	 */
+	String buildIndepSpec()
 		throws DbCompException
 	{
-		ParmRef parmRef = getParmRef("indep1");
-		if (parmRef == null)
-			throw new DbCompException("No time series mapped to indep1");
-		TimeSeriesIdentifier tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
+		numIndeps = 1;
+		TimeSeriesIdentifier tsid = getParmTsId("indep1");
 		if (tsid == null)
-			throw new DbCompException("No time series identifier associated with indep1");
+			throw new DbCompException("No time series mapped to indep1");
 		
 		indep1SiteName = tsid.getSiteName();
 		String indepSpecId = tsid.getDataType().getCode();
 		
-		parmRef = getParmRef("indep2");
+		ParmRef parmRef = getParmRef("indep2");
 		if (parmRef == null || parmRef.timeSeries == null
 		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
 		{
@@ -191,6 +193,48 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		return indepSpecId;
 	}
 
+	/**
+	 * @return the number of independent parameters the loaded rating requires, or -1 if the
+	 * rating doesn't expose a count.
+	 */
+	private int templateIndepCount()
+	{
+		if (ratingSet.getRatingSpec() == null && ratingSet.getRatingCount() == 0)
+			return -1;
+		try
+		{
+			return ratingSet.getIndParamCount();
+		}
+		catch (RatingException ex)
+		{
+			log.atWarn().setCause(ex).log("Cannot determine the independent parameter count for rating '{}'", specId);
+			return -1;
+		}
+	}
+
+	/**
+	 * Compares the parameters mapped in the computation against the ones the rating requires.
+	 * @return the number of independent parameters to use for this run.
+	 * @throws DbCompException if the computation maps a different number of parameters
+	 * than the rating takes.
+	 */
+	static int validateIndepCount(String specId, String compName, int mappedIndeps, int ratingIndeps)
+		throws DbCompException
+	{
+		if (ratingIndeps < 0)
+		{
+			log.warn("Rating '{}' doesn't declare how many independent parameters it takes -- "
+					+ "using the {} inputs mapped to '{}'.", specId, mappedIndeps, compName);
+			return mappedIndeps;
+		}
+		if (ratingIndeps != mappedIndeps)
+			throw new DbCompException("Rating '" + specId + "' takes " + ratingIndeps
+				+ " independent parameter(s) but computation '" + compName + "' maps " + mappedIndeps
+				+ ". Remove the unused 'indep' input parameters or use a rating that takes "
+				+ mappedIndeps + ".");
+		return ratingIndeps;
+	}
+
 	@Output(type = Double.class)
 	public NamedVariable dep = new NamedVariable("dep", 0);
 
@@ -238,7 +282,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-		specId = buildIndepSpec();
+		String indepSpecId = buildIndepSpec();
 		
 		ParmRef depParmRef = getParmRef("dep");
 		String specLocation = indep1SiteName;
@@ -260,7 +304,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 		
 		specId = specLocation
-			+ "." + specId + ";" + depParmRef.compParm.getDataType().getCode() + "."
+			+ "." + indepSpecId + ";" + depParmRef.compParm.getDataType().getCode() + "."
 			+ templateVersion + "." + specVersion;
 
 		// Retrieve the RatingSet object
@@ -270,12 +314,17 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 			if (earliestBaseTime == null)
 				earliestBaseTime = new Date();
 			ratingSet = crd.getRatingSet(specId);
+
+			// The rating is authoritative for how many independent parameters it takes.
+			// Mapped inputs beyond that number would silently add columns to the value
+			// sets passed to the rating.
+			numIndeps = validateIndepCount(specId, comp.getName(), numIndeps, templateIndepCount());
 			
 			// As per instructions from Mike Perryman: I must find out what the native units
 			// for the rating are and convert before calling the Java rating. The Java rating
 			// method assumes that data are already in correct units.
 			String punits[] = ratingSet.getDataUnits();
-			for(int pidx = 0; pidx < punits.length-1 && pidx < 9; pidx++)
+			for(int pidx = 0; punits != null && pidx < numIndeps && pidx < punits.length-1; pidx++)
 			{
 				if (punits[pidx] == null)
 					continue;
@@ -295,7 +344,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 			
 			// Likewise for the dependent param:
-			if (punits.length > 1 && punits[punits.length-1] != null
+			if (punits != null && punits.length > 1 && punits[punits.length-1] != null
 			 && depParmRef.timeSeries.getUnitsAbbr() != null
 			 && !depParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[punits.length-1]))
 			{
@@ -368,6 +417,8 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void afterTimeSlices()
 	{
+		if (ratingSet == null || indepTimes.isEmpty())
+			return;
 		
 		// Convert nested ArrayLists to double[TIMES][VALUES].
 		// Note that the dimensions are reversed from the nested array lists.
@@ -383,7 +434,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		
 		try (Connection conn = tsdb.getConnection())
 		{
-			log.debug("Calling rate with {} inputs and {} values each.", valueSets.length, valueTimes.length);
+			log.debug("Calling rate with {} values and {} inputs each.", valueTimes.length, numIndeps);
 			
 			double depVals[] = ratingSet.rate(conn, valueTimes, valueSets);
 			
