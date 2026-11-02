@@ -17,24 +17,24 @@ package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
+import static org.opendcs.utils.sql.SqlQueries.RECURSIVE_CTE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Deque;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.statement.PreparedBatch;
 import org.jdbi.v3.core.statement.Query;
 import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.annotations.api.InjectDao;
@@ -45,9 +45,14 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.CompDependsNotifyDao;
 import org.opendcs.database.dai.TsGroupDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.TsGroupMappers;
-import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.TsGroupMapper.Columns;
+import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.TsGroupRefMapper.Columns;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.TsGroupTsMemberAccumulator;
-import org.opendcs.database.impl.opendcs.jdbi.mapper.timeseries.TsGroupTsMemberAccumulator.MemberKey;
+import org.opendcs.database.model.tsgroup.GroupCombine;
+import org.opendcs.database.model.tsgroup.GroupCriteria;
+import org.opendcs.database.model.tsgroup.GroupDefinition;
+import org.opendcs.database.model.tsgroup.GroupMembers;
+import org.opendcs.database.model.tsgroup.SubGroupLink;
+import org.opendcs.database.model.tsgroup.TsGroupRef;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
 import org.opendcs.utils.sql.SqlKeywords;
@@ -63,15 +68,14 @@ import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.TsGroup;
-import decodes.tsdb.TsGroupMember;
 
 /**
- * Reads and writes the TSDB_GROUP table and its various member tables.
+ * Reads and writes the TSDB_GROUP table and its member tables.
  *
- * Which groups make up a group is worked out by the database: every read of a group's
- * members starts with the recursive association in the {@code closure} query, and each
- * of the member tables is then read for the whole hierarchy in one go.
+ * Every read starts by deciding, in SQL, which groups it applies to - one group, a page of
+ * them, or a whole hierarchy - and then reads each member table for all of those groups at
+ * once. Which means the number of statements a read costs does not depend on how big the
+ * group is, or how deep.
  *
  * NOTE: this is intentionally doing no caching at this time. Current focus is simply "correctness."
  */
@@ -84,23 +88,36 @@ public class TsGroupDaoImpl implements TsGroupDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
-    /** How a sub-group is combined with its parent, see TsGroup.addSubGroup. */
-    private static final char ADD = 'A';
-    private static final char SUBTRACT = 'S';
-    private static final char INTERSECT = 'I';
-
-    private static final String CLOSURE = "closure";
+    private static final String FILTERED_GROUPS = "filteredGroups";
+    private static final String HIERARCHY_GROUPS = "hierarchyGroups";
+    private static final String AFFECTED_GROUPS = "affectedGroups";
+    private static final String IDS = "ids";
     private static final String HEADERS = "headers";
-    private static final String GROUPS = "groups";
-    private static final String ID_MEMBERS = "members";
-    private static final String OTHER_MEMBERS = "otherMembers";
+    private static final String ID_MEMBERS = "idMembers";
+    private static final String ATTRIBUTES = "attributes";
+    private static final String LINKS = "links";
     private static final String TS_MEMBERS = "tsMembers";
 
-    private static final String GROUP_COLUMNS_KEY = "group_columns";
+    private static final String GROUPS_KEY = "groups";
+    private static final String REF_COLUMNS_KEY = "ref_columns";
+    private static final String CHILD_COLUMNS_KEY = "child_columns";
     private static final String SITE_COLUMNS_KEY = "site_columns";
     private static final String SITE_NAME_COLUMNS_KEY = "site_name_columns";
     private static final String TABLE_KEY = "table";
     private static final String COLUMN_KEY = "column";
+
+    private static final String GROUP_TABLE = "tsdb_group";
+    private static final String TS_MEMBER_TABLE = "tsdb_group_member_ts";
+    private static final String TS_MEMBER_COLUMN = "ts_id";
+    private static final String SITE_MEMBER_TABLE = "tsdb_group_member_site";
+    private static final String SITE_MEMBER_COLUMN = "site_id";
+    private static final String DATA_TYPE_MEMBER_TABLE = "tsdb_group_member_dt";
+    private static final String DATA_TYPE_MEMBER_COLUMN = "data_type_id";
+
+    private static final String BY_ID = "where tg.group_id = :group_id";
+    private static final String BY_NAME = "where lower(tg.group_name) = lower(:group_name)";
+    private static final String BY_TYPE = "where upper(tg.group_type) = upper(:group_type)";
+    private static final String EVERY_GROUP = "";
 
     static final String MERGE_GROUP = """
             merge into tsdb_group tg
@@ -127,12 +144,12 @@ public class TsGroupDaoImpl implements TsGroupDao
             insert into tsdb_group_member_dt(group_id, data_type_id) values (:group_id, :data_type_id)
             """;
 
-    static final String INSERT_OTHER_MEMBERS = """
+    static final String INSERT_ATTRIBUTES = """
             insert into tsdb_group_member_other(group_id, member_type, member_value)
             values (:group_id, :member_type, :member_value)
             """;
 
-    static final String INSERT_CHILD_GROUPS = """
+    static final String INSERT_LINKS = """
             insert into tsdb_group_member_group(parent_group_id, child_group_id, include_group)
             values (:parent_group_id, :child_group_id, :include_group)
             """;
@@ -149,7 +166,7 @@ public class TsGroupDaoImpl implements TsGroupDao
             delete from tsdb_group_member_dt where group_id = :group_id
             """;
 
-    static final String DELETE_OTHER_MEMBERS = """
+    static final String DELETE_ATTRIBUTES = """
             delete from tsdb_group_member_other where group_id = :group_id
             """;
 
@@ -190,8 +207,6 @@ public class TsGroupDaoImpl implements TsGroupDao
             delete from tsdb_group_member_group where child_group_id = :group_id
             """;
 
-    private static final String GROUP_TABLE = "tsdb_group";
-
     @InjectDao
     CompDependsNotifyDao compDependsDao;
 
@@ -200,114 +215,129 @@ public class TsGroupDaoImpl implements TsGroupDao
     private final TsGroupMappers mappers = TsGroupMappers.withPrefixes();
 
     @Override
-    public Optional<TsGroup> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    public Optional<TsGroupRef> ref(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
         if (DbKey.isNull(id))
         {
             return Optional.empty();
         }
-
-        var group = findGroupById(getHandle(tx), tx.getContext().getDatabaseEngine(), id);
-        if (group.isEmpty())
-        {
-            return Optional.empty();
-        }
-        return Optional.of(loadMembers(tx, group.get()));
+        return first(readRefs(getHandle(tx), tx.getContext().getDatabaseEngine(),
+                              filteredGroups(dbEngineOf(tx), BY_ID, -1, -1), binds(Columns.GROUP_ID.column(), id)));
     }
 
     @Override
-    public Optional<TsGroup> getByName(DataTransaction tx, String name) throws OpenDcsDataException
+    public Optional<TsGroupRef> refByName(DataTransaction tx, String name) throws OpenDcsDataException
     {
         if (name == null || name.isBlank())
         {
             return Optional.empty();
         }
+        return first(readRefs(getHandle(tx), tx.getContext().getDatabaseEngine(),
+                              filteredGroups(dbEngineOf(tx), BY_NAME, -1, -1), binds(Columns.GROUP_NAME.column(), name)));
+    }
 
-        var group = findGroupByName(getHandle(tx), tx.getContext().getDatabaseEngine(), name);
-        if (group.isEmpty())
+    @Override
+    public List<TsGroupRef> refs(DataTransaction tx, String groupType, int limit, int offset)
+            throws OpenDcsDataException
+    {
+        var filterByType = hasText(groupType);
+        return List.copyOf(readRefs(getHandle(tx), tx.getContext().getDatabaseEngine(),
+                                    filteredGroups(dbEngineOf(tx), filterByType ? BY_TYPE : EVERY_GROUP, limit, offset),
+                                    typeBinds(groupType, limit, offset)).values());
+    }
+
+    @Override
+    public Optional<GroupDefinition> definition(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
+        if (DbKey.isNull(id))
         {
             return Optional.empty();
         }
-        return Optional.of(loadMembers(tx, group.get()));
+        return Optional.ofNullable(readDefinitions(tx, filteredGroups(dbEngineOf(tx), BY_ID, -1, -1),
+                                                  binds(Columns.GROUP_ID.column(), id)).get(id));
     }
 
     @Override
-    public List<TsGroup> getAll(DataTransaction tx, String groupType, int limit, int offset) throws OpenDcsDataException
+    public Optional<GroupDefinition> definitionByName(DataTransaction tx, String name) throws OpenDcsDataException
     {
+        if (name == null || name.isBlank())
+        {
+            return Optional.empty();
+        }
+        var found = readDefinitions(tx, filteredGroups(dbEngineOf(tx), BY_NAME, -1, -1), binds(Columns.GROUP_NAME.column(), name));
+        return found.values().stream().findFirst();
+    }
+
+    @Override
+    public List<GroupDefinition> definitions(DataTransaction tx, String groupType, int limit, int offset)
+            throws OpenDcsDataException
+    {
+        var filterByType = hasText(groupType);
+        return List.copyOf(readDefinitions(tx, filteredGroups(dbEngineOf(tx), filterByType ? BY_TYPE : EVERY_GROUP, limit, offset),
+                                           typeBinds(groupType, limit, offset)).values());
+    }
+
+    @Override
+    public Map<DbKey, GroupDefinition> definitionsInHierarchy(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
+        if (DbKey.isNull(id))
+        {
+            return Map.of();
+        }
+        return readDefinitions(tx, hierarchyGroups(dbEngineOf(tx), HIERARCHY_GROUPS), binds(Columns.GROUP_ID.column(), id));
+    }
+
+    @Override
+    public GroupMembers members(DataTransaction tx, DbKey id) throws OpenDcsDataException
+    {
+        if (DbKey.isNull(id))
+        {
+            return GroupMembers.EMPTY;
+        }
+
         var handle = getHandle(tx);
-        var dbEngine = tx.getContext().getDatabaseEngine();
-        final var filterByType = groupType != null && !groupType.isBlank();
-        try (var query = headers(handle, dbEngine,
-                                 filterByType ? "where upper(tg.group_type) = upper(:group_type)" : "",
-                                 limit, offset))
-        {
-            if (filterByType)
-            {
-                query.bind(Columns.GROUP_TYPE.column(), groupType);
-            }
-            if (limit >= 0)
-            {
-                query.bind(SqlKeywords.LIMIT, limit);
-            }
-            if (offset >= 0)
-            {
-                query.bind(SqlKeywords.OFFSET, offset);
-            }
+        var select = template(TS_MEMBERS)
+                        .add(COLLATE_CLAUSE, SqlQueries.collateClauseFor(tx.getContext().getDatabaseEngine()))
+                        .add(SITE_COLUMNS_KEY, mappers.siteMapper().columnsForSelect())
+                        .add(SITE_NAME_COLUMNS_KEY, mappers.siteNameMapper().columnsForSelect());
 
-            return query.map(mappers.groupMapper()).list();
+        var accumulator = new TsGroupTsMemberAccumulator(mappers);
+        final Map<DbKey, TimeSeriesIdentifier> found;
+        try (var query = handle.createQuery(select.render()))
+        {
+            found = query.bind(Columns.GROUP_ID.column(), id)
+                         .reduceResultSet(new LinkedHashMap<DbKey, TimeSeriesIdentifier>(), accumulator);
         }
+
+        accumulator.getUnresolved().forEach(tsId ->
+        {
+            log.warn("Group (id={}) has time series member ID={} that has no time series identifier -- ignored.",
+                     id, tsId);
+        });
+
+        return new GroupMembers(List.copyOf(found.values()), accumulator.getUnresolved());
     }
 
     @Override
-    public TsGroup loadMembers(DataTransaction tx, TsGroup group) throws OpenDcsDataException
+    public Set<DbKey> descendants(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        Objects.requireNonNull(group, "The group to read the members of must be provided.");
-        if (DbKey.isNull(group.getGroupId()))
-        {
-            throw new OpenDcsDataException("Only a group that is in the database has members to read.");
-        }
-
-        var handle = getHandle(tx);
-        var dbEngine = tx.getContext().getDatabaseEngine();
-        var groupId = group.getGroupId();
-
-        group.clear();
-        // TsGroup.clear() leaves the groups it intersects with alone.
-        group.setIntersectedGroups(new ArrayList<>());
-
-        final var groups = new LinkedHashMap<DbKey, TsGroup>();
-        final var edges = new ArrayList<GroupEdge>();
-        readGroupTree(handle, dbEngine, groupId, groups, edges);
-        // The caller gets back the instance it handed in, not the one that was just read.
-        groups.put(groupId, group);
-
-        readTimeSeriesMembers(handle, dbEngine, groupId, groups);
-        readIdMembers(handle, dbEngine, groupId, "tsdb_group_member_site", "site_id",
-                      groups, TsGroup::addSiteId);
-        readIdMembers(handle, dbEngine, groupId, "tsdb_group_member_dt", "data_type_id",
-                      groups, TsGroup::addDataTypeId);
-        readOtherMembers(handle, dbEngine, groupId, groups);
-
-        for (var edge : withoutCycles(groupId, edges))
-        {
-            groups.get(edge.parentId()).addSubGroup(groups.get(edge.childId()), edge.combine());
-        }
-
-        return group;
+        return groupIds(tx, HIERARCHY_GROUPS, id);
     }
 
     @Override
-    public TsGroup save(DataTransaction tx, TsGroup group) throws OpenDcsDataException
+    public Set<DbKey> ancestors(DataTransaction tx, DbKey id) throws OpenDcsDataException
     {
-        Objects.requireNonNull(group, "Cannot save a null TsGroup");
-        if (group.getGroupName() == null || group.getGroupName().isBlank())
-        {
-            throw new OpenDcsDataException("Cannot save a TsGroup without a name.");
-        }
-        if (group.getGroupType() == null || group.getGroupType().isBlank())
-        {
-            throw new OpenDcsDataException("Cannot save the TsGroup '" + group.getGroupName() + "' without a type.");
-        }
+        return groupIds(tx, AFFECTED_GROUPS, id);
+    }
+
+    @Override
+    public GroupDefinition save(DataTransaction tx, GroupDefinition definition) throws OpenDcsDataException
+    {
+        Objects.requireNonNull(definition, "Cannot save a null group definition");
+        var criteria = definition.criteria();
+        requireSavedKeys(criteria.timeSeriesKeys(), "time series", definition.name());
+        requireSavedKeys(criteria.siteIds(), "site", definition.name());
+        requireSavedKeys(criteria.dataTypeIds(), "data type", definition.name());
 
         var handle = getHandle(tx);
         var ctx = tx.getContext();
@@ -319,40 +349,42 @@ public class TsGroupDaoImpl implements TsGroupDao
         try (var merge = handle.createUpdate(MERGE_GROUP)
                                .define(SqlQueries.DUAL, fromDual(dbEngine)))
         {
-            DbKey id = group.getGroupId();
+            DbKey id = definition.id();
             if (DbKey.isNull(id))
             {
-                // If a group with this name already exists, assume the missing ID was in error and reuse it.
-                var existing = findGroupByName(handle, dbEngine, group.getGroupName());
-                id = existing.isPresent() ? existing.get().getGroupId()
+                // If a group of this name is already here, assume the missing id was in error
+                // and update that one instead of failing on the unique name.
+                var existing = refByName(handle, dbEngine, definition.name());
+                id = existing.isPresent() ? existing.get().id()
                                           : keyGen.getKey(GROUP_TABLE, handle.getConnection());
             }
             groupId = id;
 
             merge.bind(Columns.GROUP_ID.column(), groupId)
-                 .bind(Columns.GROUP_NAME.column(), group.getGroupName())
-                 .bind(Columns.GROUP_TYPE.column(), group.getGroupType())
-                 .bind(Columns.GROUP_DESCRIPTION.column(), group.getDescription())
+                 .bind(Columns.GROUP_NAME.column(), definition.name())
+                 .bind(Columns.GROUP_TYPE.column(), definition.type())
+                 .bind(Columns.GROUP_DESCRIPTION.column(), definition.description())
                  .execute();
         }
         catch (DatabaseException ex)
         {
-            throw new OpenDcsDataException("Unable to generate key to save ts group '"
-                                           + group.getGroupName() + "'", ex);
+            throw new OpenDcsDataException("Unable to generate a key to save the group '"
+                                           + definition.name() + "'", ex);
         }
 
-        writeTsMembers(handle, groupId, group);
-        writeIdMembers(handle, DELETE_SITE_MEMBERS, INSERT_SITE_MEMBERS, "site_id",
-                       groupId, group.getSiteIdList());
-        writeIdMembers(handle, DELETE_DATA_TYPE_MEMBERS, INSERT_DATA_TYPE_MEMBERS, "data_type_id",
-                       groupId, group.getDataTypeIdList());
-        writeOtherMembers(handle, groupId, group.getOtherMembers());
-        writeChildGroups(handle, dbEngine, groupId, group);
+        writeIdMembers(handle, DELETE_TS_MEMBERS, INSERT_TS_MEMBERS, TS_MEMBER_COLUMN,
+                       groupId, criteria.timeSeriesKeys());
+        writeIdMembers(handle, DELETE_SITE_MEMBERS, INSERT_SITE_MEMBERS, SITE_MEMBER_COLUMN,
+                       groupId, criteria.siteIds());
+        writeIdMembers(handle, DELETE_DATA_TYPE_MEMBERS, INSERT_DATA_TYPE_MEMBERS, DATA_TYPE_MEMBER_COLUMN,
+                       groupId, criteria.dataTypeIds());
+        writeAttributes(handle, groupId, criteria);
+        writeLinks(handle, dbEngine, groupId, definition);
 
         saveNotify(tx, groupId, CpDependsNotify.GRP_MODIFIED);
 
-        return getById(tx, groupId)
-                .orElseThrow(() -> new OpenDcsDataException("Unable to retrieve TsGroup we just saved."));
+        return definition(tx, groupId)
+                .orElseThrow(() -> new OpenDcsDataException("Unable to read back the group we just saved."));
     }
 
     @Override
@@ -369,14 +401,14 @@ public class TsGroupDaoImpl implements TsGroupDao
         try (var deleteTs = handle.createUpdate(DELETE_TS_MEMBERS);
              var deleteSite = handle.createUpdate(DELETE_SITE_MEMBERS);
              var deleteDataType = handle.createUpdate(DELETE_DATA_TYPE_MEMBERS);
-             var deleteOther = handle.createUpdate(DELETE_OTHER_MEMBERS);
+             var deleteAttributes = handle.createUpdate(DELETE_ATTRIBUTES);
              var deleteAssociations = handle.createUpdate(DELETE_GROUP_ASSOCIATIONS);
              var deleteGroup = handle.createUpdate(DELETE_GROUP))
         {
             deleteTs.bind(Columns.GROUP_ID.column(), id).execute();
             deleteSite.bind(Columns.GROUP_ID.column(), id).execute();
             deleteDataType.bind(Columns.GROUP_ID.column(), id).execute();
-            deleteOther.bind(Columns.GROUP_ID.column(), id).execute();
+            deleteAttributes.bind(Columns.GROUP_ID.column(), id).execute();
             deleteAssociations.bind(Columns.GROUP_ID.column(), id).execute();
             deleteGroup.bind(Columns.GROUP_ID.column(), id).execute();
         }
@@ -435,203 +467,174 @@ public class TsGroupDaoImpl implements TsGroupDao
         parentGroupIds.forEach(groupId -> saveNotify(tx, groupId, CpDependsNotify.GRP_MODIFIED));
     }
 
-    /**
-     * The recursive part of each of the read queries, which walks the sub-group
-     * associations down from the group being read.
-     */
-    private String closure(DatabaseEngine dbEngine)
+    private Map<DbKey, GroupDefinition> readDefinitions(DataTransaction tx, String groups,
+                                                        Map<String, Object> binds) throws OpenDcsDataException
     {
-        return template(CLOSURE)
-                .add(SqlQueries.RECURSIVE_CTE_CLAUSE, SqlQueries.recursiveCteFor(dbEngine))
-                .render();
+        var handle = getHandle(tx);
+        var parts = new Parts(readRefs(handle, tx.getContext().getDatabaseEngine(), groups, binds));
+
+        readIdMembers(handle, groups, binds, TS_MEMBER_TABLE, TS_MEMBER_COLUMN, parts::timeSeries);
+        readIdMembers(handle, groups, binds, SITE_MEMBER_TABLE, SITE_MEMBER_COLUMN, parts::site);
+        readIdMembers(handle, groups, binds, DATA_TYPE_MEMBER_TABLE, DATA_TYPE_MEMBER_COLUMN, parts::dataType);
+        readAttributes(handle, groups, binds, parts);
+        readLinks(handle, tx.getContext().getDatabaseEngine(), groups, binds, parts);
+
+        return parts.build();
     }
 
-    private Optional<TsGroup> findGroupById(Handle handle, DatabaseEngine dbEngine, DbKey id)
-    {
-        try (var query = headers(handle, dbEngine, "where tg.group_id = :group_id", -1, -1))
-        {
-            return query.bind(Columns.GROUP_ID.column(), id)
-                        .map(mappers.groupMapper())
-                        .findFirst();
-        }
-    }
-
-    private Optional<TsGroup> findGroupByName(Handle handle, DatabaseEngine dbEngine, String name)
-    {
-        try (var query = headers(handle, dbEngine, "where lower(tg.group_name) = lower(:group_name)", -1, -1))
-        {
-            return query.bind(Columns.GROUP_NAME.column(), name)
-                        .map(mappers.groupMapper())
-                        .findFirst();
-        }
-    }
-
-    private Query headers(Handle handle, DatabaseEngine dbEngine, String whereClause, int limit, int offset)
+    private Map<DbKey, TsGroupRef> readRefs(Handle handle, DatabaseEngine dbEngine, String groups,
+                                            Map<String, Object> binds)
     {
         var select = template(HEADERS)
-                        .add(WHERE_CLAUSE, whereClause)
+                        .add(GROUPS_KEY, groups)
                         .add(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                        .add(LIMIT_CLAUSE, addLimitOffset(limit, offset))
-                        .add(GROUP_COLUMNS_KEY, mappers.groupMapper().columnsForSelect());
+                        .add(REF_COLUMNS_KEY, mappers.refMapper().columnsForSelect());
 
-        return handle.createQuery(select.render());
-    }
-
-    /**
-     * Read the group being asked for and every group below it, along with the
-     * associations that tie them together.
-     */
-    private void readGroupTree(Handle handle, DatabaseEngine dbEngine, DbKey groupId,
-                               Map<DbKey, TsGroup> groups, List<GroupEdge> edges)
-    {
-        var select = template(GROUPS)
-                        .add(CLOSURE, closure(dbEngine))
-                        .add(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                        .add(GROUP_COLUMNS_KEY, mappers.groupMapper().columnsForSelect());
-
+        var refs = new LinkedHashMap<DbKey, TsGroupRef>();
         try (var query = handle.createQuery(select.render()))
         {
-            var rows = query.bind(Columns.GROUP_ID.column(), groupId)
-                            .map((rs, ctx) -> new GroupRow(mappers.groupMapper().map(rs, ctx),
-                                                           DbKey.createDbKey(rs, "parent_group_id"),
-                                                           combineOp(rs.getString("include_group"))))
-                            .list();
-            for (var row : rows)
-            {
-                // A group that is a sub-group of more than one group has a row for each.
-                groups.putIfAbsent(row.group().getGroupId(), row.group());
-                if (!row.group().getGroupId().equals(row.parentId()))
-                {
-                    edges.add(new GroupEdge(row.parentId(), row.group().getGroupId(), row.combine()));
-                }
-            }
+            bindAll(query, binds).map(mappers.refMapper())
+                                 .forEach(ref -> Optional.ofNullable(ref).ifPresent(read -> refs.put(read.id(), read)));
         }
+        return refs;
     }
 
-    /**
-     * Read the time series members of every group in {@code groups}. Their sites and
-     * data types come along in the same query.
-     */
-    private void readTimeSeriesMembers(Handle handle, DatabaseEngine dbEngine, DbKey groupId,
-                                       Map<DbKey, TsGroup> groups)
-    {
-        var select = template(TS_MEMBERS)
-                        .add(CLOSURE, closure(dbEngine))
-                        .add(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
-                        .add(SITE_COLUMNS_KEY, mappers.siteMapper().columnsForSelect())
-                        .add(SITE_NAME_COLUMNS_KEY, mappers.siteNameMapper().columnsForSelect());
-
-        var accumulator = new TsGroupTsMemberAccumulator(mappers);
-        final Map<MemberKey, TimeSeriesIdentifier> members;
-        try (var query = handle.createQuery(select.render()))
-        {
-            members = query.bind(Columns.GROUP_ID.column(), groupId)
-                           .reduceResultSet(new LinkedHashMap<MemberKey, TimeSeriesIdentifier>(), accumulator);
-        }
-
-        members.forEach((member, tsId) ->
-        {
-            var group = groups.get(member.groupId());
-            if (group != null)
-            {
-                group.addTsMember(tsId);
-            }
-        });
-
-        accumulator.getMissingTimeSeries().forEach(member ->
-        {
-            var group = groups.get(member.groupId());
-            log.warn("Group (id={}) {} -- has time series member ID={} that is not in the "
-                     + "time series identifier view -- ignored.",
-                     member.groupId(), group != null ? group.getGroupName() : "?", member.tsId());
-        });
-    }
-
-    private void readIdMembers(Handle handle, DatabaseEngine dbEngine, DbKey groupId, String table, String column,
-                               Map<DbKey, TsGroup> groups, BiConsumer<TsGroup, DbKey> adder)
+    private void readIdMembers(Handle handle, String groups, Map<String, Object> binds, String table, String column,
+                               BiConsumer<DbKey, DbKey> adder)
     {
         var select = template(ID_MEMBERS)
-                        .add(CLOSURE, closure(dbEngine))
+                        .add(GROUPS_KEY, groups)
                         .add(TABLE_KEY, table)
                         .add(COLUMN_KEY, column);
 
         try (var query = handle.createQuery(select.render()))
         {
-            query.bind(Columns.GROUP_ID.column(), groupId)
-                 .map((rs, ctx) -> new MemberRow(DbKey.createDbKey(rs, "group_id"),
-                                                 DbKey.createDbKey(rs, "member_id")))
-                 .forEach(row -> Optional.ofNullable(groups.get(row.groupId()))
-                                         .ifPresent(group -> adder.accept(group, row.memberId())));
+            bindAll(query, binds)
+                .map((rs, ctx) -> new MemberRow(DbKey.createDbKey(rs, "group_id"),
+                                                DbKey.createDbKey(rs, "member_id")))
+                .forEach(row -> adder.accept(row.groupId(), row.memberId()));
         }
     }
 
-    private void readOtherMembers(Handle handle, DatabaseEngine dbEngine, DbKey groupId, Map<DbKey, TsGroup> groups)
+    private void readAttributes(Handle handle, String groups, Map<String, Object> binds, Parts parts)
     {
-        var select = template(OTHER_MEMBERS).add(CLOSURE, closure(dbEngine));
+        var select = template(ATTRIBUTES).add(GROUPS_KEY, groups);
 
         try (var query = handle.createQuery(select.render()))
         {
-            query.bind(Columns.GROUP_ID.column(), groupId)
-                 .map((rs, ctx) -> new OtherMemberRow(DbKey.createDbKey(rs, "group_id"),
-                                                      rs.getString("member_type"),
-                                                      rs.getString("member_value")))
-                 .forEach(row -> Optional.ofNullable(groups.get(row.groupId()))
-                                         .ifPresent(group -> group.addOtherMember(row.type(), row.value())));
+            bindAll(query, binds)
+                .map((rs, ctx) -> new AttributeRow(DbKey.createDbKey(rs, "group_id"),
+                                                   rs.getString("member_type"),
+                                                   rs.getString("member_value")))
+                .forEach(row -> parts.attribute(row.groupId(), row.part(), row.value()));
         }
+    }
+
+    private void readLinks(Handle handle, DatabaseEngine dbEngine, String groups, Map<String, Object> binds,
+                           Parts parts)
+    {
+        var select = template(LINKS)
+                        .add(GROUPS_KEY, groups)
+                        .add(CHILD_COLUMNS_KEY, mappers.childRefMapper().columnsForSelect());
+
+        try (var query = handle.createQuery(select.render()))
+        {
+            bindAll(query, binds)
+                .map((rs, ctx) -> new LinkRow(DbKey.createDbKey(rs, "group_id"),
+                                              mappers.childRefMapper().map(rs, ctx),
+                                              GroupCombine.fromValue(rs.getString("include_group"))))
+                .forEach(row -> parts.link(row.groupId(), new SubGroupLink(row.child(), row.combine())));
+        }
+    }
+
+    private Set<DbKey> groupIds(DataTransaction tx, String groupsTemplate, DbKey id) throws OpenDcsDataException
+    {
+        if (DbKey.isNull(id))
+        {
+            return Set.of();
+        }
+
+        var select = template(IDS).add(GROUPS_KEY, hierarchyGroups(dbEngineOf(tx), groupsTemplate));
+        try (var query = getHandle(tx).createQuery(select.render()))
+        {
+            return new LinkedHashSet<>(query.bind(Columns.GROUP_ID.column(), id).mapTo(DbKey.class).list());
+        }
+    }
+
+    /** @return the SQL that picks out one group by id, name, type, or a page of all of them. */
+    /** @return the SQL picking out the groups a read applies to: one, a type, or all of them. */
+    private String filteredGroups(DatabaseEngine dbEngine, String whereClause, int limit, int offset)
+    {
+        return template(FILTERED_GROUPS)
+                .add(WHERE_CLAUSE, whereClause)
+                .add(COLLATE_CLAUSE, SqlQueries.collateClauseFor(dbEngine))
+                .add(LIMIT_CLAUSE, addLimitOffset(limit, offset))
+                .render();
+    }
+
+    /** @return the SQL that walks a hierarchy, down from a group or up to its ancestors. */
+    private String hierarchyGroups(DatabaseEngine dbEngine, String templateName)
+    {
+        return template(templateName)
+                .add(RECURSIVE_CTE_CLAUSE, SqlQueries.recursiveCteFor(dbEngine))
+                .render();
+    }
+
+    private Optional<TsGroupRef> refByName(Handle handle, DatabaseEngine dbEngine, String name)
+    {
+        return first(readRefs(handle, dbEngine, filteredGroups(dbEngine, BY_NAME, -1, -1),
+                              binds(Columns.GROUP_NAME.column(), name)));
+    }
+
+    private static Map<String, Object> typeBinds(String groupType, int limit, int offset)
+    {
+        var binds = new LinkedHashMap<String, Object>();
+        if (hasText(groupType))
+        {
+            binds.put(Columns.GROUP_TYPE.column(), groupType);
+        }
+        if (limit >= 0)
+        {
+            binds.put(SqlKeywords.LIMIT, limit);
+        }
+        if (offset >= 0)
+        {
+            binds.put(SqlKeywords.OFFSET, offset);
+        }
+        return binds;
+    }
+
+    private static Map<String, Object> binds(String name, Object value)
+    {
+        var binds = new LinkedHashMap<String, Object>();
+        binds.put(name, value);
+        return binds;
+    }
+
+    private static Query bindAll(Query query, Map<String, Object> binds)
+    {
+        binds.forEach(query::bind);
+        return query;
+    }
+
+    private static Optional<TsGroupRef> first(Map<DbKey, TsGroupRef> refs)
+    {
+        return refs.values().stream().findFirst();
+    }
+
+    private static DatabaseEngine dbEngineOf(DataTransaction tx)
+    {
+        return tx.getContext().getDatabaseEngine();
+    }
+
+    private static boolean hasText(String value)
+    {
+        return value != null && !value.isBlank();
     }
 
     /**
-     * Nothing in the schema stops a group from being a sub-group of one of its own
-     * sub-groups, and everything that uses a group hierarchy walks it recursively. Walk
-     * the associations here instead, dropping any that would re-enter a group already on
-     * the way to it.
-     */
-    private static List<GroupEdge> withoutCycles(DbKey groupId, List<GroupEdge> edges)
-    {
-        var byParent = new LinkedHashMap<DbKey, List<GroupEdge>>();
-        edges.forEach(edge -> byParent.computeIfAbsent(edge.parentId(), id -> new ArrayList<>()).add(edge));
-
-        var acyclic = new ArrayList<GroupEdge>();
-        removeCycles(groupId, byParent, new ArrayDeque<>(), acyclic);
-        return acyclic;
-    }
-
-    private static void removeCycles(DbKey parentId, Map<DbKey, List<GroupEdge>> byParent,
-                                     Deque<DbKey> lineOfAncestry, List<GroupEdge> acyclic)
-    {
-        lineOfAncestry.push(parentId);
-        for (var edge : byParent.getOrDefault(parentId, List.of()))
-        {
-            if (lineOfAncestry.contains(edge.childId()))
-            {
-                log.warn("Group (id={}) -- has sub group ID={} -- circular reference detected -- ignored.",
-                         parentId, edge.childId());
-                continue;
-            }
-            acyclic.add(edge);
-            removeCycles(edge.childId(), byParent, lineOfAncestry, acyclic);
-        }
-        lineOfAncestry.pop();
-    }
-
-    private void writeTsMembers(Handle handle, DbKey groupId, TsGroup group) throws OpenDcsDataException
-    {
-        final var tsIds = new ArrayList<DbKey>();
-        for (TimeSeriesIdentifier tsId : group.getTsMemberList())
-        {
-            if (tsId == null || DbKey.isNull(tsId.getKey()))
-            {
-                throw new OpenDcsDataException("Group '" + group.getGroupName()
-                                               + "' has a time series member that isn't in the database.");
-            }
-            tsIds.add(tsId.getKey());
-        }
-        writeIdMembers(handle, DELETE_TS_MEMBERS, INSERT_TS_MEMBERS, "ts_id", groupId, tsIds);
-    }
-
-    /**
-     * Members are always replaced wholesale, which is simpler and no slower than
-     * working out what changed.
+     * Members are always replaced wholesale, which is simpler and no slower than working
+     * out what changed.
      */
     private static void writeIdMembers(Handle handle, String deleteSql, String insertSql, String memberColumn,
                                        DbKey groupId, Collection<DbKey> memberIds)
@@ -650,63 +653,61 @@ public class TsGroupDaoImpl implements TsGroupDao
         }
     }
 
-    private static void writeOtherMembers(Handle handle, DbKey groupId, Collection<TsGroupMember> members)
+    private static void writeAttributes(Handle handle, DbKey groupId,
+                                        GroupCriteria criteria)
     {
-        try (var delete = handle.createUpdate(DELETE_OTHER_MEMBERS);
-             var insert = handle.prepareBatch(INSERT_OTHER_MEMBERS))
+        try (var delete = handle.createUpdate(DELETE_ATTRIBUTES);
+             var insert = handle.prepareBatch(INSERT_ATTRIBUTES))
         {
             delete.bind(Columns.GROUP_ID.column(), groupId).execute();
-            for (var member : members)
+            criteria.attributes().byPart().forEach((part, values) -> values.forEach(value ->
             {
                 insert.bind(Columns.GROUP_ID.column(), groupId)
-                      .bind("member_type", member.getMemberType())
-                      .bind("member_value", member.getMemberValue())
+                      .bind("member_type", part)
+                      .bind("member_value", value)
+                      .add();
+            }));
+            insert.execute();
+        }
+    }
+
+    private void writeLinks(Handle handle, DatabaseEngine dbEngine, DbKey groupId, GroupDefinition definition)
+            throws OpenDcsDataException
+    {
+        try (var delete = handle.createUpdate(DELETE_CHILD_GROUPS);
+             var insert = handle.prepareBatch(INSERT_LINKS))
+        {
+            delete.bind("parent_group_id", groupId).execute();
+            for (var link : definition.subGroups())
+            {
+                var childId = link.group().id();
+                if (DbKey.isNull(childId))
+                {
+                    childId = refByName(handle, dbEngine, link.group().name())
+                                  .orElseThrow(() -> new OpenDcsDataException("Sub-group '" + link.group().name()
+                                            + "' of group '" + definition.name() + "' isn't in the database."))
+                                  .id();
+                }
+
+                insert.bind("parent_group_id", groupId)
+                      .bind("child_group_id", childId)
+                      .bind("include_group", String.valueOf(link.combine().value()))
                       .add();
             }
             insert.execute();
         }
     }
 
-    private void writeChildGroups(Handle handle, DatabaseEngine dbEngine, DbKey groupId, TsGroup group)
+    private static void requireSavedKeys(Collection<DbKey> keys, String what, String groupName)
             throws OpenDcsDataException
     {
-        try (var delete = handle.createUpdate(DELETE_CHILD_GROUPS);
-             var insert = handle.prepareBatch(INSERT_CHILD_GROUPS))
+        for (var key : keys)
         {
-            delete.bind("parent_group_id", groupId).execute();
-            addChildren(handle, dbEngine, insert, groupId, group.getGroupName(),
-                        group.getIncludedSubGroups(), ADD);
-            addChildren(handle, dbEngine, insert, groupId, group.getGroupName(),
-                        group.getExcludedSubGroups(), SUBTRACT);
-            addChildren(handle, dbEngine, insert, groupId, group.getGroupName(),
-                        group.getIntersectedGroups(), INTERSECT);
-            insert.execute();
-        }
-    }
-
-    private void addChildren(Handle handle, DatabaseEngine dbEngine, PreparedBatch insert, DbKey parentGroupId,
-                             String parentName, Collection<TsGroup> children, char combine)
-            throws OpenDcsDataException
-    {
-        for (var child : children)
-        {
-            if (child == null)
+            if (DbKey.isNull(key))
             {
-                continue;
+                throw new OpenDcsDataException("The group '" + groupName + "' has a " + what
+                                               + " member that isn't in the database.");
             }
-            var childId = child.getGroupId();
-            if (DbKey.isNull(childId))
-            {
-                childId = findGroupByName(handle, dbEngine, child.getGroupName())
-                              .orElseThrow(() -> new OpenDcsDataException("Sub-group '" + child.getGroupName()
-                                        + "' of group '" + parentName + "' isn't in the database."))
-                              .getGroupId();
-            }
-
-            insert.bind("parent_group_id", parentGroupId)
-                  .bind("child_group_id", childId)
-                  .bind("include_group", String.valueOf(combine))
-                  .add();
         }
     }
 
@@ -738,29 +739,77 @@ public class TsGroupDaoImpl implements TsGroupDao
                  .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
     }
 
-    /** The include_group column is a character, but may be unset in older databases. */
-    private static char combineOp(String value)
-    {
-        return value == null || value.isBlank() ? ADD : Character.toUpperCase(value.charAt(0));
-    }
-
-    /** One row of the group hierarchy: a group and the association that pulled it in. */
-    private record GroupRow(TsGroup group, DbKey parentId, char combine)
-    {
-    }
-
-    /** One sub-group association between two groups of the hierarchy being read. */
-    private record GroupEdge(DbKey parentId, DbKey childId, char combine)
-    {
-    }
-
-    /** One row of the site or data type member tables. */
+    /** One row of a group's key-only member tables. */
     private record MemberRow(DbKey groupId, DbKey memberId)
     {
     }
 
-    /** One row of the tsdb_group_member_other table. */
-    private record OtherMemberRow(DbKey groupId, String type, String value)
+    /** One row of tsdb_group_member_other. */
+    private record AttributeRow(DbKey groupId, String part, String value)
     {
+    }
+
+    /** One row of tsdb_group_member_group, with the child group read in. */
+    private record LinkRow(DbKey groupId, TsGroupRef child, GroupCombine combine)
+    {
+    }
+
+    /**
+     * Holds one builder per group while the member tables are read a table at a time, then
+     * builds them all.
+     */
+    private static final class Parts
+    {
+        private final Map<DbKey, GroupDefinition.Builder> builders = new LinkedHashMap<>();
+
+        Parts(Map<DbKey, TsGroupRef> refs)
+        {
+            refs.values().forEach(ref -> builders.put(ref.id(), GroupDefinition.builder(ref)));
+        }
+
+        void timeSeries(DbKey groupId, DbKey tsId)
+        {
+            forEachBuilder(groupId, builder -> builder.timeSeries(tsId));
+        }
+
+        void site(DbKey groupId, DbKey siteId)
+        {
+            forEachBuilder(groupId, builder -> builder.sites(siteId));
+        }
+
+        void dataType(DbKey groupId, DbKey dataTypeId)
+        {
+            forEachBuilder(groupId, builder -> builder.dataTypes(dataTypeId));
+        }
+
+        void attribute(DbKey groupId, String part, String value)
+        {
+            forEachBuilder(groupId, builder -> builder.attribute(part, value));
+        }
+
+        void link(DbKey groupId, SubGroupLink link)
+        {
+            forEachBuilder(groupId, builder -> builder.combine(link.group(), link.combine()));
+        }
+
+        Map<DbKey, GroupDefinition> build()
+        {
+            var definitions = new LinkedHashMap<DbKey, GroupDefinition>();
+            builders.forEach((id, builder) -> definitions.put(id, builder.build()));
+            return definitions;
+        }
+
+        private void forEachBuilder(DbKey groupId, Consumer<GroupDefinition.Builder> add)
+        {
+            var builder = builders.get(groupId);
+            if (builder == null)
+            {
+                // The member tables all have a foreign key back to tsdb_group, so this can
+                // only be a group that went away while it was being read.
+                log.warn("A member of group (id={}) has no group to read into -- ignored.", groupId);
+                return;
+            }
+            add.accept(builder);
+        }
     }
 }

@@ -20,16 +20,17 @@ import org.opendcs.database.model.mappers.sites.OpenDcsSiteMapper;
 import org.opendcs.database.model.mappers.sites.OpenDcsSiteNameMapper;
 
 /**
- * The set of mappers used to read a group, its sub-groups and their members, each
- * with the table alias it's query uses.
+ * The set of mappers used to read a group and its members, each with the table alias the
+ * query that feeds it uses.
  */
-public record TsGroupMappers(TsGroupMapper groupMapper, OpenDcsTimeSeriesIdentifierMapper tsiMapper,
-                             DataTypeMapper dtMapper, OpenDcsSiteMapper siteMapper,
-                             OpenDcsSiteNameMapper siteNameMapper)
+public record TsGroupMappers(TsGroupRefMapper refMapper, TsGroupRefMapper childRefMapper,
+                             OpenDcsTimeSeriesIdentifierMapper tsiMapper, DataTypeMapper dtMapper,
+                             OpenDcsSiteMapper siteMapper, OpenDcsSiteNameMapper siteNameMapper)
 {
     public static TsGroupMappers withPrefixes()
     {
-        return new TsGroupMappers(TsGroupMapper.withPrefix("tg"),
+        return new TsGroupMappers(TsGroupRefMapper.withPrefix("tg"),
+                                  TsGroupRefMapper.withPrefix("child"),
                                   OpenDcsTimeSeriesIdentifierMapper.withPrefix("tsi"),
                                   DataTypeMapper.withPrefix("dt"),
                                   OpenDcsSiteMapper.withPrefix("s"),

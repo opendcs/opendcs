@@ -30,15 +30,14 @@ import decodes.sql.DbKey;
 import decodes.tsdb.TimeSeriesIdentifier;
 
 /**
- * Builds the time series members of every group in a group's hierarchy. Members come
- * back with one row per name of the series' site, so the first row for a member builds
- * the TimeSeriesIdentifier and the rows after it only add to it.
+ * Builds a group's time series members from the joined rows of the tsMembers query. A
+ * member comes back with one row per name of its site, so the first row for a member
+ * builds the TimeSeriesIdentifier and the rows after it only add to it.
  */
-public final class TsGroupTsMemberAccumulator
-        implements ResultSetAccumulator<Map<TsGroupTsMemberAccumulator.MemberKey, TimeSeriesIdentifier>>
+public final class TsGroupTsMemberAccumulator implements ResultSetAccumulator<Map<DbKey, TimeSeriesIdentifier>>
 {
     private final TsGroupMappers mappers;
-    private final List<MemberKey> missingTimeSeries = new ArrayList<>();
+    private final List<DbKey> unresolved = new ArrayList<>();
 
     public TsGroupTsMemberAccumulator(TsGroupMappers mappers)
     {
@@ -49,59 +48,51 @@ public final class TsGroupTsMemberAccumulator
      * @return members that are in tsdb_group_member_ts but have no row in the
      * time_series_identifier view, and so could not be built.
      */
-    public List<MemberKey> getMissingTimeSeries()
+    public List<DbKey> getUnresolved()
     {
-        return Collections.unmodifiableList(missingTimeSeries);
+        return Collections.unmodifiableList(unresolved);
     }
 
     @Override
-    public Map<MemberKey, TimeSeriesIdentifier> apply(Map<MemberKey, TimeSeriesIdentifier> previous,
+    public Map<DbKey, TimeSeriesIdentifier> apply(Map<DbKey, TimeSeriesIdentifier> previous,
             ResultSet rs, StatementContext ctx) throws SQLException
     {
-        var key = new MemberKey(DbKey.createDbKey(rs, "group_id"), DbKey.createDbKey(rs, "ts_id"));
-        var tsId = previous.get(key);
+        var tsId = DbKey.createDbKey(rs, "ts_id");
+        var resolved = previous.get(tsId);
 
-        if (tsId == null)
+        if (resolved == null)
         {
             if (rs.getInt("ts_exists") == 0)
             {
-                missingTimeSeries.add(key);
+                unresolved.add(tsId);
                 return previous;
             }
 
-            tsId = mappers.tsiMapper().map(rs, ctx);
+            resolved = mappers.tsiMapper().map(rs, ctx);
 
             var dataType = mappers.dtMapper().map(rs, ctx);
             if (dataType != null)
             {
-                tsId.setDataType(dataType);
+                resolved.setDataType(dataType);
             }
 
-            // The site of a series is required, but check anyway: the mapper below
-            // assumes it has a row to read.
+            // A series has to have a site, but check anyway: the mapper below assumes it
+            // has a row to read.
             var siteId = DbKey.createDbKey(rs, mappers.siteMapper().column(OpenDcsSiteMapper.Columns.ID));
             if (!DbKey.isNull(siteId))
             {
-                tsId.setSite(mappers.siteMapper().map(rs, ctx));
+                resolved.setSite(mappers.siteMapper().map(rs, ctx));
             }
 
-            previous.put(key, tsId);
+            previous.put(tsId, resolved);
         }
 
         var siteName = mappers.siteNameMapper().map(rs, ctx);
-        if (siteName != null && tsId.getSite() != null)
+        if (siteName != null && resolved.getSite() != null)
         {
-            tsId.getSite().addName(siteName);
+            resolved.getSite().addName(siteName);
         }
 
         return previous;
-    }
-
-    /**
-     * A time series as a member of one particular group. The same series is, of course,
-     * allowed to be a member of any number of groups.
-     */
-    public record MemberKey(DbKey groupId, DbKey tsId)
-    {
     }
 }

@@ -20,42 +20,42 @@ import java.sql.SQLException;
 
 import org.jdbi.v3.core.mapper.ColumnMapper;
 import org.jdbi.v3.core.statement.StatementContext;
+import org.opendcs.database.model.tsgroup.TsGroupRef;
 import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
 import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
-import decodes.tsdb.TsGroup;
 
 /**
- * Maps the columns of the TSDB_GROUP table itself. Members are held in
- * separate tables and are mapped by the TsGroupDao implementation.
+ * Maps the TSDB_GROUP table itself. Members live in their own tables and are read by the
+ * TsGroupDao implementation.
  */
-public final class TsGroupMapper extends OpenDcsTableMapper<TsGroup,TsGroupMapper.Columns>
+public final class TsGroupRefMapper extends OpenDcsTableMapper<TsGroupRef,TsGroupRefMapper.Columns>
 {
-    private static final TsGroupMapper DEFAULT_INSTANCE = new TsGroupMapper("");
+    private static final TsGroupRefMapper DEFAULT_INSTANCE = new TsGroupRefMapper("");
 
-    private TsGroupMapper(String prefix)
+    private TsGroupRefMapper(String prefix)
     {
         super(prefix, "tsdb_group", Columns.class);
     }
 
-    public static TsGroupMapper withNoPrefix()
+    public static TsGroupRefMapper withNoPrefix()
     {
         return withPrefix(null);
     }
 
-    public static TsGroupMapper withPrefix(String prefix)
+    public static TsGroupRefMapper withPrefix(String prefix)
     {
         if (prefix == null || prefix.isBlank())
         {
             return DEFAULT_INSTANCE;
         }
-        return new TsGroupMapper(prefix);
+        return new TsGroupRefMapper(prefix);
     }
 
     @Override
-    public TsGroup map(ResultSet rs, StatementContext ctx) throws SQLException
+    public TsGroupRef map(ResultSet rs, StatementContext ctx) throws SQLException
     {
         ColumnMapper<DbKey> dbKeyMapper = ctx.findColumnMapperFor(DbKey.class)
                                              .orElseThrow(() -> new SQLException(SqlErrorMessages.DBKEY_MAPPER_NOT_FOUND));
@@ -65,12 +65,10 @@ public final class TsGroupMapper extends OpenDcsTableMapper<TsGroup,TsGroupMappe
             return null;
         }
 
-        TsGroup ret = new TsGroup();
-        ret.setGroupId(id);
-        ret.setGroupName(rs.getString(column(Columns.GROUP_NAME)));
-        ret.setGroupType(rs.getString(column(Columns.GROUP_TYPE)));
-        ret.setDescription(rs.getString(column(Columns.GROUP_DESCRIPTION)));
-        return ret;
+        return new TsGroupRef(id,
+                              rs.getString(column(Columns.GROUP_NAME)),
+                              rs.getString(column(Columns.GROUP_TYPE)),
+                              rs.getString(column(Columns.GROUP_DESCRIPTION)));
     }
 
     public enum Columns implements TableColumnDefinition

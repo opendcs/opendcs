@@ -298,20 +298,20 @@ half-populated object or forces every caller to switch on the plan).
 ```java
 public interface TsGroupDao extends OpenDcsDao
 {
-    // reference: one query, never reads members, never recurses
+    // reference: one statement, no members, no recursion
     Optional<TsGroupRef> ref(DataTransaction tx, DbKey id) throws OpenDcsDataException;
+    Optional<TsGroupRef> refByName(DataTransaction tx, String name) throws OpenDcsDataException;
     List<TsGroupRef> refs(DataTransaction tx, String groupType, int limit, int offset) throws OpenDcsDataException;
 
-    // definition: five flat queries, exactly one level deep, no time series resolved
+    // definition: six flat statements, exactly one level deep, no time series resolved
     Optional<GroupDefinition> definition(DataTransaction tx, DbKey id) throws OpenDcsDataException;
     Optional<GroupDefinition> definitionByName(DataTransaction tx, String name) throws OpenDcsDataException;
     List<GroupDefinition> definitions(DataTransaction tx, String groupType, int limit, int offset)
             throws OpenDcsDataException;
-    Map<DbKey, GroupDefinition> definitionsById(DataTransaction tx, Collection<DbKey> ids) throws OpenDcsDataException;
+    Map<DbKey, GroupDefinition> definitionsInHierarchy(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
-    // the expensive part, on demand, for one or many groups
+    // the expensive part, on demand
     GroupMembers members(DataTransaction tx, DbKey id) throws OpenDcsDataException;
-    Map<DbKey, GroupMembers> members(DataTransaction tx, Collection<DbKey> ids) throws OpenDcsDataException;
 
     // group ids only, for hierarchy questions
     Set<DbKey> descendants(DataTransaction tx, DbKey id) throws OpenDcsDataException;
@@ -324,10 +324,11 @@ public interface TsGroupDao extends OpenDcsDao
 }
 ```
 
-`definitionsById` and `members(ids)` are the batch forms: the evaluator loads the criteria for a whole subtree in
-one statement per member table, reusing the `closure` CTE already in `TsGroupDaoImpl.sql.stg` but selecting
-`group_id in (select group_id from grp)` instead of building an object graph. `descendants`/`ancestors` replace
-the per-level `getTsGroupList(null)` scans in `GroupHelper.findParentsOf` (`:237`) with one recursive query.
+Every read starts the same way: a CTE that says which groups the read applies to - one group, a type with a page
+size, or a whole hierarchy walked by `UNION` - followed by one statement per member table matched against that
+set. So the number of statements does not depend on how many groups are involved: `definitionsInHierarchy` costs
+six statements whether the hierarchy has one group in it or forty. A batch `members(ids)` form is left to step 4,
+where the access pattern is known; the two `definitionsById`-style batch forms were dropped rather than guessed at.
 
 `save` takes an immutable definition and returns the saved one with its key. Nothing is mutated in place, so a
 caller can hold on to its own object safely; the current `save` has to keep the caller's instance alive only so
@@ -415,9 +416,17 @@ Each step is independently shippable and each is roughly a PR:
 1. **[done]** `org.opendcs.database.model.tsgroup`: `TsGroupRef`, `GroupCombine`, `SubGroupLink`,
    `GroupAttributes`, `GroupCriteria`, `GroupDefinition` with its `Builder` and the `toLegacy`/`ofLegacy`
    adapters, plus 38 unit tests. No behavior change, nothing wired: nothing outside the package refers to it yet.
-2. Slice methods on `TsGroupDao` (`ref(s)`, `definition(s)`, `members`, `descendants`, `ancestors`,
-   `save(GroupDefinition)`) plus `TsGroupDaoTestIT`. The existing deep `getById`/`loadMembers` stay and are
-   `@Deprecated` once callers move.
+2. **[done]** `TsGroupDao` and `TsGroupDaoImpl` now speak only the new types: `ref(s)`, `refByName`,
+   `definition(s)`, `definitionByName`, `definitionsInHierarchy`, `members`, `descendants`, `ancestors`,
+   `save(GroupDefinition)`. `GroupMembers` joined the model package. The deep `getById`/`getByName`/`loadMembers`
+   are gone rather than deprecated, because nothing outside the DAO ever called them. Measured against a real
+   OpenDCS-Postgres schema: `refs` 1 statement, `definition` 6, `members` 1, `descendants` 1, and
+   `definitionsInHierarchy` over a four-group tree 6 - where the old deep read cost five statements per group
+   plus a time series lookup per member. Still owed: `TsGroupDaoTestIT`, and the Oracle SQL has been rendered and
+   reviewed but not executed.
+
+   Cycle handling that `loadMembers` used to do in Java is gone with it; `UNION` already terminates the walk, and
+   dropping a cyclic link back is a decision about membership, so it belongs with the evaluator in step 4.
 3. REST onto the new types: `refs` for `/tsgrouprefs`, `definition`+`members` for `GET /tsgroup`,
    `Builder`+`save` for `POST`, and an evaluate endpoint that accepts a posted definition. This step alone fixes
    the `groupSites: []` bug and the editor's evaluate-after-save limitation.
