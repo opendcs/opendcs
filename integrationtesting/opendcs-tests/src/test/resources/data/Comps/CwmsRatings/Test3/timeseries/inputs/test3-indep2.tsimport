@@ -1,0 +1,5 @@
+SET:TZ=UTC
+SET:UNITS=ft
+TSID:TESTSITE1.Elev.Inst.1Hour.0.cwmsRatingExtra-2
+2024/6/13-11:00:00,2.0,0
+2024/6/13-12:00:00,2.5,0

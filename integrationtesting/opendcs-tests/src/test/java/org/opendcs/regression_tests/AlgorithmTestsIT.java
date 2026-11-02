@@ -1,10 +1,6 @@
 package org.opendcs.regression_tests;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,7 +39,8 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.opendcs.fixtures.helpers.ImporterHelper.buildFilePath;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
 
@@ -139,6 +136,7 @@ public class AlgorithmTestsIT extends AppTestBase
 		ImporterHelper helper = new ImporterHelper(tsDb, configuration, environment, exit);
 
         return DynamicTest.dynamicTest(comp.getName() +" "+test.getName(), () -> {
+            ImporterHelper.TestConfig config = ImporterHelper.TestConfig.EMPTY;
             for (File comp_data : test.listFiles()) 
             {
                 // Process comp xml
@@ -154,16 +152,8 @@ public class AlgorithmTestsIT extends AppTestBase
                 else if (name.contains(".config"))
                 {
                     log.info("Has config: " + comp_data.getAbsolutePath());
-                    File configFile = new File(comp_data.getAbsolutePath());
-                    try (InputStream configStream = new FileInputStream(configFile)) {
-                        String firstLine = new BufferedReader(new InputStreamReader(configStream)).readLine();
-                        String keyword = "EnableOn:";
-                        if (firstLine != null && firstLine.contains(keyword)) {
-                            String substring = firstLine.substring(firstLine.indexOf(keyword) + keyword.length()).trim();
-                            final String testEngine = System.getProperty("opendcs.test.engine", "").trim();
-                            assumeFalse(!substring.equals(testEngine), "Test is disabled by config file for: " + substring);
-                        }
-                    }
+                    config = ImporterHelper.TestConfig.read(comp_data);
+                    config.assumeEnabledForCurrentEngine();
                 }
                 else if (name.endsWith(".sql"))
                 {
@@ -201,6 +191,13 @@ public class AlgorithmTestsIT extends AppTestBase
             // new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z")
             //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
             testComp.prepareForExec(tsDb);
+
+            if (config.expectError() != null)
+            {
+                assertComputationFails(testComp, theData, config.expectError());
+                return;
+            }
+
             testComp.apply(theData, tsDb);
 
             Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
@@ -235,5 +232,27 @@ public class AlgorithmTestsIT extends AppTestBase
                 assertEquals(currExpect, algoOutput, "expected true", testComp.getValidStart(), testComp.getValidEnd());
             }
         });
+    }
+
+    /**
+     * Runs a computation that the test's config declares must fail, and checks that it
+     * failed for the reason the config names rather than through some unrelated error.
+     */
+    private void assertComputationFails(DbComputation computation, DataCollection theData,
+                                        String expectedMessage)
+    {
+        Throwable failure = assertThrows(Throwable.class, () -> computation.apply(theData, tsDb),
+            () -> "Expected the computation to fail with '" + expectedMessage + "'");
+
+        for (Throwable cause = failure; cause != null; cause = cause.getCause())
+        {
+            if (cause.getMessage() != null && cause.getMessage().contains(expectedMessage))
+            {
+                log.info("Computation failed as expected: {}", cause.getMessage());
+                return;
+            }
+        }
+
+        fail(() -> "Expected a failure containing '" + expectedMessage + "' but got: " + failure);
     }
 }

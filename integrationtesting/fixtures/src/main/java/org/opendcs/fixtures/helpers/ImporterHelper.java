@@ -1,11 +1,8 @@
 package org.opendcs.fixtures.helpers;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -131,23 +128,64 @@ public class ImporterHelper
 	private void handleConfig(File compData)
 	{
 		log.info("Has config: {}", compData.getAbsolutePath());
-		File configFile = new File(compData.getAbsolutePath());
-		try (InputStream configStream = new FileInputStream(configFile))
+		try
 		{
-			String firstLine = new BufferedReader(new InputStreamReader(configStream)).readLine();
-			String keyword = "EnableOn:";
-			if (firstLine != null && firstLine.contains(keyword))
-			{
-				String substring = firstLine.substring(firstLine.indexOf(keyword) + keyword.length()).trim();
-				final String testEngine = System.getProperty("opendcs.test.engine", "").trim();
-				assumeFalse(!substring.equals(testEngine), "Test is disabled by config file for: " + substring);
-			}
+			TestConfig.read(compData).assumeEnabledForCurrentEngine();
 		}
 		catch (IOException ex)
 		{
 			String msg = String.format("Error reading config file: %s", compData.getAbsolutePath());
 			log.atError().setCause(ex).log(msg);
 			throw new ImportException(msg, ex);
+		}
+	}
+
+	/**
+	 * The directives a test directory's .config file can carry. Lines naming no known
+	 * directive are ignored.
+	 *
+	 * @param enableOn    the one engine this test runs on, or null to run on any engine.
+	 * @param expectError text the computation is expected to fail with, or null when the
+	 *                    test asserts on the computation's output instead.
+	 */
+	public record TestConfig(String enableOn, String expectError)
+	{
+		private static final String ENABLE_ON = "EnableOn:";
+		private static final String EXPECT_ERROR = "ExpectError:";
+
+		/** What a test directory with no .config file is treated as having. */
+		public static final TestConfig EMPTY = new TestConfig(null, null);
+
+		public static TestConfig read(File configFile) throws IOException
+		{
+			String enableOn = null;
+			String expectError = null;
+			for (String line : Files.readAllLines(configFile.toPath(), StandardCharsets.UTF_8))
+			{
+				String setting = line.trim();
+				if (setting.startsWith(ENABLE_ON))
+				{
+					enableOn = setting.substring(ENABLE_ON.length()).trim();
+				}
+				else if (setting.startsWith(EXPECT_ERROR))
+				{
+					expectError = setting.substring(EXPECT_ERROR.length()).trim();
+				}
+			}
+			return new TestConfig(enableOn, expectError);
+		}
+
+		/**
+		 * Skip the calling test unless the engine under test is the one the config names.
+		 */
+		public void assumeEnabledForCurrentEngine()
+		{
+			if (enableOn == null)
+			{
+				return;
+			}
+			final String testEngine = System.getProperty("opendcs.test.engine", "").trim();
+			assumeFalse(!enableOn.equals(testEngine), "Test is disabled by config file for: " + enableOn);
 		}
 	}
 
