@@ -3,6 +3,7 @@ package org.opendcs.database.api;
 
 import java.util.Optional;
 
+import org.opendcs.operations.OpenDcsOperations;
 import org.opendcs.settings.api.ProvidesOpenDcsSettings;
 
 /**
@@ -29,6 +30,15 @@ public interface OpenDcsDatabase extends ProvidesOpenDcsSettings
      * @return A valid instance for this database, or an empty optional if the DAO is not supported
      */
     <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao);
+
+    /**
+     * Retrieve an {@link org.opendcs.operations.OpenDcsOperations} instance for the given OpenDcsOperations type.
+     *
+     * @param <T> Specific OpenDcsOperations implementation Type.
+     * @param operations specific operations type to access.
+     * @return The instance, or empty if not implementation is available.
+     */
+    <T extends OpenDcsOperations> Optional<T> getOperations(Class<T> operations);
 
     /**
      * Start a new transaction to perform data source operations.

@@ -257,7 +257,13 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         }
     }
 
-    public <T extends OpenDcsOperations> Optional<T> operationsFromLookup(Class<T> operations)
+    @Override
+    public <T extends OpenDcsOperations> Optional<T> getOperations(Class<T> operations)
+    {
+        return operationsFromLookup(operations);
+    }
+
+    private <T extends OpenDcsOperations> Optional<T> operationsFromLookup(Class<T> operations)
     {
         final String impl = ((DecodesSettings)this.settingsMap.get(DecodesSettings.class)).editDatabaseType;
         final var implLookup = Lookups.forPath("operations/"+impl);
@@ -271,6 +277,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
         {
             final var tmp = instance;
             injectOperations(tmp);
+            tmp.injectDatabase(this);
             return Optional.of(tmp);
         }
         else
@@ -354,7 +361,7 @@ public abstract class AbstractJdbiOpenDcsDatabaseWrapper implements OpenDcsDatab
                 }
                 catch (IllegalArgumentException | IllegalAccessException ex)
                 {
-                    throw new OpenDcsDaoConfigurationException("Unable to assign DAO to this instance", ex);
+                    throw new OpenDcsDaoConfigurationException("Unable to assign Operation to this instance", ex);
                 }
             }
             else if (!anno.optional())
