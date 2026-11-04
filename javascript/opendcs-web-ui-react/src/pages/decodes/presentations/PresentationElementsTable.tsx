@@ -1,10 +1,15 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import type { ApiPresentationElement } from "opendcs-api";
-import { AppDataTable, type ColumnDef } from "../../../components/data-table";
+import {
+  AppDataTable,
+  isNewRowId,
+  rowLabel,
+  type ColumnDef,
+} from "../../../components/data-table";
 import UnitSelect from "../../../components/controls/UnitSelector";
 import { useUnitListQuery } from "../../../queries/units";
 import { useDataTypeListQuery } from "../../../queries/dataTypes";
@@ -16,9 +21,6 @@ export interface PresentationElementsTableProperties {
   onSave: (original: ApiPresentationElement, updated: ApiPresentationElement) => void;
   onRemove: (key: string) => void;
 }
-
-const elementDisplayName = (row: ApiPresentationElement, rowId: string): string =>
-  row.dataTypeCode || row.dataTypeStd || rowId.replace("__appdt_new_", "") || "";
 
 // Parse a number cell value back to a number or undefined when blank.
 const readNumber = (raw: string | undefined): number | undefined => {
@@ -36,6 +38,14 @@ export const PresentationElementsTable: React.FC<
   const { isSuccess: unitsReady } = useUnitListQuery();
   const { data: dataTypes = [], isSuccess: dataTypesReady } = useDataTypeListQuery();
   const queryClient = useQueryClient();
+
+  const elementDisplayName = useCallback(
+    (row: ApiPresentationElement, rowId: string): string =>
+      row.dataTypeCode ||
+      row.dataTypeStd ||
+      rowLabel(rowId, (n) => t("presentations:elements.new_element", { n })),
+    [t],
+  );
 
   const dataTypeStandards = useMemo(() => {
     const stds = new Set<string>();
@@ -231,7 +241,7 @@ export const PresentationElementsTable: React.FC<
         },
       },
     ],
-    [t, dataTypeStandards, dataTypesReady, unitsReady, queryClient],
+    [t, elementDisplayName, dataTypeStandards, dataTypesReady, unitsReady, queryClient],
   );
 
   return (
@@ -288,7 +298,7 @@ export const PresentationElementsTable: React.FC<
                     name: elementDisplayName(r, rowId),
                   }),
                 cancel: (r, rowId) =>
-                  rowId.startsWith("__appdt_new_")
+                  isNewRowId(rowId)
                     ? t("presentations:elements.remove", {
                         name: elementDisplayName(r, rowId),
                       })

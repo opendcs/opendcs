@@ -20,6 +20,7 @@ import { dtLangs } from "../../lang";
 import { unmountToDom, useContextWrapper } from "../../util/ContextWrapper";
 import { useTableProcessing } from "./useTableProcessing";
 import { TableCaption, type CaptionButton } from "./TableCaption";
+import { newRowId } from "./newRowId";
 import { SaveErrorAlert } from "../forms";
 import { useSaveError } from "../../hooks/useSaveError";
 
@@ -931,7 +932,7 @@ export function AppDataTable<T, TId extends string | number, TSave = T>(
     const newTemplate = inlineEdit?.newTemplate;
     if (!newTemplate) return;
     const newItem = newTemplate();
-    const synthId = `__appdt_new_${++newRowCounterRef.current}`;
+    const synthId = newRowId(++newRowCounterRef.current);
     if (typeof newItem === "object" && newItem !== null) {
       newRowIdsRef.current.set(newItem as object, synthId);
     }
