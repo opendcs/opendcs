@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <!-- Same definition as the bundled CwmsRatingMultIndep.xml so that both
+       CwmsRatings tests import an identical algorithm record. -->
+  <Algorithm name="CwmsRatingMultIndep">
+    <Comment>Implements CWMS rating computations using the CWMS API provided by HEC.</Comment>
+    <ExecClass>decodes.cwms.rating.CwmsRatingMultIndep</ExecClass>
+    <AlgoProperty name="templateVersion">USGS-EXSA</AlgoProperty>
+    <AlgoProperty name="specVersion">Production</AlgoProperty>
+    <AlgoProperty name="useDepLocation">false</AlgoProperty>
+    <AlgoProperty name="indep1_MISSING">fail</AlgoProperty>
+    <AlgoProperty name="indep2_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep3_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep4_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep5_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep6_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep7_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep8_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep9_MISSING">ignore</AlgoProperty>
+    <AlgoParm roleName="indep1"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep2"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep3"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep4"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep5"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep6"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep7"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep8"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep9"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="dep"><ParmType>o</ParmType></AlgoParm>
+  </Algorithm>
+
+  <!-- TESTSITE1.Stage;Flow.Linear.SingleIndep takes one independent parameter and this
+       computation maps one input. The indep2 role is deliberately not defined: the
+       independent list must stop at the first role without a time series. -->
+  <Computation name="Test2CwmsRatings">
+    <Comment>One independent parameter rated through the multi independent algorithm.</Comment>
+    <Enabled>true</Enabled>
+    <AlgorithmName>CwmsRatingMultIndep</AlgorithmName>
+    <LastModified>2026-11-02 12:00:00 PDT</LastModified>
+    <ValidStart>2024-06-13 00:00:00 UTC</ValidStart>
+    <ValidEnd>2024-06-14 00:00:00 UTC</ValidEnd>
+    <CompProperty name="templateVersion">Linear</CompProperty>
+    <CompProperty name="specVersion">SingleIndep</CompProperty>
+    <CompProperty name="indep1_MISSING">fail</CompProperty>
+    <CompParm roleName="indep1">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Stage"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.cwmsRatingSingle-1</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="dep">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.cwmsRatingSingle-Dep</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>
