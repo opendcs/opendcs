@@ -4,6 +4,7 @@
   "delete_prop": "Eigenschaft mit dem Namen {{name}} löschen",
   "edit_prop": "Bearbeiten Sie die Eigenschaft mit dem Namen {{name}}",
   "name_input": "Namenseingabe für die Eigenschaft mit dem Namen {{name}}",
+  "new_prop": "neue Eigenschaft {{n}}",
   "save_prop": "Eigenschaft mit dem Namen {{name}} speichern",
   "value_input": "Werteingabe für die Eigenschaft mit dem Namen {{name}}"
 }
