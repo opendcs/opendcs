@@ -873,6 +873,12 @@ CwmsRatingMultiIndep
 
 Exec Class: decodes.cwms.rating.CwmsRatingMultIndep
 
+Map one input parameter (indep1, indep2, ...) for each independent parameter
+the rating template takes, in the order the template lists them. Mapping more
+inputs than the rating takes fails the computation with a message naming the
+rating spec and the number of parameters it takes, instead of quietly rating a
+subset of the inputs.
+
 CwmsRatingSingleIndep
 ---------------------
 

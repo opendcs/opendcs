@@ -826,6 +826,12 @@ Within this directory, you can create subdirectories named `Test1`, `Test2`, etc
     - Purpose: This file defines the setup for the computation and the tests that need to be run. It specifies the algorithm configuration and links the input, output, and expected output time series.  
     - Note: You can create the `comp.xml` file using the `compexport` command.
 
+4. **Test Directives**:  
+    - File: any file in the test directory ending in `.config`.  
+    - Purpose: Recognized directives configure how the test runs. Any other line, including `#` comments, is ignored.  
+    - `EnableOn: <engine>`: only run the test when the suite is executing against that engine, for example `EnableOn: CWMS-Oracle`. Without it the test runs on every engine.  
+    - `ExpectError: <text>`: the computation is expected to fail, and one of the messages in the failure's cause chain must contain `<text>`. Use this in place of an `expectedOutputs` file to assert that a computation refuses bad input rather than quietly producing numbers.
+
 By organizing the algorithm test resources in this structure, developers can easily manage algorithm tests.
 
 
