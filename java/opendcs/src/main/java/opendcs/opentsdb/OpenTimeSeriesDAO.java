@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import org.opendcs.database.ExceptionHelpers;
@@ -440,7 +441,12 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					EngineeringUnit.getEngineeringUnit(ts.getUnitsAbbr()));
 		}
 
-		String tableName = makeDataTableName(ctsid);
+        Optional<String> table = findDataTableName(ctsid);
+        if (table.isEmpty())
+        {
+            return 0;
+        }
+        String tableName = table.orElseThrow();
 		List<Object> parameters = new ArrayList<>();
 		StringBuilder q = new StringBuilder();
 		q.append("select " + ts_columns + " from " + tableName
@@ -510,7 +516,12 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				EngineeringUnit.getEngineeringUnit(ctsid.getStorageUnits()),
 					EngineeringUnit.getEngineeringUnit(ts.getUnitsAbbr()));
 
-		String tableName = makeDataTableName(ctsid);
+        Optional<String> table = findDataTableName(ctsid);
+        if (table.isEmpty())
+        {
+            return 0;
+        }
+        String tableName = table.orElseThrow();
 
 		int MAX_IN_CLAUSE = 200;
 		String baseQ = "select " + ts_columns + " from " + tableName
@@ -574,7 +585,12 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				EngineeringUnit.getEngineeringUnit(ctsid.getStorageUnits()),
 					EngineeringUnit.getEngineeringUnit(ts.getUnitsAbbr()));
 
-		String tableName = makeDataTableName(ctsid);
+        Optional<String> table = findDataTableName(ctsid);
+        if (table.isEmpty())
+        {
+            return null;
+        }
+        String tableName = table.orElseThrow();
 		String q = "select " + ts_columns + " from " + tableName
 			+ " where ts_id = " + ctsid.getKey()
 			+ " and sample_time = "
@@ -620,7 +636,12 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				EngineeringUnit.getEngineeringUnit(ctsid.getStorageUnits()),
 					EngineeringUnit.getEngineeringUnit(ts.getUnitsAbbr()));
 
-		String tableName = makeDataTableName(ctsid);
+        Optional<String> table = findDataTableName(ctsid);
+        if (table.isEmpty())
+        {
+            return null;
+        }
+        String tableName = table.orElseThrow();
 		String q = "select " + ts_columns + " from " + tableName
 			+ " where ts_id = " + ctsid.getKey()
 			+ " and sample_time = "
@@ -1186,64 +1207,81 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		return (int)(msecTime /= MSEC_PER_UTC_DAY);
 	}
 
-	public String makeDataTableName(CwmsTsId tsid)
-		throws DbIoException
-	{
-		int tableNum = tsid.getStorageTable();
-		if (tableNum == -1)
-			tableNum = allocateTable(tsid);
+    public String makeDataTableName(CwmsTsId tsid) throws DbIoException
+    {
+        Optional<String> table = findDataTableName(tsid);
+        if (table.isPresent())
+        {
+            return table.orElseThrow();
+        }
+        tsid.setStorageTable(allocateTable(tsid));
+        return formatDataTableName(tsid);
+    }
 
-		return (tsid.getStorageType() == 'N' ? "TS_NUM_" : "TS_STRING_")
-			+ suffixFmt.format(tableNum);
-	}
+    private Optional<String> findDataTableName(CwmsTsId tsid) throws DbIoException
+    {
+        if (tsid.getStorageTable() == -1)
+        {
+            tsid.setStorageTable(readStorageTable(tsid));
+        }
+        return tsid.getStorageTable() == -1 ? Optional.empty() : Optional.of(formatDataTableName(tsid));
+    }
 
-	/**
-	 * Allocates a storage table for the passed TSID. Updates the storage table
-	 * stats and the ts_spec for this TSID.
-	 * @param tsid
-	 * @return
-	 * @throws DbIoException
-	 */
-	private int allocateTable(CwmsTsId tsid)
-		throws DbIoException
-	{
-		String q = "select * from storage_table_list "
-			+ "where storage_type = '" + tsid.getStorageType() + "' "
-			+ "and est_annual_values = "
-			+ "(select min(est_annual_values) from storage_table_list where storage_type = '"
-			+ tsid.getStorageType() + "') order by table_num";
+    private String formatDataTableName(CwmsTsId tsid)
+    {
+        return (tsid.getStorageType() == 'N' ? "TS_NUM_" : "TS_STRING_")
+            + suffixFmt.format(tsid.getStorageTable());
+    }
 
-		try (ResultSet rs = doQuery(q))
-		{
-			if (rs.next())
-			{
-				int tableNum = rs.getInt(1);
-				int numTsPresent = rs.getInt(3);
-				int estAnnualValues = rs.getInt(4);
-				numTsPresent++;
-				Interval intv = tsid.getIntervalOb();
-				estAnnualValues += interval2estAnnualValues(intv);
-				q = "update storage_table_list set num_ts_present = " + numTsPresent
-					+ ", est_annual_values = " + estAnnualValues
-					+ " where storage_type = '" + tsid.getStorageType() + "' "
-					+ " and table_num = " + tableNum;
-				doModify(q);
-				tsid.setStorageTable(tableNum);
+    private int readStorageTable(CwmsTsId tsid) throws DbIoException
+    {
+        try
+        {
+            Integer tableNum = getSingleResultOr("select storage_table from ts_spec where ts_id = ?",
+                rs -> rs.getInt(1), null, tsid.getKey());
+            if (tableNum == null)
+            {
+                throw new DbIoException("No time series with key " + tsid.getKey());
+            }
+            return tableNum;
+        }
+        catch (SQLException ex)
+        {
+            throw new DbIoException("Unable to read time series storage table.", ex);
+        }
+    }
 
-				q = "update ts_spec set storage_table = " + tableNum
-					+ " where ts_id = " + tsid.getKey();
-				doModify(q);
+    private int allocateTable(CwmsTsId tsid) throws DbIoException
+    {
+        String query = "select * from storage_table_list where storage_type = ? "
+            + "and est_annual_values = (select min(est_annual_values) from storage_table_list "
+            + "where storage_type = ?) order by table_num";
+        try
+        {
+            Integer tableNum = getFirstResult(query, rs -> rs.getInt("table_num"),
+                tsid.getStorageType(), tsid.getStorageType());
+            if (tableNum == null)
+            {
+                throw new DbIoException("No storage tables available!");
+            }
 
-				return tableNum;
-			}
-			else
-				throw new DbIoException("No storage tables available!");
-		}
-		catch (SQLException ex)
-		{
-			throw new DbIoException(ex.getMessage(), ex);
-		}
-	}
+            // Only the process that claims the unassigned series updates the table statistics.
+            int assigned = doModify("update ts_spec set storage_table = ? where ts_id = ? and storage_table = -1",
+                tableNum, tsid.getKey());
+            if (assigned == 0)
+            {
+                return readStorageTable(tsid);
+            }
+            doModify("update storage_table_list set num_ts_present = num_ts_present + 1, "
+                + "est_annual_values = est_annual_values + ? where storage_type = ? and table_num = ?",
+                interval2estAnnualValues(tsid.getIntervalOb()), tsid.getStorageType(), tableNum);
+            return tableNum;
+        }
+        catch (SQLException ex)
+        {
+            throw new DbIoException("Unable to allocate time series storage table.", ex);
+        }
+    }
 
 	public static int interval2estAnnualValues(Interval intv)
 	{

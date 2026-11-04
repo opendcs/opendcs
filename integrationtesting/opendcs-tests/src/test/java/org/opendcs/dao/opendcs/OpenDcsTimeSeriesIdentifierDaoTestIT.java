@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.opendcs.fixtures.helpers.TestResources.getResource;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.TimeZone;
 
 import org.jdbi.v3.core.Handle;
@@ -28,8 +30,11 @@ import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.CpDependsNotify;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsImporter;
+import decodes.tsdb.VarFlags;
+import ilex.var.TimedVariable;
 import opendcs.opentsdb.OpenTimeSeriesDAO;
 import opendcs.opentsdb.StorageTableSpec;
 
@@ -91,6 +96,56 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
         }
     }
 
+    /** Verifies saving stale identifier metadata preserves the writer's storage assignment and access to stored values. */
+    @Test
+    void saving_stale_identifier_preserves_writer_storage_assignment() throws Exception
+    {
+        var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
+        try (var writer = tsDb.makeTimeSeriesDAO())
+        {
+            var id = (CwmsTsId)tsDb.makeTsId("TESTSITE1.Precip.Total.1Hour.1Hour.stale-metadata");
+            id.setStorageUnits("in");
+            writer.createTimeSeries(id);
+            try
+            {
+                CwmsTsId stale;
+                try (var tx = db.newTransaction())
+                {
+                    stale = (CwmsTsId)dao.getById(tx, id.getKey()).orElseThrow();
+                    assertEquals(-1, stale.getStorageTable());
+                }
+
+                var input = new CTimeSeries(id);
+                input.setUnitsAbbr("in");
+                input.addSample(new TimedVariable(Date.from(Instant.parse("2012-01-01T00:00:00Z")),
+                    12.5, VarFlags.TO_WRITE));
+                writer.saveTimeSeries(input); // Assigns storage_table
+
+                try (var tx = db.newTransaction())
+                {
+                    var assigned = (CwmsTsId)dao.getById(tx, id.getKey()).orElseThrow();
+                    assertNotEquals(-1, assigned.getStorageTable());
+                    stale.setDescription("Updated stale metadata");
+                    var updated = (CwmsTsId)dao.save(tx, stale);
+                    assertEquals(assigned.getStorageTable(), updated.getStorageTable());
+                    assertEquals("Updated stale metadata", updated.getDescription());
+                }
+
+                try (var reader = tsDb.makeTimeSeriesDAO())
+                {
+                    var output = new CTimeSeries(stale);
+                    output.setUnitsAbbr("in");
+                    assertEquals(1, reader.fillTimeSeries(output, null, null));
+                    assertEquals(12.5, output.sampleAt(0).getDoubleValue());
+                }
+            }
+            finally
+            {
+                writer.deleteTimeSeries(id);
+            }
+        }
+    }
+
     @Test
     void allocating_series_preserves_existing_annual_load() throws Exception
     {
@@ -116,6 +171,45 @@ class OpenDcsTimeSeriesIdentifierDaoTestIT extends AppTestBase
             assertEquals(before + OpenTimeSeriesDAO.interval2estAnnualValues(input.getIntervalOb()), after,
                          "Allocation must add to the existing annual load");
             tx.rollback();
+        }
+    }
+
+    /** Verifies an empty read does not allocate storage and stale reader metadata can find the first write. */
+    @Test
+    void stale_reader_and_writer_preserve_storage_assignment() throws Exception
+    {
+        try (var reader = tsDb.makeTimeSeriesDAO();
+             var writer = tsDb.makeTimeSeriesDAO())
+        {
+            var id = (CwmsTsId)tsDb.makeTsId("TESTSITE1.Precip.Total.1Hour.1Hour.storage-regression");
+            id.setStorageUnits("in");
+            reader.createTimeSeries(id); // TS_SPEC: table = -1.
+            try
+            {
+                var readerId = id.copyNoKey(); // Reader also has -1.
+                readerId.setKey(id.getKey());
+                var output = new CTimeSeries(readerId);
+                output.setUnitsAbbr("in");
+                assertEquals(0, reader.fillTimeSeries(output, null, null)); // Still unassigned.
+                var dao = db.getDao(TimeSeriesIdentifierDao.class).orElseThrow();
+                try (var tx = db.newTransaction())
+                {
+                    assertEquals(-1, ((CwmsTsId)dao.getById(tx, id.getKey()).orElseThrow()).getStorageTable(),
+                        "Reading an empty series must not allocate storage");
+                }
+
+                var input = new CTimeSeries(id);
+                input.setUnitsAbbr("in");
+                input.addSample(new TimedVariable(Date.from(Instant.parse("2012-01-01T00:00:00Z")),
+                    12.5, VarFlags.TO_WRITE));
+                writer.saveTimeSeries(input); // Assigns TS_NUM_####; reader still has -1.
+                assertEquals(1, reader.fillTimeSeries(output, null, null)); // Reader finds the assigned table.
+                assertEquals(12.5, output.sampleAt(0).getDoubleValue());
+            }
+            finally
+            {
+                reader.deleteTimeSeries(id);
+            }
         }
     }
 
