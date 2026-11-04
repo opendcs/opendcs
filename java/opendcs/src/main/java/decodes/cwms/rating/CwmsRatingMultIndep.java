@@ -72,123 +72,86 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 	private ArrayList<ArrayList<Double>> valueSetsA = null;
 
 	
-	private String buildIndepSpec()
+	/**
+	 * Builds the comma-separated list of independent parameter codes from the time series
+	 * mapped to the indep roles, and sets numIndeps to the number found. Parameters are used
+	 * up to the first role that isn't mapped to a time series, unless its own indepN_MISSING
+	 * property demands one.
+	 */
+	String buildIndepSpec()
 		throws DbCompException
 	{
-		ParmRef parmRef = getParmRef("indep1");
-		if (parmRef == null)
+		String missingAction[] =
+		{
+			indep1_MISSING, indep2_MISSING, indep3_MISSING, indep4_MISSING, indep5_MISSING,
+			indep6_MISSING, indep7_MISSING, indep8_MISSING, indep9_MISSING
+		};
+
+		StringBuilder indepSpecId = new StringBuilder();
+		numIndeps = 0;
+		for (int idx = 0; idx < missingAction.length; idx++)
+		{
+			String role = "indep" + (idx + 1);
+			TimeSeriesIdentifier tsid = getParmTsId(role);
+			if (tsid == null)
+			{
+				if (!missingAction[idx].equalsIgnoreCase("ignore"))
+					throw new DbCompException("No time series mapped to " + role);
+				break;
+			}
+			if (numIndeps == 0)
+				indep1SiteName = tsid.getSiteName();
+			else
+				indepSpecId.append(',');
+			indepSpecId.append(tsid.getDataType().getCode());
+			numIndeps++;
+		}
+
+		if (numIndeps == 0)
 			throw new DbCompException("No time series mapped to indep1");
-		TimeSeriesIdentifier tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		if (tsid == null)
-			throw new DbCompException("No time series identifier associated with indep1");
-		
-		indep1SiteName = tsid.getSiteName();
-		String indepSpecId = tsid.getDataType().getCode();
-		
-		parmRef = getParmRef("indep2");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep2_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep2");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 2;
-		
-		parmRef = getParmRef("indep3");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep3_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep3");
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 3;
+		return indepSpecId.toString();
+	}
 
-		parmRef = getParmRef("indep4");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
+	/**
+	 * @return the number of independent parameters the loaded rating requires, or -1 if the
+	 * rating doesn't expose a count.
+	 */
+	private int templateIndepCount()
+	{
+		if (ratingSet.getRatingSpec() == null && ratingSet.getRatingCount() == 0)
+			return -1;
+		try
 		{
-			if (!indep4_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep4");
-			
-			return indepSpecId;
+			return ratingSet.getIndParamCount();
 		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 4;
-
-		parmRef = getParmRef("indep5");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
+		catch (RatingException ex)
 		{
-			if (!indep5_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep5");
-			
-			return indepSpecId;
+			log.atWarn().setCause(ex).log("Cannot determine the independent parameter count for rating '{}'", specId);
+			return -1;
 		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 5;
+	}
 
-		parmRef = getParmRef("indep6");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
+	/**
+	 * Compares the parameters mapped in the computation against the ones the rating requires.
+	 * @return the number of independent parameters to use for this run.
+	 * @throws DbCompException if the computation maps a different number of parameters
+	 * than the rating takes.
+	 */
+	static int validateIndepCount(String specId, String compName, int mappedIndeps, int ratingIndeps)
+		throws DbCompException
+	{
+		if (ratingIndeps < 0)
 		{
-			if (!indep6_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep6");
-			
-			return indepSpecId;
+			log.warn("Rating '{}' doesn't declare how many independent parameters it takes -- "
+					+ "using the {} inputs mapped to '{}'.", specId, mappedIndeps, compName);
+			return mappedIndeps;
 		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 6;
-
-		parmRef = getParmRef("indep7");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep7_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep7");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 7;
-
-		parmRef = getParmRef("indep8");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep8_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep8");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 8;
-
-		parmRef = getParmRef("indep9");
-		if (parmRef == null || parmRef.timeSeries == null
-		 || parmRef.timeSeries.getTimeSeriesIdentifier() == null)
-		{
-			if (!indep9_MISSING.equalsIgnoreCase("ignore"))
-				throw new DbCompException("No time series mapped to indep9");
-			
-			return indepSpecId;
-		}
-		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		numIndeps = 9;
-
-		return indepSpecId;
+		if (ratingIndeps != mappedIndeps)
+			throw new DbCompException("Rating '" + specId + "' takes " + ratingIndeps
+				+ " independent parameter(s) but computation '" + compName + "' maps " + mappedIndeps
+				+ ". Remove the unused 'indep' input parameters or use a rating that takes "
+				+ mappedIndeps + ".");
+		return ratingIndeps;
 	}
 
 	@Output(type = Double.class)
@@ -238,7 +201,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-		specId = buildIndepSpec();
+		String indepSpecId = buildIndepSpec();
 		
 		ParmRef depParmRef = getParmRef("dep");
 		String specLocation = indep1SiteName;
@@ -260,7 +223,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 		
 		specId = specLocation
-			+ "." + specId + ";" + depParmRef.compParm.getDataType().getCode() + "."
+			+ "." + indepSpecId + ";" + depParmRef.compParm.getDataType().getCode() + "."
 			+ templateVersion + "." + specVersion;
 
 		// Retrieve the RatingSet object
@@ -270,12 +233,17 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 			if (earliestBaseTime == null)
 				earliestBaseTime = new Date();
 			ratingSet = crd.getRatingSet(specId);
+
+			// The rating is authoritative for how many independent parameters it takes.
+			// Mapped inputs beyond that number would silently add columns to the value
+			// sets passed to the rating.
+			numIndeps = validateIndepCount(specId, comp.getName(), numIndeps, templateIndepCount());
 			
 			// As per instructions from Mike Perryman: I must find out what the native units
 			// for the rating are and convert before calling the Java rating. The Java rating
 			// method assumes that data are already in correct units.
 			String punits[] = ratingSet.getDataUnits();
-			for(int pidx = 0; pidx < punits.length-1 && pidx < 9; pidx++)
+			for(int pidx = 0; punits != null && pidx < numIndeps && pidx < punits.length-1; pidx++)
 			{
 				if (punits[pidx] == null)
 					continue;
@@ -295,7 +263,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 			
 			// Likewise for the dependent param:
-			if (punits.length > 1 && punits[punits.length-1] != null
+			if (punits != null && punits.length > 1 && punits[punits.length-1] != null
 			 && depParmRef.timeSeries.getUnitsAbbr() != null
 			 && !depParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[punits.length-1]))
 			{
@@ -368,6 +336,8 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void afterTimeSlices()
 	{
+		if (ratingSet == null || indepTimes.isEmpty())
+			return;
 		
 		// Convert nested ArrayLists to double[TIMES][VALUES].
 		// Note that the dimensions are reversed from the nested array lists.
@@ -383,7 +353,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		
 		try (Connection conn = tsdb.getConnection())
 		{
-			log.debug("Calling rate with {} inputs and {} values each.", valueSets.length, valueTimes.length);
+			log.debug("Calling rate with {} values and {} inputs each.", valueTimes.length, numIndeps);
 			
 			double depVals[] = ratingSet.rate(conn, valueTimes, valueSets);
 			
