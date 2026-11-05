@@ -26,10 +26,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.stringtemplate4.StringTemplateSqlLocator;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.ScheduleEntryDao;
+import org.opendcs.database.impl.opendcs.dao.AbstractJdbiDao;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.decodes.schedule.ScheduleEntryMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -37,7 +37,6 @@ import org.opendcs.utils.sql.SqlKeywords;
 import org.opendcs.utils.sql.SqlQueries;
 import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
-import org.stringtemplate.v4.STGroup;
 
 import decodes.db.DatabaseException;
 import decodes.db.ScheduleEntry;
@@ -46,23 +45,17 @@ import decodes.sql.KeyGenerator;
 import decodes.tsdb.CompAppInfo;
 
 @ServiceProvider(service = ScheduleEntryDao.class)
-public class ScheduleEntryDaoImpl implements ScheduleEntryDao
+public class ScheduleEntryDaoImpl extends AbstractJdbiDao implements ScheduleEntryDao
 {
     private static final String LOADINGAPP_KEY = "loadingapp";
 
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
-    private static final String SELECT = "select";
-    private static final String MERGE = "merge";
-    private static final String DELETE = "delete";
-
-    private final STGroup queries;
-
     private final ScheduleEntryMapper entryMapper = ScheduleEntryMapper.withPrefix("se");
 
     public ScheduleEntryDaoImpl()
     {
-        queries = StringTemplateSqlLocator.findStringTemplateGroup(ScheduleEntryDaoImpl.class);
+        super(ScheduleEntryDaoImpl.class);
     }
 
     @Override
@@ -82,11 +75,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
 
-        var selectTemplate = queries.getInstanceOf(SELECT);
-        if (selectTemplate == null)
-        {
-            throw new OpenDcsDataException("No Instance of Select query is available.");
-        }
+        var selectTemplate = getTemplate("select");
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
         selectTemplate.add("where", whereClause)
@@ -157,7 +146,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
         var dbEngine = ctx.getDatabaseEngine();
         var keyGen = ctx.getGenerator(KeyGenerator.class)
                 .orElseThrow(() -> new OpenDcsDataException("No key generator configured."));
-        var mergeTemplate = queries.getInstanceOf(MERGE)
+        var mergeTemplate = getTemplate("merge")
                                    .add("dual", fromDual(dbEngine));
         Object routingBind = entry.getRoutingSpecName();
         if (!DbKey.isNull(entry.getRoutingSpecId()))
@@ -251,7 +240,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
     {
         var handle = tx.connection(Handle.class)
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
-        var deleteTemplate = queries.getInstanceOf(DELETE);
+        var deleteTemplate = getTemplate("delete");
         try (var delete = handle.createUpdate(deleteTemplate.render()))
         {
             delete.bind(ScheduleEntryMapper.Columns.ID.column(), id).execute();
@@ -278,11 +267,7 @@ public class ScheduleEntryDaoImpl implements ScheduleEntryDao
                        .orElseThrow(() -> new OpenDcsDataException(SqlErrorMessages.NO_JDBI_HANDLE));
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
-        var selectTemplate = queries.getInstanceOf(SELECT);
-        if (selectTemplate == null)
-        {
-            throw new OpenDcsDataException("No Instance of Select query is available.");
-        }
+        var selectTemplate = getTemplate("select");
         selectTemplate.add(SqlKeywords.LIMIT, addLimitOffset(limit, offset))
                       .add("columns",
                            entryMapper.columnsForSelect(ScheduleEntryMapper.Columns.LOADING_APPLICATION_NAME,

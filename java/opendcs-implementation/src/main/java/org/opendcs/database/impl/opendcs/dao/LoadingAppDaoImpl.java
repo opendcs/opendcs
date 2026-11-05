@@ -7,6 +7,7 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.LoadingAppDao;
+import org.opendcs.database.impl.opendcs.dao.AbstractJdbiDao;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoMapper;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoMapper.Columns;
 import org.opendcs.database.model.mappers.compapp.CompAppInfoReducer;
@@ -30,7 +31,7 @@ import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 @ServiceProvider(service = LoadingAppDao.class)
-public final class LoadingAppDaoImpl implements LoadingAppDao
+public final class LoadingAppDaoImpl extends AbstractJdbiDao implements LoadingAppDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String SELECT_QUERY = """
@@ -49,6 +50,11 @@ public final class LoadingAppDaoImpl implements LoadingAppDao
     """;
 
     private static final String DELETE_APP_PROPERTIES = "delete from ref_loading_application_prop where loading_application_id = :id";
+
+    public LoadingAppDaoImpl()
+    {
+        super(LoadingAppDaoImpl.class);
+    }
 
     @Override
     public Optional<CompAppInfo> getById(DataTransaction tx, DbKey id) throws OpenDcsDataException
