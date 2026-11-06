@@ -56,16 +56,27 @@ class TestConfigTest
 
         assertNull(config.enableOn());
         assertNull(config.expectError());
+        assertEquals(List.of(), config.unassignedRoles());
     }
 
     @Test
-    void reads_both_directives() throws Exception
+    void reads_all_directives() throws Exception
     {
         TestConfig config = read("EnableOn: CWMS-Oracle",
-                                 "ExpectError: Cannot read rating for 'A.B;C.D.E'");
+                                 "ExpectError: Cannot read rating for 'A.B;C.D.E'",
+                                 "UnassignedRoles: indep3,indep4");
 
         assertEquals("CWMS-Oracle", config.enableOn());
         assertEquals("Cannot read rating for 'A.B;C.D.E'", config.expectError());
+        assertEquals(List.of("indep3", "indep4"), config.unassignedRoles());
+    }
+
+    @Test
+    void unassigned_roles_tolerate_spaces_and_trailing_commas() throws Exception
+    {
+        TestConfig config = read("UnassignedRoles: indep3 , indep4,, indep5 ,");
+
+        assertEquals(List.of("indep3", "indep4", "indep5"), config.unassignedRoles());
     }
 
     @Test
