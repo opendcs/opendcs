@@ -1,0 +1,41 @@
+import type { StatusGroupSummary } from "../../types";
+
+export const statusGroupSummary: StatusGroupSummary = {
+  timestamp: "2025-06-25T11:33:33-05:00",
+  group: "SWT",
+  durationHours: 24,
+  summary: {
+    completeCount: 515,
+    partialCount: 15,
+    parityCount: 14,
+    missingCount: 5,
+    reservoirCount: 0,
+  },
+  lowBatteryAddresses: ["CE1F40D4"],
+  locations: [
+    {
+      locationCode: "NIMB",
+      stationId: "NMBA4",
+      dcpAddress: "CE1F40D4",
+      status: "complete",
+      messagesTotal: 23,
+      parityCount: 48,
+    },
+    {
+      locationCode: "BMOB",
+      stationId: "BMRA4",
+      dcpAddress: "CE1F2532",
+      status: "complete",
+      messagesTotal: 24,
+      parityCount: 0,
+    },
+    {
+      locationCode: "TEST",
+      stationId: "TSTA4",
+      dcpAddress: "CE000001",
+      status: "partial",
+      messagesTotal: 16,
+      parityCount: 2,
+    },
+  ],
+};
