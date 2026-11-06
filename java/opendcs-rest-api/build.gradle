@@ -21,7 +21,7 @@ plugins {
     id "opendcs.version-conventions"
     id "war"
 
-    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.55"
+    id "io.swagger.core.v3.swagger-gradle-plugin" version "3.0.0"
 }
 
 configurations {
