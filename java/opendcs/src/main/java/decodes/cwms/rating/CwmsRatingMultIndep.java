@@ -303,31 +303,37 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		throws DbCompException
 	{
 		if (ratingSet == null)
+		{
 			throw new DbCompException("No rating set!");
+		}
 		
+		double indepVals[] = { indep1, indep2, indep3, indep4, indep5,
+							   indep6, indep7, indep8, indep9 };
+		String indepMissingActions[] = { indep1_MISSING, indep2_MISSING, indep3_MISSING,
+										 indep4_MISSING, indep5_MISSING, indep6_MISSING,
+										 indep7_MISSING, indep8_MISSING, indep9_MISSING };
+
 		// If any non-ignored params are missing in this time-slice, skip it.
-		if ((isMissing("indep1") && indep1_MISSING.equalsIgnoreCase("fail"))
-		 || (numIndeps >= 2 && isMissing("indep2") && indep2_MISSING.equalsIgnoreCase("fail"))
-		 || (numIndeps >= 3 && isMissing("indep3") && indep3_MISSING.equalsIgnoreCase("fail"))
-		 || (numIndeps >= 4 && isMissing("indep4") && indep4_MISSING.equalsIgnoreCase("fail"))
-		 || (numIndeps >= 5 && isMissing("indep5") && indep5_MISSING.equalsIgnoreCase("fail"))
-		 || (numIndeps >= 6 && isMissing("indep6") && indep6_MISSING.equalsIgnoreCase("fail"))
-		 || (numIndeps >= 7 && isMissing("indep7") && indep7_MISSING.equalsIgnoreCase("fail"))
-		 || (numIndeps >= 8 && isMissing("indep8") && indep8_MISSING.equalsIgnoreCase("fail"))
-		 || (numIndeps >= 9 && isMissing("indep9") && indep9_MISSING.equalsIgnoreCase("fail")))
-			return;
+		// Inputs beyond numIndeps are not part of the rating spec, so they're not considered.
+		for (int idx = 0; idx < numIndeps; idx++)
+		{
+			if (!isAssigned("indep" + (idx + 1)))
+			{
+				continue;
+			}
+
+			if (isMissing(indepVals[idx]) && "fail".equalsIgnoreCase(indepMissingActions[idx]))
+			{
+				return;
+			}
+		}
 
 		// MJM 10/31/2017 Modified to save values and do array rating in after method.
 		indepTimes.add(_timeSliceBaseTime.getTime());
-		valueSetsA.get(0).add(indep1);
-		if (numIndeps >= 2) valueSetsA.get(1).add(indep2);
-		if (numIndeps >= 3) valueSetsA.get(2).add(indep3);
-		if (numIndeps >= 4) valueSetsA.get(3).add(indep4);
-		if (numIndeps >= 5) valueSetsA.get(4).add(indep5);
-		if (numIndeps >= 6) valueSetsA.get(5).add(indep6);
-		if (numIndeps >= 7) valueSetsA.get(6).add(indep7);
-		if (numIndeps >= 8) valueSetsA.get(7).add(indep8);
-		if (numIndeps >= 9) valueSetsA.get(8).add(indep9);
+		for (int idx = 0; idx < numIndeps; idx++)
+		{
+			valueSetsA.get(idx).add(indepVals[idx]);
+		}
 		
 	}
 
