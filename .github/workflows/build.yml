@@ -348,7 +348,19 @@ jobs:
         run: npm ci --ignore-scripts
       - name: integration tests (${{ matrix.engine.name }})
         run: |
+          if [[ '${{ matrix.engine.name }}' == 'opendcs-oracle' ]]; then
+            bash .github/scripts/monitor-oracle.sh "$RUNNER_TEMP/oracle-diagnostics" &
+            monitor_pid=$!
+            trap 'kill "$monitor_pid" 2>/dev/null || true; wait "$monitor_pid" 2>/dev/null || true' EXIT
+          fi
           ./gradlew :testing:opendcs-tests:${{ matrix.engine.task }} --info
+      - name: Upload Oracle diagnostics
+        if: always() && matrix.engine.name == 'opendcs-oracle'
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: oracle-diagnostics-${{ matrix.engine.name }}
+          path: ${{ runner.temp }}/oracle-diagnostics/
+          if-no-files-found: warn
       - name: Upload jacoco exec data
         if: always()
         uses: actions/upload-artifact@v7.0.2
