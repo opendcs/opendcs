@@ -63,6 +63,9 @@
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>
+    <CompParm roleName="indep3"/>
+    <CompParm roleName="indep4"/>
+    <CompParm roleName="indep5"/>
     <CompParm roleName="dep">
       <SiteDataType>
         <SiteName NameType="CWMS">TESTSITE1</SiteName>
