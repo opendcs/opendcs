@@ -36,6 +36,7 @@
     "input": "Entrada",
     "output": "Salida",
     "add_parm": "Agregar parámetro",
+    "new_role": "nuevo rol {{n}}",
     "save_parm": "Guardar parámetro {{name}}",
     "cancel_parm": "Cancelar edición de parámetro {{name}}",
     "edit_for": "Editar parámetro {{name}}",

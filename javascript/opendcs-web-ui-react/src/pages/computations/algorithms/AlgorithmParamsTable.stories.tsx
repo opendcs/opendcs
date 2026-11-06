@@ -107,14 +107,15 @@ export const AddParm: Story = {
     });
     await userEvent.click(addBtn);
 
-    // A new row has no role name yet, so its labels use the table's new-row number.
+    // A new row has no role name yet, so its labels use a friendly placeholder.
+    const newRole = i18n.t("algorithms:parms.new_role", { n: 1 });
     const roleInput = await canvas.findByRole("textbox", {
-      name: i18n.t("algorithms:parms.roleName_input", { name: "1" }),
+      name: i18n.t("algorithms:parms.roleName_input", { name: newRole }),
     });
     await userEvent.type(roleInput, "myInput");
 
     const saveBtn = await canvas.findByRole("button", {
-      name: i18n.t("algorithms:parms.save_parm", { name: "1" }),
+      name: i18n.t("algorithms:parms.save_parm", { name: newRole }),
     });
     await act(async () => userEvent.click(saveBtn));
 
@@ -140,8 +141,9 @@ export const RoleNameCannotBeBlank: Story = {
     await userEvent.click(addBtn);
 
     // Attempt to save without filling in a role name
+    const newRole = i18n.t("algorithms:parms.new_role", { n: 1 });
     const saveBtn = await canvas.findByRole("button", {
-      name: i18n.t("algorithms:parms.save_parm", { name: "1" }),
+      name: i18n.t("algorithms:parms.save_parm", { name: newRole }),
     });
     await act(async () => userEvent.click(saveBtn));
 
@@ -150,7 +152,7 @@ export const RoleNameCannotBeBlank: Story = {
     await waitFor(
       () => {
         const roleInput = canvas.queryByRole("textbox", {
-          name: i18n.t("algorithms:parms.roleName_input", { name: "1" }),
+          name: i18n.t("algorithms:parms.roleName_input", { name: newRole }),
         });
         expect(roleInput).toBeInTheDocument();
       },
