@@ -32,11 +32,11 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.1  # NOSONAR first-party Gradle action, tag pinning acceptable
         with:
           dependency-graph: generate-and-submit
           # Force a cache write from this job so downstream test jobs can restore
@@ -101,11 +101,11 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.1  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         run: |
           mkdir -p ~/.gradle
@@ -184,7 +184,7 @@ jobs:
             ./**/build/test-results/**
           if-no-files-found: error
       - name: Test Report
-        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+        uses: mikepenz/action-junit-report@8a133bfa3ecb0ea9024c1e2ae788b4c25f6cdb9d # v6.6.2
         if: always()
         with:
           annotate_only: true
@@ -207,11 +207,11 @@ jobs:
         with:
           java-version: ${{matrix.jdk}}
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.1  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         if: matrix.platform != 'windows-latest'
         run: |
@@ -284,7 +284,7 @@ jobs:
             ./**/build/test-results/**
           if-no-files-found: error
       - name: Test Report
-        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+        uses: mikepenz/action-junit-report@8a133bfa3ecb0ea9024c1e2ae788b4c25f6cdb9d # v6.6.2
         if: always()
         with:
           annotate_only: true
@@ -320,11 +320,11 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.1  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         run: |
           mkdir -p ~/.gradle
@@ -366,9 +366,10 @@ jobs:
           path: |
             ./**/build/reports/tests/**
             ./**/build/test-results/**
+            ./integrationtesting/opendcs-tests/build/runs/**/*.log
           if-no-files-found: error
       - name: Test Report
-        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+        uses: mikepenz/action-junit-report@8a133bfa3ecb0ea9024c1e2ae788b4c25f6cdb9d # v6.6.2
         if: always()
         with:
           annotate_only: true
@@ -394,11 +395,11 @@ jobs:
         with:
           java-version: ${{ env.sonarJdk }}
           distribution: temurin
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.4.0  # NOSONAR first-party Gradle action, tag pinning acceptable
+        uses: gradle/actions/setup-gradle@v6.4.1  # NOSONAR first-party Gradle action, tag pinning acceptable
       - name: Enable Gradle build cache for CI
         run: |
           mkdir -p ~/.gradle

@@ -12,6 +12,7 @@ import {
   type ApiTsGroupRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { tsGroupKeys } from "./keys";
 import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
@@ -102,6 +103,7 @@ export const useDeleteTsGroupMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (groupId: number) => groupApi.deleteTsGroup(org, groupId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: invalidateThenDelegate<void, unknown, number>(
       queryClient,

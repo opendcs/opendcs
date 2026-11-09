@@ -22,6 +22,8 @@ import java.text.ParseException;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import ilex.var.Variable;
 
 import decodes.db.Constants;
@@ -29,9 +31,10 @@ import decodes.db.Constants;
 /**
 Performance Measurement Parser for USGS EDL Header Lines.
 */
-public class RadioPMParser extends PMParser
+public class RadioPMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public static final String HEADER_TYPE = "radio";
 	// Private time/date stamp parsers:
 	private static SimpleDateFormat beginDateTimeSdf = new SimpleDateFormat("yyyyMMddHHmm Z");
 
@@ -84,10 +87,16 @@ public class RadioPMParser extends PMParser
 	}
 
 	/** Returns the constant string "radio". */
-	public String getHeaderType() { return "radio"; }
+	public String getHeaderType()
+	{
+		return HEADER_TYPE;
+	}
 
 	/** Returns constant medium type for platform association. */
-	public String getMediumType() { return Constants.medium_RADIO; }
+	public String getMediumType()
+	{
+		return Constants.medium_RADIO;
+	}
 
 	/**
 	  Parses performance measurements from raw message and populates
@@ -318,6 +327,16 @@ public class RadioPMParser extends PMParser
 	public boolean containsExplicitLength()
 	{
 		return false;
+	}
+
+	@AutoService(PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new RadioPMParser() : null;
+		}
 	}
 }
 

@@ -1,13 +1,13 @@
 package org.opendcs.database.impl.opendcs.dao;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.DataTypeDao;
 import org.opendcs.database.model.mappers.datatype.DataTypeMapper;
@@ -63,7 +63,7 @@ public class DataTypeDaoImpl implements DataTypeDao
                     values(input.id, input.standard, input.code, input.display_name)
                 """;
         try (var query = handle.createUpdate(insertSql)
-                               .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : ""))
+                               .define("dual", fromDual(dbEngine)))
         {
             final DbKey id = dataType.idIsSet() ? dataType.getId() : keyGen.getKey("datatype", handle.getConnection());
             query.registerRowMapper(DataType.class, DataTypeMapper.withPrefix(""))

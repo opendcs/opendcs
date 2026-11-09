@@ -19,6 +19,8 @@ package decodes.datasource;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import java.util.Date;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -35,9 +37,10 @@ import decodes.db.Constants;
   Concrete subclass of PMParser for parsing performance measurements
   out of IRIDIUM SBD messages.
 */
-public class IridiumPMParser extends PMParser
+public class IridiumPMParser implements PMParser
 {
 	private static final Logger logger = OpenDcsLoggerFactory.getLogger();
+	private static final String HEADER_TYPE = "iridium";
 	// Allow more flexibiity in Header parsing
 	private static final Pattern SEPARATOR_MATCHER = 
 		Pattern.compile("^(.*?)[\\s,]+.*?$", Pattern.MULTILINE | Pattern.DOTALL);
@@ -261,7 +264,7 @@ public class IridiumPMParser extends PMParser
 	/** @return "iridium" */
 	public String getHeaderType()
 	{
-		return "iridium";
+		return HEADER_TYPE;
 	}
 
 	/** @return the medium type constant for GOES DCP messages. */
@@ -273,5 +276,15 @@ public class IridiumPMParser extends PMParser
 	public SimpleDateFormat getGoesDateFormat()
 	{
 		return goesDateFormat;
+	}
+
+	@AutoService (PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new IridiumPMParser() : null;
+		}
 	}
 }

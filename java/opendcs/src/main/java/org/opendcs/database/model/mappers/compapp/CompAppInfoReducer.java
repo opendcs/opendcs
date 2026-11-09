@@ -1,7 +1,6 @@
 package org.opendcs.database.model.mappers.compapp;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
@@ -10,6 +9,7 @@ import java.util.function.BiConsumer;
 
 import org.jdbi.v3.core.result.RowView;
 import org.opendcs.database.model.mappers.properties.PropertiesMapper;
+import org.opendcs.utils.sql.PropertyBindings;
 
 import decodes.tsdb.CompAppInfo;
 
@@ -18,8 +18,7 @@ import static org.opendcs.database.model.mappers.OpenDcsTableMapper.addUnderscor
 
 public final class CompAppInfoReducer implements BiConsumer<Map<Long, CompAppInfo>, RowView>
 {
-    public static final DateTimeFormatter LAST_MODIFIED_SDF = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-                                                                               .withZone(ZoneId.of("UTC"));
+    public static final DateTimeFormatter LAST_MODIFIED_SDF = PropertyBindings.LAST_MODIFIED_FORMATTER;
 
     private final String prefixAppInfo;
     public CompAppInfoReducer()
@@ -41,7 +40,7 @@ public final class CompAppInfoReducer implements BiConsumer<Map<Long, CompAppInf
         var prop = rowView.getRow(PropertiesMapper.PAIR_STRING_STRING);
         if (prop.first != null)
         {
-            if ("LastModified".equals(prop.first))
+            if (PropertyBindings.LAST_MODIFIED.equalsIgnoreCase(prop.first))
             {
                 var tmp = LAST_MODIFIED_SDF.parse(prop.second);
                 appInfo.setLastModified(Date.from(Instant.from(tmp)));

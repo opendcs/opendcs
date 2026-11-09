@@ -24,6 +24,8 @@ import java.text.SimpleDateFormat;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import ilex.var.Variable;
 import decodes.db.Constants;
 
@@ -31,9 +33,10 @@ import decodes.db.Constants;
   Concrete subclass of PMParser for parsing performance measurements
   out of GOES DCP messages.
 */
-public class MBFirePMParser extends PMParser
+public class MBFirePMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public static final String HEADER_TYPE = "mbfire";
 	private SimpleDateFormat dateFormat = null;
 	private static final String dateFmtStr = "MMM dd, yyyy      HH";
 
@@ -105,7 +108,7 @@ public class MBFirePMParser extends PMParser
 	/** @return "mbfire" */
 	public String getHeaderType()
 	{
-		return "mbfire";
+		return HEADER_TYPE;
 	}
 
 	/** @return "mbfire" */
@@ -134,6 +137,16 @@ public class MBFirePMParser extends PMParser
 				log.warn("MBFirePMParser invalid webtz property '{}' -- using GMT-06:00.", s);
 			else
 				dateFormat.setTimeZone(tz);
+		}
+	}
+
+	@AutoService(PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new MBFirePMParser() : null;
 		}
 	}
 }

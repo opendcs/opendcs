@@ -56,10 +56,10 @@ public class CwmsOracleConfiguration implements Configuration
 
     private CwmsDatabaseContainer<?> cwmsDb = null;
     private String dbUrl = null;
-    private File userDir;
-    private File propertiesFile;
+    private final File userDir;
+    private final File propertiesFile;
     private boolean started = false;
-    private HashMap<Object,Object> environmentVars = new HashMap<>();
+    private final HashMap<Object,Object> environmentVars = new HashMap<>();
     private String dcsUser = null;
     private String dcsUserPassword = null;
     private Profile profile = null;

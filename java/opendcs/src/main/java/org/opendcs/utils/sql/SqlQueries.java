@@ -9,6 +9,7 @@ public final class SqlQueries
     public static final String WHERE_CLAUSE = "where";
     public static final String COLLATE_CLAUSE = "collate";
     public static final String RECURSIVE_CTE_CLAUSE = "recursive_cte";
+    public static final String DUAL = "dual";
     public static final String LEFT_OUTER = "left outer";
     public static final String INNER = "inner";
     public static final String LEFT = "left";
@@ -48,14 +49,30 @@ public final class SqlQueries
         return dbEngine == DatabaseEngine.POSTGRES ? "COLLATE \"C\"" : "COLLATE BINARY";
     }
 
+    /** Return FROM DUAL for Oracle, or an empty clause for other engines. */
+    public static String fromDual(DatabaseEngine dbEngine)
+    {
+        return dbEngine == DatabaseEngine.ORACLE ? "from dual" : "";
+    }
+
     /**
      * Return the required keyword for recursive CTEs. At this time only oracle supports
      * the feature, but does not require the keyword.
      * @param dbEngine
      * @return
      */
-    public static Object recursiveCteFor(DatabaseEngine dbEngine)
+    public static String recursiveCteFor(DatabaseEngine dbEngine)
     {
-        return  dbEngine == DatabaseEngine.ORACLE ? "" : " RECURSIVE ";
+        return dbEngine == DatabaseEngine.ORACLE ? "" : " RECURSIVE ";
+    }
+
+    /**
+     * Return a <pre> from dual </pre> clause for database that require it.
+     * @param dbEngine
+     * @return
+     */
+    public static String dualFor(DatabaseEngine dbEngine)
+    {
+        return dbEngine == DatabaseEngine.ORACLE ? " from dual " : " ";
     }
 }

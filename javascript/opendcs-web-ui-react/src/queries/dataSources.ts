@@ -11,6 +11,7 @@ import {
   type ApiDataSourceRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { dataSourceKeys } from "./keys";
 
 const useDataSourcesApi = () => {
@@ -80,6 +81,7 @@ export const useDeleteDataSourceMutation = (
   return useMutation({
     mutationFn: (dataSourceId: number) =>
       dataSourceApi.deleteDatasource(org, dataSourceId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: dataSourceKeys.all(org) });

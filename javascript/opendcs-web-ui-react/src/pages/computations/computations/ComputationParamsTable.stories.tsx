@@ -247,6 +247,49 @@ export const EditParm: Story = {
   },
 };
 
+const ROW_INPUT_KEYS = [
+  "roleName",
+  "parmType",
+  "site",
+  "dataType",
+  "interval",
+  "paramType",
+  "duration",
+  "version",
+  "deltaT",
+  "deltaTUnits",
+  "units",
+  "ifMissing",
+];
+
+/** Every input in an open row names its role, so two open rows never share a label. */
+export const RowInputsLabeledByRole: Story = {
+  args: { parms: sampleParms },
+  render: EditableRender,
+  play: async ({ mount, parameters, userEvent }) => {
+    const canvas = await mount();
+    const { i18n } = parameters;
+    const roles = ["input1", "output1"];
+
+    for (const name of roles) {
+      const editBtn = await canvas.findByRole("button", {
+        name: i18n.t("computations:parms.edit_for", { name }),
+      });
+      await act(() => userEvent.click(editBtn));
+    }
+
+    for (const name of roles) {
+      for (const key of ROW_INPUT_KEYS) {
+        expect(
+          await canvas.findByLabelText(
+            i18n.t(`computations:parms.${key}_input`, { name }),
+          ),
+        ).toBeInTheDocument();
+      }
+    }
+  },
+};
+
 export const DeleteParm: Story = {
   args: { parms: sampleParms },
   render: EditableRender,

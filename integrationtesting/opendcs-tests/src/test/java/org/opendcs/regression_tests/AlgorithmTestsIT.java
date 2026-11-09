@@ -1,10 +1,6 @@
 package org.opendcs.regression_tests;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,6 +15,7 @@ import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DataCollection;
+import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.ImportComp;
@@ -43,7 +40,10 @@ import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.opendcs.fixtures.helpers.ImporterHelper.buildFilePath;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
 
@@ -139,6 +139,7 @@ public class AlgorithmTestsIT extends AppTestBase
 		ImporterHelper helper = new ImporterHelper(tsDb, configuration, environment, exit);
 
         return DynamicTest.dynamicTest(comp.getName() +" "+test.getName(), () -> {
+            ImporterHelper.TestConfig config = ImporterHelper.TestConfig.EMPTY;
             for (File comp_data : test.listFiles()) 
             {
                 // Process comp xml
@@ -154,16 +155,8 @@ public class AlgorithmTestsIT extends AppTestBase
                 else if (name.contains(".config"))
                 {
                     log.info("Has config: " + comp_data.getAbsolutePath());
-                    File configFile = new File(comp_data.getAbsolutePath());
-                    try (InputStream configStream = new FileInputStream(configFile)) {
-                        String firstLine = new BufferedReader(new InputStreamReader(configStream)).readLine();
-                        String keyword = "EnableOn:";
-                        if (firstLine != null && firstLine.contains(keyword)) {
-                            String substring = firstLine.substring(firstLine.indexOf(keyword) + keyword.length()).trim();
-                            final String testEngine = System.getProperty("opendcs.test.engine", "").trim();
-                            assumeFalse(!substring.equals(testEngine), "Test is disabled by config file for: " + substring);
-                        }
-                    }
+                    config = ImporterHelper.TestConfig.read(comp_data);
+                    config.assumeEnabledForCurrentEngine();
                 }
                 else if (name.endsWith(".sql"))
                 {
@@ -201,7 +194,18 @@ public class AlgorithmTestsIT extends AppTestBase
             // new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z")
             //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
             testComp.prepareForExec(tsDb);
+
+            assertUnassignedRoles(helper, testComp, config.unassignedRoles(), "before execution");
+
+            if (config.expectError() != null)
+            {
+                assertComputationFails(testComp, theData, config.expectError());
+                return;
+            }
+
             testComp.apply(theData, tsDb);
+
+            assertUnassignedRoles(helper, testComp, config.unassignedRoles(), "after execution");
 
             Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
             
@@ -235,5 +239,63 @@ public class AlgorithmTestsIT extends AppTestBase
                 assertEquals(currExpect, algoOutput, "expected true", testComp.getValidStart(), testComp.getValidEnd());
             }
         });
+    }
+
+    /**
+     * Checks each role the test's config declares unassigned, before the computation runs and
+     * again after it. Before is what proves the record was written at all, since a fixture that
+     * quietly writes nothing would otherwise test less than it appears to. After is what proves
+     * running the computation left the record alone.
+     */
+    private void assertUnassignedRoles(ImporterHelper helper, DbComputation computation,
+                                       List<String> roles, String stage)
+    {
+        if (roles.isEmpty())
+        {
+            return;
+        }
+
+        DbAlgorithmExecutive executive = computation.getExecutive();
+        assertNotNull(executive, () -> "the computation must be prepared before role "
+            + "assignment can be checked");
+
+        for (String role : roles)
+        {
+            helper.assertRoleRowIsUnconfigured(computation.getName(), role);
+            helper.assertUnassignedRole(computation.getName(), role);
+
+            // The record alone cannot tell an unassigned role from an absent one. A record
+            // naming no site and datatype still yields a ParmRef, so isAssigned is the check
+            // that separates the two.
+            assertNotNull(executive.getParmRef(role), () -> stage + ": no ParmRef for role " + role
+                + " even though the computation has a record for it");
+            assertFalse(executive.isAssigned(role), () -> stage + ": role " + role
+                + " has a record naming no time series and must not be assigned");
+
+            log.info("{}: role {} of {} is declared but unassigned",
+                     stage, role, computation.getName());
+        }
+    }
+
+    /**
+     * Runs a computation that the test's config declares must fail, and checks that it
+     * failed for the reason the config names rather than through some unrelated error.
+     */
+    private void assertComputationFails(DbComputation computation, DataCollection theData,
+                                        String expectedMessage)
+    {
+        Throwable failure = assertThrows(Throwable.class, () -> computation.apply(theData, tsDb),
+            () -> "Expected the computation to fail with '" + expectedMessage + "'");
+
+        for (Throwable cause = failure; cause != null; cause = cause.getCause())
+        {
+            if (cause.getMessage() != null && cause.getMessage().contains(expectedMessage))
+            {
+                log.info("Computation failed as expected: {}", cause.getMessage());
+                return;
+            }
+        }
+
+        fail(() -> "Expected a failure containing '" + expectedMessage + "' but got: " + failure);
     }
 }

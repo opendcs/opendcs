@@ -4,6 +4,9 @@
 package decodes.datasource;
 
 import java.util.Date;
+
+import com.google.auto.service.AutoService;
+
 import ilex.var.Variable;
 
 import decodes.db.Constants;
@@ -15,8 +18,11 @@ import decodes.db.Constants;
   Used when parsing files and medium ID has been given via some other means.
   Also sets the MESSAGE_TIME to current time.
 */
-public class NoHeaderPMParser extends PMParser
+public class NoHeaderPMParser implements PMParser
 {
+	public static final String HEADER_TYPE = "noHeader";
+	public static final String HEADER_TYPE_OTHER = "other";
+
 	/** default constructor */
 	public NoHeaderPMParser()
 	{
@@ -46,13 +52,25 @@ public class NoHeaderPMParser extends PMParser
 	/** @return "NoHeader" */
 	public String getHeaderType()
 	{
-		return "NoHeader";
+		return HEADER_TYPE;
 	}
 
 	/** @return the medium type constant for 'other' messages. */
 	public String getMediumType()
 	{
 		return Constants.medium_Other;
+	}
+
+	@AutoService(PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) || HEADER_TYPE_OTHER.equalsIgnoreCase(headerType)
+				 ? new NoHeaderPMParser()
+				 : null;
+		}
 	}
 }
 

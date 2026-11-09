@@ -8,6 +8,7 @@ import org.jdbi.v3.core.statement.SqlStatements;
 import org.opendcs.database.AbstractJdbiOpenDcsDatabaseWrapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.exceptions.OpenDcsExceptionHandler;
 import org.opendcs.settings.api.OpenDcsSettings;
+import org.opendcs.utils.sql.SqlQueries;
 
 import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
@@ -27,5 +28,6 @@ public class OpenDcsDatabaseWrapper extends AbstractJdbiOpenDcsDatabaseWrapper
         this.jdbi.define("numeric_date", true);
         this.jdbi.getConfig(SqlStatements.class)
                  .addExceptionHandler(new OpenDcsExceptionHandler());
+        jdbi.define(SqlQueries.DUAL, SqlQueries.dualFor(this.dbEngine));
     }
 }

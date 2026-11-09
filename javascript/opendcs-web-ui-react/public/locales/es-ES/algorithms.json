@@ -36,11 +36,12 @@
     "input": "Entrada",
     "output": "Salida",
     "add_parm": "Agregar parámetro",
-    "save_parm": "Guardar parámetro",
-    "cancel_parm": "Cancelar edición de parámetro",
+    "new_role": "nuevo rol {{n}}",
+    "save_parm": "Guardar parámetro {{name}}",
+    "cancel_parm": "Cancelar edición de parámetro {{name}}",
     "edit_for": "Editar parámetro {{name}}",
     "delete_for": "Eliminar parámetro {{name}}",
-    "roleName_input": "Nombre de rol del parámetro",
-    "parmType_input": "Tipo de parámetro"
+    "roleName_input": "Nombre de rol del parámetro para {{name}}",
+    "parmType_input": "Tipo de parámetro para {{name}}"
   }
 }

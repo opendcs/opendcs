@@ -1,7 +1,9 @@
 package decodes.datasource;
 
+import com.google.auto.service.AutoService;
+
 /**
- * Use this parser for CSV files where the platform name is contained in one of the 
+ * Use this parser for CSV files where the platform name is contained in one of the
  * fields in the first few header lines in the file. For example:
  * <pre>
 "TOA5","Jackson_Gulch","CR800","25718","CR800.Std.25","CPU:JacksonGulchCR800.CR8","19588","Table60"
@@ -23,14 +25,14 @@ package decodes.datasource;
  *   <li>delim - the delimiter in the header lines. Default = comma</li>
  * </ul>
  */
-public class CsvHeaderPMParser extends PMParser
+public class CsvHeaderPMParser implements  PMParser
 {
+	public static final String HEADER_TYPE = "csvheader";
 
 	@Override
 	public String getHeaderType()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return HEADER_TYPE;
 	}
 
 	@Override
@@ -54,4 +56,13 @@ public class CsvHeaderPMParser extends PMParser
 		return 0;
 	}
 
+	@AutoService(PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new CsvHeaderPMParser() : null;
+		}
+	}
 }

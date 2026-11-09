@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Container, Form } from "react-bootstrap";
 import { renderToString } from "react-dom/server";
 import type { ApiPropSpec } from "../../../../../java/api-clients/api-client-typescript/build/generated/openApi/dist";
 import { useTranslation } from "react-i18next";
 import type { CollectionActions } from "../../util/Actions";
-import { AppDataTable, type ColumnDef } from "../data-table";
+import { AppDataTable, isNewRowId, rowLabel, type ColumnDef } from "../data-table";
 
 /**
  * NOTE: this should primarily be extracted from the API spec with the state value
@@ -28,11 +28,6 @@ export interface PropertiesTableProps {
   caption?: React.ReactNode;
 }
 
-/** Returns the property name, falling back to the new-row counter when the name is blank. */
-function propDisplayName(row: Property, rowId: string): string {
-  return row.name || rowId.replace("__appdt_new_", "") || "";
-}
-
 /**
  * Properties table component for use by all pages. Control of the properties
  * by what uses the component — the save and remove methods provided should
@@ -49,6 +44,12 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
   caption,
 }) => {
   const [t] = useTranslation(["properties", "translation"]);
+
+  const propDisplayName = useCallback(
+    (row: Property, rowId: string): string =>
+      row.name || rowLabel(rowId, (n) => t("properties:new_prop", { n })),
+    [t],
+  );
 
   const columns = useMemo<ColumnDef<Property>[]>(
     () => [
@@ -98,7 +99,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
         },
       },
     ],
-    [t],
+    [t, propDisplayName],
   );
 
   return (
@@ -131,7 +132,7 @@ export const PropertiesTable: React.FC<PropertiesTableProps> = ({
                   save: (r, rowId) =>
                     t("properties:save_prop", { name: propDisplayName(r, rowId) }),
                   cancel: (r, rowId) =>
-                    rowId.startsWith("__appdt_new_")
+                    isNewRowId(rowId)
                       ? t("properties:delete_prop", { name: propDisplayName(r, rowId) })
                       : t("translation:cancel"),
                   add: t("properties:add_prop"),

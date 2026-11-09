@@ -14,6 +14,7 @@ import {
   type ClassName,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { algorithmKeys } from "./keys";
 import { invalidateThenDelegate, normalizeNewId } from "./mutationHelpers";
 
@@ -100,6 +101,7 @@ export const useDeleteAlgorithmMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (algorithmId: number) => algorithmApi.deleteAlgorithm(org, algorithmId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: invalidateThenDelegate(
       queryClient,
