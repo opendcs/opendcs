@@ -1,17 +1,16 @@
 package org.opendcs.fixtures.helpers;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +26,7 @@ import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.ImportComp;
@@ -52,7 +52,6 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 import hec.data.RatingException;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 public class ImporterHelper
 {
@@ -131,17 +130,9 @@ public class ImporterHelper
 	private void handleConfig(File compData)
 	{
 		log.info("Has config: {}", compData.getAbsolutePath());
-		File configFile = new File(compData.getAbsolutePath());
-		try (InputStream configStream = new FileInputStream(configFile))
+		try
 		{
-			String firstLine = new BufferedReader(new InputStreamReader(configStream)).readLine();
-			String keyword = "EnableOn:";
-			if (firstLine != null && firstLine.contains(keyword))
-			{
-				String substring = firstLine.substring(firstLine.indexOf(keyword) + keyword.length()).trim();
-				final String testEngine = System.getProperty("opendcs.test.engine", "").trim();
-				assumeFalse(!substring.equals(testEngine), "Test is disabled by config file for: " + substring);
-			}
+			TestConfig.read(compData).assumeEnabledForCurrentEngine();
 		}
 		catch (IOException ex)
 		{
@@ -336,6 +327,75 @@ public class ImporterHelper
 		{
 			log.error("Failed to execute SQL file " + sqlFile.getName() + ": " + ex.getMessage(), ex);
 			// Don't fail the test, just log the error
+		}
+	}
+
+	/**
+	 * The database behind this helper. Configuration#getOpenDcsDatabase declares Throwable, so
+	 * it is boxed here rather than pushed onto every caller, which would either widen their
+	 * signatures or have them catch Throwable and swallow real assertion failures with it.
+	 */
+	private OpenDcsDatabase database()
+	{
+		try
+		{
+			return configuration.getOpenDcsDatabase();
+		}
+		catch (Throwable ex)
+		{
+			throw new ImportException("Unable to get the OpenDCS database.", ex);
+		}
+	}
+
+	/**
+	 * Reads a computation back from the database and returns the parameter record for one of
+	 * its roles, or null if it has none.
+	 */
+	public DbCompParm readCompParm(String compName, String role)
+	{
+		try (ComputationDAI compDao = tsDb.makeComputationDAO())
+		{
+			return compDao.getComputationByName(compName).getParm(role);
+		}
+		catch (DbIoException | NoSuchObjectException ex)
+		{
+			throw new ImportException("Unable to read back role " + role + " of " + compName, ex);
+		}
+	}
+
+	/**
+	 * Counts the role's cp_comp_ts_parm records that hold nothing that could resolve to a time
+	 * series and have a TABLE_SELECTOR that is not null, which a parameter object cannot show.
+	 * The TABLE_SELECTOR matters because ParmRef.getDescription() dereferences it and
+	 * addTsToParmRef builds the message whether or not debug logging is enabled, so a null there
+	 * fails the computation for reasons unrelated to the role.
+	 */
+	public int countUnconfiguredRoleRecords(String compName, String role)
+	{
+		final String sql = "select count(*) from cp_comp_ts_parm "
+			+ " where computation_id = (select computation_id from cp_computation "
+			+ "                          where computation_name = ?)"
+			+ "   and algo_role_name = ?"
+			+ "   and site_datatype_id is null and site_id is null and datatype_id is null"
+			+ "   and table_selector is not null";
+
+		try (DataTransaction tx = database().newTransaction();
+			Connection conn = tx.connection(Connection.class)
+				.orElseThrow(() -> new ImportException(
+					"JDBC Connection not available in this transaction."));
+			PreparedStatement count = conn.prepareStatement(sql))
+		{
+			count.setString(1, compName);
+			count.setString(2, role);
+			try (ResultSet rs = count.executeQuery())
+			{
+				return rs.next() ? rs.getInt(1) : 0;
+			}
+		}
+		catch (SQLException | OpenDcsDataException ex)
+		{
+			throw new ImportException("Unable to check the record for role " + role + " of "
+				+ compName, ex);
 		}
 	}
 

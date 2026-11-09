@@ -63,17 +63,21 @@ export const EmptyAddThenRemove: Story = {
   play: async ({ mount, parameters, userEvent }) => {
     const canvas = await mount();
     const { i18n } = parameters;
+    const newProp = i18n.t("properties:new_prop", { n: 1 });
 
     const add = await canvas.findByRole("button", {
       name: i18n.t("properties:add_prop"),
     });
     await userEvent.click(add);
     const nameInput = await canvas.findByRole("textbox", {
-      name: i18n.t("properties:name_input", { name: "1" }),
+      name: i18n.t("properties:name_input", { name: newProp }),
     });
-    expect(nameInput).toBeInTheDocument();
+    expect(nameInput).toHaveAttribute(
+      "aria-label",
+      "name input for property named new property 1",
+    );
     const remove = await canvas.findByRole("button", {
-      name: i18n.t("properties:delete_prop", { name: "1" }),
+      name: i18n.t("properties:delete_prop", { name: newProp }),
     });
 
     await userEvent.click(remove);
@@ -88,6 +92,7 @@ export const PropertyNameCannotBeBlank: Story = {
   play: async ({ mount, parameters, userEvent }) => {
     const canvas = await mount();
     const { i18n } = parameters;
+    const newProp = i18n.t("properties:new_prop", { n: 1 });
 
     const add = await canvas.findByRole("button", {
       name: i18n.t("properties:add_prop"),
@@ -95,12 +100,12 @@ export const PropertyNameCannotBeBlank: Story = {
     await userEvent.click(add);
 
     const nameInput = await canvas.findByRole("textbox", {
-      name: i18n.t("properties:name_input", { name: "1" }),
+      name: i18n.t("properties:name_input", { name: newProp }),
     });
     expect(nameInput).toBeInTheDocument();
 
     const valueInput = await canvas.findByRole("textbox", {
-      name: i18n.t("properties:value_input", { name: "1" }),
+      name: i18n.t("properties:value_input", { name: newProp }),
     });
     expect(valueInput).toBeInTheDocument();
 
@@ -108,14 +113,14 @@ export const PropertyNameCannotBeBlank: Story = {
     await userEvent.type(valueInput, "testvalue");
 
     const save = await canvas.findByRole("button", {
-      name: i18n.t("properties:save_prop", { name: "1" }),
+      name: i18n.t("properties:save_prop", { name: newProp }),
     });
 
     await userEvent.click(save);
 
     await waitFor(async () => {
       const nameInputAfterSave = canvas.queryByRole("textbox", {
-        name: i18n.t("properties:name_input", { name: "1" }),
+        name: i18n.t("properties:name_input", { name: newProp }),
       });
       expect(nameInputAfterSave).toBeInTheDocument();
 
@@ -123,7 +128,7 @@ export const PropertyNameCannotBeBlank: Story = {
     });
 
     const remove = await canvas.findByRole("button", {
-      name: i18n.t("properties:delete_prop", { name: "1" }),
+      name: i18n.t("properties:delete_prop", { name: newProp }),
     });
 
     await userEvent.click(remove);
@@ -138,6 +143,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
   play: async ({ step, mount, parameters, userEvent }) => {
     const canvas = await mount();
     const { i18n } = parameters;
+    const newProp = i18n.t("properties:new_prop", { n: 1 });
 
     await step("add new prop", async () => {
       const add = await canvas.findByRole("button", {
@@ -146,11 +152,11 @@ export const EmptyAddThenSaveThenRemove: Story = {
       await userEvent.click(add);
 
       const nameInput = await canvas.findByRole("textbox", {
-        name: i18n.t("properties:name_input", { name: "1" }),
+        name: i18n.t("properties:name_input", { name: newProp }),
       });
       expect(nameInput).toBeInTheDocument();
       const valueInput = await canvas.findByRole("textbox", {
-        name: i18n.t("properties:value_input", { name: "1" }),
+        name: i18n.t("properties:value_input", { name: newProp }),
       });
       expect(valueInput).toBeInTheDocument();
 
@@ -159,7 +165,7 @@ export const EmptyAddThenSaveThenRemove: Story = {
     });
 
     const save = await canvas.findByRole("button", {
-      name: i18n.t("properties:save_prop", { name: "1" }),
+      name: i18n.t("properties:save_prop", { name: newProp }),
     });
     await step("save prop", async () => {
       await userEvent.click(save);

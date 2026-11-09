@@ -11,7 +11,6 @@ import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
 import org.opendcs.annotations.api.InjectDao;
 import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.EngineeringUnitDao;
 import org.opendcs.database.dai.UnitConverterDao;
@@ -33,6 +32,7 @@ import decodes.sql.KeyGenerator;
 
 import static org.opendcs.utils.sql.SqlQueries.addLimitOffset;
 import static org.opendcs.utils.sql.SqlQueries.collateClauseFor;
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
 
 @ServiceProvider(service = UnitConverterDao.class)
 public class UnitConverterDaoImpl implements UnitConverterDao
@@ -94,7 +94,7 @@ public class UnitConverterDaoImpl implements UnitConverterDao
                     values(input.id, input.fromunitsabbr, input.tounitsabbr, input.algorithm, input.a, input.b, input.c, input.d, input.e, input.f)
                 """;
         try (var query = handle.createUpdate(insertSql)
-                               .define("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : ""))
+                               .define("dual", fromDual(dbEngine)))
         {
             final DbKey id = unitConverter.idIsSet() ? unitConverter.getId() : keyGen.getKey("unitconverter", handle.getConnection());
             query.registerArgument(new NullableDoubleArgumentFactory())

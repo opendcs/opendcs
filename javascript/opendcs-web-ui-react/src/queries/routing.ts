@@ -11,6 +11,7 @@ import {
   type ApiRoutingRef,
 } from "opendcs-api";
 import { useApi } from "../contexts/app/ApiContext";
+import { DELETE_TOASTS } from "../contexts/app/mutationToasts";
 import { routingKeys } from "./keys";
 
 const useRoutingApi = () => {
@@ -77,6 +78,7 @@ export const useDeleteRoutingMutation = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (routingId: number) => routingApi.deleteRouting(org, routingId),
+    meta: DELETE_TOASTS,
     ...options,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: routingKeys.all(org) });

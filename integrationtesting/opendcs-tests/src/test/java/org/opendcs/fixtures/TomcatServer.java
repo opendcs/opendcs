@@ -15,6 +15,8 @@
 
 package org.opendcs.fixtures;
 
+import static org.opendcs.utils.sql.SqlQueries.fromDual;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,7 +54,6 @@ import org.jdbi.v3.core.Handle;
 import org.opendcs.authentication.OpenDcsAuthException;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInIdentityProvider;
 import org.opendcs.authentication.identityprovider.impl.builtin.BuiltInProviderCredentials;
-import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dai.IdentityProviderDao;
@@ -281,7 +282,7 @@ public final class TomcatServer implements AutoCloseable
 				when not matched then
 				  insert (prop_name, prop_value)
 				  values(input.prop_name, input.prop_value)
-				""").define("dual", tx.getContext().getDatabaseEngine() == DatabaseEngine.ORACLE ? "from dual" : ""))
+				""").define("dual", fromDual(tx.getContext().getDatabaseEngine())))
 			{
 				DecodesSettings settings = config.getOpenDcsDatabase()
 												.getSettings(DecodesSettings.class)

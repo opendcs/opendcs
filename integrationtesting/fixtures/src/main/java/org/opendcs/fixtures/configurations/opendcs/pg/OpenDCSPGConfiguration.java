@@ -141,7 +141,7 @@ public class OpenDCSPGConfiguration implements Configuration
 
         MigrationManager mm = new MigrationManager(ds,OpenDcsPgProvider.NAME);
         MigrationProvider mp = mm.getMigrationProvider();
-        mp.setPlaceholderValue("NUM_TS_TABLES", "1");
+        mp.setPlaceholderValue("NUM_TS_TABLES", "2");
         mp.setPlaceholderValue("NUM_TEXT_TABLES","1");
         mm.migrate();
         Jdbi jdbi = mm.getJdbiHandle();

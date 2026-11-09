@@ -5,7 +5,6 @@ import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import org.opendcs.database.ManageDatabaseApp;
-import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,15 +46,14 @@ public final class AlgorithmUpdateApp
         StringToken password = new StringToken("password", "Database password", "",
                 TokenOptions.optRequired, null);
         StringToken algorithm = new StringToken("algorithm", "Limit update to an algorithm name", "",
-                TokenOptions.optRequired, null);
+                0, null);
         cli.addToken(apply);
         cli.addToken(username);
         cli.addToken(password);
         cli.addToken(algorithm);
         cli.parseArgs(args);
-        var dataSource = ManageDatabaseApp.getDataSourceFromProfileAndUserInfo(
+        var database = ManageDatabaseApp.getDatabaseForAfterUpdates(
                 cli.getProfile(), System.console(), username.getValue(), password.getValue());
-        var database = DatabaseService.getDatabaseFor(dataSource);
         try (var transaction = database.newTransaction())
         {
             try

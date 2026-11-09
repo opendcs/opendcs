@@ -23,6 +23,8 @@ import java.text.SimpleDateFormat;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import com.google.auto.service.AutoService;
+
 import ilex.util.ByteUtil;
 import ilex.var.Variable;
 
@@ -32,9 +34,10 @@ import decodes.db.Constants;
   Concrete subclass of PMParser for parsing performance measurements
   out of GOES DCP messages.
 */
-public class NoaaportPMParser extends PMParser
+public class NoaaportPMParser implements PMParser
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public static final String HEADER_TYPE = "noaaport";
 	private static SimpleDateFormat goesDateFormat = null;
 
 	/** default constructor */
@@ -214,7 +217,7 @@ public class NoaaportPMParser extends PMParser
 	/** @return "noaaport" */
 	public String getHeaderType()
 	{
-		return "noaaport";
+		return HEADER_TYPE;
 	}
 
 	/** @return data type constant for NOAAPORT message */
@@ -230,6 +233,16 @@ public class NoaaportPMParser extends PMParser
 	public boolean containsExplicitLength()
 	{
 		return false;
+	}
+
+	@AutoService(PMParser.Provider.class)
+	public static final class Provider implements PMParser.Provider
+	{
+		@Override
+		public PMParser create(String headerType)
+		{
+			return HEADER_TYPE.equalsIgnoreCase(headerType) ? new NoaaportPMParser() : null;
+		}
 	}
 }
 

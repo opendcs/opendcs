@@ -1,5 +1,6 @@
 package org.opendcs.database;
 
+import decodes.db.DatabaseException;
 import decodes.launcher.Profile;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
@@ -11,6 +12,7 @@ import javax.sql.DataSource;
 
 import org.flywaydb.core.api.MigrationInfo;
 import org.opendcs.spi.database.MigrationProvider;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.spi.database.MigrationProvider.MigrationProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +37,22 @@ public class ManageDatabaseApp
 {
     private static final Logger log = LoggerFactory.getLogger(ManageDatabaseApp.class);
 
-    public static void main(String args[]) throws Exception
+    public static void main(String args[])
+    {
+        try
+        {
+            run(args);
+        }
+        catch (Exception ex)
+        {
+            log.error("Database migration or after-update tasks failed", ex);
+            System.exit(1);
+        }
+        // Oracle's connection pool can leave executor threads running after the work completes.
+        System.exit(0);
+    }
+
+    private static void run(String args[]) throws Exception
     {
         StringToken implementation = new StringToken("I","which database type are we installing? Examples: 'CWMS-Oracle', 'OpenDCS-Oracle',  'OpenDCS-Postgres' ",
                                                      "",TokenOptions.optRequired,"");
@@ -131,7 +148,8 @@ public class ManageDatabaseApp
             }
 
             log.info("Running after-update tasks on the existing database");
-            AfterUpdateRunner.run(DatabaseService.getDatabaseFor(ds));
+            AfterUpdateRunner.run(getDatabaseForAfterUpdates(
+                    profile, console, appUsername.getValue(), appPassword.getValue()));
         }
     }
 
@@ -178,6 +196,19 @@ public class ManageDatabaseApp
     public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c, String username, String password) throws IOException, FileNotFoundException
     {
         DecodesSettings settings = DecodesSettings.fromProfile(p);
+        return new SimpleDataSource(settings.editDatabaseLocation, getCredentials(settings, c, username, password));
+    }
+
+    /** Uses the profile-aware provider so CWMS connections have office/security context. */
+    public static OpenDcsDatabase getDatabaseForAfterUpdates(Profile p, Console c, String username, String password)
+            throws IOException, DatabaseException
+    {
+        DecodesSettings settings = DecodesSettings.fromProfile(p);
+        return DatabaseService.getDatabaseFor("algoupdate", settings, getCredentials(settings, c, username, password));
+    }
+
+    private static Properties getCredentials(DecodesSettings settings, Console c, String username, String password)
+    {
         if (username == null)
         {
             c.printf("Please enter the schema owning username and password for database at %s,%s",
@@ -188,7 +219,10 @@ public class ManageDatabaseApp
             password = new String(pw);
         }
 
-        return new SimpleDataSource(settings.editDatabaseLocation,username,password);
+        Properties credentials = new Properties();
+        credentials.setProperty("username", username);
+        credentials.setProperty("password", password);
+        return credentials;
     }
 
     private static void setPlaceholders(Properties props, Console c, MigrationProvider mp)
