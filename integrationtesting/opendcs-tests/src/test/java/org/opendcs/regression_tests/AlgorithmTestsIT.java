@@ -16,6 +16,7 @@ import decodes.db.SiteName;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbAlgorithmExecutive;
+import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.ImportComp;
@@ -34,15 +35,18 @@ import org.junit.jupiter.api.TestFactory;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.helpers.ImporterHelper;
+import org.opendcs.fixtures.helpers.TestConfig;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.opendcs.fixtures.helpers.ImporterHelper.buildFilePath;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
@@ -139,7 +143,7 @@ public class AlgorithmTestsIT extends AppTestBase
 		ImporterHelper helper = new ImporterHelper(tsDb, configuration, environment, exit);
 
         return DynamicTest.dynamicTest(comp.getName() +" "+test.getName(), () -> {
-            ImporterHelper.TestConfig config = ImporterHelper.TestConfig.EMPTY;
+            TestConfig config = TestConfig.EMPTY;
             for (File comp_data : test.listFiles()) 
             {
                 // Process comp xml
@@ -155,7 +159,7 @@ public class AlgorithmTestsIT extends AppTestBase
                 else if (name.contains(".config"))
                 {
                     log.info("Has config: " + comp_data.getAbsolutePath());
-                    config = ImporterHelper.TestConfig.read(comp_data);
+                    config = TestConfig.read(comp_data);
                     config.assumeEnabledForCurrentEngine();
                 }
                 else if (name.endsWith(".sql"))
@@ -261,8 +265,18 @@ public class AlgorithmTestsIT extends AppTestBase
 
         for (String role : roles)
         {
-            helper.assertRoleRowIsUnconfigured(computation.getName(), role);
-            helper.assertUnassignedRole(computation.getName(), role);
+            String roleOfComp = stage + ": role " + role + " of computation "
+                + computation.getName();
+
+            // Exactly one, because nothing constrains (computation_id, algo_role_name) to be
+            // unique, so a fixture that is not delete-then-insert accumulates records.
+            assertEquals(1, helper.countUnconfiguredRoleRecords(computation.getName(), role),
+                () -> roleOfComp + " must have exactly one unconfigured cp_comp_ts_parm record");
+
+            DbCompParm parm = helper.readCompParm(computation.getName(), role);
+            assertNotNull(parm, () -> roleOfComp + " has no cp_comp_ts_parm record");
+            assertTrue(parm.getSiteDataTypeId().isNull(),
+                () -> roleOfComp + " should not name a site and datatype");
 
             // The record alone cannot tell an unassigned role from an absent one. A record
             // naming no site and datatype still yields a ParmRef, so isAssigned is the check
