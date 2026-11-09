@@ -72,6 +72,11 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 	private ArrayList<ArrayList<Double>> valueSetsA = null;
 
 	
+	private static String indepRole(int index)
+	{
+		return "indep" + (index + 1);
+	}
+
 	/**
 	 * Builds the comma-separated list of independent parameter codes from the time series
 	 * mapped to the indep roles, and sets numIndeps to the number found. Parameters are used
@@ -91,7 +96,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		numIndeps = 0;
 		for (int idx = 0; idx < missingAction.length; idx++)
 		{
-			String role = "indep" + (idx + 1);
+			String role = indepRole(idx);
 			TimeSeriesIdentifier tsid = getParmTsId(role);
 			if (tsid == null)
 			{
@@ -247,7 +252,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 			{
 				if (punits[pidx] == null)
 					continue;
-				String pname = "indep" + (pidx+1);
+				String pname = indepRole(pidx);
 				ParmRef indepParmRef = getParmRef(pname);
 				if (indepParmRef == null || indepParmRef.timeSeries == null 
 				 || indepParmRef.timeSeries.getUnitsAbbr() == null)
@@ -307,9 +312,9 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 			throw new DbCompException("No rating set!");
 		}
 		
-		double indepVals[] = { indep1, indep2, indep3, indep4, indep5,
+		double[] indepVals = { indep1, indep2, indep3, indep4, indep5,
 							   indep6, indep7, indep8, indep9 };
-		String indepMissingActions[] = { indep1_MISSING, indep2_MISSING, indep3_MISSING,
+		String[] indepMissingActions = { indep1_MISSING, indep2_MISSING, indep3_MISSING,
 										 indep4_MISSING, indep5_MISSING, indep6_MISSING,
 										 indep7_MISSING, indep8_MISSING, indep9_MISSING };
 
@@ -317,7 +322,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		// Inputs beyond numIndeps are not part of the rating spec, so they're not considered.
 		for (int idx = 0; idx < numIndeps; idx++)
 		{
-			if (!isAssigned("indep" + (idx + 1)))
+			if (!isAssigned(indepRole(idx)))
 			{
 				continue;
 			}

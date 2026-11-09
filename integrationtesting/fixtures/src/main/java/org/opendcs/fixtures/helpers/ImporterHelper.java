@@ -52,9 +52,6 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 import hec.data.RatingException;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 public class ImporterHelper
 {
@@ -142,68 +139,6 @@ public class ImporterHelper
 			String msg = String.format("Error reading config file: %s", compData.getAbsolutePath());
 			log.atError().setCause(ex).log(msg);
 			throw new ImportException(msg, ex);
-		}
-	}
-
-	/**
-	 * The directives a test directory's .config file can carry. Lines naming no known
-	 * directive are ignored.
-	 *
-	 * @param enableOn    the one engine this test runs on, or null to run on any engine.
-	 * @param expectError text the computation is expected to fail with, or null when the
-	 *                    test asserts on the computation's output instead.
-	 * @param unassignedRoles algorithm roles that must have a cp_comp_ts_parm record which
-	 *                    names no time series, so the computation finds the role declared but
-	 *                    unassigned rather than absent.
-	 */
-	public record TestConfig(String enableOn, String expectError, List<String> unassignedRoles)
-	{
-		private static final String ENABLE_ON = "EnableOn:";
-		private static final String EXPECT_ERROR = "ExpectError:";
-		private static final String UNASSIGNED_ROLES = "UnassignedRoles:";
-
-		/** What a test directory with no .config file is treated as having. */
-		public static final TestConfig EMPTY = new TestConfig(null, null, List.of());
-
-		public static TestConfig read(File configFile) throws IOException
-		{
-			String enableOn = null;
-			String expectError = null;
-			List<String> unassignedRoles = List.of();
-			for (String line : Files.readAllLines(configFile.toPath(), StandardCharsets.UTF_8))
-			{
-				String setting = line.trim();
-				if (setting.startsWith(ENABLE_ON))
-				{
-					enableOn = setting.substring(ENABLE_ON.length()).trim();
-				}
-				else if (setting.startsWith(EXPECT_ERROR))
-				{
-					expectError = setting.substring(EXPECT_ERROR.length()).trim();
-				}
-				else if (setting.startsWith(UNASSIGNED_ROLES))
-				{
-					unassignedRoles = Arrays.stream(
-							setting.substring(UNASSIGNED_ROLES.length()).split(","))
-						.map(String::trim)
-						.filter(role -> !role.isEmpty())
-						.toList();
-				}
-			}
-			return new TestConfig(enableOn, expectError, unassignedRoles);
-		}
-
-		/**
-		 * Skip the calling test unless the engine under test is the one the config names.
-		 */
-		public void assumeEnabledForCurrentEngine()
-		{
-			if (enableOn == null)
-			{
-				return;
-			}
-			final String testEngine = System.getProperty("opendcs.test.engine", "").trim();
-			assumeFalse(!enableOn.equals(testEngine), "Test is disabled by config file for: " + enableOn);
 		}
 	}
 
@@ -414,25 +349,13 @@ public class ImporterHelper
 
 	/**
 	 * Reads a computation back from the database and returns the parameter record for one of
-	 * its roles, checking that the record exists and names no site and datatype. An empty
-	 * {@code <CompParm roleName="x"/>} in a computation's XML fixture writes exactly this
-	 * record: the role has a database entry, so a ParmRef is built for it, but isAssigned
-	 * returns false. The role-absent case cannot exercise that distinction, because with no
-	 * record there is no ParmRef either.
-	 *
-	 * @throws AssertionError if the role has no record, or its record is configured.
+	 * its roles, or null if it has none.
 	 */
-	public DbCompParm assertUnassignedRole(String compName, String role)
+	public DbCompParm readCompParm(String compName, String role)
 	{
 		try (ComputationDAI compDao = tsDb.makeComputationDAO())
 		{
-			DbCompParm parm = compDao.getComputationByName(compName).getParm(role);
-			assertNotNull(parm, () -> "no cp_comp_ts_parm record was read back for role " + role
-				+ " of computation " + compName);
-			assertTrue(parm.getSiteDataTypeId().isNull(),
-				() -> "role " + role + " of computation " + compName
-					+ " should not name a site and datatype");
-			return parm;
+			return compDao.getComputationByName(compName).getParm(role);
 		}
 		catch (DbIoException | NoSuchObjectException ex)
 		{
@@ -441,15 +364,13 @@ public class ImporterHelper
 	}
 
 	/**
-	 * Checks the cp_comp_ts_parm table itself for what a parameter object cannot show: exactly
-	 * one record for the role, nothing in it that could resolve to a time series, and a
-	 * TABLE_SELECTOR that is not null. That last one matters because ParmRef.getDescription()
-	 * dereferences it and addTsToParmRef builds the message whether or not debug logging is
-	 * enabled, so a null there fails the computation for reasons unrelated to the role.
-	 *
-	 * @throws AssertionError if the record is missing, duplicated or partially configured.
+	 * Counts the role's cp_comp_ts_parm records that hold nothing that could resolve to a time
+	 * series and have a TABLE_SELECTOR that is not null, which a parameter object cannot show.
+	 * The TABLE_SELECTOR matters because ParmRef.getDescription() dereferences it and
+	 * addTsToParmRef builds the message whether or not debug logging is enabled, so a null there
+	 * fails the computation for reasons unrelated to the role.
 	 */
-	public void assertRoleRowIsUnconfigured(String compName, String role)
+	public int countUnconfiguredRoleRecords(String compName, String role)
 	{
 		final String sql = "select count(*) from cp_comp_ts_parm "
 			+ " where computation_id = (select computation_id from cp_computation "
@@ -468,11 +389,7 @@ public class ImporterHelper
 			count.setString(2, role);
 			try (ResultSet rs = count.executeQuery())
 			{
-				// Exactly one, because nothing constrains (computation_id, algo_role_name) to
-				// be unique, so a fixture that is not delete-then-insert accumulates records.
-				assertTrue(rs.next() && rs.getInt(1) == 1,
-					() -> "expected exactly one unconfigured cp_comp_ts_parm record for role "
-						+ role + " of computation " + compName);
+				return rs.next() ? rs.getInt(1) : 0;
 			}
 		}
 		catch (SQLException | OpenDcsDataException ex)
