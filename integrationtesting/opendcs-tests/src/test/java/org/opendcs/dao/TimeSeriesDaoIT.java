@@ -98,7 +98,7 @@ class TimeSeriesDaoIT extends AppTestBase
     }
 
     @Test
-    @EnableIfTsDb({"CWMS-Oracle", "OpenDCS-Postgres", "OpenDCS-Oracle"})
+    @EnableIfTsDb({"CWMS-Oracle", "OpenDCS-Postgres", "OpenDCS-Oracle", "OpenDCS-SQLite"})
     void test_timeseries_validation() throws Exception {
         try(TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
             SiteDAI siteDao = tsDb.makeSiteDAO())

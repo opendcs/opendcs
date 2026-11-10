@@ -149,6 +149,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean
 
 
         onClose.accept(this);
+        this.realConnection = null; // after a close we don't reuse this object
     }
 
     @Override
@@ -299,7 +300,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean
     @Override
     public boolean isClosed() throws SQLException
     {
-        return realConnection.isClosed();
+        return realConnection == null ? true : realConnection.isClosed();
     }
 
     @Override
@@ -311,7 +312,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean
     @Override
     public boolean isValid(int timeout) throws SQLException
     {
-        return realConnection.isValid(timeout);
+        return realConnection == null ? false : realConnection.isValid(timeout);
     }
 
     @Override

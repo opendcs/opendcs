@@ -454,16 +454,19 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		{
 			// The scratchpad is now what we want CP_COMP_DEPENDS to look like.
 			// Mark's 2-line SQL to move the scratchpad to CP_COMP_DEPENDS.
-			String q = "delete from cp_comp_depends "
-				+ "where(computation_id, ts_id) in "
-				+ "(select computation_id, ts_id from cp_comp_depends " +
-					(db.isOracle() ? "minus" : "except")  + " select computation_id, ts_id from cp_comp_depends_scratchpad)";
-			doModify(q, new Object[0]);
+			inTransaction(dao ->
+			{
+				String q = "delete from cp_comp_depends "
+					+ "where(computation_id, ts_id) in "
+					+ "(select computation_id, ts_id from cp_comp_depends " +
+						db.sqlListSubtraction()  + " select computation_id, ts_id from cp_comp_depends_scratchpad)";
+				dao.doModify(q, new Object[0]);
 
-			q = "insert into cp_comp_depends( computation_id, ts_id) "
-				+ "(select computation_id, ts_id from cp_comp_depends_scratchpad "
-				+ (db.isOracle() ? "minus" : "except") + " select computation_id, ts_id from cp_comp_depends)";
-			doModify(q, new Object[0]);
+				q = "insert into cp_comp_depends( computation_id, ts_id) "
+					+ "(select computation_id, ts_id from cp_comp_depends_scratchpad "
+					+ db.sqlListSubtraction() + " select computation_id, ts_id from cp_comp_depends)";
+				dao.doModify(q, new Object[0]);
+			});
 		}
 		catch (Exception ex)
 		{
@@ -478,11 +481,8 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		{
 			inTransaction(dao ->
 			{
-				try (CompDependsDAI dai = db.makeCompDependsDAO();)
-				{
-					dai.inTransactionOf(dao);
-					consumer.accept(dai);
-				}
+				this.inTransactionOf(dao);
+				consumer.accept(this);
 			});
 		}
 		catch (Exception ex)
@@ -496,9 +496,13 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	{
 		try
 		{
-			doModify("delete from cp_comp_depends_scratchpad sp "
-				+ "where exists(select * from cp_comp_depends cd where cd.computation_id = sp.computation_id "
-				+ "and cd.ts_id = sp.ts_id)", new Object[0]);
+			doModify(
+				"""
+					delete from cp_comp_depends_scratchpad as sp
+					where exists(select * from cp_comp_depends cd where cd.computation_id = sp.computation_id
+					and cd.ts_id = sp.ts_id)
+				""",
+				new Object[0]);
 		}
 		catch (SQLException ex)
 		{
