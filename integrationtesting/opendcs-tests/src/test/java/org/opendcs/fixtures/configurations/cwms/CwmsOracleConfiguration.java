@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.apache.commons.io.FileUtils;
 import org.opendcs.database.MigrationManager;
@@ -175,7 +176,7 @@ public class CwmsOracleConfiguration implements Configuration
             out.write("org.jooq".getBytes());
         }
     }
-
+    
     private void createPropertiesFile(UserPropertiesBuilder configBuilder, File propertiesFile) throws Exception
     {
         configBuilder.withEditDatabaseType("CWMS");
@@ -278,6 +279,10 @@ public class CwmsOracleConfiguration implements Configuration
             return true;
         }
         else if(dao.equals(LoadingAppDao.class))
+        {
+            return true;
+        }
+        else if(dao.equals(decodes.cwms.CwmsLocationLevelDAO.class))
         {
             return true;
         }
