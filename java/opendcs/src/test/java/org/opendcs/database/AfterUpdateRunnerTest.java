@@ -24,6 +24,7 @@ import org.opendcs.database.api.DatabaseEngine;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.operations.OpenDcsOperations;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.opendcs.spi.database.AfterUpdate;
 import org.openide.util.Lookup;
@@ -106,6 +107,12 @@ class AfterUpdateRunnerTest
 
             @Override
             public <T> Optional<T> getLegacyDatabase(Class<T> databaseClass)
+            {
+                return Optional.empty();
+            }
+
+            @Override
+            public <T extends OpenDcsOperations> Optional<T> getOperations(Class<T> operations)
             {
                 return Optional.empty();
             }
