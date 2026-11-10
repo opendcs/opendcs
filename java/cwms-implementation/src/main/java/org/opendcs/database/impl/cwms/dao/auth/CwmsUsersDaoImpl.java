@@ -3,6 +3,7 @@ package org.opendcs.database.impl.cwms.dao.auth;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.mapper.RowMapper;
@@ -245,6 +246,21 @@ public class CwmsUsersDaoImpl implements UsersDao
                         .add();
             }
             idpBatch.execute();
+        }
+
+        return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Updated User could not be retrieved."));
+    }
+
+    @Override
+    public User updatePreferences(DataTransaction tx, DbKey id, Map<String, Object> preferences) throws OpenDcsDataException
+    {
+        Handle handle = getHandle(tx);
+
+        try (var update = handle.createUpdate("update opendcs_user set preferences = :preferences where id = :id"))
+        {
+            update.bind(GenericColumns.ID.column(), id)
+                  .bindByType(GenericColumns.PREFERENCES.column(), preferences, ConfigColumnMapper.CONFIG_TYPE)
+                  .execute();
         }
 
         return getUser(tx, id).orElseThrow(() -> new OpenDcsDataException("Updated User could not be retrieved."));
