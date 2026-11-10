@@ -1,0 +1,80 @@
+group ComputationDaoImpl;
+
+select(comp_columns, algo_columns, parm_columns, parm_join, algo_join, algo_parm_columns, algo_parm_join,
+       algo_prop_columns, algo_prop_join, prop_columns, prop_join, where, limit, collate, dual, comp_prefix,
+       algo_prefix, algo_parm_prefix, parm_prefix, script_columns, script_join, script_prefix, algo_prop_prefix,
+       prop_prefix) ::= <<
+with comps(id, name) as (
+    select computation_id, computation_name
+      from cp_computation <comp_prefix>
+      <if(where)>where <where><endif>
+      order by <comp_prefix>.computation_name <collate> asc
+      <if(limit)><limit><endif>
+)
+select 
+    <comp_columns>,
+    -- these are intentionally pulled in separate, to ease the use of the 
+    -- "don't expand" feature while still retaining some useful information.
+    local_algo.algorithm_name <comp_prefix>_algorithm_name,
+    local_app.loading_application_name <comp_prefix>_app_name,
+    <parm_columns>
+    <if(algo_columns)>, <algo_columns> <endif>
+    <if(algo_parm_columns)>, <algo_parm_columns> <endif>
+    <if(algo_prop_columns)>, <algo_prop_columns> <endif>
+    <if(script_columns)>, <script_columns> <endif>
+    <if(prop_columns)>, <prop_columns> <endif>
+from comps
+join cp_computation <comp_prefix> on <comp_prefix>.computation_id = comps.id
+left outer join cp_algorithm local_algo on local_algo.algorithm_id = comps.id
+left outer join hdb_loading_application local_app on local_app.loading_application_id = <comp_prefix>.loading_application_id
+<parm_join>
+<if(algo_join)> <algo_join> <endif>
+<if(script_join)> <script_join> <endif>
+<if(algo_prop_join)> <algo_prop_join> <endif>
+<if(algo_parm_join)> <algo_parm_join> <endif>
+<if(prop_join)> <prop_join> <endif>
+order by <comp_prefix>.computation_name <collate> asc, <parm_prefix>.algo_role_name <collate> asc
+<if(script_join)> , <script_prefix>.script_type <collate> asc, <script_prefix>.block_num asc <endif>
+
+>>
+
+
+merge(dual) ::= <<
+merge into cp_computation comp
+using (select
+        :computation_id computation_id, :computation_name computation_name, :algorithm_id algorithm_id,
+        :cmmnt cmmnt, :loading_application_id loading_application_id, :date_time_loaded date_time_loaded,
+        :enabled enabled, :effective_start_date_time effective_start, :effective_end_date_time effective_end,
+        :group_id group_id <dual>) input
+on (comp.computation_id = input.computation_id)
+when matched then
+    update set algorithm_id = input.algorithm_id, cmmnt = input.cmmnt, computation_name = input.computation_name,
+               loading_application_id = input.loading_application_id, date_time_loaded = input.date_time_loaded,
+               enabled = input.enabled, effective_start_date_time = input.effective_start, 
+               effective_end_date_time = input.effective_end, group_id = input.group_id
+when not matched then
+    insert (computation_id, computation_name, loading_application_id, algorithm_id, cmmnt,
+            date_time_loaded, enabled, effective_start_date_time, effective_date_end_time, group_id)
+    values (input.computation_id, input.computation_name, input.loading_application_id, input.cmmnt,
+            input.date_Time_loaded, input.enabled, input.effective_start, input.effective_end, input.group_id)
+>>
+
+deleteComp() ::= "delete from cp_computation where computation_id = :id"
+deleteProps() ::= "delete from cp_comp_property where computation_id = :id"
+
+deleteParms() ::= "delete from cp_comp_ts_parm where computation_id = :id"
+
+insertProp() ::= <<
+insert into cp_comp_property(computation_id, prop_name, prop_value)
+values (:computation_id, :name, :prop_value)
+>>
+
+
+insertParm() ::= <<
+insert into cp_comp_ts_parm(computation_id, algo_role_name, site_datatype_id, interval_abbr,
+                            table_selector, delta_t, model_id, datatype_id, delta_t_units,
+                            site_id)
+values (:computation_id, :algo_role_name, :site_datatype_id, :interval_abbr,
+        :table_selector, :delta_t, :model_id, :datatype_id, :delta_t_units,
+        :site_id)
+>>
