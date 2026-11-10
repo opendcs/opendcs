@@ -107,8 +107,10 @@ public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 		// that its identifier is looked up for below -- so only its parameter is required.
 		ParmRef outputParm = getParmRef("output");
 		if (outputParm == null || outputParm.timeSeries == null)
+		{
 			throw new DbCompException("Computation '" + comp.getName()
 				+ "' has no output parameter -- update its parameters.");
+		}
 		CTimeSeries outputTS = outputParm.timeSeries;
 		TimeSeriesIdentifier outputTsid = outputTS.getTimeSeriesIdentifier();
 		if (outputTsid == null)

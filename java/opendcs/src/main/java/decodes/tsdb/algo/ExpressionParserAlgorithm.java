@@ -92,7 +92,9 @@ public class ExpressionParserAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBas
 	protected MissingAction getInputMissingAction(String roleName)
 	{
 		if (!isAssigned(roleName))
+		{
 			return MissingAction.IGNORE;
+		}
 		return super.getInputMissingAction(roleName);
 	}
 

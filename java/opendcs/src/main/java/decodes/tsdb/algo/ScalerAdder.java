@@ -109,13 +109,19 @@ public class ScalerAdder extends AW_AlgorithmBase
 
 		double tally = 0.0;
 		for(int i = 0; i < inputs.length; i++)
+		{
 			if (!isMissing(inputs[i]))
+			{
 				tally += (inputs[i] * coeffs[i]);
+			}
+		}
 
 		LoggingEventBuilder leb = log.atTrace();
 		for(int i = 0; i < inputs.length; i++)
+		{
 			leb.addKeyValue("input" + (i + 1), inputs[i])
 			   .addKeyValue("coeff" + (i + 1), coeffs[i]);
+		}
 		leb.log("tally={}", tally);
 		setOutput(output, tally);
 	}

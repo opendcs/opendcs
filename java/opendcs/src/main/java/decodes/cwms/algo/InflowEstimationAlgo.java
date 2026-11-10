@@ -154,7 +154,9 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	protected MissingAction getInputMissingAction(String roleName)
 	{
 		if (OPTIONAL_ROLES.contains(roleName) && !isAssigned(roleName))
+		{
 			return MissingAction.IGNORE;
+		}
 		return super.getInputMissingAction(roleName);
 	}
 

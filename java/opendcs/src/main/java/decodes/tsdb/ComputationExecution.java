@@ -407,14 +407,20 @@ public final class ComputationExecution implements AutoCloseable
 			{
 				String msg = "Error in running computation " + comp.getKey() + ":" + comp.getName() + " -- ";
 				if (parmRef == null)
+				{
 					msg = msg + "No such input time series -- " + ex.getMessage();
+				}
 				else
 				{
 					msg = msg + "No such input time series for parm '" + parmRef.role + "'";
 					if(parmRef.tsid == null)
+					{
 						msg = msg + " -- No TSID assigned.";
+					}
 					else
+					{
 						msg = msg + " -- TSID '" + parmRef.tsid.getUniqueString() + "' does not exist in db.";
+					}
 				}
 				listener.onProgress(msg, Level.WARN, ex);
 				numErrors.incrementAndGet();

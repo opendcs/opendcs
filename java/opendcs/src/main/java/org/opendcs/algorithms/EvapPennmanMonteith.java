@@ -209,7 +209,9 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
     protected MissingAction getInputMissingAction(String roleName)
     {
         if (!isAssigned(roleName))
+        {
             return MissingAction.IGNORE;
+        }
         return super.getInputMissingAction(roleName);
     }
 

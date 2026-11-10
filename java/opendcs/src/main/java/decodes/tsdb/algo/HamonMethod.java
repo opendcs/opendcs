@@ -90,8 +90,10 @@ public class HamonMethod extends AW_AlgorithmBase
 		CTimeSeries inputTimeSeries = getRequiredTimeSeries("input");
 		TimeSeriesIdentifier inputTsid = inputTimeSeries.getTimeSeriesIdentifier();
 		if (inputTsid == null || inputTsid.getSite() == null)
+		{
 			throw new DbCompException("The 'input' series of computation '" + comp.getName()
 				+ "' has no site, and HamonMethod needs the site latitude.");
+		}
 		Site site = inputTsid.getSite();
 		double temperatureCelsius = convert(input, temperatureConverter, "temperature", "C");
 

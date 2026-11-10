@@ -165,8 +165,10 @@ public class DynamicAggregatesAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		// get the input and output parameters and see if its model data
 		ParmRef inputRef = getParmRef("input");
 		if (inputRef == null || inputRef.timeSeries == null)
+		{
 			throw new DbCompException("Computation '" + comp.getName()
 				+ "' has no 'input' parameter -- update its parameters.");
+		}
 		String input_interval = inputRef.compParm.getInterval();
 		String table_selector = inputRef.compParm.getTableSelector();
 		int model_run_id = inputRef.timeSeries.getModelRunId();

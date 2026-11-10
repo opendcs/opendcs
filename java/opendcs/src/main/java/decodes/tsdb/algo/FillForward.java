@@ -74,7 +74,9 @@ public class FillForward extends decodes.tsdb.algo.AW_AlgorithmBase
 		// empty check below already treats as "nothing to do".
 		inputTS = getAssignedTimeSeries("input");
 		if (inputTS == null || inputTS.size() == 0)
+		{
 			return;
+		}
 
 		outputIntvs = getRequiredCompParm("output").getInterval();
 		outputIntv = IntervalCodes.getInterval(outputIntvs);

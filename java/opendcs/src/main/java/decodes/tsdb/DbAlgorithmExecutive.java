@@ -466,16 +466,22 @@ public abstract class DbAlgorithmExecutive
 		{
 			TimeSeriesIdentifier tsid = tsdb.expandSDI(parm);
 			if (tsid != null)
+			{
 				parmRef.tsid = tsid;
+			}
 			else if (DbKey.isNull(parm.getSiteDataTypeId()))
+			{
 				log.debug("Role '{}' of computation '{}' names no site and data type, so it"
 						  + " is unassigned.", role, comp.getName());
+			}
 			else
+			{
 				// The parameter does name a site and data type, so this is a configuration
 				// problem rather than an intentionally unmapped role.
 				log.warn("Role '{}' of computation '{}' has site and data type {} but no time"
 						 + " series matches it; the role is treated as unassigned.",
 						 role, comp.getName(), parm.getSiteDataTypeId());
+			}
 		}
 		catch(Exception ex)
 		{
@@ -501,13 +507,17 @@ public abstract class DbAlgorithmExecutive
 	protected void warnUnassignedRoles()
 	{
 		for(String role : getInputNames())
+		{
 			warnUnassignedInputRole(role);
+		}
 	}
 
 	private void warnUnassignedInputRole(String role)
 	{
 		if (getParmRef(role) != null || !reportedRoles.add(role))
+		{
 			return;
+		}
 
 		// An algorithm whose inputs are optional says so with a <role>_MISSING property,
 		// so only the roles left at the 'fail' default are worth telling an operator about.
@@ -648,9 +658,13 @@ public abstract class DbAlgorithmExecutive
 	{
 		CTimeSeries ret = new CTimeSeries(ref.compParm);
 		if (TextUtil.strEqualIgnoreCase(ref.compParm.getTableSelector(), "M_"))
+		{
 			ret.setModelRunId(modelRunId);
+		}
 		if (ref.tsid != null)
+		{
 			ret.setTimeSeriesIdentifier(ref.tsid);
+		}
 		return ret;
 	}
 
@@ -851,7 +865,9 @@ public abstract class DbAlgorithmExecutive
 		{
 			ParmRef parmRef = parmMap.get(role);
 			if (parmRef == null || parmRef.tsid == null)
+			{
 				continue;
+			}
 			log.trace("expandForDeltas 1 role='{}'", role);
 
 			String typ = parmRef.compParm.getAlgoParmType().toLowerCase();
@@ -1837,7 +1853,9 @@ public abstract class DbAlgorithmExecutive
 	protected CTimeSeries getAssignedTimeSeries(String role)
 	{
 		if (!isAssigned(role))
+		{
 			return null;
+		}
 		ParmRef ref = getParmRef(role);
 		return ref == null ? null : ref.timeSeries;
 	}
@@ -1853,7 +1871,9 @@ public abstract class DbAlgorithmExecutive
 	{
 		CTimeSeries cts = getAssignedTimeSeries(role);
 		if (cts == null)
+		{
 			throw new DbCompException(unassignedRoleMessage(role));
+		}
 		return cts;
 	}
 
@@ -1868,7 +1888,9 @@ public abstract class DbAlgorithmExecutive
 	{
 		TimeSeriesIdentifier tsid = getParmTsId(role);
 		if (tsid == null)
+		{
 			throw new DbCompException(unassignedRoleMessage(role));
+		}
 		return tsid;
 	}
 
@@ -1899,8 +1921,10 @@ public abstract class DbAlgorithmExecutive
 	{
 		DbCompParm parm = getAssignedCompParm(role);
 		if (parm == null)
+		{
 			throw new DbCompException("Computation '" + comp.getName()
 				+ "' has no parameter for role '" + role + "' -- update its parameters.");
+		}
 		return parm;
 	}
 

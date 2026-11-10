@@ -257,7 +257,9 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 				String pname = indepRole(pidx);
 				CTimeSeries indepTS = getAssignedTimeSeries(pname);
 				if (indepTS == null || indepTS.getUnitsAbbr() == null)
+				{
 					continue;
+				}
 
 				if (!indepTS.getUnitsAbbr().equalsIgnoreCase(punits[pidx]))
 				{

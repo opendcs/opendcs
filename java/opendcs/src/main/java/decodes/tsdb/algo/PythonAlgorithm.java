@@ -252,7 +252,9 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected MissingAction getInputMissingAction(String roleName)
 	{
 		if (getParmRef(roleName) == null && comp.getProperty(roleName + "_MISSING") == null)
+		{
 			return MissingAction.IGNORE;
+		}
 		return super.getInputMissingAction(roleName);
 	}
 
@@ -850,11 +852,15 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 		ComputationApp app = ComputationApp.instance();
 		if (app == null)
+		{
 			return;
+		}
 		ParmRef parmRef = getParmRef(rolename);
 		if (parmRef == null || parmRef.compParm == null
 		 || !parmRef.compParm.getAlgoParmType().startsWith("i"))
+		{
 			return;
+		}
 		TimeSeriesIdentifier tsid = getParmTsId(rolename);
 		if (tsid == null)
 		{

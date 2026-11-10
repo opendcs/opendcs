@@ -563,8 +563,10 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			// Now add times t+int, t+(2*int), t+(3*int), until we hit the end.
 			String[] inputNames = getInputNames();
 			if (inputNames.length == 0)
+			{
 				throw new DbCompException("Comp '" + comp.getName()
 					+ "' is a running aggregate but declares no input parameters.");
+			}
 			DbCompParm inpParm = getRequiredCompParm(inputNames[0]);
 			calIncr = IntervalCodes.getIntervalCalIncr(inpParm.getInterval());
 			aggCal.setTime(t);
@@ -1105,10 +1107,14 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		{
 			TimeSeriesIdentifier tsid = getParmTsId(name);
 			if (tsid != null && !DbKey.isNull(tsid.getKey()))
+			{
 				app.getResolver().pythonWrote(comp.getId(), tsid.getKey());
+			}
 			else
+			{
 				log.debug("Not recording that '{}' was written for computation '{}':"
 						  + " the role is not assigned to a time series.", name, comp.getName());
+			}
 		}
 
 	}
@@ -1324,7 +1330,9 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 	{
 		ParmRef parmRef = getParmRef(roleName);
 		if (parmRef != null)
+		{
 			return parmRef.missingAction;
+		}
 		return comp.getMissingAction(roleName);
 	}
 

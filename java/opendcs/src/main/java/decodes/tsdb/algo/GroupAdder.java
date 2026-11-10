@@ -75,7 +75,9 @@ public class GroupAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected MissingAction getInputMissingAction(String roleName)
 	{
 		if ("mask".equalsIgnoreCase(roleName))
+		{
 			return MissingAction.IGNORE;
+		}
 		return super.getInputMissingAction(roleName);
 	}
 
@@ -129,7 +131,9 @@ public class GroupAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 			// would silently replace the IGNORE default set above.
 			String maskMissing = origComp.getProperty("mask_MISSING");
 			if (maskMissing != null && maskMissing.trim().length() > 0)
+			{
 				missingAction = MissingAction.fromString(maskMissing);
+			}
 
 			maskUnits = origComp.getProperty("mask_EU");
 

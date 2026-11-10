@@ -150,7 +150,9 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 		// merely missing -- or whenever no time series is assigned to the role at all.
 		// The base class still deletes the output when the input was explicitly deleted.
 		if (isMissing(input))
+		{
 			return;
+		}
 
 		double x = input;
 		if (converter != null)
