@@ -19,6 +19,7 @@ import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.DuplicateTimeSeriesException;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -185,11 +186,20 @@ public class AlgorithmTestsIT extends AppTestBase
 
             DataCollection theData = new DataCollection();
 
-            for (CTimeSeries ctsi: inputTS){
-                for (int idx = 0; idx < ctsi.size(); idx++){
+            for (CTimeSeries ctsi: inputTS)
+            {
+                for (int idx = 0; idx < ctsi.size(); idx++)
+                {
                     VarFlags.setWasAdded(ctsi.sampleAt(idx));
                 }
-                theData.addTimeSeries(ctsi);
+                try
+                {
+                    theData.addTimeSeries(ctsi);
+                }
+                catch (DuplicateTimeSeriesException ex)
+                {
+                    log.atTrace().setCause(ex).log("Time series {}, was already saved. Check your input/output data for duplicates.", ctsi.getDisplayName());
+                }
             }
             for (CTimeSeries ctso: outputTS){
                 theData.addTimeSeries(ctso);
