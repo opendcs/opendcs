@@ -17,9 +17,10 @@ import ilex.var.NamedVariable;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Constants;
 import decodes.db.SiteName;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
+import decodes.tsdb.DbCompParm;
 import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.ParmRef;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
@@ -207,12 +208,13 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		throws DbCompException
 	{
 		String indepSpecId = buildIndepSpec();
-		
-		ParmRef depParmRef = getParmRef("dep");
+
+		DbCompParm depParm = getRequiredCompParm("dep");
+		CTimeSeries depTS = getAssignedTimeSeries("dep");
 		String specLocation = indep1SiteName;
 		if (useDepLocation)
 		{
-			SiteName depSiteName = depParmRef.compParm.getSiteName(Constants.snt_CWMS);
+			SiteName depSiteName = depParm.getSiteName(Constants.snt_CWMS);
 			if (depSiteName == null)
 				log.warn("No dependent site name available, using site from indep1: '{}'", specLocation);
 			else
@@ -228,7 +230,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 		
 		specId = specLocation
-			+ "." + indepSpecId + ";" + depParmRef.compParm.getDataType().getCode() + "."
+			+ "." + indepSpecId + ";" + depParm.getDataType().getCode() + "."
 			+ templateVersion + "." + specVersion;
 
 		// Retrieve the RatingSet object
@@ -253,28 +255,27 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 				if (punits[pidx] == null)
 					continue;
 				String pname = indepRole(pidx);
-				ParmRef indepParmRef = getParmRef(pname);
-				if (indepParmRef == null || indepParmRef.timeSeries == null 
-				 || indepParmRef.timeSeries.getUnitsAbbr() == null)
+				CTimeSeries indepTS = getAssignedTimeSeries(pname);
+				if (indepTS == null || indepTS.getUnitsAbbr() == null)
 					continue;
 
-				if (!indepParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[pidx]))
+				if (!indepTS.getUnitsAbbr().equalsIgnoreCase(punits[pidx]))
 				{
 					log.debug("Converting {} units for time series {} from {} to {}",
-							  pname, indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString(),
-							  indepParmRef.timeSeries.getUnitsAbbr(), punits[pidx]);
-					TSUtil.convertUnits(indepParmRef.timeSeries, punits[pidx]);
+							  pname, indepTS.getTimeSeriesIdentifier().getUniqueString(),
+							  indepTS.getUnitsAbbr(), punits[pidx]);
+					TSUtil.convertUnits(indepTS, punits[pidx]);
 				}
 			}
 			
 			// Likewise for the dependent param:
 			if (punits != null && punits.length > 1 && punits[punits.length-1] != null
-			 && depParmRef.timeSeries.getUnitsAbbr() != null
-			 && !depParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[punits.length-1]))
+			 && depTS != null && depTS.getUnitsAbbr() != null
+			 && !depTS.getUnitsAbbr().equalsIgnoreCase(punits[punits.length-1]))
 			{
 				log.debug("Converting dep units from {} to {}.",
-						  depParmRef.timeSeries.getUnitsAbbr(), punits[punits.length-1]);
-				TSUtil.convertUnits(depParmRef.timeSeries, punits[punits.length-1]);
+						  depTS.getUnitsAbbr(), punits[punits.length-1]);
+				TSUtil.convertUnits(depTS, punits[punits.length-1]);
 			}
 
 		}

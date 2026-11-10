@@ -354,6 +354,13 @@ public final class ComputationExecution implements AutoCloseable
 						comp.getExecutive().setDc(dataCollection);
 						comp.getExecutive().addTsToParmRef(parm.getRoleName(), false);
 						parmRef = comp.getExecutive().getParmRef(parm.getRoleName());
+						if (parmRef == null || parmRef.timeSeries == null)
+						{
+							listener.onProgress("Skipping input role '" + parm.getRoleName()
+								+ "' of computation '" + comp.getName()
+								+ "': no time series is assigned to it.", Level.WARN, null);
+							continue;
+						}
 						CTimeSeries cts = parmRef.timeSeries;
 
 						// Read values between previous and this run. Then flag them as DB_ADDED
@@ -399,11 +406,16 @@ public final class ComputationExecution implements AutoCloseable
 			catch(BadTimeSeriesException ex)
 			{
 				String msg = "Error in running computation " + comp.getKey() + ":" + comp.getName() + " -- ";
-				msg = msg + "No such input time series for parm '" + parmRef.role + "'";
-				if(parmRef.tsid == null)
-					msg = msg + " -- No TSID assigned.";
+				if (parmRef == null)
+					msg = msg + "No such input time series -- " + ex.getMessage();
 				else
-					msg = msg + " -- TSID '" + parmRef.tsid.getUniqueString() + "' does not exist in db.";
+				{
+					msg = msg + "No such input time series for parm '" + parmRef.role + "'";
+					if(parmRef.tsid == null)
+						msg = msg + " -- No TSID assigned.";
+					else
+						msg = msg + " -- TSID '" + parmRef.tsid.getUniqueString() + "' does not exist in db.";
+				}
 				listener.onProgress(msg, Level.WARN, ex);
 				numErrors.incrementAndGet();
 			}

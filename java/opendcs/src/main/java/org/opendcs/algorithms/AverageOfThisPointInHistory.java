@@ -108,7 +108,7 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
             storage = input;
             num++;
         }
-        CTimeSeries ts = this.getParmRef("input").timeSeries;
+        CTimeSeries ts = getRequiredTimeSeries("input");
 
         for (int i=1; i < numberOfIntervals; i++)
         {
@@ -125,6 +125,12 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
 
                 log.trace("Search for data at time: {}", time.toString() );
                 tv = ts.findWithin(cal.getTime(), 1000);
+                if (tv == null)
+                {
+                    log.trace("No value at {} in the window of the average", time);
+                    setFlagBits(average, CwmsFlags.VALIDITY_QUESTIONABLE);
+                    continue;
+                }
 
                 log.trace("Value at {} = {}", tv.timeString(), tv.getStringValue() );
                 storage += tv.getDoubleValue();
@@ -133,12 +139,7 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
             }
             catch (NoConversionException ex)
             {
-                log.trace("Non valid value: {}", tv.getStringValue());
-                setFlagBits(average, CwmsFlags.VALIDITY_QUESTIONABLE);
-            }
-            catch( NullPointerException ex)
-            {
-                log.trace("Missing Value in in window of average");
+                log.trace("Non valid value at {} in window of average", time);
                 setFlagBits(average, CwmsFlags.VALIDITY_QUESTIONABLE);
             }
             catch (DbIoException ex)
@@ -155,6 +156,15 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
                    .log("Issue with timeseries, unable to retrieve value");
                 setFlagBits(average, CwmsFlags.VALIDITY_QUESTIONABLE);
             }
+        }
+
+        if (num == 0)
+        {
+            // Without this the division below yields NaN, which setOutput does not treat
+            // as missing and so writes to the database.
+            log.debug("No values in the window of the average at {} -- no output",
+                      _timeSliceBaseTime);
+            return;
         }
 
         double ave = storage/num;

@@ -166,7 +166,7 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		ParmRef parmRef = getParmRef("input");
 		if (parmRef == null)
 		{
-			log.warn("FlowToVolumeAlg: Unknown aggregate control output variable 'INPUT'");
+			log.warn("FlowToVolumeAlg: No time series assigned to input role 'INPUT'");
 			return;
 		}
 		String input_interval = parmRef.compParm.getInterval();
@@ -174,7 +174,7 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		parmRef = getParmRef("output");
 		if (parmRef == null)
 		{
-			log.warn("FlowToVolumeAlg: Unknown aggregate control output variable 'OUTPUT'");
+			log.warn("FlowToVolumeAlg: No time series assigned to output role 'OUTPUT'");
 			return;
 		}
 		String output_interval = parmRef.compParm.getInterval();

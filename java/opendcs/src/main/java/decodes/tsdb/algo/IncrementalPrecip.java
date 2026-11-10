@@ -109,8 +109,15 @@ public class IncrementalPrecip extends AW_AlgorithmBase
 	{
 		log.trace("cumulativePrecip = {}, at time {}.", cumulativePrecip, _timeSliceBaseTime);
 
+		// A missing or unassigned input arrives as negative infinity, which the negativity
+		// check below would report as a bad cumulative value. Say what it actually is.
+		if (isMissing(cumulativePrecip))
+		{
+			log.warn("No cumulativePrecip value in {} at time {} -- ignored.",
+					 getParmTsUniqueString("cumulativePrecip"), _timeSliceBaseTime);
+		}
 		// Normal case is to ignore negative cumulative inputs. But allow if option set.
-		if (cumulativePrecip < 0.0 && !allowNegative)
+		else if (cumulativePrecip < 0.0 && !allowNegative)
 		{
 			log.warn("Negative cumulativePrecip ({})  in {} at time {} -- ignored.",
 					 cumulativePrecip, getParmTsUniqueString("cumulativePrecip"), _timeSliceBaseTime);

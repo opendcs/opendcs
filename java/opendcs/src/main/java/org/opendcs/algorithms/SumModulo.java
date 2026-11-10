@@ -20,6 +20,8 @@ import ilex.var.NamedVariable;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
@@ -29,6 +31,8 @@ import decodes.tsdb.algo.AW_AlgorithmBase;
                        + "Where % is the modulus operator in the above equation")
 public class SumModulo extends AW_AlgorithmBase
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
     @Input
     public double a;
     @Input
@@ -74,6 +78,14 @@ public class SumModulo extends AW_AlgorithmBase
     protected void doAWTimeSlice()
         throws DbCompException
     {
+        // Without this a missing input makes (a+b) infinite, and the modulus of an
+        // infinite value is NaN -- which setOutput does not treat as missing, so it would
+        // be written to the database.
+        if (isMissing(a) || isMissing(b))
+        {
+            log.debug("No output at {} because input 'a' or 'b' is missing", _timeSliceBaseTime);
+            return;
+        }
         setOutput(y, (a+b)%modulus );
     }
 

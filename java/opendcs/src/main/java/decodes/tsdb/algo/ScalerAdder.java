@@ -3,13 +3,13 @@ package decodes.tsdb.algo;
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.MissingAction;
-import decodes.tsdb.ParmRef;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.spi.LoggingEventBuilder;
 
 @Algorithm(description ="Takes up to 10 input values labeled input1 ... input10. Multiplies\n" +
 "them by coefficients supplied in properties coeff1 ... coeff10.\n" +
@@ -87,65 +87,36 @@ public class ScalerAdder extends AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-		double tally = 0.0;
-		ParmRef pr = null;
-		String t = null;
-		if (((pr = getParmRef(t = "input1")) != null && isAssigned(t) && isMissing(input1) && 
-			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input2")) != null && isAssigned(t) && isMissing(input2) && 
-			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input3")) != null && isAssigned(t) && isMissing(input3) && 
-			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input4")) != null && isAssigned(t) && isMissing(input4) && 
-			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input5")) != null && isAssigned(t) && isMissing(input5) && 
-			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input6")) != null && isAssigned(t) && isMissing(input6) && 
-			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input7")) != null && isAssigned(t) && isMissing(input7) && 
-			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input8")) != null && isAssigned(t) && isMissing(input8) && 
-			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input0")) != null && isAssigned(t) && isMissing(input9) && 
-			pr.missingAction != MissingAction.IGNORE))
+		double inputs[] = { input1, input2, input3, input4, input5,
+							input6, input7, input8, input9, input10 };
+		double coeffs[] = { coeff1, coeff2, coeff3, coeff4, coeff5,
+							coeff6, coeff7, coeff8, coeff9, coeff10 };
+
+		// Only an assigned input can hold up the slice: an input the computation does not
+		// map has no value to require, which is what "values not assigned by computation
+		// are ignored" in the algorithm description means.
+		for(int i = 0; i < inputs.length; i++)
 		{
-			log.trace("Skipping time slice with base time {} because of missing value for param {}",
-					  _timeSliceBaseTime, t);
-			return;
+			String role = "input" + (i + 1);
+			if (isAssigned(role) && isMissing(inputs[i])
+			 && getInputMissingAction(role) != MissingAction.IGNORE)
+			{
+				log.trace("Skipping time slice with base time {} because of missing value for param {}",
+						  _timeSliceBaseTime, role);
+				return;
+			}
 		}
-			
-		if (!isMissing(input1))
-			tally += (input1 * coeff1);
-		if (!isMissing(input2))
-			tally += (input2 * coeff2);
-		if (!isMissing(input3))
-			tally += (input3 * coeff3);
-		if (!isMissing(input4))
-			tally += (input4 * coeff4);
-		if (!isMissing(input5))
-			tally += (input5 * coeff5);
-		if (!isMissing(input6))
-			tally += (input6 * coeff6);
-		if (!isMissing(input7))
-			tally += (input7 * coeff7);
-		if (!isMissing(input8))
-			tally += (input8 * coeff8);
-		if (!isMissing(input9))
-			tally += (input9 * coeff9);
-		if (!isMissing(input10))
-			tally += (input10 * coeff10);
-		log.atTrace()
-		   .addKeyValue("input1", input1).addKeyValue("coeff1", coeff1)
-		   .addKeyValue("input2", input2).addKeyValue("coeff2", coeff2)
-		   .addKeyValue("input3", input3).addKeyValue("coeff3", coeff3)
-		   .addKeyValue("input4", input4).addKeyValue("coeff4", coeff4)
-		   .addKeyValue("input5", input5).addKeyValue("coeff5", coeff5)
-		   .addKeyValue("input6", input6).addKeyValue("coeff6", coeff6)
-		   .addKeyValue("input7", input7).addKeyValue("coeff7", coeff7)
-		   .addKeyValue("input8", input8).addKeyValue("coeff8", coeff8)
-		   .addKeyValue("input9", input9).addKeyValue("coeff9", coeff9)
-		   .addKeyValue("input10", input10).addKeyValue("coeff10", coeff10)
-		   .log("tally={}", tally);
+
+		double tally = 0.0;
+		for(int i = 0; i < inputs.length; i++)
+			if (!isMissing(inputs[i]))
+				tally += (inputs[i] * coeffs[i]);
+
+		LoggingEventBuilder leb = log.atTrace();
+		for(int i = 0; i < inputs.length; i++)
+			leb.addKeyValue("input" + (i + 1), inputs[i])
+			   .addKeyValue("coeff" + (i + 1), coeffs[i]);
+		leb.log("tally={}", tally);
 		setOutput(output, tally);
 	}
 

@@ -67,6 +67,19 @@ public class GroupAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	}
 
 	/**
+	 * The 'mask' parameter is a template for transforming the group's time series
+	 * identifiers, not a source of values, so an absent mask must never hold up a time
+	 * slice. This algorithm applies its own mask_MISSING handling per member series.
+	 */
+	@Override
+	protected MissingAction getInputMissingAction(String roleName)
+	{
+		if ("mask".equalsIgnoreCase(roleName))
+			return MissingAction.IGNORE;
+		return super.getInputMissingAction(roleName);
+	}
+
+	/**
 	 * This method is called once before iterating all time slices.
 	 * For GroupAdder, ALL the work is done in this method.
 	 */
@@ -106,12 +119,17 @@ public class GroupAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 		ComputationDAI computationDAO = tsdb.makeComputationDAO();
 		MissingAction missingAction = MissingAction.IGNORE;
 		String maskUnits = null;
+		int maskFailures = 0;
 
 		try
 		{
 			DbComputation origComp = computationDAO.getComputationById(comp.getId());
 			DbCompParm maskParm = origComp.getParm("mask");
-			missingAction = MissingAction.fromString(origComp.getProperty("mask_MISSING"));
+			// Only an explicit property changes the action: fromString(null) is FAIL, which
+			// would silently replace the IGNORE default set above.
+			String maskMissing = origComp.getProperty("mask_MISSING");
+			if (maskMissing != null && maskMissing.trim().length() > 0)
+				missingAction = MissingAction.fromString(maskMissing);
 
 			maskUnits = origComp.getProperty("mask_EU");
 
@@ -138,6 +156,7 @@ public class GroupAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 				}
 				catch (Exception ex)
 				{
+					maskFailures++;
 					log.atWarn()
 					   .setCause(ex)
 					   .log("Masking group tsid '{}' with mask failed.", tsid.getUniqueString());
@@ -154,7 +173,12 @@ public class GroupAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 			computationDAO.close();
 		}
 		if (ts2sum.isEmpty())
-			throw new DbCompException("After applying mask, there are no time series to sum.");
+			throw new DbCompException("After applying mask, there are no time series to sum"
+				+ (maskFailures > 0
+					? (", and masking failed for " + maskFailures + " of " + tsidList.size()
+						+ " group members -- check the 'mask' parameter of computation '"
+						+ comp.getName() + "' (see the warnings above).")
+					: "."));
 
 		// Fill in the CTimeSeries objects with all the potential data I'll need.
 		for(CTimeSeries cts : ts2sum)

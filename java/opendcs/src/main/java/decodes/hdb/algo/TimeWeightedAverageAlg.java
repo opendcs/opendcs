@@ -174,7 +174,7 @@ public class TimeWeightedAverageAlg	extends decodes.tsdb.algo.AW_AlgorithmBase
 		ParmRef parmRef = getParmRef("input");
 		if (parmRef == null) 
 		{
-		   log.warn("Unknown aggregate control output variable 'INPUT'");
+		   log.warn("No time series assigned to input role 'INPUT'");
 		   return;
 		}
 		String input_interval = parmRef.compParm.getInterval();
@@ -183,7 +183,7 @@ public class TimeWeightedAverageAlg	extends decodes.tsdb.algo.AW_AlgorithmBase
 		parmRef = getParmRef("output");
 		if (parmRef == null) 
 		{
-		   log.warn("Unknown aggregate control output variable 'OUTPUT'");
+		   log.warn("No time series assigned to output role 'OUTPUT'");
 		   return;
 		}
 		String output_interval = parmRef.compParm.getInterval();
@@ -442,7 +442,7 @@ public class TimeWeightedAverageAlg	extends decodes.tsdb.algo.AW_AlgorithmBase
 					new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
 					new_window_sdt   = new Date(dbobj.get("nwsdt").toString());
 					// now do the interpolation of the eop of this period to the BOP for next period
-				debug3(new_window_sdt + "  " + index);
+				log.trace(new_window_sdt + "  " + index);
 					milly_diff_total = new_window_sdt.getTime() - date_out[index].getTime();
 					milly_diff_end = _aggregatePeriodEnd.getTime() - date_out[index].getTime();
 					val_diff = new_window_value - value_out[index];

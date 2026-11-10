@@ -5,6 +5,8 @@ import decodes.tsdb.DbCompException;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
 
@@ -13,6 +15,8 @@ import org.opendcs.annotations.algorithm.Output;
 public class LastValueFromPeriod
 	extends AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	@Input
 	public double input;
 
@@ -67,6 +71,16 @@ public class LastValueFromPeriod
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
+		// An empty period is not the same as a deleted input. Passing -Inf to setOutput
+		// deletes the stored value, which would let a period with no data at all -- or an
+		// input role nothing is assigned to -- erase the previous result. The base class
+		// still deletes the output when an input was explicitly deleted.
+		if (isMissing(lastValue))
+		{
+			log.debug("No value in the period ending {} -- leaving the output unchanged",
+					  _aggregatePeriodEnd);
+			return;
+		}
 		setOutput(output, lastValue);
 	}
 

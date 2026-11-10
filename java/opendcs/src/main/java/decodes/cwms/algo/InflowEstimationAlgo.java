@@ -17,7 +17,7 @@ import decodes.cwms.rating.CwmsRatingDao;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.IntervalCodes;
-import decodes.tsdb.ParmRef;
+import decodes.tsdb.MissingAction;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
@@ -136,6 +136,28 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		aggUpperBoundClosed = true;
 	}
 
+	/**
+	 * Roles that may be omitted from the computation record: the two alternatives for each
+	 * of release and storage, plus the six optional additional outflows. Which combination
+	 * is actually required is enforced by {@link #validateInputs()}.
+	 */
+	private static final List<String> OPTIONAL_ROLES = Arrays.asList(
+			"tailwaterStage", "releaseFlow", "poolStage", "storageVolume",
+			"additionalOutflow1", "additionalOutflow2", "additionalOutflow3",
+			"additionalOutflow4", "additionalOutflow5", "additionalOutflow6");
+
+	/**
+	 * An omitted alternative or optional role has no value to require, so it must not hold
+	 * up a time slice. Once a role is assigned its own MISSING property governs.
+	 */
+	@Override
+	protected MissingAction getInputMissingAction(String roleName)
+	{
+		if (OPTIONAL_ROLES.contains(roleName) && !isAssigned(roleName))
+			return MissingAction.IGNORE;
+		return super.getInputMissingAction(roleName);
+	}
+
 	@Override
 	protected void beforeTimeSlices() throws DbCompException
 	{
@@ -150,7 +172,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 
 	private void validateOutput() throws DbCompException
 	{
-		inflowTs = getParmRef("inflow").timeSeries;
+		inflowTs = getRequiredTimeSeries("inflow");
 		TimeSeriesIdentifier timeSeriesIdentifier = inflowTs.getTimeSeriesIdentifier();
 		if(!(timeSeriesIdentifier instanceof CwmsTsId))
 		{
@@ -179,45 +201,33 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 
 	private void validateInputs() throws DbCompException
 	{
-		ParmRef outflow1 = getParmRef("additionalOutflow1");
-		ParmRef outflow2 = getParmRef("additionalOutflow2");
-		ParmRef outflow3 = getParmRef("additionalOutflow3");
-		ParmRef outflow4 = getParmRef("additionalOutflow4");
-		ParmRef outflow5 = getParmRef("additionalOutflow5");
-		ParmRef outflow6 = getParmRef("additionalOutflow6");
-		ParmRef releaseFlowRef = getParmRef("releaseFlow");
-		ParmRef tailwaterStageRef = getParmRef("tailwaterStage");
-		ParmRef poolStageRef = getParmRef("poolStage");
-		ParmRef storageVolumeRef = getParmRef("storageVolume");
-		// Alternative roles may be omitted from the computation XML.
-		inflowTs = getParmRef("inflow").timeSeries;
-		outflowTs1 = getTimeSeries(outflow1);
-		outflowTs2 = getTimeSeries(outflow2);
-		outflowTs3 = getTimeSeries(outflow3);
-		outflowTs4 = getTimeSeries(outflow4);
-		outflowTs5 = getTimeSeries(outflow5);
-		outflowTs6 = getTimeSeries(outflow6);
-		releaseTs = getTimeSeries(releaseFlowRef);
-		tailwaterTs = getTimeSeries(tailwaterStageRef);
-		stagePoolTs = getTimeSeries(poolStageRef);
-		storageTs = getTimeSeries(storageVolumeRef);
+		// Alternative and optional roles may be omitted from the computation record, so
+		// read them through the null-safe accessor rather than a ParmRef dereference.
+		inflowTs = getRequiredTimeSeries("inflow");
+		outflowTs1 = getAssignedTimeSeries("additionalOutflow1");
+		outflowTs2 = getAssignedTimeSeries("additionalOutflow2");
+		outflowTs3 = getAssignedTimeSeries("additionalOutflow3");
+		outflowTs4 = getAssignedTimeSeries("additionalOutflow4");
+		outflowTs5 = getAssignedTimeSeries("additionalOutflow5");
+		outflowTs6 = getAssignedTimeSeries("additionalOutflow6");
+		releaseTs = getAssignedTimeSeries("releaseFlow");
+		tailwaterTs = getAssignedTimeSeries("tailwaterStage");
+		stagePoolTs = getAssignedTimeSeries("poolStage");
+		storageTs = getAssignedTimeSeries("storageVolume");
 
-		if((tailwaterTs == null || tailwaterTs.getTimeSeriesIdentifier() == null)
-				&& (releaseTs == null || releaseTs.getTimeSeriesIdentifier() == null))
+		if(!isConfigured(tailwaterTs) && !isConfigured(releaseTs))
 		{
 			throw new DbCompException("InflowEstimationAlgo requires either tailwaterStage or releaseFlow to be configured");
 		}
-		if((tailwaterTs != null && tailwaterTs.getTimeSeriesIdentifier() != null)
-				&& tailwaterToReleaseRating == null)
+		if(isConfigured(tailwaterTs) && tailwaterToReleaseRating == null)
 		{
 			throw new DbCompException("InflowEstimationAlgo requires tailwaterToReleaseRating when tailwaterStage is configured");
 		}
-		if((stagePoolTs == null || stagePoolTs.getTimeSeriesIdentifier() == null)
-				&& (storageTs == null || storageTs.getTimeSeriesIdentifier() == null))
+		if(!isConfigured(stagePoolTs) && !isConfigured(storageTs))
 		{
 			throw new DbCompException("InflowEstimationAlgo requires either poolStage or storageVolume to be configured");
 		}
-		if(stagePoolTs != null && stagePoolTs.getTimeSeriesIdentifier() != null && stagePoolStorageRating == null)
+		if(isConfigured(stagePoolTs) && stagePoolStorageRating == null)
 		{
 			throw new DbCompException("InflowEstimationAlgo requires stagePoolStorageRating when poolStage is configured");
 		}
@@ -230,10 +240,13 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		durationPeriod = ((CwmsTsId) timeSeriesIdentifier).getDuration();
 	}
 
-	/** Returns no series for an omitted optional role rather than dereferencing a null ParmRef. */
-	private CTimeSeries getTimeSeries(ParmRef parmRef)
+	/**
+	 * A role only counts as configured when it resolved to an actual time series: a
+	 * computation may carry a parameter for an alternative role that names no series.
+	 */
+	private static boolean isConfigured(CTimeSeries ts)
 	{
-		return parmRef == null ? null : parmRef.timeSeries;
+		return ts != null && ts.getTimeSeriesIdentifier() != null;
 	}
 
 	@Override

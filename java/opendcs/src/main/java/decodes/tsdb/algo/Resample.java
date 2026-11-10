@@ -60,9 +60,8 @@ public class Resample extends decodes.tsdb.algo.AW_AlgorithmBase
 		throws DbCompException
 	{
 		// output must be a regular interval time-series!
-		ParmRef outputParmRef = getParmRef("output");
 		outputIncr = IntervalCodes.getIntervalCalIncr(
-			outputParmRef.compParm.getInterval());
+			getRequiredCompParm("output").getInterval());
 		if (outputIncr == null || outputIncr.getCount() == 0)
 			throw new DbCompException("Resample requires regular interval output!");
 		
@@ -72,10 +71,7 @@ public class Resample extends decodes.tsdb.algo.AW_AlgorithmBase
 
 		// Get the previous & next input so we can interpolate before &
 		// after the trigger times.
-		ParmRef inputParmRef = getParmRef("input");
-		if (inputParmRef == null)
-			throw new DbCompException("No 'input' param defined!");
-		CTimeSeries inputTS = inputParmRef.timeSeries;
+		CTimeSeries inputTS = getRequiredTimeSeries("input");
 		TimedVariable prevInput = inputTS.findPrev(firstInputT);
 		TimedVariable nextInput = null;
 		try
@@ -158,7 +154,7 @@ public class Resample extends decodes.tsdb.algo.AW_AlgorithmBase
 		else
 		{
 			throw new DbCompException("Invalid output interval: " + 
-				outputParmRef.compParm.getInterval());
+				getRequiredCompParm("output").getInterval());
 		}
 
 		

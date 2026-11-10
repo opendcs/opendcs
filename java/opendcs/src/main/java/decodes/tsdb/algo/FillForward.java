@@ -70,11 +70,13 @@ public class FillForward extends decodes.tsdb.algo.AW_AlgorithmBase
 		throws DbCompException
 	{
 		// Validation
-		inputTS = getParmRef("input").timeSeries;
-		if (inputTS.size() == 0)
+		// An input with no resolvable series leaves nothing to fill forward, which the
+		// empty check below already treats as "nothing to do".
+		inputTS = getAssignedTimeSeries("input");
+		if (inputTS == null || inputTS.size() == 0)
 			return;
 
-		outputIntvs = getParmRef("output").compParm.getInterval();
+		outputIntvs = getRequiredCompParm("output").getInterval();
 		outputIntv = IntervalCodes.getInterval(outputIntvs);
 		if (IntervalCodes.getIntervalSeconds(outputIntvs) == 0 || outputIntv.getCalMultiplier() == 0)
 			throw new DbCompException("Output interval may not be 0 length.");

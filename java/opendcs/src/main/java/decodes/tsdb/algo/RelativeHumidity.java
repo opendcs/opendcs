@@ -38,9 +38,9 @@ public class RelativeHumidity extends AW_AlgorithmBase
 	{
 		
 		// Validation
-		String outputIntvs = getParmRef("output").compParm.getInterval();
+		String outputIntvs = getRequiredCompParm("output").getInterval();
 		Interval outputIntv = IntervalCodes.getInterval(outputIntvs);
-		String temperatureIntvs = getParmRef("temperature").compParm.getInterval();
+		String temperatureIntvs = getRequiredCompParm("temperature").getInterval();
 		Interval temperatureIntv = IntervalCodes.getInterval(temperatureIntvs);
 
 		if(!outputIntv.equals(temperatureIntv))

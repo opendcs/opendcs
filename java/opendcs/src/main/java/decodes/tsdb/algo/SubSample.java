@@ -24,7 +24,6 @@ import decodes.tsdb.DbCompException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.ParmRef;
 import decodes.util.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
@@ -86,10 +85,8 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 		// Initialize it to the first time >= the first input time.
 		Date firstInputT = baseTimes.first();
 		outputCal.setTime(firstInputT);
-		ParmRef outputParmRef = getParmRef("outputLongInterval");
-		
 		outputIncr = IntervalCodes.getIntervalCalIncr(
-			outputParmRef.compParm.getInterval());
+			getRequiredCompParm("outputLongInterval").getInterval());
 		if (outputIncr == null || outputIncr.getCount() == 0)
 			throw new DbCompException("SubSample requires regular interval output!");
 
@@ -154,7 +151,7 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 		else
 		{
 			throw new DbCompException("Invalid output interval: " + 
-				outputParmRef.compParm.getInterval());
+				getRequiredCompParm("outputLongInterval").getInterval());
 		}
 		
 		// If an offset was supplied, add it. Note: it's up to the user to make sure

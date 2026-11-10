@@ -19,6 +19,7 @@ import java.util.Date;
 
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
+import decodes.tsdb.ParmRef;
 
 import java.util.TimeZone;
 import java.util.Calendar;
@@ -35,7 +36,6 @@ import java.text.SimpleDateFormat;
 import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
-import decodes.tsdb.ParmRef;
 import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
 import decodes.util.DecodesSettings;
@@ -163,14 +163,14 @@ public class DynamicAggregatesAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		do_setoutput = true;
 //
 		// get the input and output parameters and see if its model data
-		ParmRef parmRef = getParmRef("input");
-		if (parmRef == null) warning("Unknown aggregate control output variable 'INPUT'");
-		String input_interval = parmRef.compParm.getInterval();
-		String table_selector = parmRef.compParm.getTableSelector();
-                int model_run_id = parmRef.timeSeries.getModelRunId();
-		parmRef = getParmRef("output");
-		if (parmRef == null) warning("Unknown aggregate control output variable 'OUTPUT'");
-		String output_interval = parmRef.compParm.getInterval();
+		ParmRef inputRef = getParmRef("input");
+		if (inputRef == null || inputRef.timeSeries == null)
+			throw new DbCompException("Computation '" + comp.getName()
+				+ "' has no 'input' parameter -- update its parameters.");
+		String input_interval = inputRef.compParm.getInterval();
+		String table_selector = inputRef.compParm.getTableSelector();
+		int model_run_id = inputRef.timeSeries.getModelRunId();
+		String output_interval = getRequiredCompParm("output").getInterval();
 //
 
                 TimeZone tz = TimeZone.getTimeZone("GMT");

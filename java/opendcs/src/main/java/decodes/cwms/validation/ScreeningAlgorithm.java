@@ -24,6 +24,7 @@ import opendcs.dai.TimeSeriesDAI;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
 import ilex.var.Variable;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.VarFlags;
@@ -97,21 +98,25 @@ public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 		// This code will be executed once before iterating through all the time-slices
 		
 		// Find the Screening record
-		ParmRef inputParm = getParmRef("input");
-		TimeSeriesIdentifier inputTsid = inputParm.timeSeries.getTimeSeriesIdentifier();
-		if (inputTsid == null)
-			throw new DbCompException("No input time-series identifier!");
+		CTimeSeries inputTS = getRequiredTimeSeries("input");
+		TimeSeriesIdentifier inputTsid = inputTS.getTimeSeriesIdentifier();
 		
 		// MJM 20121002 Enhancement: Allow input and output to refer to the same
 		// time-series. This triggers special processing in the checks.
+		// The output series may not exist yet -- a screening writes flags onto a series
+		// that its identifier is looked up for below -- so only its parameter is required.
 		ParmRef outputParm = getParmRef("output");
-		TimeSeriesIdentifier outputTsid = outputParm.timeSeries.getTimeSeriesIdentifier();
+		if (outputParm == null || outputParm.timeSeries == null)
+			throw new DbCompException("Computation '" + comp.getName()
+				+ "' has no output parameter -- update its parameters.");
+		CTimeSeries outputTS = outputParm.timeSeries;
+		TimeSeriesIdentifier outputTsid = outputTS.getTimeSeriesIdentifier();
 		if (outputTsid == null)
 		{
 			TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 			try
 			{
-				timeSeriesDAO.fillTimeSeriesMetadata(outputParm.timeSeries);
+				timeSeriesDAO.fillTimeSeriesMetadata(outputTS);
 			}
 			catch (Exception ex)
 			{
@@ -121,13 +126,13 @@ public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 			{
 				timeSeriesDAO.close();
 			}
-			outputTsid = outputParm.timeSeries.getTimeSeriesIdentifier();
+			outputTsid = outputTS.getTimeSeriesIdentifier();
 			if (outputTsid == null)
 				throw new DbCompException("No output time-series identifier!");
 		}
 
 		_inputIsOutput = inputTsid.getKey() == outputTsid.getKey();
-		info("_inputIsOutput=" + _inputIsOutput);
+		log.debug("_inputIsOutput={}", _inputIsOutput);
 		
 		screening = getScreening(inputTsid);
 		if (screening == null)
@@ -143,9 +148,9 @@ public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 
 		log.trace("Retrieving additional data needed for checks.");
 		ScreeningCriteria prevcrit = null;
-		for(int idx = 0; idx<inputParm.timeSeries.size(); idx++)
+		for(int idx = 0; idx<inputTS.size(); idx++)
 		{
-			TimedVariable tv = inputParm.timeSeries.sampleAt(idx);
+			TimedVariable tv = inputTS.sampleAt(idx);
 			if (VarFlags.wasAdded(tv))
 			{
 				ScreeningCriteria crit = screening.findForDate(tv.getTime(), aggTZ);
@@ -157,7 +162,7 @@ public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 				}
 				if (crit == null || crit == prevcrit)
 					continue;
-				crit.fillTimesNeeded(inputParm.timeSeries, needed, aggCal, this);
+				crit.fillTimesNeeded(inputTS, needed, aggCal, this);
 				prevcrit = crit;
 			}
 		}
@@ -175,10 +180,10 @@ public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 				if (inputIrregular
 				 || (needed.size() >= 50 && end.getTime() - start.getTime() <= (4*24*3600*1000L)))
 				{
-					timeSeriesDAO.fillTimeSeries(inputParm.timeSeries, start, end, true, true, false);
+					timeSeriesDAO.fillTimeSeries(inputTS, start, end, true, true, false);
 				}
 				else
-					timeSeriesDAO.fillTimeSeries(inputParm.timeSeries, needed);
+					timeSeriesDAO.fillTimeSeries(inputTS, needed);
 			}
 			catch (Exception ex)
 			{
@@ -192,10 +197,10 @@ public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 		
 		String euAbbr = screening.getCheckUnitsAbbr();
 		if (euAbbr != null 
-		 && TextUtil.strCompareIgnoreCase(euAbbr, inputParm.timeSeries.getUnitsAbbr()) != 0)
+		 && TextUtil.strCompareIgnoreCase(euAbbr, inputTS.getUnitsAbbr()) != 0)
 		{
 			// Need to convert the input param into the proper units.
-			TSUtil.convertUnits(inputParm.timeSeries, euAbbr);
+			TSUtil.convertUnits(inputTS, euAbbr);
 			
 			// Also, if there is an output, make sure its units match the input.
 			setOutputUnitsAbbr("output", euAbbr);
@@ -261,9 +266,9 @@ public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 			 + crit.getSeasonStart().get(Calendar.DAY_OF_MONTH) + " " 
 			 + crit.getSeasonStart().getTimeZone().getID())));
 		
-		ParmRef inputParm = getParmRef("input");
+		CTimeSeries inputTS = getRequiredTimeSeries("input");
 
-		crit.executeChecks(dc, inputParm.timeSeries, _timeSliceBaseTime, output, this);
+		crit.executeChecks(dc, inputTS, _timeSliceBaseTime, output, this);
 	}
 
 	/**

@@ -30,7 +30,8 @@ import decodes.db.Constants;
 import decodes.db.SiteName;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.ParmRef;
+import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DbCompParm;
 
 
 import hec.data.RatingException;
@@ -89,19 +90,21 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
     @Override
     protected void beforeTimeSlices() throws DbCompException
     {
-        // Get parm refs for indep and dep
-        ParmRef indepParmRef = getParmRef("indep");
-        ParmRef depParmRef = getParmRef("dep");
+        // A single-independent rating needs both roles, so require them rather than
+        // dereferencing a ParmRef that a misconfigured computation leaves null.
+        CTimeSeries indepTS = getRequiredTimeSeries("indep");
+        CTimeSeries depTS = getRequiredTimeSeries("dep");
+        DbCompParm depParm = getRequiredCompParm("dep");
 
         // Build rating spec ID as follows:
         // {CwmsLocID}.{indep:cwmsDataType};{dep:cwmsDataType}.{templateVersion}.{specVersion}
-        TimeSeriesIdentifier indepTsid = indepParmRef.timeSeries.getTimeSeriesIdentifier();
+        TimeSeriesIdentifier indepTsid = getRequiredTsId("indep");
 
         String specLocation = indepTsid.getSiteName();
         // OpenDCS 6.1 RC10 feature allows location to be taken from dep variable:
         if (useDepLocation)
         {
-            SiteName depSiteName = depParmRef.compParm.getSiteName(Constants.snt_CWMS);
+            SiteName depSiteName = depParm.getSiteName(Constants.snt_CWMS);
             if (depSiteName == null)
             {
                 log.debug("No dependent site name available, using site from indep1");
@@ -114,7 +117,7 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
 
         specId = specLocation + "."
             + indepTsid.getDataType().getCode() + ";"
-            + depParmRef.compParm.getDataType().getCode() + "."
+            + depParm.getDataType().getCode() + "."
             + templateVersion + "." + specVersion;
 
         // Retrieve the RatingSet object
@@ -134,23 +137,23 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
             // method assumes that data are already in correct units.
             String punits[] = ratingSet.getDataUnits();
             if (punits.length > 0 && punits[0] != null
-             && indepParmRef.timeSeries.getUnitsAbbr() != null
-             && !indepParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[0]))
+             && indepTS.getUnitsAbbr() != null
+             && !indepTS.getUnitsAbbr().equalsIgnoreCase(punits[0]))
             {
                 log.debug(" Converting indep units for time series {} from {} to {}",
-                          indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString(),
-                          indepParmRef.timeSeries.getUnitsAbbr(),
+                          indepTS.getTimeSeriesIdentifier().getUniqueString(),
+                          indepTS.getUnitsAbbr(),
                           punits[0]);
-                TSUtil.convertUnits(indepParmRef.timeSeries, punits[0]);
+                TSUtil.convertUnits(indepTS, punits[0]);
             }
             // Likewise for the dependent param:
             if (punits.length > 1 && punits[1] != null
-             && depParmRef.timeSeries.getUnitsAbbr() != null
-             && !depParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[1]))
+             && depTS.getUnitsAbbr() != null
+             && !depTS.getUnitsAbbr().equalsIgnoreCase(punits[1]))
             {
-                log.debug("depTSID={}", depParmRef.timeSeries.getTimeSeriesIdentifier());
-                log.debug("Converting dep units from {} to {}", depParmRef.timeSeries.getUnitsAbbr(), punits[1]);
-                TSUtil.convertUnits(depParmRef.timeSeries, punits[1]);
+                log.debug("depTSID={}", depTS.getTimeSeriesIdentifier());
+                log.debug("Converting dep units from {} to {}", depTS.getUnitsAbbr(), punits[1]);
+                TSUtil.convertUnits(depTS, punits[1]);
             }
         }
         catch (RatingException ex)

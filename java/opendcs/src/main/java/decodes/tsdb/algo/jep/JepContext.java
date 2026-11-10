@@ -189,6 +189,12 @@ public class JepContext
 		rolesInitializedForScreening.add(inputRole);
 		
 		ParmRef inputParm = algo.getParmRef(inputRole);
+		if (inputParm == null || inputParm.timeSeries == null)
+		{
+			log.warn("Role '{}' of computation '{}' has no time series; cannot determine"
+					 + " the data its screening checks need.", inputRole, algo.getCompName());
+			return;
+		}
 		TimeSeriesIdentifier inputTsid = inputParm.timeSeries.getTimeSeriesIdentifier();
 		
 		Site site = inputTsid.getSite();

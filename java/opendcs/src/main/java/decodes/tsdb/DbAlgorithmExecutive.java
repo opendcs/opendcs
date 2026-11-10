@@ -20,6 +20,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -78,6 +80,12 @@ public abstract class DbAlgorithmExecutive
 	 * meta and time-series data given a role name.
 	 */
 	private HashMap<String, ParmRef> parmMap;
+
+	/**
+	 * Roles already reported as unassigned, so that a misconfigured computation is
+	 * reported once per algorithm instance rather than once per time slice.
+	 */
+	private final Set<String> reportedRoles = new HashSet<>();
 
 	/** For time rounding -- number of seconds */
 	public int roundSec;
@@ -313,6 +321,7 @@ public abstract class DbAlgorithmExecutive
 			this.dc = dc;
 			log.trace("DbAlgorithmExec.apply()");
 
+			warnUnassignedRoles();
 			evaluateEffectiveRange();
 			determineModelRunId(dc);
 
@@ -328,7 +337,11 @@ public abstract class DbAlgorithmExecutive
 			for (String role: getOutputNames())
 			{
 				var parmRef = getParmRef(role);
-				if (parmRef == null || parmRef.timeSeries == null)
+				// A role with no site and data type cannot identify a series to write to.
+				// A role that does name one is passed along even when its identifier has not
+				// been resolved, because some databases create the output series on save.
+				if (parmRef == null || parmRef.timeSeries == null
+				 || DbKey.isNull(parmRef.compParm.getSiteDataTypeId()))
 				{
 					log.warn("Computation '{}' has no usable output for role '{}'; update its parameters", comp.getName(), role);
 					continue;
@@ -424,7 +437,9 @@ public abstract class DbAlgorithmExecutive
 	}
 
 	/**
-	 * Maps a single parameter, called from apply for each input/output role.
+	 * Maps a single parameter, called from init for each input/output role.
+	 * A role the computation has no parameter for is left unmapped; see
+	 * {@link #getParmRef(String)} and {@link #isAssigned(String)}.
 	 */
 	private void mapParm(String role, TimeSeriesDb tsdb)
 	{
@@ -436,28 +451,76 @@ public abstract class DbAlgorithmExecutive
 			return;
 		}
 
-		TimeSeriesIdentifier tsid = null;
-		try
-		{
-			tsid = tsdb.expandSDI(parm);
-		}
-		catch(Exception ex)
-		{
-			log.atWarn().setCause(ex).log("Cannot expand meta data for role '{}'", role);
-			return;
-		}
-
+		// Map the parameter before expanding it. A parameter whose site and data type
+		// cannot be resolved must stay distinguishable from a role the computation never
+		// mapped, and must keep the missing action the operator set for it.
 		ParmRef parmRef = new ParmRef(role, parm, null);
-		if (tsid != null)
-			parmRef.tsid = tsid;
+		parmMap.put(role, parmRef);
 
 		// Retrieve the 'missing action' property, either specific to this
 		// role, or global for the whole algorithm.
 		// Specific one is <role>_MISSING
-		String propval = comp.getProperty(role + "_MISSING");
-		parmRef.setMissingAction(MissingAction.fromString(propval));
+		parmRef.setMissingAction(comp.getMissingAction(role));
 
-		parmMap.put(role, parmRef);
+		try
+		{
+			TimeSeriesIdentifier tsid = tsdb.expandSDI(parm);
+			if (tsid != null)
+				parmRef.tsid = tsid;
+			else if (DbKey.isNull(parm.getSiteDataTypeId()))
+				log.debug("Role '{}' of computation '{}' names no site and data type, so it"
+						  + " is unassigned.", role, comp.getName());
+			else
+				// The parameter does name a site and data type, so this is a configuration
+				// problem rather than an intentionally unmapped role.
+				log.warn("Role '{}' of computation '{}' has site and data type {} but no time"
+						 + " series matches it; the role is treated as unassigned.",
+						 role, comp.getName(), parm.getSiteDataTypeId());
+		}
+		catch(Exception ex)
+		{
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot expand meta data for role '{}' of computation '{}' (sdi={})"
+					+ " -- the role is unassigned.",
+					role, comp.getName(), parm.getSiteDataTypeId());
+		}
+	}
+
+	/**
+	 * Reports each declared input role the computation has no parameter for. Roles whose
+	 * parameter exists but names no time series are reported by
+	 * {@link #mapParm(String, TimeSeriesDb)} instead, and unassigned outputs are reported
+	 * by {@link #apply(DataCollection)}, so together the three cover every way a role can
+	 * end up unassigned.
+	 * <p>
+	 * Each role is reported once per algorithm instance, because a long-running
+	 * computation process would otherwise log the same misconfiguration for every
+	 * time slice.
+	 */
+	protected void warnUnassignedRoles()
+	{
+		for(String role : getInputNames())
+			warnUnassignedInputRole(role);
+	}
+
+	private void warnUnassignedInputRole(String role)
+	{
+		if (getParmRef(role) != null || !reportedRoles.add(role))
+			return;
+
+		// An algorithm whose inputs are optional says so with a <role>_MISSING property,
+		// so only the roles left at the 'fail' default are worth telling an operator about.
+		if (comp.getMissingAction(role) != MissingAction.FAIL)
+		{
+			log.debug("Computation '{}' does not map the input role '{}'; treating it as"
+					  + " unassigned.", comp.getName(), role);
+			return;
+		}
+		log.warn("Computation '{}' declares input role '{}' but no time series is mapped to"
+				 + " it, and its missing action is 'fail'. The computation will produce no"
+				 + " output until a site and data type are assigned to it.",
+				 comp.getName(), role);
 	}
 
 	public void addTsToParmRef(String role, boolean isOutput)
@@ -508,42 +571,51 @@ public abstract class DbAlgorithmExecutive
 			}
 
 		}
-		ref.timeSeries = dc.getTimeSeries(ref.compParm.getSiteDataTypeId(), intv, tabsel, modelRunId);
-		if (ref.timeSeries == null)
+		DbKey sdi = ref.compParm.getSiteDataTypeId();
+		if (DbKey.isNull(sdi))
 		{
-			ref.timeSeries = new CTimeSeries(ref.compParm);
-			if (TextUtil.strEqualIgnoreCase(tabsel, "M_"))
-				ref.timeSeries.setModelRunId(modelRunId);
-			if (ref.tsid != null)
-				ref.timeSeries.setTimeSeriesIdentifier(ref.tsid);
-			log.atDebug()
-			   .log(() -> "addTsToParmRef: Made empty time series for "
-						+ ref.getDescription()
-						+ ", sdiIsUnique=" + TimeSeriesDb.sdiIsUnique
-						+ ", sdi=" + ref.compParm.getSiteDataTypeId() + ", intv='"
-						+ intv + "', + tabsel='" + tabsel + "'");
-
-
-			try { dc.addTimeSeries(ref.timeSeries); }
-			catch(DuplicateTimeSeriesException ex)
-			{
-				// won't happen, but warn if it does.
-				log.atError()
-				   .setCause(ex)
-				   .log("Can't add time series as it is already in the collection. This shouldn't happen.");
-			}
+			// A parameter with no site and data type cannot name a time series. Give the
+			// role its own empty series and keep it out of the data collection: looking one
+			// up by a null key matches whichever unassigned role was mapped first, which
+			// would silently make several roles share one set of samples.
+			ref.timeSeries = newEmptyTimeSeries(ref, modelRunId);
+			log.debug("addTsToParmRef: role '{}' has no site and data type; using an empty"
+					  + " time series outside the data collection.", ref.role);
 		}
 		else
 		{
-			log.debug("addTsToParmRef: Mapping existing time series for {} num samples ={} ",
-					  ref.getDescription(), ref.timeSeries.size());
-
-			if (ref.timeSeries.size() > 0 && log.isTraceEnabled())
+			ref.timeSeries = dc.getTimeSeries(sdi, intv, tabsel, modelRunId);
+			if (ref.timeSeries == null)
 			{
-				for(int idx=0; idx < ref.timeSeries.size() && idx < 32; idx++)
+				ref.timeSeries = newEmptyTimeSeries(ref, modelRunId);
+				log.atDebug()
+				   .log(() -> "addTsToParmRef: Made empty time series for "
+							+ ref.getDescription()
+							+ ", sdiIsUnique=" + TimeSeriesDb.sdiIsUnique
+							+ ", sdi=" + sdi + ", intv='"
+							+ intv + "', + tabsel='" + tabsel + "'");
+
+				try { dc.addTimeSeries(ref.timeSeries); }
+				catch(DuplicateTimeSeriesException ex)
 				{
-					TimedVariable tv = ref.timeSeries.sampleAt(idx);
-					log.trace("[{}] {} 0x{}", idx, tv.toString(), Integer.toHexString(tv.getFlags()));
+					// won't happen, but warn if it does.
+					log.atError()
+					   .setCause(ex)
+					   .log("Can't add time series as it is already in the collection. This shouldn't happen.");
+				}
+			}
+			else
+			{
+				log.debug("addTsToParmRef: Mapping existing time series for {} num samples ={} ",
+						  ref.getDescription(), ref.timeSeries.size());
+
+				if (ref.timeSeries.size() > 0 && log.isTraceEnabled())
+				{
+					for(int idx=0; idx < ref.timeSeries.size() && idx < 32; idx++)
+					{
+						TimedVariable tv = ref.timeSeries.sampleAt(idx);
+						log.trace("[{}] {} 0x{}", idx, tv.toString(), Integer.toHexString(tv.getFlags()));
+					}
 				}
 			}
 		}
@@ -566,6 +638,20 @@ public abstract class DbAlgorithmExecutive
 			// Note: Even if we did no conversion, still set the units abbreviation.
 			ref.timeSeries.setUnitsAbbr(neededEU);
 		}
+	}
+
+	/**
+	 * Builds the empty time series a parameter needs when neither the data collection
+	 * nor the database has a series for it.
+	 */
+	private CTimeSeries newEmptyTimeSeries(ParmRef ref, int modelRunId)
+	{
+		CTimeSeries ret = new CTimeSeries(ref.compParm);
+		if (TextUtil.strEqualIgnoreCase(ref.compParm.getTableSelector(), "M_"))
+			ret.setModelRunId(modelRunId);
+		if (ref.tsid != null)
+			ret.setTimeSeriesIdentifier(ref.tsid);
+		return ret;
 	}
 
 	/**
@@ -686,6 +772,7 @@ public abstract class DbAlgorithmExecutive
 			{
 				ParmRef parmRef = parmMap.get(role);
 				if (parmRef == null
+				 || parmRef.tsid == null
 				 || parmRef.missingAction == MissingAction.FAIL
 				 || parmRef.missingAction == MissingAction.IGNORE)
 					continue;
@@ -763,7 +850,7 @@ public abstract class DbAlgorithmExecutive
 		for(String role : getInputNames())
 		{
 			ParmRef parmRef = parmMap.get(role);
-			if (parmRef == null)
+			if (parmRef == null || parmRef.tsid == null)
 				continue;
 			log.trace("expandForDeltas 1 role='{}'", role);
 
@@ -996,9 +1083,9 @@ public abstract class DbAlgorithmExecutive
 			for(String role : getInputNames())
 			{
 				ParmRef parmRef = parmMap.get(role);
-				if (parmRef == null)
+				if (parmRef == null || parmRef.tsid == null)
 				{
-					log.warn("(since,until)Skipping unassigned role '{}'", role);
+					log.trace("(since,until) Skipping unassigned role '{}'", role);
 					continue;
 				}
 
@@ -1597,8 +1684,12 @@ public abstract class DbAlgorithmExecutive
 	protected void deleteOutput(String role, Date basetime)
 	{
 		ParmRef parmRef = getParmRef(role);
-		if (parmRef == null)
+		if (parmRef == null || parmRef.timeSeries == null)
+		{
+			log.debug("Cannot delete output for role '{}' of computation '{}': the role is"
+					  + " not assigned to a time series.", role, comp.getName());
 			return;
+		}
 		Date paramTime = parmRef.compParm.baseTimeToParamTime(basetime, aggCal);
 
 		long sec = paramTime.getTime() / 1000L;
@@ -1731,6 +1822,92 @@ public abstract class DbAlgorithmExecutive
 	public boolean isAssigned(String role)
 	{
 		return getParmTsId(role) != null;
+	}
+
+	/**
+	 * Returns the time series assigned to a role, or null if the role is not assigned to
+	 * one. Prefer this over {@code getParmRef(role).timeSeries}, which throws
+	 * NullPointerException for a role the computation has no parameter for, and
+	 * {@code getParmRef(role).timeSeries.getTimeSeriesIdentifier()}, which is null for a
+	 * parameter that names no site and data type.
+	 *
+	 * @param role the name of the parameter (input or output)
+	 * @return the time series, or null if the role is unassigned.
+	 */
+	protected CTimeSeries getAssignedTimeSeries(String role)
+	{
+		if (!isAssigned(role))
+			return null;
+		ParmRef ref = getParmRef(role);
+		return ref == null ? null : ref.timeSeries;
+	}
+
+	/**
+	 * Same as {@link #getAssignedTimeSeries(String)}, but reports the configuration
+	 * problem rather than returning null. Use for roles the algorithm cannot do without.
+	 *
+	 * @throws DbCompException naming the role when no time series is assigned to it.
+	 */
+	protected CTimeSeries getRequiredTimeSeries(String role)
+		throws DbCompException
+	{
+		CTimeSeries cts = getAssignedTimeSeries(role);
+		if (cts == null)
+			throw new DbCompException(unassignedRoleMessage(role));
+		return cts;
+	}
+
+	/**
+	 * Same as {@link #getRequiredTimeSeries(String)}, for an algorithm that needs the
+	 * identifier rather than the values -- to build a rating spec, say.
+	 *
+	 * @throws DbCompException naming the role when no time series is assigned to it.
+	 */
+	protected TimeSeriesIdentifier getRequiredTsId(String role)
+		throws DbCompException
+	{
+		TimeSeriesIdentifier tsid = getParmTsId(role);
+		if (tsid == null)
+			throw new DbCompException(unassignedRoleMessage(role));
+		return tsid;
+	}
+
+	/**
+	 * Returns the computation parameter for a role, or null if the computation has no
+	 * parameter for it. Unlike a time series, the parameter carries the interval, table
+	 * selector and delta-T the algorithm needs even when it names no site and data type,
+	 * so a parameter that is present but unassigned is returned here. Use
+	 * {@link #isAssigned(String)} when the values themselves are what matters.
+	 *
+	 * @param role the name of the parameter (input or output)
+	 * @return the parameter, or null if the role has no computation parameter.
+	 */
+	protected DbCompParm getAssignedCompParm(String role)
+	{
+		ParmRef ref = getParmRef(role);
+		return ref == null ? null : ref.compParm;
+	}
+
+	/**
+	 * Same as {@link #getAssignedCompParm(String)}, but reports the configuration problem
+	 * rather than returning null. Use for roles the algorithm cannot do without.
+	 *
+	 * @throws DbCompException naming the role when the computation has no parameter for it.
+	 */
+	protected DbCompParm getRequiredCompParm(String role)
+		throws DbCompException
+	{
+		DbCompParm parm = getAssignedCompParm(role);
+		if (parm == null)
+			throw new DbCompException("Computation '" + comp.getName()
+				+ "' has no parameter for role '" + role + "' -- update its parameters.");
+		return parm;
+	}
+
+	private String unassignedRoleMessage(String role)
+	{
+		return "Computation '" + comp.getName() + "' has no time series assigned to role '"
+			+ role + "' -- update its parameters.";
 	}
 
 	/**
@@ -1940,6 +2117,15 @@ public abstract class DbAlgorithmExecutive
 	}
 
 	public DataCollection getDataCollection() { return dc; }
+
+	/**
+	 * @return the name of the computation this algorithm is running for, for use in
+	 * messages that have to be built outside the algorithm's own class.
+	 */
+	public String getCompName()
+	{
+		return comp == null ? "<none>" : comp.getName();
+	}
 
 	public void setDc(DataCollection dc)
 	{

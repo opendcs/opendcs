@@ -241,6 +241,21 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:BEFORE_TIMESLICES_END
 	}
 
+	/**
+	 * Python's default missing action is IGNORE, including for a role the computation has
+	 * no parameter for: {@link #makeInitScript} binds those roles to
+	 * {@code AlgoParm('undefined')} and the script decides what to do with them. Without
+	 * this the base class would resolve an unassigned role to the FAIL default and skip
+	 * every time slice.
+	 */
+	@Override
+	protected MissingAction getInputMissingAction(String roleName)
+	{
+		if (getParmRef(roleName) == null && comp.getProperty(roleName + "_MISSING") == null)
+			return MissingAction.IGNORE;
+		return super.getInputMissingAction(roleName);
+	}
+
 	public void firstBeforeTimeSlices()
 		throws DbCompException
 	{
@@ -578,10 +593,7 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		this.setOutput(nv, value);
 
 		// See docs in PythonWritten.java for explanation of the following:
-		ParmRef parmRef = this.getParmRef(rolename);
-		ComputationApp app = ComputationApp.instance();
-		if (parmRef.compParm.getAlgoParmType().startsWith("i") && app != null)
-			app.getResolver().pythonWrote(comp.getId(), parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
+		notePythonWroteInput(rolename);
 	}
 
 	/**
@@ -829,6 +841,31 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	public int getAggregateCount() { return aggregateCount; }
 
 	/**
+	 * Tells the resolver that a Python script has written to an input parameter, so that a
+	 * validation computation does not run again for the same value. A script may name any
+	 * role, including one this computation has no parameter for, so nothing here is assumed
+	 * to exist.
+	 */
+	private void notePythonWroteInput(String rolename)
+	{
+		ComputationApp app = ComputationApp.instance();
+		if (app == null)
+			return;
+		ParmRef parmRef = getParmRef(rolename);
+		if (parmRef == null || parmRef.compParm == null
+		 || !parmRef.compParm.getAlgoParmType().startsWith("i"))
+			return;
+		TimeSeriesIdentifier tsid = getParmTsId(rolename);
+		if (tsid == null)
+		{
+			log.debug("Not recording that Python wrote role '{}': no time series is assigned"
+					  + " to it.", rolename);
+			return;
+		}
+		app.getResolver().pythonWrote(comp.getId(), tsid.getKey());
+	}
+
+	/**
 	 * Perform the CWMS DATCHK functions on the named variable.
 	 * See docs on Datchk algorithm on how datchk is configured.
 	 * @param rolename
@@ -850,6 +887,11 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			datchkReader = DatchkReader.instance();
 
 		ParmRef parmRef = getParmRef(rolename);
+		if (parmRef == null || parmRef.timeSeries == null)
+		{
+			log.warn("datchk({}) -- this computation has no parameter for that role.", rolename);
+			return nv.getFlags();
+		}
 		TimeSeriesIdentifier tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		if (tsid == null)
 		{
@@ -1019,6 +1061,11 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 
 		ParmRef parmRef = getParmRef(rolename);
+		if (parmRef == null || parmRef.timeSeries == null)
+		{
+			log.warn("screening({}) -- this computation has no parameter for that role.", rolename);
+			return nv.getFlags();
+		}
 		TimeSeriesIdentifier tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		if (tsid == null)
 		{
@@ -1081,10 +1128,7 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		_saveOutputCalled = true;
 
 		// See docs in PythonWritten.java for explanation of the following:
-		ParmRef parmRef = this.getParmRef(rolename);
-		ComputationApp app = ComputationApp.instance();
-		if (parmRef.compParm.getAlgoParmType().startsWith("i") && app != null)
-			app.getResolver().pythonWrote(comp.getId(), parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
+		notePythonWroteInput(rolename);
 	}
 
 	/**
@@ -1115,10 +1159,7 @@ public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		_saveOutputCalled = true;
 
 		// See docs in PythonWritten.java for explanation of the following:
-		ParmRef parmRef = this.getParmRef(rolename);
-		ComputationApp app = ComputationApp.instance();
-		if (parmRef.compParm.getAlgoParmType().startsWith("i") && app != null)
-			app.getResolver().pythonWrote(comp.getId(), parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
+		notePythonWroteInput(rolename);
 	}
 
 	/**

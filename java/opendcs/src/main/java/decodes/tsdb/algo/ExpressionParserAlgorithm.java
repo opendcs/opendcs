@@ -16,6 +16,7 @@
 package decodes.tsdb.algo;
 
 import decodes.tsdb.DbCompException;
+import decodes.tsdb.MissingAction;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
@@ -80,6 +81,20 @@ public class ExpressionParserAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBas
 	public NamedVariable out1 = new NamedVariable("out1", 0);
 	@Output
 	public NamedVariable out2 = new NamedVariable("out2", 0);
+
+	/**
+	 * The algorithm takes "up to 5" inputs: a computation maps as many of in1...in5 as its
+	 * expressions actually reference, so an unmapped one must not hold up a time slice.
+	 * This is checked here rather than with in*_MISSING algorithm properties so that it
+	 * also covers records written before those properties existed.
+	 */
+	@Override
+	protected MissingAction getInputMissingAction(String roleName)
+	{
+		if (!isAssigned(roleName))
+			return MissingAction.IGNORE;
+		return super.getInputMissingAction(roleName);
+	}
 
 	@org.opendcs.annotations.PropertySpec(value="")
 	public String pre_1 = "";

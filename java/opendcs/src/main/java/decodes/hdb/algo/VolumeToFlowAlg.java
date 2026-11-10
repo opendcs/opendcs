@@ -163,7 +163,7 @@ public class VolumeToFlowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		ParmRef parmRef = getParmRef("input");
 		if (parmRef == null) 
 		{
-		   log.warn("VolumeToFlowAlg: Unknown aggregate control output variable 'INPUT'");
+		   log.warn("VolumeToFlowAlg: No time series assigned to input role 'INPUT'");
 		                   return;
 		}
 		String input_interval = parmRef.compParm.getInterval();
@@ -171,7 +171,7 @@ public class VolumeToFlowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		parmRef = getParmRef("output");
 		if (parmRef == null) 
 		                {
-		   log.warn("VolumeToFlowAlg: Unknown aggregate control output variable 'OUTPUT'");
+		   log.warn("VolumeToFlowAlg: No time series assigned to output role 'OUTPUT'");
 		                   return;
 		}
 		String output_interval = parmRef.compParm.getInterval();
@@ -278,7 +278,7 @@ public class VolumeToFlowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 					"','dd-MM-yyyy HH24:MI')) is_current_period from dual";
 							// now do the query for all the needed data
 			status = db.performQuery(query,dbobj);
-							debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+							log.trace(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
 			// see if there was an error
 			if (status.startsWith("ERROR"))
 							{

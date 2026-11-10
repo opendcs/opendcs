@@ -70,7 +70,7 @@ public class DatchkFunction	extends PostfixMathCommand
 		
 		// Find the Screening record
 		ParmRef inputParm = ctx.getAlgo().getParmRef(name);
-		if (inputParm.timeSeries == null)
+		if (inputParm == null || inputParm.timeSeries == null)
 			throw new ParseException("No input time-series for '" + name + "'!");
 		TimeSeriesIdentifier inputTsid = inputParm.timeSeries.getTimeSeriesIdentifier();
 		if (inputTsid == null)

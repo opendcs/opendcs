@@ -158,7 +158,7 @@ public class PowerToEnergyAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		ParmRef parmRef = getParmRef("input");
 		if (parmRef == null) 
         {
-			log.warn("PowerToEnergyAlg: Unknown aggregate control output variable 'INPUT'");
+			log.warn("PowerToEnergyAlg: No time series assigned to input role 'INPUT'");
             return;
 		}
 		String input_interval = parmRef.compParm.getInterval();
@@ -166,7 +166,7 @@ public class PowerToEnergyAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		parmRef = getParmRef("output");
 		if (parmRef == null) 
         {
-		   	log.warn("PowerToEnergyAlg: Unknown aggregate control output variable 'OUTPUT'");
+		   	log.warn("PowerToEnergyAlg: No time series assigned to output role 'OUTPUT'");
             return;
 		}
 		String output_interval = parmRef.compParm.getInterval();

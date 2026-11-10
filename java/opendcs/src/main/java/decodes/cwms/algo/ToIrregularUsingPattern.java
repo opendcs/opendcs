@@ -70,17 +70,17 @@ public class ToIrregularUsingPattern extends AW_AlgorithmBase
 	{
 		
 		// Validation
-		String outputIntvs = getParmRef("output").compParm.getInterval();
+		String outputIntvs = getRequiredCompParm("output").getInterval();
 		Interval outputIntv = IntervalCodes.getInterval(outputIntvs);
-		String patternIntvs = getParmRef("pattern").compParm.getInterval();
+		String patternIntvs = getRequiredCompParm("pattern").getInterval();
 		Interval patternIntv = IntervalCodes.getInterval(patternIntvs);
 
 		if(!outputIntv.equals(patternIntv)){
 			throw new DbCompException("Output interval does not match Pattern interval");
 		}
 
-		inputTS = getParmRef("input").timeSeries;
-		patternTS = getParmRef("pattern").timeSeries;
+		inputTS = getRequiredTimeSeries("input");
+		patternTS = getRequiredTimeSeries("pattern");
 
 		inUnits = getInputUnitsAbbr("input");
 		setOutputUnitsAbbr("output", inUnits);
@@ -105,7 +105,11 @@ public class ToIrregularUsingPattern extends AW_AlgorithmBase
 		}
 		catch(Exception ex)
 		{
-			log.atWarn().setCause(ex).log("Error accessing input/output time series.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot look back before the first trigger time for the 'input' or"
+					+ " 'pattern' series of computation '{}'; past pattern times are not"
+					+ " interpolated.", comp.getName());
 		}
 
 		

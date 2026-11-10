@@ -39,10 +39,12 @@ import decodes.sql.DbKey;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
+import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.MissingAction;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.ParmRef;
 import decodes.util.PropertiesOwner;
@@ -559,10 +561,12 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			Date end = aggCal.getTime();
 
 			// Now add times t+int, t+(2*int), t+(3*int), until we hit the end.
-			String varName = getInputNames()[0];
-			ParmRef inpParmRef = getParmRef(varName);
-			calIncr = IntervalCodes.getIntervalCalIncr(
-				inpParmRef.compParm.getInterval());
+			String[] inputNames = getInputNames();
+			if (inputNames.length == 0)
+				throw new DbCompException("Comp '" + comp.getName()
+					+ "' is a running aggregate but declares no input parameters.");
+			DbCompParm inpParm = getRequiredCompParm(inputNames[0]);
+			calIncr = IntervalCodes.getIntervalCalIncr(inpParm.getInterval());
 			aggCal.setTime(t);
 			aggCal.add(calIncr.getCalConstant(), calIncr.getCount());
 			while(aggCal.getTime().before(end)
@@ -852,10 +856,11 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 //  if any found then do a delete of all outputs
 		for (String varName : getInputNames())
 		{
-			ParmRef parmRef = getParmRef(varName);
-			if (parmRef == null)
-				continue;
-			if (parmRef.missingAction == MissingAction.FAIL
+			// A role the computation has no parameter for has no ParmRef to carry a missing
+			// action, but its own <role>_MISSING property still applies. Resolving it the
+			// same way keeps an unassigned role behaving alike whether or not it has a record.
+			MissingAction missingAction = getInputMissingAction(varName);
+			if (missingAction == MissingAction.FAIL
 			 || ifQuestionable != IfQuestionable.ProcessAsNormal)
 			{
 				NamedVariable v = _timeSliceVars.findByName(varName);
@@ -1095,11 +1100,16 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		
 		// CWMS-13771 Use the python repeat guard for validation comps to
 		// prevent re-running the same computation.
-		ParmRef parmRef = this.getParmRef(name);
 		ComputationApp app = ComputationApp.instance();
 		if (app != null)
-			app.getResolver().pythonWrote(comp.getId(), 
-				parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
+		{
+			TimeSeriesIdentifier tsid = getParmTsId(name);
+			if (tsid != null && !DbKey.isNull(tsid.getKey()))
+				app.getResolver().pythonWrote(comp.getId(), tsid.getKey());
+			else
+				log.debug("Not recording that '{}' was written for computation '{}':"
+						  + " the role is not assigned to a time series.", name, comp.getName());
+		}
 
 	}
 
@@ -1299,8 +1309,30 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 		}
 	}
 
+	/**
+	 * The missing action that applies to a declared input role. A role with a computation
+	 * parameter takes it from its ParmRef, which is where a record's own
+	 * &lt;role&gt;_MISSING property was resolved. A role the computation has no parameter
+	 * for has no ParmRef, so resolve the same property directly from the computation --
+	 * which also covers an algorithm whose optional inputs declare their own defaults as
+	 * algorithm properties.
+	 *
+	 * @param roleName the algorithm's input role name
+	 * @return the configured MissingAction, FAIL when nothing configures it.
+	 */
+	protected MissingAction getInputMissingAction(String roleName)
+	{
+		ParmRef parmRef = getParmRef(roleName);
+		if (parmRef != null)
+			return parmRef.missingAction;
+		return comp.getMissingAction(roleName);
+	}
+
 	protected void getSliceInputs()
 	{
+		// Must be cleared once per slice, not per input: with several inputs only the last
+		// one's deleted flag would survive and the output delete cascade would be missed.
+		_sliceInputsDeleted = false;
 		for(String varName : getInputNames())
 		{
 			ParmRef parmRef = getParmRef(varName);
@@ -1309,7 +1341,6 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements P
 			// MJM 20150727 Optional parms that are unused in an algorithm should be
 			// filled with the special value meaning MISSING.
 			
-			_sliceInputsDeleted = false;
 			// Use reflection to find the variable with same name.
 			// Then determine its type (double, long, or String).
 			Class cls = null;

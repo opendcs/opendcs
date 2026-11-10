@@ -18,7 +18,7 @@ import decodes.db.Site;
 import decodes.db.UnitConverter;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.ParmRef;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesException;
 import ilex.var.NamedVariable;
 
@@ -87,9 +87,12 @@ public class HamonMethod extends AW_AlgorithmBase
 	@Override
 	protected void doAWTimeSlice() throws DbCompException
 	{
-		ParmRef inputParm = getParmRef("input");
-		CTimeSeries inputTimeSeries = inputParm.timeSeries;
-		Site site = inputTimeSeries.getTimeSeriesIdentifier().getSite();
+		CTimeSeries inputTimeSeries = getRequiredTimeSeries("input");
+		TimeSeriesIdentifier inputTsid = inputTimeSeries.getTimeSeriesIdentifier();
+		if (inputTsid == null || inputTsid.getSite() == null)
+			throw new DbCompException("The 'input' series of computation '" + comp.getName()
+				+ "' has no site, and HamonMethod needs the site latitude.");
+		Site site = inputTsid.getSite();
 		double temperatureCelsius = convert(input, temperatureConverter, "temperature", "C");
 
 		// Hamon uses the Julian day to estimate solar declination and daylight length.

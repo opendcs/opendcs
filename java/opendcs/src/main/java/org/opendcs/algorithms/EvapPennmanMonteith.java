@@ -21,6 +21,7 @@ import java.util.Date;
 
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
+import decodes.tsdb.MissingAction;
 import decodes.tsdb.algo.AWAlgoType;
 
 // Place an import statements you need here.
@@ -196,6 +197,20 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
         // this variable will determine the output interval
         _aggPeriodVarRoleName = "Evap";
 
+    }
+
+    /**
+     * The algorithm computes from whichever of the meteorological inputs are present and
+     * marks the result questionable for the rest (see doAWTimeSlice), so an input the
+     * computation does not map must not hold up a time slice. Once a role is assigned, its
+     * own MISSING property governs as usual.
+     */
+    @Override
+    protected MissingAction getInputMissingAction(String roleName)
+    {
+        if (!isAssigned(roleName))
+            return MissingAction.IGNORE;
+        return super.getInputMissingAction(roleName);
     }
 
     /**

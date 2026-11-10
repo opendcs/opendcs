@@ -433,10 +433,10 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         totalDailyEvapDepthM = 0.0;
         count = 0;
 
-        String evapInterval = getParmRef(DAILY_EVAP_DEPTH) == null || getParmRef(DAILY_EVAP_DEPTH).tsid == null
-                ? null : getParmRef(DAILY_EVAP_DEPTH).tsid.getInterval();
-        String flowInterval = getParmRef("dailyEvapAsFlow") == null || getParmRef("dailyEvapAsFlow").tsid == null
-                ? null : getParmRef("dailyEvapAsFlow").tsid.getInterval();
+        var evapTsid = getParmTsId(DAILY_EVAP_DEPTH);
+        String evapInterval = evapTsid == null ? null : evapTsid.getInterval();
+        var flowTsid = getParmTsId("dailyEvapAsFlow");
+        String flowInterval = flowTsid == null ? null : flowTsid.getInterval();
         boolean evapIR = evapInterval == null || Objects.equals(evapInterval, IntervalCodes.int_one_day_dst);
         boolean flowIR = flowInterval == null || Objects.equals(flowInterval, IntervalCodes.int_one_day_dst);
 
@@ -510,21 +510,20 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
                 }
 
                 //initialize output timeseries
-                hourlyEvapRateTS = getParmRef(HOURLY_EVAP_RATE) == null
-                        ? null : getParmRef(HOURLY_EVAP_RATE).timeSeries;
+                hourlyEvapRateTS = getAssignedTimeSeries(HOURLY_EVAP_RATE);
 
                 //initialize input timeseries
-                windSpeedTS = getParmRef("windSpeed").timeSeries;
-                airTempTS = getParmRef("airTemp").timeSeries;
-                relativeHumidityTS = getParmRef("relativeHumidity").timeSeries;
-                atmPressTS = getParmRef("atmPress").timeSeries;
-                percentLowCloudTS = getParmRef("percentLowCloud").timeSeries;
-                elevLowCloudTS = getParmRef("elevLowCloud").timeSeries;
-                percentMidCloudTS = getParmRef("percentMidCloud").timeSeries;
-                elevMidCloudTS = getParmRef("elevMidCloud").timeSeries;
-                percentHighCloudTS = getParmRef("percentHighCloud").timeSeries;
-                elevHighCloudTS = getParmRef("elevHighCloud").timeSeries;
-                elevTS = getParmRef("elev").timeSeries;
+                windSpeedTS = getRequiredTimeSeries("windSpeed");
+                airTempTS = getRequiredTimeSeries("airTemp");
+                relativeHumidityTS = getRequiredTimeSeries("relativeHumidity");
+                atmPressTS = getRequiredTimeSeries("atmPress");
+                percentLowCloudTS = getRequiredTimeSeries("percentLowCloud");
+                elevLowCloudTS = getRequiredTimeSeries("elevLowCloud");
+                percentMidCloudTS = getRequiredTimeSeries("percentMidCloud");
+                elevMidCloudTS = getRequiredTimeSeries("elevMidCloud");
+                percentHighCloudTS = getRequiredTimeSeries("percentHighCloud");
+                elevHighCloudTS = getRequiredTimeSeries("elevHighCloud");
+                elevTS = getRequiredTimeSeries("elev");
 
 
                 //initialize MetData

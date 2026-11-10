@@ -21,7 +21,7 @@ import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.ParmRef;
+import decodes.tsdb.DbCompParm;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
@@ -83,13 +83,13 @@ public class AddToPrevious extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 		if (justStarted)
 		{
-			ParmRef inputParmRef = getParmRef("input");
-			CTimeSeries inputTS = inputParmRef.timeSeries;
+			DbCompParm inputParm = getRequiredCompParm("input");
+			CTimeSeries inputTS = getRequiredTimeSeries("input");
 			try (TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO())
 			{
 				TimedVariable prevInput =
 						timeSeriesDAO.getPreviousValue(inputTS,
-								inputParmRef.compParm.baseTimeToParamTime(
+								inputParm.baseTimeToParamTime(
 										this._timeSliceBaseTime, aggCal));
 				prevVal = prevInput.getDoubleValue();
 			}

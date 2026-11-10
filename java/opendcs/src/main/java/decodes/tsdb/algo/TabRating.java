@@ -126,8 +126,8 @@ public class TabRating extends decodes.tsdb.algo.AW_AlgorithmBase implements dec
 			else // No name type specified, use the siteNameTypePreference from Decodes Settings.
 				tableName = getSiteName("indep");
 			if (tableName == null)
-				throw new DbCompException("No site name for independent "
-					+ "variable with SDI=" + getSDI("indep"));
+				throw new DbCompException("No site name for the 'indep' parameter of computation '"
+					+ comp.getName() + "' (" + getParmTsUniqueString("indep") + ")");
 			tableName += tableNameSuffix;
 		}
 		String p = tableDir + "/" + tableName;
@@ -188,7 +188,7 @@ public class TabRating extends decodes.tsdb.algo.AW_AlgorithmBase implements dec
 			   .setCause(ex)
 			   .log("Table bounds exceeded on indep value at site {}, value was {} at time {}, indep units={}",
 					getSiteName("indep", null), indep,
-					_timeSliceBaseTime, this.getParmRef("indep").timeSeries.getUnitsAbbr());
+					_timeSliceBaseTime, getInputUnitsAbbr("indep"));
 		}
 	}
 

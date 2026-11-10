@@ -15,7 +15,6 @@ import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
-import decodes.tsdb.ParmRef;
 
 @Algorithm(description = "Type a javadoc-style comment describing the algorithm class.")
 public class BeginofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
@@ -91,6 +90,7 @@ public class BeginofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * This method is called once after iterating all time slices.
 	 */
 	protected void afterTimeSlices()
+		throws DbCompException
 	{
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
@@ -106,12 +106,7 @@ public class BeginofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
 		long milly_diff = date_out.getTime() - _aggregatePeriodBegin.getTime();
 		long milly_window = 0;
-		ParmRef parmRef = getParmRef("output");
-		if (parmRef == null)
-		{ 
-			log.warn("Unknown aggregate control output variable 'OUTPUT'");
-		}
-		String intstr = parmRef.compParm.getInterval();
+		String intstr = getRequiredCompParm("output").getInterval();
 		if (intstr.equalsIgnoreCase("hour"))
 		     milly_window = req_window_period * (MS_PER_HOUR / 60L);
 		  else if (intstr.equalsIgnoreCase("day"))

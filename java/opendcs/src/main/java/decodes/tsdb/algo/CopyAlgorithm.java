@@ -145,6 +145,13 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 		LoggingEventBuilder le = enhancedDebug ? log.atInfo() : log.atTrace();
 		le.log("CopyAlgorithm doAWTimeSlice input={}, inUnits={}, outUnits={}", input, inUnits, outUnits);
 
+		// An absent input is not a deleted one. Passing -Inf to setOutput deletes the
+		// output, so doing that here would erase stored values whenever the input is
+		// merely missing -- or whenever no time series is assigned to the role at all.
+		// The base class still deletes the output when the input was explicitly deleted.
+		if (isMissing(input))
+			return;
+
 		double x = input;
 		if (converter != null)
 		{

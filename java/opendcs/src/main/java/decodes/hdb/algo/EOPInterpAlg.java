@@ -19,12 +19,12 @@ import java.util.Date;
 
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
+import decodes.tsdb.DbCompParm;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
 
-import decodes.tsdb.ParmRef;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.sql.Connection;
@@ -154,9 +154,7 @@ public class EOPInterpAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
 
 
-		ParmRef parmRef = getParmRef("output");
-		if (parmRef == null) warning("Unknown aggregate control output variable 'OUTPUT'");
-		String intstr_out = parmRef.compParm.getInterval();
+		String intstr_out = getRequiredCompParm("output").getInterval();
 		//  now check to see if before EOP record within required window
 		if (intstr_out.equalsIgnoreCase("hour"))
 		     milly_window = req_window_period * (MS_PER_HOUR / 60L);
@@ -231,13 +229,9 @@ public class EOPInterpAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				
 				SimpleDateFormat sdf = new SimpleDateFormat(dt_fmt);
 				do_setoutput = true;
-				parmRef = getParmRef("input");
-				if (parmRef == null) 
-				{
-					log.warn("Unknown aggregate control output variable 'INPUT'");
-				}	
-				String input_interval = parmRef.compParm.getInterval();
-						String table_selector = parmRef.compParm.getTableSelector();
+				DbCompParm inputParm = getRequiredCompParm("input");
+				String input_interval = inputParm.getInterval();
+				String table_selector = inputParm.getTableSelector();
 
 				String status = null;
 				DBAccess db = new DBAccess(conn);

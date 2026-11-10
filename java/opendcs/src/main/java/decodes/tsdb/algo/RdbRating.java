@@ -243,7 +243,7 @@ public class RdbRating extends decodes.tsdb.algo.AW_AlgorithmBase implements dec
                .setCause(ex)
                .log("Table bounds exceeded on indep value at site {}, value was {} at time {}, indep units={}",
                     getSiteName("indep", null), indep,
-                    _timeSliceBaseTime, this.getParmRef("indep").timeSeries.getUnitsAbbr());
+                    _timeSliceBaseTime, getInputUnitsAbbr("indep"));
         }
     }
 

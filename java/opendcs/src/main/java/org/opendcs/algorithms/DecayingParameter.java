@@ -137,7 +137,7 @@ public class DecayingParameter extends AW_AlgorithmBase
 		if (first_run)
 		{
 			log.trace("beginning first run procedures");
-			TimeSeriesIdentifier tsId = this.getParmTsId("input");
+			TimeSeriesIdentifier tsId = getRequiredTsId("input");
 			try
 			{
 				CTimeSeries cts = tsdb.makeTimeSeries(tsId);
