@@ -34,49 +34,62 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 final class ComputationsImportResourcesIT extends BaseApiIT
 {
-	private static final String COPYTEST_COMP_XML = "data/Comps/CopyTest/Test1/CopyTestComp.xml";
+    private static final String COPYTEST_COMP_XML = "data/Comps/CopyTest/Test1/CopyTestComp.xml";
 
-	@BeforeEach
-	void setUp()
-	{
-		setUpCreds();
-		authenticate();
-	}
+    @BeforeEach
+    void setUp()
+    {
+        setUpCreds();
+        authenticate();
+    }
 
-	private static String readFixture() throws Exception
-	{
-		try (InputStream is = ComputationsImportResourcesIT.class.getClassLoader().getResourceAsStream(COPYTEST_COMP_XML))
-		{
-			assertNotNull(is, "Missing test fixture " + COPYTEST_COMP_XML);
-			return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-		}
-	}
+    private static String readComputationXml() throws Exception
+    {
+        try (InputStream is = ComputationsImportResourcesIT.class.getClassLoader().getResourceAsStream(COPYTEST_COMP_XML))
+        {
+            assertNotNull(is, "Missing test fixture " + COPYTEST_COMP_XML);
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
 
-	@Test
-	void importStoresComputation() throws Exception
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.contentType(MediaType.APPLICATION_XML)
-			.spec(authSpec)
-			.body(readFixture())
-		.when()
-			.post("import/computations?createTimeSeries=true")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.statusCode(is(Response.Status.OK.getStatusCode()))
-			.body("importType", equalTo("computations"))
-			.body("validateOnly", is(false))
-			.body("success", is(true));
+    @Test
+    void importStoresComputation() throws Exception
+    {
+        String content = readComputationXml();
+        String uploadId = given()
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_XML)
+            .spec(authSpec)
+            .body(content)
+        .when()
+            .post("import/preview")
+        .then()
+            .statusCode(is(Response.Status.OK.getStatusCode()))
+            .body("importType", is("computations"))
+            .body("validateOnly", is(true))
+            .body("counts.Computation", is(1))
+            .extract().path("uploadId");
 
-		given()
-			.accept(MediaType.APPLICATION_JSON)
-			.spec(authSpec)
-		.when()
-			.get("computationrefs")
-		.then()
-			.statusCode(is(Response.Status.OK.getStatusCode()))
-			.body("findAll { it.name.toString() == 'Test1CopyTest' }.isEmpty()", is(false));
-	}
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(MediaType.APPLICATION_JSON)
+            .spec(authSpec)
+        .when()
+            .post("import/" + uploadId + "/confirm?createTimeSeries=true")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(Response.Status.OK.getStatusCode()))
+            .body("importType", equalTo("computations"))
+            .body("validateOnly", is(false))
+            .body("success", is(true));
+
+        given()
+            .accept(MediaType.APPLICATION_JSON)
+            .spec(authSpec)
+        .when()
+            .get("computationrefs")
+        .then()
+            .statusCode(is(Response.Status.OK.getStatusCode()))
+            .body("findAll { it.name.toString() == 'Test1CopyTest' }.isEmpty()", is(false));
+    }
 }
