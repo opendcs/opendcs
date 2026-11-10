@@ -15,6 +15,7 @@ import decodes.tsdb.IntervalIncrement;
  * value over a specified duration.
  */
 public class ConstCheck
+	implements ScreeningCheck
 {
 	private char flag;
 	private String duration;
@@ -43,9 +44,16 @@ public class ConstCheck
 		this.allowedMissing = allowedMissing;
 	}
 
+	@Override
 	public char getFlag()
 	{
 		return flag;
+	}
+
+	@Override
+	public Category getCategory()
+	{
+		return Category.CONSTANT;
 	}
 
 	public String getDuration()

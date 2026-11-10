@@ -820,13 +820,7 @@ public class DatchkReader
 				System.out.println("\t\tSeason start: " + sdf.format(d));
 			}
 
-			for(AbsCheck chk : crit.absChecks)
-				System.out.println("\t\t" + chk);
-			for(ConstCheck chk : crit.constChecks)
-				System.out.println("\t\t" + chk);
-			for(RocPerHourCheck chk : crit.rocPerHourChecks)
-				System.out.println("\t\t" + chk);
-			for(DurCheckPeriod chk : crit.durCheckPeriods)
+			for(ScreeningCheck chk : crit.getChecks())
 				System.out.println("\t\t" + chk);
 		}
 	}
