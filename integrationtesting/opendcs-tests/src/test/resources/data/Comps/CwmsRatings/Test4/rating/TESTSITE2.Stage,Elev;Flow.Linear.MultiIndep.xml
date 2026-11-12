@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ratings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd">
+<rating-template office-id="SPK">
+<parameters-id>Stage,Elev;Flow</parameters-id>
+<version>Linear</version>
+<ind-parameter-specs>
+<ind-parameter-spec position="1"><parameter>Stage</parameter><in-range-method>LINEAR</in-range-method><out-range-low-method>NEAREST</out-range-low-method><out-range-high-method>NEAREST</out-range-high-method></ind-parameter-spec>
+<ind-parameter-spec position="2"><parameter>Elev</parameter><in-range-method>LINEAR</in-range-method><out-range-low-method>NEAREST</out-range-low-method><out-range-high-method>NEAREST</out-range-high-method></ind-parameter-spec>
+</ind-parameter-specs>
+<dep-parameter>Flow</dep-parameter>
+<description>Multi-parametric rating for the second location of the CwmsRatingMultIndep group test</description>
+</rating-template>
+<rating-spec office-id="SPK">
+<rating-spec-id>TESTSITE2.Stage,Elev;Flow.Linear.MultiIndep</rating-spec-id>
+<template-id>Stage,Elev;Flow.Linear</template-id>
+<location-id>TESTSITE2</location-id>
+<version>MultiIndep</version>
+<source-agency/>
+<in-range-method>LINEAR</in-range-method>
+<out-range-low-method>NEAREST</out-range-low-method>
+<out-range-high-method>NEAREST</out-range-high-method>
+<active>true</active>
+<auto-update>false</auto-update>
+<auto-activate>false</auto-activate>
+<auto-migrate-extension>false</auto-migrate-extension>
+<ind-rounding-specs>
+<ind-rounding-spec position="1">2222233332</ind-rounding-spec>
+<ind-rounding-spec position="2">2222233332</ind-rounding-spec>
+</ind-rounding-specs>
+<dep-rounding-spec>2222233332</dep-rounding-spec>
+<description/>
+</rating-spec>
+<simple-rating office-id="SPK">
+<rating-spec-id>TESTSITE2.Stage,Elev;Flow.Linear.MultiIndep</rating-spec-id>
+<units-id>ft,ft;cfs</units-id>
+<effective-date>2024-06-01T00:00:00Z</effective-date>
+<transition-start-date/>
+<create-date>2024-06-01T00:00:00Z</create-date>
+<active>true</active>
+<formula>5.0 * Arg1 + 3.0 * Arg2</formula>
+<description>Flow = 5 x Stage + 3 x Elev</description>
+</simple-rating>
+</ratings>

@@ -212,7 +212,7 @@ public final class ComputationExecution implements AutoCloseable
 							theData.getTasklistHandle().markComputationFailed(rn);
 						}
 					}
-					catch (Exception ex)
+					catch (Throwable ex) // NOSONAR. We need to catch everything here.
 					{
 						listener.onProgress(String.format("Unexpected error in computation %s", comp.getName()), Level.WARN, ex);
 						numErrors.incrementAndGet();
