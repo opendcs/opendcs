@@ -8,17 +8,22 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.ComputationExecution;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompParm;
+import decodes.tsdb.DbCompResolver;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.DuplicateTimeSeriesException;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -30,12 +35,16 @@ import ilex.var.TimedVariable;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.fixtures.helpers.TestConfig;
+import org.opendcs.util.functional.ThrowingSupplier;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
@@ -62,6 +71,23 @@ public class AlgorithmTestsIT extends AppTestBase
     
     @ConfiguredField
     private OpenDcsDatabase db;
+
+    private ComputationExecution compExecutor;
+
+
+    private static final ExecutorService compExecService = Executors.newFixedThreadPool(2); // allow parallel tests
+
+    @BeforeEach
+    void setup() throws Exception
+    {
+        compExecutor = new ComputationExecution(db, compExecService);
+    }
+
+    @AfterEach
+    void tearDown()
+    {
+        compExecutor.close();
+    }
 
     /**
      * This just tests that timeseries can be saved to the database, retrieved, and totally deleted.
@@ -176,40 +202,68 @@ public class AlgorithmTestsIT extends AppTestBase
             helper.loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
             helper.loadScreenings(buildFilePath(test.getAbsolutePath(), "screenings"));
 
-
-            DbComputation testComp = null;
-            try (ComputationDAI compdao = tsDb.makeComputationDAO())
+            final DbComputation testComp = ((ThrowingSupplier<DbComputation,Exception>)() ->
             {
-               testComp = compdao.getComputationByName(test.getName()+comp.getName());
-            }
+                try (ComputationDAI compdao = tsDb.makeComputationDAO())
+                {
+                return compdao.getComputationByName(test.getName()+comp.getName());
+                }
+            }).get();
 
             DataCollection theData = new DataCollection();
 
-            for (CTimeSeries ctsi: inputTS){
-                for (int idx = 0; idx < ctsi.size(); idx++){
+            for (CTimeSeries ctsi: inputTS)
+            {
+                for (int idx = 0; idx < ctsi.size(); idx++)
+                {
                     VarFlags.setWasAdded(ctsi.sampleAt(idx));
                 }
+                ctsi.addDependentCompId(testComp.getId());
                 theData.addTimeSeries(ctsi);
             }
-            for (CTimeSeries ctso: outputTS){
+            for (CTimeSeries ctso: outputTS)
+            {
                 theData.addTimeSeries(ctso);
             }
-
-            // new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z")
-            //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
-            testComp.prepareForExec(tsDb);
-
-            assertUnassignedRoles(helper, testComp, config.unassignedRoles(), "before execution");
 
             if (config.expectError() != null)
             {
                 assertComputationFails(testComp, theData, config.expectError());
                 return;
             }
+            // While we already have the computation, we want to be able to test group comps
+            // and make sure we're doing the same thing the other portions of computation execution
+            // is doing.
+            var resolver = new DbCompResolver(tsDb);
+            var comps = List.of(resolver.resolve(theData))
+                            .stream()
+                            .peek(c -> log.info("Seeing if we should run {}", c.getName()))
+                            .filter(c -> c.getName().equals(testComp.getName()))
+                            .toList();
+            assertFalse(comps.isEmpty());
+            final var outputData = new DataCollection();
+            var results = compExecutor.execute(comps, theData, dcOut ->
+            {
+                for (var ts: dcOut.getAllTimeSeries())
+                {
+                    try 
+                    {
+                        outputData.addTimeSeries(ts);
+                    }
+                    catch (DuplicateTimeSeriesException ex)
+                    {
+                        fail("This should not happen.", ex);
+                    }
+                }
+                return dcOut;
+            });
+            assertEquals(comps.size(), results.computesTried());
+            assertEquals(0, results.numErrors());
 
-            testComp.apply(theData, tsDb);
-
-            assertUnassignedRoles(helper, testComp, config.unassignedRoles(), "after execution");
+            for (var concreteComp: comps)
+            {
+                assertUnassignedRoles(helper, concreteComp, config.unassignedRoles(), "after execution");
+            }
 
             Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
             
@@ -221,7 +275,8 @@ public class AlgorithmTestsIT extends AppTestBase
 
                 log.info(currExpect.getNameString());
 
-                CTimeSeries algoOutput = theData.getTimeSeriesByTsidKey(outputID);
+                CTimeSeries algoOutput = outputData.getTimeSeriesByTsidKey(outputID);
+                assertNotNull(algoOutput, "Expected time series was not created.");
                 log.info("expected units: " + currExpect.getUnitsAbbr());
                 TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
 
