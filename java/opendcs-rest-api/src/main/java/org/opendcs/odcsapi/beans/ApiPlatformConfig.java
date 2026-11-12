@@ -35,6 +35,10 @@ public final class ApiPlatformConfig
 	@Schema(description = "Detailed description of the platform configuration.")
 	private String description = null;
 
+	@Schema(description = "The ID of the equipment model assigned to this configuration, or null if none is assigned.",
+			example = "3")
+	private Long equipmentId = null;
+
 	@Schema(description = "A list of configuration sensors associated with the platform.")
 	private List<ApiConfigSensor> configSensors =
 			new ArrayList<>();
@@ -81,6 +85,16 @@ public final class ApiPlatformConfig
 	public void setDescription(String description)
 	{
 		this.description = description;
+	}
+
+	public Long getEquipmentId()
+	{
+		return equipmentId;
+	}
+
+	public void setEquipmentId(Long equipmentId)
+	{
+		this.equipmentId = equipmentId;
 	}
 
 	public List<ApiConfigSensor> getConfigSensors()

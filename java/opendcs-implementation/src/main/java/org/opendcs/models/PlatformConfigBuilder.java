@@ -96,7 +96,7 @@ public class PlatformConfigBuilder
      */
     public PlatformConfigBuilder withEquipmentModel(EquipmentModel equipmentModel)
     {
-        if (this.equipmentModel != null)
+        if (this.equipmentModel == null)
         {
             this.equipmentModel = equipmentModel;
         }

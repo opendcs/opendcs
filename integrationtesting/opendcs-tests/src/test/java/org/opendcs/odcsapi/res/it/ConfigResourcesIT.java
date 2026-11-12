@@ -15,6 +15,7 @@
 
 package org.opendcs.odcsapi.res.it;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import jakarta.ws.rs.core.MediaType;
@@ -22,13 +23,18 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opendcs.odcsapi.beans.ApiEquipmentModel;
+import org.opendcs.odcsapi.beans.ApiPlatformConfig;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class ConfigResourcesIT extends BaseApiIT
 {
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 	private static Long configId;
 
 	@BeforeEach
@@ -248,5 +254,97 @@ final class ConfigResourcesIT extends BaseApiIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(Response.Status.NOT_FOUND.getStatusCode()));
+	}
+
+	@Test
+	void testConfigEquipmentModelAssignAndClear() throws Exception
+	{
+		ApiEquipmentModel model = new ApiEquipmentModel();
+		model.setName("Config IT Logger");
+		model.setEquipmentType("DCP");
+		Long equipmentId = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(OBJECT_MAPPER.writeValueAsString(model))
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("equipment")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.extract().jsonPath().getLong("equipmentId");
+
+		ApiPlatformConfig config = getDtoFromResource("config_post_delete_input_data.json", ApiPlatformConfig.class);
+		config.setEquipmentId(equipmentId);
+		Long newConfigId = postConfig(config);
+		assertEquals(equipmentId, getConfig(newConfigId).getLong("equipmentId"));
+
+		config.setConfigId(newConfigId);
+		config.setEquipmentId(null);
+		postConfig(config);
+		assertNull(getConfig(newConfigId).get("equipmentId"));
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.spec(authSpec)
+			.queryParam("configid", newConfigId)
+		.when()
+			.delete("config")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()));
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.spec(authSpec)
+			.queryParam("equipmentid", equipmentId)
+		.when()
+			.delete("equipment")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.NO_CONTENT.getStatusCode()));
+	}
+
+	private Long postConfig(ApiPlatformConfig config) throws Exception
+	{
+		return given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.body(OBJECT_MAPPER.writeValueAsString(config))
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("config")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.CREATED.getStatusCode()))
+			.extract().jsonPath().getLong("configId");
+	}
+
+	private JsonPath getConfig(Long id)
+	{
+		return given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.spec(authSpec)
+			.queryParam("configid", id)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("config")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(Response.Status.OK.getStatusCode()))
+			.extract().jsonPath();
 	}
 }
