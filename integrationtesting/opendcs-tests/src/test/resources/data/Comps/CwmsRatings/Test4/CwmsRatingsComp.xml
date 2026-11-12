@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <!-- Same definition as the bundled CwmsRatingMultIndep.xml so that all the
+       CwmsRatings tests import an identical algorithm record. -->
+  <Algorithm name="CwmsRatingMultIndep">
+    <Comment>Implements CWMS rating computations using the CWMS API provided by HEC.</Comment>
+    <ExecClass>decodes.cwms.rating.CwmsRatingMultIndep</ExecClass>
+    <AlgoProperty name="templateVersion">USGS-EXSA</AlgoProperty>
+    <AlgoProperty name="specVersion">Production</AlgoProperty>
+    <AlgoProperty name="useDepLocation">false</AlgoProperty>
+    <AlgoProperty name="indep1_MISSING">fail</AlgoProperty>
+    <AlgoProperty name="indep2_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep3_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep4_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep5_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep6_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep7_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep8_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep9_MISSING">ignore</AlgoProperty>
+    <AlgoParm roleName="indep1"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep2"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep3"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep4"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep5"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep6"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep7"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep8"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="indep9"><ParmType>i</ParmType></AlgoParm>
+    <AlgoParm roleName="dep"><ParmType>o</ParmType></AlgoParm>
+  </Algorithm>
+
+  <!-- The locations Test4CwmsRatings is allowed to rate. Members are named by site, so a
+       new location is one SiteName element plus that location's rating and time series, not
+       another computation. Inputs only: naming the rated (dependent) time series would let
+       the computation trigger on its own output. The Version member keeps the group to this
+       test's table selectors, so the other CwmsRatings tests' TESTSITE1 time series do not
+       become members. -->
+  <TsGroup name="Test4 CwmsRatings Locations">
+    <GroupType>rating-inputs</GroupType>
+    <Description>Locations Test4CwmsRatings may rate.</Description>
+    <SiteName>TESTSITE1</SiteName>
+    <SiteName>TESTSITE2</SiteName>
+    <DataType Standard="CWMS" code="Stage"/>
+    <DataType Standard="CWMS" code="Elev"/>
+    <Member type="ParamType" value="Inst"/>
+    <Member type="Interval" value="1Hour"/>
+    <Member type="Duration" value="0"/>
+    <Member type="Version" value="cwmsRatingGroup-*"/>
+  </TsGroup>
+
+  <!-- TESTSITE1.Stage,Elev;Flow.Linear.MultiIndep takes two independent parameters, and so
+       does TESTSITE2's rating of the same template and version. The params below name a
+       datatype but no site: the resolver fills the site in from the time series that
+       triggers the computation, so the rating spec id, and with it the rating applied,
+       follows whichever location triggered. The two locations deliberately carry different
+       formulas so a rating applied at the wrong one cannot pass. -->
+  <Computation name="Test4CwmsRatings">
+    <Comment>Rates every location in the group, each with its own CWMS rating.</Comment>
+    <Enabled>true</Enabled>
+    <AlgorithmName>CwmsRatingMultIndep</AlgorithmName>
+    <LastModified>2026-11-12 12:00:00 PDT</LastModified>
+    <ValidStart>2024-06-13 00:00:00 UTC</ValidStart>
+    <ValidEnd>2024-06-14 00:00:00 UTC</ValidEnd>
+    <GroupName>Test4 CwmsRatings Locations</GroupName>
+    <CompProperty name="templateVersion">Linear</CompProperty>
+    <CompProperty name="specVersion">MultiIndep</CompProperty>
+    <CompProperty name="indep1_MISSING">fail</CompProperty>
+    <CompProperty name="indep2_MISSING">fail</CompProperty>
+    <CompParm roleName="indep1">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Stage"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.cwmsRatingGroup-1</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="indep2">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Elev"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.cwmsRatingGroup-2</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="indep3"/>
+    <CompParm roleName="indep4"/>
+    <CompParm roleName="indep5"/>
+    <CompParm roleName="dep">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.cwmsRatingGroup-Dep</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>
