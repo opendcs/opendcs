@@ -41,6 +41,14 @@ when not matched then
 deleteNetworkList() ::= "delete from networklist where id = :id"
 deleteNetworkListEntry() ::= "delete from networklistentry where networklistid = :networklistid"
 
+routingSpecsUsingNetworkList() ::= <<
+select rs.name from routingspec rs
+  join routingspecnetworklist rsnl on rsnl.routingspecid = rs.id
+  join networklist nl on nl.name = rsnl.networklistname
+ where nl.id = :id
+ order by rs.name
+>>
+
 insertNetworkListEntry() ::= <<
 insert into networklistentry(networklistid, transportid, platform_name, description)
 values (:networklistid, :transportid, :platform_name, :description)

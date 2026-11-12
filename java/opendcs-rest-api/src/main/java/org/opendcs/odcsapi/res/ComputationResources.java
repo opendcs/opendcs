@@ -355,6 +355,9 @@ public final class ComputationResources extends OpenDcsResource
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted computation"),
 					@ApiResponse(responseCode = "400", description = "Missing required computationid parameter"),
+					@ApiResponse(responseCode = "409", description = "Conflict - Computation is in use and cannot be deleted",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
