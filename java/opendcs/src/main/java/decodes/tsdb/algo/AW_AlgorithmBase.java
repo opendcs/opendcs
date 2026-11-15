@@ -141,7 +141,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 	protected boolean noAggregateFill = false;
 
 	/** Property that determines how to handle questionable input data */
-	enum IfQuestionable { ProcessAsNormal, QuestionOutput, SkipTimeslice };
+	enum IfQuestionable { ProcessAsNormal, QuestionOutput, SkipTimeslice, FindPrevious };
 	protected IfQuestionable ifQuestionable = IfQuestionable.ProcessAsNormal;
 	protected boolean _questionOutput = false;
 
@@ -174,7 +174,7 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 		new PropertySpec("maxInterpIntervals", PropertySpec.INT,
 			"Max number of intervals that can be interpolated for missing"),
 		new PropertySpec("ifQuestionable", PropertySpec.STRING,
-			"ProcessAsNormal, QuestionOutput, or SkipTimeslice"),
+			"ProcessAsNormal, QuestionOutput, SkipTimeslice, or FindPrevious"),
 		new PropertySpec("maxMissingValuesForFill", PropertySpec.INT,
 			"When filling regular interval missing input data, do not fill more than this many intervals."),
 		new PropertySpec("maxMissingTimeForFill", PropertySpec.INT,
@@ -333,6 +333,9 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 				break;
 			case 'q': case 'Q':
 				ifQuestionable = IfQuestionable.QuestionOutput;
+				break;
+			case 'f': case 'F':
+				ifQuestionable = IfQuestionable.FindPrevious;
 				break;
 			}
 		}
@@ -911,6 +914,11 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 		}
 	}
 
+	protected boolean findPreviousForQuestionable()
+	{
+		return ifQuestionable == IfQuestionable.FindPrevious;
+	}
+
 
 	/**
 	 * Sets a double-type output variable.
@@ -990,7 +998,9 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 	public void clearFlagBits(NamedVariable v, int bits)
 	{
 		v.setFlags(v.getFlags() & (~bits));
+		setFlagBitsCalled = true;
 		saveOutput(v);
+		setFlagBitsCalled = false;
 	}
 
 	/**
