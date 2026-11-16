@@ -199,7 +199,6 @@ public final class ComputationExecution implements AutoCloseable
 					{
 						listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
 								comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
-						computesTried.incrementAndGet();
 						boolean ignoreTimeWindow = start == null && end == null;
 						ret = executeSingleComp(comp, start, end, theData, ignoreTimeWindow, listener);
 					}
@@ -296,7 +295,6 @@ public final class ComputationExecution implements AutoCloseable
 		{
 			listener.onProgress("Unexpected error fetching input data.", Level.WARN, ex);
 		}
-		computesTried.incrementAndGet();
 		try (var mdcComputation = MDC.putCloseable(COMPUTATION_KEY, computation.getName()))
 		{
 			executeSingleComp(computation, start, end, theData, false, listener);
@@ -338,6 +336,9 @@ public final class ComputationExecution implements AutoCloseable
 			var compTimer = MDCTimer.startTimer("executing single computation: " + comp.getName());
 			TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
 		{
+			// The compute itself isn't "tried" until it actually gets here.
+			// otherwise we end up double counting
+			computesTried.incrementAndGet();
 			// Make a data collection with inputs filled from ... until
 			ParmRef parmRef = null;
 			try
