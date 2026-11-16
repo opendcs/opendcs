@@ -36,8 +36,6 @@ import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -72,22 +70,7 @@ public class AlgorithmTestsIT extends AppTestBase
     @ConfiguredField
     private OpenDcsDatabase db;
 
-    private ComputationExecution compExecutor;
-
-
     private static final ExecutorService compExecService = Executors.newFixedThreadPool(2); // allow parallel tests
-
-    @BeforeEach
-    void setup() throws Exception
-    {
-        compExecutor = new ComputationExecution(db, compExecService);
-    }
-
-    @AfterEach
-    void tearDown()
-    {
-        compExecutor.close();
-    }
 
     /**
      * This just tests that timeseries can be saved to the database, retrieved, and totally deleted.
@@ -167,8 +150,8 @@ public class AlgorithmTestsIT extends AppTestBase
     private DynamicTest getDynamicTest(File test, File comp, TsImporter importer, TimeSeriesDAI tsDao)
 	{
 		ImporterHelper helper = new ImporterHelper(tsDb, configuration, environment, exit);
-
-        return DynamicTest.dynamicTest(comp.getName() +" "+test.getName(), () -> {
+        final var testName = comp.getName() +" " + test.getName();
+        return DynamicTest.dynamicTest(testName, () -> {
             TestConfig config = TestConfig.EMPTY;
             for (File comp_data : test.listFiles()) 
             {
@@ -242,25 +225,31 @@ public class AlgorithmTestsIT extends AppTestBase
                             .filter(c -> c.getName().equals(testComp.getName()))
                             .toList();
             assertFalse(comps.isEmpty());
+            log.info("Will execute {} computations for {}", comps.size(), testName);
             final var outputData = new DataCollection();
-            var results = compExecutor.execute(comps, theData, dcOut ->
+            // This is here because @BeforeEach doesn't execute before Dynamic computations.
+            // Might be worth moving the generation to a parameterized test with
+            // a Argument provider
+            try (ComputationExecution compExecutor = new ComputationExecution(db, compExecService))
             {
-                for (var ts: dcOut.getAllTimeSeries())
+                var results = compExecutor.execute(comps, theData, dcOut ->
                 {
-                    try 
+                    for (var ts: dcOut.getAllTimeSeries())
                     {
-                        outputData.addTimeSeries(ts);
+                        try 
+                        {
+                            outputData.addTimeSeries(ts);
+                        }
+                        catch (DuplicateTimeSeriesException ex)
+                        {
+                            fail("This should not happen.", ex);
+                        }
                     }
-                    catch (DuplicateTimeSeriesException ex)
-                    {
-                        fail("This should not happen.", ex);
-                    }
-                }
-                return dcOut;
-            });
-            assertEquals(comps.size(), results.computesTried());
-            assertEquals(0, results.numErrors());
-
+                    return dcOut;
+                });
+                assertEquals(comps.size(), results.computesTried(), () -> "Incorrect number of computations run for " + testName);
+                assertEquals(0, results.numErrors());
+            }
             for (var concreteComp: comps)
             {
                 assertUnassignedRoles(helper, concreteComp, config.unassignedRoles(), "after execution");
