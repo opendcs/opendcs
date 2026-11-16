@@ -228,6 +228,7 @@ public class AlgorithmTestsIT extends AppTestBase
 
             if (config.expectError() != null)
             {
+                testComp.prepareForExec(tsDb);
                 assertComputationFails(testComp, theData, config.expectError());
                 return;
             }
