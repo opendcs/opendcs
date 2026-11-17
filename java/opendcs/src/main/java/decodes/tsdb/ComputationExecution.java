@@ -352,11 +352,19 @@ public final class ComputationExecution implements AutoCloseable
 						if(!parm.isInput())
 							continue;
 						// 'prepare' method doesn't actually create the CTimeSeries. Do that now.
-						comp.getExecutive().setDc(dataCollection);
-						comp.getExecutive().addTsToParmRef(parm.getRoleName(), false);
-						parmRef = comp.getExecutive().getParmRef(parm.getRoleName());
-						CTimeSeries cts = parmRef.timeSeries;
+						var algo = comp.getExecutive();
+						algo.setDc(dataCollection);
+						algo.addTsToParmRef(parm.getRoleName(), false);
+						// Skip unassigned roles, otherwise we needlessly crash
+						if (!algo.isAssigned(parm.getRoleName()))
+						{
+							listener.logEvent("Skipping unassigned role " + parm.getRoleName(), Level.INFO, null);
+							continue;
+						}
+						parmRef = algo.getParmRef(parm.getRoleName());
 
+						CTimeSeries cts = parmRef.timeSeries;
+						
 						// Read values between previous and this run. Then flag them as DB_ADDED
 						// Thus, they will be treated as triggers by the computation.
 						int numRead = timeSeriesDAO.fillTimeSeries(cts, start, end, true, true, false);
