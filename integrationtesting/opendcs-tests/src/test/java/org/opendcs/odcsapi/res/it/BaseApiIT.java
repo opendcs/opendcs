@@ -152,7 +152,7 @@ public class BaseApiIT extends AppTestBase
 		return new JsonPath(resource);
 	}
 
-	void authenticate()
+	protected void authenticate()
 	{
 		final String COOKIE = "IntegrationTestAuthCookie";
 		String username = System.getProperty("DB_USERNAME");
@@ -206,7 +206,7 @@ public class BaseApiIT extends AppTestBase
 		assertEquals(rolesFromMapped, principal.jsonPath().getMap("roles"));
 	}
 
-	String getCookie()
+	protected String getCookie()
 	{
 		if (cookie == null)
 		{
