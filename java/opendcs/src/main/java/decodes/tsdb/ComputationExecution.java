@@ -356,11 +356,11 @@ public final class ComputationExecution implements AutoCloseable
 						algo.setDc(dataCollection);
 						algo.addTsToParmRef(parm.getRoleName(), false);
 						// Skip unassigned roles, otherwise we needlessly crash
-						if (!algo.isAssigned(parm.getRoleName()))
-						{
-							listener.logEvent("Skipping unassigned role " + parm.getRoleName(), Level.INFO, null);
-							continue;
-						}
+						// if (!algo.isAssigned(parm.getRoleName()))
+						// {
+						// 	listener.logEvent("Skipping unassigned role " + parm.getRoleName(), Level.INFO, null);
+						// 	continue;
+						// }
 						parmRef = algo.getParmRef(parm.getRoleName());
 
 						CTimeSeries cts = parmRef.timeSeries;
