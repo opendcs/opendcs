@@ -33,7 +33,7 @@ final class ImportResourcesTest
     @MethodSource("importTypeCases")
     void detectsImportType(String expectedType, String content) throws Exception
     {
-        assertEquals(expectedType, ImportResources.detectImportType(content));
+        assertEquals(expectedType, ImportResources.inspectImport(content).getImportType());
     }
 
     private static Stream<Arguments> importTypeCases()
@@ -68,7 +68,7 @@ final class ImportResourcesTest
     void previewCountsNestedDecodesObjects() throws Exception
     {
         String xml = "<Database><Platform><Site/><PlatformConfig/></Platform><Site/></Database>";
-        ApiImportResult result = ImportPreviewParser.inspect(xml);
+        ApiImportResult result = ImportResources.inspectImport(xml);
         assertEquals("decodes", result.getImportType());
         assertEquals("dbimport", result.getImporter());
         assertEquals(Map.of("Platform", 1L, "Site", 2L, "PlatformConfig", 1L), result.getCounts());
@@ -82,7 +82,7 @@ final class ImportResourcesTest
     void previewsTimeSeries(String content, long series, long samples, String firstTime,
             String lastTime, int warnings) throws Exception
     {
-        ApiImportResult result = ImportPreviewParser.inspect(content);
+        ApiImportResult result = ImportResources.inspectImport(content);
         assertEquals("timeseries", result.getImportType());
         assertEquals("tsimport", result.getImporter());
         assertEquals(Map.of("timeSeries", series, "samples", samples), result.getCounts());
@@ -122,7 +122,7 @@ final class ImportResourcesTest
     void rejectsUnsupportedAndMalformedContent(String content)
     {
         WebAppException error = assertThrows(WebAppException.class,
-                () -> ImportPreviewParser.inspect(content));
+                () -> ImportResources.inspectImport(content));
         assertEquals(400, error.getStatus());
     }
 }
