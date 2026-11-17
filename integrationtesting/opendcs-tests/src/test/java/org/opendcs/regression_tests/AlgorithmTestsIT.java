@@ -11,6 +11,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import decodes.db.Constants;
 import decodes.db.Site;
@@ -32,16 +33,19 @@ import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
 import ilex.var.TimedVariable;
+import jakarta.annotation.Nonnull;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
+import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.fixtures.helpers.TestConfig;
+import org.opendcs.odcsapi.res.it.BaseApiIT;
 import org.opendcs.util.functional.ThrowingSupplier;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
@@ -55,12 +59,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.opendcs.fixtures.helpers.ImporterHelper.buildFilePath;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
 
 @DecodesConfigurationRequired({
     "shared/test-sites.xml"})
-public class AlgorithmTestsIT extends AppTestBase
+public class AlgorithmTestsIT extends BaseApiIT // we also want to run these through the API
 {
     private Logger log = LoggerFactory.getLogger(AlgorithmTestsIT.class);
 
@@ -79,7 +84,7 @@ public class AlgorithmTestsIT extends AppTestBase
      */
     @TestFactory
     @EnableIfTsDb
-    public Collection<DynamicTest> test_algorithm_operations() throws Exception
+    public Collection<DynamicNode> test_algorithm_operations() throws Exception
     {
         DecodesSettings settings = DecodesSettings.instance();
         try (TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
@@ -123,7 +128,7 @@ public class AlgorithmTestsIT extends AppTestBase
             String current_Directory = buildFilePath(workingDirectoryPath, "src", "test", "resources", "data", "Comps");
             File directory = new File(current_Directory);
 
-            Collection<DynamicTest> algoTests = new ArrayList<DynamicTest>();
+            var algoTests = new ArrayList<DynamicNode>();
 
             final String filterTest = System.getProperty("opendcs.test.algorithm.filter", "").trim();
             if (directory.exists() && directory.isDirectory()) {
@@ -147,10 +152,90 @@ public class AlgorithmTestsIT extends AppTestBase
         }
     }
 
-    private DynamicTest getDynamicTest(File test, File comp, TsImporter importer, TimeSeriesDAI tsDao)
+    private DynamicNode getDynamicTest(File test, File comp, TsImporter importer, TimeSeriesDAI tsDao)
 	{
 		ImporterHelper helper = new ImporterHelper(tsDb, configuration, environment, exit);
         final var testName = comp.getName() +" " + test.getName();
+        
+        return dynamicContainer(testName, Stream.of(
+            createComputationAppTest(test, helper, comp, importer, tsDao)
+        )); 
+            
+    }
+
+    /**
+     * Checks each role the test's config declares unassigned, before the computation runs and
+     * again after it. Before is what proves the record was written at all, since a fixture that
+     * quietly writes nothing would otherwise test less than it appears to. After is what proves
+     * running the computation left the record alone.
+     */
+    private void assertUnassignedRoles(ImporterHelper helper, DbComputation computation,
+                                       List<String> roles, String stage)
+    {
+        if (roles.isEmpty())
+        {
+            return;
+        }
+
+        DbAlgorithmExecutive executive = computation.getExecutive();
+        assertNotNull(executive, () -> "the computation must be prepared before role "
+            + "assignment can be checked");
+
+        for (String role : roles)
+        {
+            String roleOfComp = stage + ": role " + role + " of computation "
+                + computation.getName();
+
+            // Exactly one, because nothing constrains (computation_id, algo_role_name) to be
+            // unique, so a fixture that is not delete-then-insert accumulates records.
+            assertEquals(1, helper.countUnconfiguredRoleRecords(computation.getName(), role),
+                () -> roleOfComp + " must have exactly one unconfigured cp_comp_ts_parm record");
+
+            DbCompParm parm = helper.readCompParm(computation.getName(), role);
+            assertNotNull(parm, () -> roleOfComp + " has no cp_comp_ts_parm record");
+            assertTrue(parm.getSiteDataTypeId().isNull(),
+                () -> roleOfComp + " should not name a site and datatype");
+
+            // The record alone cannot tell an unassigned role from an absent one. A record
+            // naming no site and datatype still yields a ParmRef, so isAssigned is the check
+            // that separates the two.
+            assertNotNull(executive.getParmRef(role), () -> stage + ": no ParmRef for role " + role
+                + " even though the computation has a record for it");
+            assertFalse(executive.isAssigned(role), () -> stage + ": role " + role
+                + " has a record naming no time series and must not be assigned");
+
+            log.info("{}: role {} of {} is declared but unassigned",
+                     stage, role, computation.getName());
+        }
+    }
+
+    /**
+     * Runs a computation that the test's config declares must fail, and checks that it
+     * failed for the reason the config names rather than through some unrelated error.
+     */
+    private void assertComputationFails(DbComputation computation, DataCollection theData,
+                                        String expectedMessage)
+    {
+        Throwable failure = assertThrows(Throwable.class, () -> computation.apply(theData, tsDb),
+            () -> "Expected the computation to fail with '" + expectedMessage + "'");
+
+        for (Throwable cause = failure; cause != null; cause = cause.getCause())
+        {
+            if (cause.getMessage() != null && cause.getMessage().contains(expectedMessage))
+            {
+                log.info("Computation failed as expected: {}", cause.getMessage());
+                return;
+            }
+        }
+
+        fail(() -> "Expected a failure containing '" + expectedMessage + "' but got: " + failure);
+    }
+
+    @Nonnull
+    private DynamicTest createComputationAppTest(File test, ImporterHelper helper, File comp, TsImporter importer, TimeSeriesDAI tsDao)
+    {
+        final var testName = "ComputationApp";
+
         return DynamicTest.dynamicTest(testName, () -> {
             TestConfig config = TestConfig.EMPTY;
             for (File comp_data : test.listFiles()) 
@@ -288,73 +373,5 @@ public class AlgorithmTestsIT extends AppTestBase
                 assertEquals(currExpect, algoOutput, "expected true", testComp.getValidStart(), testComp.getValidEnd());
             }
         });
-    }
-
-    /**
-     * Checks each role the test's config declares unassigned, before the computation runs and
-     * again after it. Before is what proves the record was written at all, since a fixture that
-     * quietly writes nothing would otherwise test less than it appears to. After is what proves
-     * running the computation left the record alone.
-     */
-    private void assertUnassignedRoles(ImporterHelper helper, DbComputation computation,
-                                       List<String> roles, String stage)
-    {
-        if (roles.isEmpty())
-        {
-            return;
-        }
-
-        DbAlgorithmExecutive executive = computation.getExecutive();
-        assertNotNull(executive, () -> "the computation must be prepared before role "
-            + "assignment can be checked");
-
-        for (String role : roles)
-        {
-            String roleOfComp = stage + ": role " + role + " of computation "
-                + computation.getName();
-
-            // Exactly one, because nothing constrains (computation_id, algo_role_name) to be
-            // unique, so a fixture that is not delete-then-insert accumulates records.
-            assertEquals(1, helper.countUnconfiguredRoleRecords(computation.getName(), role),
-                () -> roleOfComp + " must have exactly one unconfigured cp_comp_ts_parm record");
-
-            DbCompParm parm = helper.readCompParm(computation.getName(), role);
-            assertNotNull(parm, () -> roleOfComp + " has no cp_comp_ts_parm record");
-            assertTrue(parm.getSiteDataTypeId().isNull(),
-                () -> roleOfComp + " should not name a site and datatype");
-
-            // The record alone cannot tell an unassigned role from an absent one. A record
-            // naming no site and datatype still yields a ParmRef, so isAssigned is the check
-            // that separates the two.
-            assertNotNull(executive.getParmRef(role), () -> stage + ": no ParmRef for role " + role
-                + " even though the computation has a record for it");
-            assertFalse(executive.isAssigned(role), () -> stage + ": role " + role
-                + " has a record naming no time series and must not be assigned");
-
-            log.info("{}: role {} of {} is declared but unassigned",
-                     stage, role, computation.getName());
-        }
-    }
-
-    /**
-     * Runs a computation that the test's config declares must fail, and checks that it
-     * failed for the reason the config names rather than through some unrelated error.
-     */
-    private void assertComputationFails(DbComputation computation, DataCollection theData,
-                                        String expectedMessage)
-    {
-        Throwable failure = assertThrows(Throwable.class, () -> computation.apply(theData, tsDb),
-            () -> "Expected the computation to fail with '" + expectedMessage + "'");
-
-        for (Throwable cause = failure; cause != null; cause = cause.getCause())
-        {
-            if (cause.getMessage() != null && cause.getMessage().contains(expectedMessage))
-            {
-                log.info("Computation failed as expected: {}", cause.getMessage());
-                return;
-            }
-        }
-
-        fail(() -> "Expected a failure containing '" + expectedMessage + "' but got: " + failure);
     }
 }

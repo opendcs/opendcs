@@ -550,7 +550,7 @@ public class CwmsTsId implements TimeSeriesIdentifier
 
 	public void setOffsetErrorAction(OffsetErrorAction offsetErrorAction)
 	{
-		this.offsetErrorAction = offsetErrorAction;
+		this.offsetErrorAction = offsetErrorAction != null ? offsetErrorAction : OffsetErrorAction.IGNORE;
 	}
 
 	public boolean isActive()
