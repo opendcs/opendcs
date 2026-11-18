@@ -60,6 +60,8 @@ import opendcs.dai.TimeSeriesDAI;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.fixtures.helpers.TestConfig;
@@ -113,7 +115,8 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
      * @throws Exception
      */
     @SuppressWarnings("null")
-    @TestFactory
+    @TestFactory 
+    @Execution(value = ExecutionMode.SAME_THREAD, reason = "Comp system needs rework before this could reasonably be parallel.")
     @EnableIfTsDb
     public Collection<DynamicNode> test_algorithm_operations() throws Exception
     {
@@ -193,6 +196,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
 	{
 		ImporterHelper helper = new ImporterHelper(tsDb, configuration, environment, exit);
         var context = new ExecutionContext(test, helper, comp, importer, tsDao);
+
         return dynamicContainer(test.getName(), Stream.of(
             initializeComputation(context),
             createComputationAppTest(context),
@@ -338,6 +342,8 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                 // this should be moved into the TestConfig in the future.
                 ctx.comp.triggeringTsid = ctx.inputTS.getFirst().getTimeSeriesIdentifier();
             }
+            // we prepare now as we will need to use isAssigned later.
+            ctx.comp.prepareForExec(tsDb);
         });
     }
 
@@ -350,7 +356,6 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
             assumeTrue(ctx.comp != null);
             if (ctx.config.expectError() != null)
             {
-                ctx.comp.prepareForExec(tsDb);
                 assertComputationFails(ctx.comp, ctx.dataIn, ctx.config.expectError());
                 return;
             }
@@ -532,6 +537,20 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                             .anyMatch(d -> d != null && d.contains("executed with 0 errors"));
                     assertTrue(ranClean, "computation failed");
                     int foundCount = 0;
+
+                    int expectedTsCount = 0;
+                    for (var parm: ctx.comp.getParmList())
+                    {
+                        // If you create new tests and this isn't behaving quite right
+                        // it will likely be easiest to add a "(un)assigned output" in addition to the
+                        // list of assigned roles. Mixing the input and output list is likely going
+                        // to cause confusion.
+                        if (parm.isOutput())
+                        {
+                            expectedTsCount++;
+                        }
+                    }
+
                     for (InboundSseEvent sseEvent : events)
                     {
                         if (sseEvent.getName().equalsIgnoreCase("Results"))
@@ -539,7 +558,8 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                             foundCount++;
                             JsonPath jsonPath = JsonPath.from(
                                 sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE));
-                            assertEquals(1, jsonPath.getList("tsIds").size(),
+
+                            assertEquals(expectedTsCount, jsonPath.getList("tsIds").size(),
                                          () -> "Expected " + ctx.expectedOutputTS.size() + " results" + jsonPath.prettyPrint());
                             // A manual run writes nothing, so its computed values have to travel inline
                             // on this event -- there is nothing for the caller to read back afterwards.
