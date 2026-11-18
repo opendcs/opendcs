@@ -99,7 +99,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
     private Logger log = LoggerFactory.getLogger(AlgorithmTestsIT.class);
 
 
-    final DateTimeFormatter ISO_FMT = DateTimeFormatter.ISO_INSTANT;
+    private static final DateTimeFormatter ISO_FMT = DateTimeFormatter.ISO_INSTANT;
 
     @ConfiguredField
     private TimeSeriesDb tsDb;
@@ -173,7 +173,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                             algoTests.add(
                                 dynamicContainer(
                                     comp.getName(), 
-                                    Arrays.stream(comp.listFiles(test -> test.isDirectory()))
+                                    Arrays.stream(comp.listFiles(File::isDirectory))
                                          .filter(test -> filterTest == "" || filterTest.equals(comp.getName()+test.getName()))
                                          .map(test -> getDynamicTest(test, comp, importer, tsDao))
                                          .collect(Collectors.toList())
@@ -348,6 +348,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
     }
 
     @Nonnull
+    @SuppressWarnings("java:S3658") // the exception is rather nested *and* unlikely.
     private DynamicTest createComputationAppTest(ExecutionContext ctx)
     {
         final var testName = "ComputationApp";
