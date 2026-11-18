@@ -437,7 +437,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
      */
     private DynamicTest createComputationApiTest(ExecutionContext ctx)
     {
-        final var testName = "ComputationApp";
+        final var testName = "RestAPI";
 
         return DynamicTest.dynamicTest(testName, () -> 
         {
@@ -530,7 +530,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                             .filter(e -> !e.getName().equalsIgnoreCase("Results"))
                             .map(e -> e.readData(String.class, MediaType.TEXT_PLAIN_TYPE))
                             .anyMatch(d -> d != null && d.contains("executed with 0 errors"));
-
+                    assertTrue(ranClean, "computation failed");
                     int foundCount = 0;
                     for (InboundSseEvent sseEvent : events)
                     {
@@ -539,8 +539,8 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                             foundCount++;
                             JsonPath jsonPath = JsonPath.from(
                                 sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE));
-                            assertEquals(ctx.expectedOutputTS.size(), jsonPath.getList("tsIds").size(),
-                                         "Expected " + ctx.expectedOutputTS.size() + " results");
+                            assertEquals(1, jsonPath.getList("tsIds").size(),
+                                         () -> "Expected " + ctx.expectedOutputTS.size() + " results" + jsonPath.prettyPrint());
                             // A manual run writes nothing, so its computed values have to travel inline
                             // on this event -- there is nothing for the caller to read back afterwards.
                             //

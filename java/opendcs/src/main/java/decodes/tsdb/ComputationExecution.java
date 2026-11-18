@@ -356,11 +356,11 @@ public final class ComputationExecution implements AutoCloseable
 						algo.setDc(dataCollection);
 						algo.addTsToParmRef(parm.getRoleName(), false);
 						// Skip unassigned roles, otherwise we needlessly crash
-						// if (!algo.isAssigned(parm.getRoleName()))
-						// {
-						// 	listener.logEvent("Skipping unassigned role " + parm.getRoleName(), Level.INFO, null);
-						// 	continue;
-						// }
+						if (!algo.isAssigned(parm.getRoleName()))
+						{
+							listener.logEvent("Skipping unassigned role " + parm.getRoleName(), Level.INFO, null);
+							continue;
+						}
 						parmRef = algo.getParmRef(parm.getRoleName());
 
 						CTimeSeries cts = parmRef.timeSeries;
@@ -368,21 +368,21 @@ public final class ComputationExecution implements AutoCloseable
 						// Read values between previous and this run. Then flag them as DB_ADDED
 						// Thus, they will be treated as triggers by the computation.
 						int numRead = timeSeriesDAO.fillTimeSeries(cts, start, end, true, true, false);
-						if(numRead > 0)
+						if (numRead > 0)
 						{
-							for(int idx = 0; idx < cts.size(); idx++)
+							for (int idx = 0; idx < cts.size(); idx++)
 							{
 								TimedVariable tv = cts.sampleAt(idx);
 								if(!tv.getTime().before(start) && !tv.getTime().after(end))
 									VarFlags.setWasAdded(tv);
 							}
-							if(dataCollection.getTimeSeriesByUniqueSdi(cts.getTimeSeriesIdentifier().getKey()) == null)
+							if (dataCollection.getTimeSeriesByUniqueSdi(cts.getTimeSeriesIdentifier().getKey()) == null)
 							{
 								try
 								{
 									dataCollection.addTimeSeries(cts);
 								}
-								catch(DuplicateTimeSeriesException ex)
+								catch (DuplicateTimeSeriesException ex)
 								{
 									// Should not happen! We checked first.
 									listener.onProgress("Unexpected duplicate time series.", Level.ERROR, ex);
