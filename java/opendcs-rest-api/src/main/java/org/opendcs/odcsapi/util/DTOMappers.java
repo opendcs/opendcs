@@ -41,8 +41,21 @@ public final class DTOMappers
 			IntFunction<String> flagRenderer)
 	{
 		ApiTimeSeriesData ret = new ApiTimeSeriesData();
-		ret.setTsid(mapTsId(cts.getTimeSeriesIdentifier()));
+		ret.setTsid(mapTsId(cts.getTimeSeriesIdentifier()));		
 		ret.setValues(map(cts, start, end, flagRenderer));
+		ret.setUnits(cts.getUnitsAbbr());
+		return ret;
+	}
+
+	public static CTimeSeries dataMap(ApiTimeSeriesData atsd)
+	{
+		var ret = new CTimeSeries(mapTsId(atsd.getTsid()));
+		ret.setUnitsAbbr(atsd.getUnits());
+		for (var value: atsd.getValues())
+		{
+			var sample = new TimedVariable(value.getSampleTime(), value.getValue(), (int)value.getFlags());
+			ret.addSample(sample);
+		}
 		return ret;
 	}
 
@@ -174,6 +187,27 @@ public final class DTOMappers
 			ret.setStorageUnits(tsid.getStorageUnits());
 			return ret;
 		}
+	}
+
+	/**
+	 * NOTE: this and the above reverse need to be changed to an OpenDcsOperation set
+	 * that is handled by the given implementation. Otherwise we'd hvave 
+	 * @return
+	 */
+	public static TimeSeriesIdentifier mapTsId(ApiTimeSeriesIdentifier tsId)
+	{
+		var ret = new CwmsTsId();
+		if (tsId.getKey() != null)
+		{
+			ret.setKey(DbKey.createDbKey(tsId.getKey()));
+		}
+		
+		ret.setUniqueString(tsId.getUniqueString());
+		ret.setActive(tsId.isActive());
+		ret.setDescription(tsId.getDescription());
+		ret.setStorageUnits(tsId.getStorageUnits());
+
+		return ret;
 	}
 
 	public static DbCompParm map(ApiCompParm parm) throws DatabaseException

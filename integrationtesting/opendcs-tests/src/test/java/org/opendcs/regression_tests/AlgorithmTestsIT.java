@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
+import decodes.sql.DbKey;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ComputationExecution;
 import decodes.tsdb.DataCollection;
@@ -66,10 +67,15 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.helpers.ImporterHelper;
 import org.opendcs.fixtures.helpers.TestConfig;
+import org.opendcs.odcsapi.beans.ApiCompResults;
+import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
 import org.opendcs.odcsapi.filters.LoggingFilter;
 import org.opendcs.odcsapi.filters.W3CTraceFilter;
+import org.opendcs.odcsapi.res.ObjectMapperContextResolver;
 import org.opendcs.odcsapi.res.it.BaseApiIT;
 import org.opendcs.odcsapi.util.ApiConstants;
+import org.opendcs.odcsapi.util.DTOMappers;
 import org.opendcs.util.functional.ThrowingSupplier;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
@@ -580,14 +586,15 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                         }
                     }
 
+                    String resultData = null;
+
                     for (InboundSseEvent sseEvent : events)
                     {
                         if (sseEvent.getName().equalsIgnoreCase("Results"))
                         {
                             foundCount++;
-                            JsonPath jsonPath = JsonPath.from(
-                                sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE));
-
+                            resultData = sseEvent.readData(String.class, MediaType.TEXT_PLAIN_TYPE);
+                            JsonPath jsonPath = JsonPath.from(resultData);
                             assertEquals(expectedTsCount, jsonPath.getList("tsIds").size(),
                                          () -> "Expected " + ctx.expectedOutputTS.size() + " results" + jsonPath.prettyPrint());
                             // A manual run writes nothing, so its computed values have to travel inline
@@ -614,16 +621,25 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                     assertEquals(1, foundCount,
                                  String.format("Expected %d SSE Result events, found %d", 1, foundCount));
 
-                    for (CTimeSeries ts : ctx.expectedOutputTS)
-                    {
-                        CTimeSeries cts = fillTimeSeries(ts, Instant.parse(from), Instant.parse(to));
-                        assertNotNull(cts);
-                        assertNotNull(cts.getTimeSeriesIdentifier());
-                        assertTrue(cts.size() > 0, "No data found for time series " + cts.getTimeSeriesIdentifier());
-                    }
+                    System.out.println(resultData);
+                    assertNotNull(resultData);
+                    var mapper = new ObjectMapperContextResolver().getContext(ApiCompResults.class);
+                    var compResult = mapper.readValue(resultData, ApiCompResults.class);
+                    assertNotNull(compResult);
+		            var dataOut = compResult.getData();
+                    assertNotNull(dataOut);
+                    dataOut.stream()
+                           .map(ats -> DTOMappers.dataMap(ats))
+                           .map(cts -> Pair.of(ctx.getExpected(cts.getSDI()), cts))
+                           .filter(cts -> cts != null)
+                           .forEach(pair -> 
+                           {
+                            assertEquals(pair.first, pair.second, "expected true", ctx.comp.getValidStart(),
+                                                                              ctx.comp.getValidEnd());
+                           });
                 }
             }
-    }
+    }    
 
     private static final class ExecutionContext
     {
@@ -678,6 +694,15 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
             }
 
             return latest.toInstant().atZone(ZoneId.of("UTC"));
+        }
+
+        public CTimeSeries getExpected(DbKey key)
+        {
+            return this.expectedOutputTS
+                       .stream()
+                       .filter(cts -> cts.getSDI().equals(key))
+                       .findFirst()
+                       .orElse(null);
         }
     }
 }
