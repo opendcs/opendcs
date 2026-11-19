@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { http, HttpResponse } from "msw";
 import {
   ApiConfigScriptDataOrderEnum,
   type ApiDecodedMessage,
+  type ApiEquipmentModelRef,
   type ApiPlatformConfig,
 } from "opendcs-api";
 import { expect, fn, waitFor } from "storybook/test";
@@ -13,6 +15,7 @@ const fullConfig: ApiPlatformConfig = {
   name: "Standard CFG",
   numPlatforms: 3,
   description: "Default config",
+  equipmentId: 1,
   configSensors: [
     {
       sensorNumber: 1,
@@ -42,12 +45,32 @@ const fullConfig: ApiPlatformConfig = {
   ],
 };
 
+const equipmentModels: ApiEquipmentModelRef[] = [
+  { equipmentId: 1, name: "Campbell-CR1000", equipmentType: "dcp" },
+  { equipmentId: 2, name: "sutron-9210B", equipmentType: "dcp" },
+];
+
 const noopDecode = (_raw: string): ApiDecodedMessage => ({}) as ApiDecodedMessage;
 
 const meta = {
   title: "Configs/Config",
   component: Config,
   decorators: [WithUnits],
+  parameters: {
+    msw: {
+      handlers: {
+        equipmentRefs: http.get("/odcsapi/equipmentrefs", () =>
+          HttpResponse.json(equipmentModels),
+        ),
+      },
+    },
+  },
+  // The global i18n preload doesn't include this namespace.
+  loaders: [
+    async ({ parameters }) => {
+      await parameters.i18n.loadNamespaces("equipment");
+    },
+  ],
 } satisfies Meta<typeof Config>;
 export default meta;
 
@@ -70,6 +93,9 @@ export const ReadOnly: Story = {
     expect(canvas.getByText(i18n.t("configs:scripts"))).toBeInTheDocument();
     expect(canvas.getByText("Stage")).toBeInTheDocument();
     expect(canvas.getByText("Main")).toBeInTheDocument();
+    const equipment = canvas.getByLabelText(i18n.t("equipment:equipment_model"));
+    await waitFor(() => expect(equipment).toHaveDisplayValue("Campbell-CR1000"));
+    expect(equipment).toBeDisabled();
   },
 };
 
@@ -97,6 +123,10 @@ export const EditAndSave: Story = {
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "Updated CFG");
 
+    const equipment = canvas.getByLabelText(i18n.t("equipment:equipment_model"));
+    await waitFor(() => expect(equipment).toBeEnabled());
+    await userEvent.selectOptions(equipment, "sutron-9210B");
+
     const saveBtn = canvas.getByRole("button", {
       name: i18n.t("configs:save_config", { id: 101 }),
     });
@@ -106,5 +136,6 @@ export const EditAndSave: Story = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const saved = (args.actions!.save as any).mock.calls[0][0] as ApiPlatformConfig;
     expect(saved.name).toEqual("Updated CFG");
+    expect(saved.equipmentId).toEqual(2);
   },
 };
