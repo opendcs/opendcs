@@ -42,6 +42,7 @@ import decodes.tsdb.TsImporter;
 import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
+import ilex.util.Pair;
 import ilex.var.TimedVariable;
 import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
@@ -90,7 +91,7 @@ import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
 @DecodesConfigurationRequired({
     "shared/test-sites.xml"})
 /**
- * Note on Suppres Null everyone... at the time of addplication, non of the elements could be null
+ * * Note on Suppress Null everywhere... at the time of application, none of the elements could be null
  * and I was sick of the IDE flagging them. Be cautious.
  * AlgorithmTestsIT
  */
@@ -334,16 +335,42 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
             {
                 ctx.dataIn.addTimeSeries(ctso);
             }
-            if (ctx.comp.hasGroupInput())
-            {
-                // Somewhat arbitrary, but we need one for the app execution.
-                // Some algorithms do alter behavior depending on 
-                // which input triggers, so while this is a good initial default,
-                // this should be moved into the TestConfig in the future.
-                ctx.comp.triggeringTsid = ctx.inputTS.getFirst().getTimeSeriesIdentifier();
-            }
+            var resolver = new DbCompResolver(tsDb);
+            ctx.comps = List.of(resolver.resolve(ctx.dataIn))
+                            .stream()
+                            .peek(c -> log.info("Seeing if we should run {}", c.getName()))
+                            .filter(c -> c.getName().equals(ctx.comp.getName()))
+                            .toList();
+            assertFalse(ctx.comps.isEmpty());
+            log.info("Will execute {} computations for {}", ctx.comps.size(), testName);
             // we prepare now as we will need to use isAssigned later.
             ctx.comp.prepareForExec(tsDb);
+
+            ctx.dataIn
+               .getAllTimeSeries()
+               .stream()
+               .peek(ts -> log.info("{} -> has Added {}", ts.getTimeSeriesIdentifier().getUniqueString(), ts.hasAddedOrDeleted()))
+               .filter(ts -> ts.hasAddedOrDeleted())
+               .flatMap(ts -> ts.getDependentCompIds()
+                                .stream()
+                                .peek(comp -> log.info("{} triggers {}", ts.getTimeSeriesIdentifier().getUniqueString(), comp))
+                                .map(compId -> Pair.of(compId, ts.getTimeSeriesIdentifier())))
+               .forEach(compTs ->
+                {
+                    for (var comp: ctx.comps)
+                    {
+                        log.info("Checking {}/{}", comp.getId(), comp.getName());
+                        if (comp.getId().equals(compTs.first))
+                        {
+                            log.info("Assigning trigger {}", compTs.second.getUniqueString());
+                            comp.triggeringTsid = compTs.second;
+                        }
+                    }
+                });
+            ctx.comps
+               .stream()
+               .filter(DbComputation::hasGroupInput)
+               .forEach(comp -> assertNotNull(comp.triggeringTsid));
         });
     }
 
@@ -360,24 +387,10 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                 assertComputationFails(ctx.comp, ctx.dataIn, ctx.config.expectError());
                 return;
             }
-            // While we already have the computation, we want to be able to test group comps
-            // and make sure we're doing the same thing the other portions of computation execution
-            // is doing.
-            var resolver = new DbCompResolver(tsDb);
-            var comps = List.of(resolver.resolve(ctx.dataIn))
-                            .stream()
-                            .peek(c -> log.info("Seeing if we should run {}", c.getName()))
-                            .filter(c -> c.getName().equals(ctx.comp.getName()))
-                            .toList();
-            assertFalse(comps.isEmpty());
-            log.info("Will execute {} computations for {}", comps.size(), testName);
             ctx.dataOut = new DataCollection();
-            // This is here because @BeforeEach doesn't execute before Dynamic computations.
-            // Might be worth moving the generation to a parameterized test with
-            // a Argument provider
             try (ComputationExecution compExecutor = new ComputationExecution(db, compExecService))
             {
-                var results = compExecutor.execute(comps, ctx.dataIn, dcOut ->
+                var results = compExecutor.execute(ctx.comps, ctx.dataIn, dcOut ->
                 {
                     for (var ts: dcOut.getAllTimeSeries())
                     {
@@ -392,10 +405,10 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                     }
                     return dcOut;
                 });
-                assertEquals(comps.size(), results.computesTried(), () -> "Incorrect number of computations run for " + testName);
+                assertEquals(ctx.comps.size(), results.computesTried(), () -> "Incorrect number of computations run for " + testName);
                 assertEquals(0, results.numErrors());
             }
-            for (var concreteComp: comps)
+            for (var concreteComp: ctx.comps)
             {
                 assertUnassignedRoles(ctx.helper, concreteComp, ctx.config.unassignedRoles(), "after execution");
             }
@@ -418,12 +431,12 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                 
                 if (log.isInfoEnabled()) 
                 {
-                    for (int i = 0; i<algoOutput.size(); i++)
+                    for (int i = 0; i < algoOutput.size(); i++)
                     {
                         TimedVariable TVOutput = algoOutput.sampleAt(i);
                         TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
-                        log.info("output time: "+TVOutput.getTime());
-                        log.info("output value  : "+TVOutput.getDoubleValue());
+                        log.info("output time: " + TVOutput.getTime());
+                        log.info("output value  : " + TVOutput.getDoubleValue());
                         log.info("expected value: {}", TVExpected != null
                                                                           ? TVExpected.getDoubleValue()
                                                                           : " intentionally missing in output file");
@@ -453,8 +466,23 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
             setUpCreds();
 		    authenticate();
             
-            String organization = getOrganization();		
+            String organization = getOrganization();
+            for (var concreteComp: ctx.comps)
+            {
+                executeApiComp(concreteComp, ctx, organization);
+            }
+        });
+    }
 
+    /**
+     * Actually execute the individual computation from the resolved set.
+     * @param comp
+     * @param ctx
+     * @param organization
+     * @throws Exception
+     */
+    private void executeApiComp(DbComputation comp, ExecutionContext ctx, String organization) throws Exception
+    {
             final var compTraceId = UUID.randomUUID().toString();
             final var traceParent = "00-06df66e0fcc70c06ef71cf9ed9753bf8-12b7001e81b533ab-01";
             ClientRequestFilter auth = crCtx ->
@@ -485,7 +513,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
 
                 if (ctx.comp.hasGroupInput())
                 {
-                    target = target.queryParam("tsid", ctx.comp.triggeringTsid.getKey().getValue());
+                    target = target.queryParam("tsid", comp.triggeringTsid.getKey().getValue());
                 }
 
                 List<InboundSseEvent> events = new CopyOnWriteArrayList<>();
@@ -595,8 +623,6 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                     }
                 }
             }
-
-        });
     }
 
     private static final class ExecutionContext
@@ -610,7 +636,8 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
         List<CTimeSeries> inputTS;
         Collection<CTimeSeries> outputTS;
         Collection<CTimeSeries> expectedOutputTS;
-        DbComputation comp;
+        DbComputation comp; // primary definition
+        List<DbComputation> comps; // list of computations after makeConcrete
         DataCollection dataIn;
         DataCollection dataOut;
         
