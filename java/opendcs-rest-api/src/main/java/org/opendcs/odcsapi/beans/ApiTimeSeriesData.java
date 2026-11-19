@@ -29,10 +29,13 @@ public final class ApiTimeSeriesData
 	@Schema(description = "A list of time series values representing the data points.")
 	private List<ApiTimeSeriesValue> values = new ArrayList<>();
 
+	@Schema(description = "The units of the data")
+	private String units;
+
 	public ApiTimeSeriesIdentifier getTsid()
 	{
 		return tsid;
-	}
+	}	
 
 	public void setTsid(ApiTimeSeriesIdentifier tsid)
 	{
@@ -47,6 +50,16 @@ public final class ApiTimeSeriesData
 	public void setValues(List<ApiTimeSeriesValue> values)
 	{
 		this.values = values;
+	}
+
+	public String getUnits()
+	{
+		return this.units;
+	}
+
+	public void setUnits(String units)
+	{
+		this.units = units;
 	}
 
 }
