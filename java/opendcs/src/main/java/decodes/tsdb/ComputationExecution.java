@@ -364,7 +364,7 @@ public final class ComputationExecution implements AutoCloseable
 						parmRef = algo.getParmRef(parm.getRoleName());
 
 						CTimeSeries cts = parmRef.timeSeries;
-						
+
 						// Read values between previous and this run. Then flag them as DB_ADDED
 						// Thus, they will be treated as triggers by the computation.
 						int numRead = timeSeriesDAO.fillTimeSeries(cts, start, end, true, true, false);

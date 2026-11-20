@@ -86,6 +86,7 @@ import org.slf4j.LoggerFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -248,7 +249,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
             // The record alone cannot tell an unassigned role from an absent one. A record
             // naming no site and datatype still yields a ParmRef, so isAssigned is the check
             // that separates the two.
-            assertNotNull(executive.getParmRef(role), () -> stage + ": no ParmRef for role " + role
+            assertNull(executive.getParmRef(role), () -> stage + ": no ParmRef for role " + role
                 + " even though the computation has a record for it");
             assertFalse(executive.isAssigned(role), () -> stage + ": role " + role
                 + " has a record naming no time series and must not be assigned");

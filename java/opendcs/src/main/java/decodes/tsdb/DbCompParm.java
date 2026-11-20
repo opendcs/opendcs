@@ -341,7 +341,7 @@ public class DbCompParm
 	{
 		return algoRoleName + "(" + algoParmType + "):"
 			+ getSiteDataTypeId() + ":" + interval + ":" + tableSelector
-			+ ":deltaT=" + deltaT + "(" + deltaTUnits + ")";
+			+ ":deltaT=" + deltaT + "(" + deltaTUnits + "):units=" + unitsAbbr;
 	}
 
 	public boolean equals(DbCompParm rhs)
