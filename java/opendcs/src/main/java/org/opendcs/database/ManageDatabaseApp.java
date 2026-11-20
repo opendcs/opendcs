@@ -204,7 +204,7 @@ public class ManageDatabaseApp
             throws IOException, DatabaseException
     {
         DecodesSettings settings = DecodesSettings.fromProfile(p);
-        return DatabaseService.getDatabaseFor("algoupdate", settings, getCredentials(settings, c, username, password));
+        return DatabaseService.getDatabaseFor("utility", settings, getCredentials(settings, c, username, password));
     }
 
     private static Properties getCredentials(DecodesSettings settings, Console c, String username, String password)

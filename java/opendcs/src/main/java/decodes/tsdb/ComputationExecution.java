@@ -199,7 +199,6 @@ public final class ComputationExecution implements AutoCloseable
 					{
 						listener.onProgress(String.format("Executing computation '%s' #trigs=%d",
 								comp.getName(), comp.getTriggeringRecNums().size()), Level.DEBUG, null);
-						computesTried.incrementAndGet();
 						boolean ignoreTimeWindow = start == null && end == null;
 						ret = executeSingleComp(comp, start, end, theData, ignoreTimeWindow, listener);
 					}
@@ -212,7 +211,7 @@ public final class ComputationExecution implements AutoCloseable
 							theData.getTasklistHandle().markComputationFailed(rn);
 						}
 					}
-					catch (Exception ex)
+					catch (Throwable ex) // NOSONAR. We need to catch everything here.
 					{
 						listener.onProgress(String.format("Unexpected error in computation %s", comp.getName()), Level.WARN, ex);
 						numErrors.incrementAndGet();
@@ -296,7 +295,6 @@ public final class ComputationExecution implements AutoCloseable
 		{
 			listener.onProgress("Unexpected error fetching input data.", Level.WARN, ex);
 		}
-		computesTried.incrementAndGet();
 		try (var mdcComputation = MDC.putCloseable(COMPUTATION_KEY, computation.getName()))
 		{
 			executeSingleComp(computation, start, end, theData, false, listener);
@@ -338,6 +336,9 @@ public final class ComputationExecution implements AutoCloseable
 			var compTimer = MDCTimer.startTimer("executing single computation: " + comp.getName());
 			TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO())
 		{
+			// The compute itself isn't "tried" until it actually gets here.
+			// otherwise we end up double counting
+			computesTried.incrementAndGet();
 			// Make a data collection with inputs filled from ... until
 			ParmRef parmRef = null;
 			try
@@ -351,29 +352,37 @@ public final class ComputationExecution implements AutoCloseable
 						if(!parm.isInput())
 							continue;
 						// 'prepare' method doesn't actually create the CTimeSeries. Do that now.
-						comp.getExecutive().setDc(dataCollection);
-						comp.getExecutive().addTsToParmRef(parm.getRoleName(), false);
-						parmRef = comp.getExecutive().getParmRef(parm.getRoleName());
+						var algo = comp.getExecutive();
+						algo.setDc(dataCollection);
+						algo.addTsToParmRef(parm.getRoleName(), false);
+						// Skip unassigned roles, otherwise we needlessly crash
+						if (!algo.isAssigned(parm.getRoleName()))
+						{
+							listener.logEvent("Skipping unassigned role " + parm.getRoleName(), Level.INFO, null);
+							continue;
+						}
+						parmRef = algo.getParmRef(parm.getRoleName());
+
 						CTimeSeries cts = parmRef.timeSeries;
 
 						// Read values between previous and this run. Then flag them as DB_ADDED
 						// Thus, they will be treated as triggers by the computation.
 						int numRead = timeSeriesDAO.fillTimeSeries(cts, start, end, true, true, false);
-						if(numRead > 0)
+						if (numRead > 0)
 						{
-							for(int idx = 0; idx < cts.size(); idx++)
+							for (int idx = 0; idx < cts.size(); idx++)
 							{
 								TimedVariable tv = cts.sampleAt(idx);
 								if(!tv.getTime().before(start) && !tv.getTime().after(end))
 									VarFlags.setWasAdded(tv);
 							}
-							if(dataCollection.getTimeSeriesByUniqueSdi(cts.getTimeSeriesIdentifier().getKey()) == null)
+							if (dataCollection.getTimeSeriesByUniqueSdi(cts.getTimeSeriesIdentifier().getKey()) == null)
 							{
 								try
 								{
 									dataCollection.addTimeSeries(cts);
 								}
-								catch(DuplicateTimeSeriesException ex)
+								catch (DuplicateTimeSeriesException ex)
 								{
 									// Should not happen! We checked first.
 									listener.onProgress("Unexpected duplicate time series.", Level.ERROR, ex);
