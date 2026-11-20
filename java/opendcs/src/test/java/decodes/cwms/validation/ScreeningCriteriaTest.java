@@ -37,6 +37,8 @@ final class ScreeningCriteriaTest
 	private static final int OKAY = CwmsFlags.SCREENED | CwmsFlags.VALIDITY_OKAY;
 	private static final int QUESTIONABLE = CwmsFlags.SCREENED | CwmsFlags.VALIDITY_QUESTIONABLE;
 	private static final int REJECTED = CwmsFlags.SCREENED | CwmsFlags.VALIDITY_REJECTED;
+	private static final int EVERY_TEST_BIT = CwmsFlags.TEST_ABSOLUTE_VALUE | CwmsFlags.TEST_CONSTANT_VALUE
+		| CwmsFlags.TEST_RATE_OF_CHANGE | CwmsFlags.TEST_DURATION_VALUE;
 
 	@Test
 	void absoluteValueWithinLimitsIsOkay()
@@ -204,6 +206,77 @@ final class ScreeningCriteriaTest
 	}
 
 	@Test
+	void everyCategoryRunsWhileItsScreeningFlagIsActive()
+	{
+		assertEquals(QUESTIONABLE | EVERY_TEST_BIT, checkEveryCategoryFailing(new Screening()));
+	}
+
+	@Test
+	void inactiveRangeSkipsOnlyTheAbsoluteChecks()
+	{
+		Screening screening = new Screening();
+		screening.setRangeActive(false);
+		assertEquals(QUESTIONABLE | (EVERY_TEST_BIT & ~CwmsFlags.TEST_ABSOLUTE_VALUE),
+			checkEveryCategoryFailing(screening));
+	}
+
+	@Test
+	void inactiveConstSkipsOnlyTheConstantChecks()
+	{
+		Screening screening = new Screening();
+		screening.setConstActive(false);
+		assertEquals(QUESTIONABLE | (EVERY_TEST_BIT & ~CwmsFlags.TEST_CONSTANT_VALUE),
+			checkEveryCategoryFailing(screening));
+	}
+
+	@Test
+	void inactiveRocSkipsOnlyTheRateOfChangeChecks()
+	{
+		Screening screening = new Screening();
+		screening.setRocActive(false);
+		assertEquals(QUESTIONABLE | (EVERY_TEST_BIT & ~CwmsFlags.TEST_RATE_OF_CHANGE),
+			checkEveryCategoryFailing(screening));
+	}
+
+	@Test
+	void inactiveDurMagSkipsOnlyTheDurationChecks()
+	{
+		Screening screening = new Screening();
+		screening.setDurMagActive(false);
+		assertEquals(QUESTIONABLE | (EVERY_TEST_BIT & ~CwmsFlags.TEST_DURATION_VALUE),
+			checkEveryCategoryFailing(screening));
+	}
+
+	@Test
+	void questionableBitIsKeptWhenALaterCategoryRejects()
+	{
+		// Absolute checks run before rate of change. 5 is outside the questionable range
+		// [10, 90], and the drop of 11 from an hour earlier exceeds the reject limit of 5 per hour.
+		ScreeningCriteria crit = new ScreeningCriteria();
+		crit.addAbsCheck(new AbsCheck('Q', 10.0, 90.0));
+		crit.addRocPerHourCheck(new RocPerHourCheck('R', -5.0, 5.0));
+		CTimeSeries input = series(HOURLY);
+		add(input, HOUR_MS, 16.0);
+		add(input, 0, 5.0);
+		assertEquals(REJECTED | CwmsFlags.TEST_ABSOLUTE_VALUE | CwmsFlags.TEST_RATE_OF_CHANGE,
+			check(crit, input, 5.0));
+	}
+
+	@Test
+	void questionableBitIsDroppedWhenAnEarlierCategoryRejected()
+	{
+		// Same failures with the severities swapped. Current behavior: once a value is rejected,
+		// a later questionable failure is ignored, test bit included, so only one bit is set.
+		ScreeningCriteria crit = new ScreeningCriteria();
+		crit.addAbsCheck(new AbsCheck('R', 10.0, 90.0));
+		crit.addRocPerHourCheck(new RocPerHourCheck('Q', -5.0, 5.0));
+		CTimeSeries input = series(HOURLY);
+		add(input, HOUR_MS, 16.0);
+		add(input, 0, 5.0);
+		assertEquals(REJECTED | CwmsFlags.TEST_ABSOLUTE_VALUE, check(crit, input, 5.0));
+	}
+
+	@Test
 	void screeningSelectsCriteriaForTheSeasonContainingTheDate()
 	{
 		ScreeningCriteria winter = new ScreeningCriteria();
@@ -248,6 +321,32 @@ final class ScreeningCriteriaTest
 		ScreeningCriteria crit = new ScreeningCriteria();
 		crit.addDurCheckPeriod(new DurCheckPeriod('R', "hour*3", 0.0, 2.0));
 		return crit;
+	}
+
+	/**
+	 * Runs one questionable check of each category under the given screening, against a value
+	 * that fails all four, so each active category contributes exactly its own test bit.
+	 */
+	private static int checkEveryCategoryFailing(Screening screening)
+	{
+		// The input is a flat 5.0 for three hours of hourly incremental data:
+		//   absolute: 5 is outside [10, 90]
+		//   constant: no change over the three hour duration
+		//   rate of change: no change, but the limits require a rise of 1 to 5 per hour
+		//   duration: 5 + 5 + 5 + 5 = 20 over three hours, above the 0..2 limit
+		ScreeningCriteria crit = new ScreeningCriteria();
+		crit.addAbsCheck(new AbsCheck('Q', 10.0, 90.0));
+		crit.addConstCheck(new ConstCheck('Q', "hour*3", 0.0, 0.01, 0));
+		crit.addRocPerHourCheck(new RocPerHourCheck('Q', 1.0, 5.0));
+		crit.addDurCheckPeriod(new DurCheckPeriod('Q', "hour*3", 0.0, 2.0));
+		screening.add(crit);
+
+		CTimeSeries input = series(HOURLY_INCREMENTAL);
+		for (int hoursBefore = 3; hoursBefore >= 0; hoursBefore--)
+		{
+			add(input, hoursBefore * HOUR_MS, 5.0);
+		}
+		return check(crit, input, 5.0);
 	}
 
 	private static int check(ScreeningCriteria crit, CTimeSeries input, double value)
