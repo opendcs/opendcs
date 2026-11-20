@@ -1,0 +1,452 @@
+openapi: '3.0.2'
+info:
+  title: DDS over HTTP
+  # will update to 1.0.0 once We have better stablized on the design
+  # after some usages.
+  version: '0.0.1'
+  description: |
+   **DCP Data Service (DDS) over HTTP**
+
+   This API defines the minimum URL requirements for exchanging Data Collection Platform (DCP) messages over HTTP. It defines access to telemetry data collected from multiple sources including GOES and Iridium satellites, and other data collection systems.
+servers:
+  - url: /dds
+    description: Data Dissemination Service over HTTP
+
+components:
+  responses:
+    '500':
+      description: This will be returned on server error. It is up to the client to decide how to try connecting again.
+    '503':
+      description: Inform clients that the system is shutting down or other-wise not ready yet.
+      headers:
+        retry-after:
+          description: When to try connecting again. Sending this header to clients is optional.
+          required: false
+          schema:
+            type: string
+  schemas:
+    dataSource:
+      description: Source of data that this system retrieves messages from.
+                  A given source has a name and type and may provide additional properties as appropriate.
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/dataSourceType"
+        groupingKeys:
+          $ref: "#/components/schemas/groupingKey"
+      required:
+        - name
+        - type
+      additionalProperties: true
+    knownSourceTypes:
+      type: string
+      enum: ["GOES", "Iridium", "Network Dcp", "HRIT", "DRGS", "LRGS", "NOAPORT", "WEB"]
+    customSourceType:
+      type: string
+    dataSourceType:
+      description: An LRGS generally processes data from specific known sources; however it is possible
+                      for a given installation to retrieve data from custom sources.
+      oneOf:
+        - $ref: '#/components/schemas/knownSourceTypes'
+        - $ref: '#/components/schemas/customSourceType'
+    groupingKey:
+      type: object
+      description: Data Source message element that can be used to organize the the display page.
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - name
+        - description
+    searchCriteria:
+      description: Search criteria to use for retrieving messages
+      type: object
+      additionalProperties: true
+      properties:
+        addresses:
+          type: array
+          items:
+            type: string
+        address-mask:
+          type: string
+          description: Regular expression to identify messages by address field if available
+        name-mask:
+          type: string
+          description: Regular expression to identiify message by name field by available
+        names:
+          type: array
+          items:
+            type: string
+        since:
+          type: string
+        until:
+          type: string
+        data-sources:
+          type: array
+          items:
+            type: string
+          description: Which data sources to retrieve data for. (defaults to all data sources)
+    goesMessage:
+      type: object
+      description: Represents a single message received from a DCP (Data Collection Platform),
+        including metadata about signal quality, source, and encoded data.
+      properties:
+        receiveTime:
+          type: string
+          format: date-time
+          description: Timestamp when the message was received (in UTC).
+        dataSource:
+          $ref: "#/components/schemas/dataSource"
+        cType:
+          type: string
+          description: Carrier type code (e.g., 'g-s-t').
+        arm:
+          type: string
+          description: Antenna receive mode indicator - Type Message - G=Good,?=Parity Error (Any other is from DAPS)
+        eirp:
+          type: string
+          description: Signal strength, in dB (32-57) - Effective Isotropic Radiated Power (EIRP) value. Good 50 to 38dB.
+        frequency:
+          type: string
+          description: Frequency offset used by the transmitter. +/-X in 50Hz increments (+/-A indicates 500Hz).
+        modulation:
+          type: string
+          description: Modulation type used. High, Normal, Low (H=? 70°, N=60°+/-5°, L=? 50°)
+        quality:
+          type: string
+          description: Data signal quality indicator. Normal, Fair, Poor (Error N<10^-6, Fair>10^-6 to 10^-4, Poor>10^-4)
+        channel:
+          type: string
+          description: Channel number used for transmission (e.g., '162W'). Goes East or West Satellite.
+        downlink:
+          type: string
+          description: Down link status - Hexadecimal coded.
+        charlen:
+          type: integer
+          description: Number of characters in message (includes EOT + FW but not ID).
+        data:
+          type: string
+          description: Raw DCP data payload in plain text format.
+
+    iridiumMessage:
+      type: object
+      description: Message received via Iridium satellite including transmission metadata and DCP payload.
+      properties:
+        receiveTime:
+          type: string
+          format: date-time
+          description: Time the message was received by the system (in UTC).
+        dataSource:
+          $ref: "#/components/schemas/dataSource"
+        imei:
+          type: string
+          description: IMEI identifier extracted from the `ID=` field.
+        timestampOffset:
+          type: string
+          description: Encoded timestamp from `TIME=` field.
+        status:
+          type: string
+          description: Status flag from `STAT=` field.
+        mobileOriginated:
+          type: string
+          description: Message count for mobile-originated packets (MO=).
+        mobileTerminated:
+          type: string
+          description: Message count for mobile-terminated packets (MT=).
+        cdrReference:
+          type: string
+          description: Reference code from `CDR=`.
+        latitude:
+          type: number
+          format: float
+          description: Latitude from `LAT=`.
+        longitude:
+          type: number
+          format: float
+          description: Longitude from `LON=`.
+        radius:
+          type: integer
+          description: Accuracy or coverage radius from `RAD=`.
+        payloadFormat:
+          type: string
+          description: Raw header line preceding DCP payload (e.g. `IE:0200D0`)
+        data:
+          type: string
+          description: DCP data content that follows the header.
+
+    dcpMessage:
+      oneOf:
+        - $ref: '#/components/schemas/goesMessage'
+        - $ref: '#/components/schemas/iridiumMessage'
+      discriminator:
+        propertyName: dataSource.type
+        mapping:
+          GOES: '#/components/schemas/goesMessage'
+          Iridium: '#/components/schemas/iridiumMessage'
+
+    dcpMessages:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Number of messages contained in this result
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/dcpMessage'
+        dataSource:
+          $ref: '#/components/schemas/dataSource'
+        groupingKey:
+          $ref: '#/components/schemas/groupingKey'
+        knownSourceTypes:
+          $ref: '#/components/schemas/knownSourceTypes'
+        customSourceType:
+          $ref: '#/components/schemas/customSourceType'
+        dataSourceType:
+          $ref: '#/components/schemas/dataSourceType'
+
+    statusGroupSummary:
+      type: object
+      description: Summary of DCP statuses for a group of locations
+      additionalProperties: true
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp the summary was generated (in UTC).
+        durationHours:
+          type: integer
+          description: Duration in hours that the status covers (e.g. 24)
+        counts:
+          type: object
+          properties:
+            missing:
+              type: integer
+            partial:
+              type: integer
+            parity:
+              type: integer
+            complete:
+              type: integer
+        dcpSummaries:
+          type: object
+          description: Map of DCPs (by Address) and their summary information
+          additionalProperties:
+            $ref: '#/components/schemas/dcpSummary'
+    dcpSummary:
+      type: object
+      additionalProperties: true
+      properties:
+        identifiers:
+          type: array
+          description: |
+            Data Loggers (Data Collection Platforms) may have more than one address available.
+            If so, they will be listed here.
+          items:
+            $ref: '#/components/schemas/dcpIdentifier'
+        status:
+          type: string
+          enum: [missing, partial, parity, complete]
+        messageTotal:
+          type: integer
+          description: Number of messages received
+        parityCount:
+          type: integer
+          description: Number of parity message issues
+        lowBattery:
+          description: If this DCP is in  low battery status
+          type: boolean
+      required:
+        - status
+        - messageTotal
+        - parityCount
+        - lowBattery
+    dcpIdentifier:
+      type: object
+      properties:
+        type:
+          description: |
+            Specific type of identifier, such as NESDIS ID or SHEF ID.
+            Some systems may refer to this as an alias. The field is freeform implementations
+            *SHOULD* use the simplest version of the name possible. See the examples below.
+          type: string
+          example:
+            - SHEF
+            - NESDIS
+            - Local
+            - CWMS
+        id:
+          type: string
+      required:
+        - type
+        - id
+paths:
+  /data/next:
+    get:
+      summary: Retrieve DCS data
+      parameters:
+        - name: criteria
+          in: query
+          description: Name of previously provided criteria to use
+          required: false
+          schema:
+            type: string
+            description: Alphanumeric string given when the criteria was provided to the server.
+      responses:
+        '200':
+          description: Response includes any data available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dcpMessages'
+        '204':
+          description: No new data available, request again.
+        '500':
+          $ref: '#/components/responses/500'
+        '503':
+          $ref: '#/components/responses/503'
+      description: Retrieve message for the given, or all if none provided, criteria. This uses HTTP long-polling. After 9 seconds, if no new data is available from the server a 204 Response is sent to the client to indicate the client should connect again to wait for more data.
+  /data/search:
+    post:
+      summary: Provide criteria for limiting data returned.
+      description: Allows the client to inform the system exactly which data should be returned.
+      responses:
+        '201':
+          description: "Successfully stored."
+          # NOTE: return an identifier
+        '400':
+          description: "Provided criteria is invalid."
+        '500':
+          $ref: '#/components/responses/500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/searchCriteria'
+  /sources:
+    get:
+      summary: Provide information about data sources available from this instance
+      description: Allow client to know what data sources are available
+      responses:
+        '200':
+          description: Sources successfully sent to user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/dataSource"
+        '500':
+          $ref: '#/components/responses/500'
+      tags:
+        - sources
+  /data/query:
+    get:
+      summary: Query DCP messages on the fly
+      description: |
+        Allows direct querying of DCP messages using search criteria fields passed as query parameters.
+        Equivalent to providing a temporary criteria file.
+      parameters:
+        - name: dcpName
+          in: query
+          description: Specific DCP name(s) to filter
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: dcpAddress
+          in: query
+          description: Specific DCP address(es) to filter
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: since
+          in: query
+          description: Lower bound of receive time (UTC)
+          schema:
+            type: string
+            format: date-time
+        - name: until
+          in: query
+          description: Upper bound of receive time (UTC)
+          schema:
+            type: string
+            format: date-time
+        - name: ascending
+          in: query
+          description: Return results in ascending time
+          schema:
+            type: boolean
+        - name: spacecraft
+          in: query
+          description: Satellite selection ('E', 'W', or 'A')
+          schema:
+            type: string
+            enum: [E, W, A]
+        - name: source
+          in: query
+          description: Filter by source types (e.g., GOES, Iridium)
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: single
+          in: query
+          description: Whether to only return a single message
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Matched messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dcpMessages'
+        '204':
+          description: No messages found matching query.
+        '400':
+          description: Invalid parameters
+        '500':
+          $ref: '#/components/responses/500'
+        '503':
+          $ref: '#/components/responses/503'
+  /data/summary:
+    get:
+      summary: Retrieve status summary for a group DCPs
+      description: |
+        Returns a summarized status report for a group of DCP locations, including message counts,
+        parity errors, and battery health.
+      parameters:
+        - name: data-group
+          in: query
+          required: true
+          description: The name of the group to summarize (e.g., "SWT")
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status summary for the group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusGroupSummary'
+        '400':
+          description: Missing or invalid group parameter
+        '404':
+          description: Group not implemented or found
+        '500':
+          $ref: '#/components/responses/500'
+        '503':
+          $ref: '#/components/responses/503'

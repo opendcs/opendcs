@@ -61,5 +61,8 @@ project(":opendcs-web-ui-react").projectDir=file("javascript/opendcs-web-ui-reac
 include ":api-client-typescript"
 project(":api-client-typescript").projectDir=file("java/api-clients/api-client-typescript")
 
+include ":dds-api-client-typescript"
+project(":dds-api-client-typescript").projectDir=file("java/api-clients/dds-api-client-typescript")
+
 include ":api-client-java"
 project(":api-client-java").projectDir=file("java/api-clients/api-client-java")
