@@ -147,6 +147,7 @@ public class CTimeSeries
             parm.getTableSelector());
         this.modelId = parm.getModelId();
         this.displayName = null;
+        this.setUnitsAbbr(parm.getUnitsAbbr());
     }
 
     /**

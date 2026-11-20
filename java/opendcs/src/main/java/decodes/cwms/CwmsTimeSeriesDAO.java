@@ -232,7 +232,6 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                 ret.setDataType(dbdt);
             }
         }
-
         return ret;
     }
 

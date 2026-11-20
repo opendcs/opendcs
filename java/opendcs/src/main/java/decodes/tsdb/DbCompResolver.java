@@ -266,6 +266,16 @@ public class DbCompResolver
 				{
 					throw new NoSuchObjectException("Cannot resolve parm " + parmName);
 				}
+
+				if (dcp.getUnitsAbbr() == null && parmTsid != null)
+				{
+					// The units were not specified in the computation, so we will have the concrete
+					// form set it here.
+					dcp.setUnitsAbbr(
+						parmTsid.getStorageUnits() != null
+						? parmTsid.getStorageUnits()
+						: theDb.getStorageUnitsForDataType(parmTsid.getDataType()));
+				}
 			}
 			return comp;
 		}
