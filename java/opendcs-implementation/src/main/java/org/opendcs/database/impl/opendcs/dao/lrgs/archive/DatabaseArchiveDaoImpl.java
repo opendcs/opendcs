@@ -7,7 +7,6 @@ import org.opendcs.data.lrgs.archive.ArchiveEntry;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.exceptions.data.OpenDcsConstraintException;
-import org.opendcs.database.dai.PlatformDao;
 import org.opendcs.database.dao.lrgs.archive.LrgsArchiveDao;
 import org.opendcs.database.impl.opendcs.jdbi.column.io.ByteBufferArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.io.ByteBufferColumnMapper;

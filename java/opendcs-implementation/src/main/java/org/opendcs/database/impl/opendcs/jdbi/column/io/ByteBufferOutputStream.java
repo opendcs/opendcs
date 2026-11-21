@@ -20,9 +20,8 @@ public class ByteBufferOutputStream extends InputStream
     @Override
     public int read() throws IOException 
     {
-        return data.hasRemaining() ? -1 : data.get() & 0xFF;
+        return data.hasRemaining() ? -1 : (data.get() & 0xFF);
     }
-    
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException

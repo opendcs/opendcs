@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ConfigColumnMapper implements ColumnMapper<Map<String, Object>>
 {
-    public static final GenericType<?> CONFIG_TYPE = new GenericType<Map<String, Object>>() {};
+    public static final GenericType<Map<String, Object>> CONFIG_TYPE = new GenericType<>() {};
 
     private final ObjectMapper om = new ObjectMapper();
 

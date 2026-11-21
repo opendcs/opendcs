@@ -86,7 +86,7 @@ public interface LrgsArchiveDao extends OpenDcsDao
      * the changes over time starting from all GOES to GOES + other thing and the various DOMSAT etc things
      * that no longer exists.
      */
-    public interface LrgsSearchCriteria
+    interface LrgsSearchCriteria
     {
         List<String> getIdentifiers();
         List<String> getTypes();

@@ -40,7 +40,7 @@ public class ArchiveEntryMapper extends OpenDcsTableMapper<ArchiveEntry,ArchiveE
         var rawData = byteBufferMapper.map(rs, column(Columns.RAW_DATA), ctx);
         var quality = rs.getString(column(Columns.QUALITY));
         var dataInterfaceId = keyMapper.map(rs, column(Columns.DATA_INTERFACE_ID), ctx);
-        var header = (Map<String,Object>)configMapper.map(rs, column(Columns.DATA_HEADER), ctx);
+        var header = configMapper.map(rs, column(Columns.DATA_HEADER), ctx);
         return new ArchiveEntry(null, dataInterfaceId, id, header, rawData, storedAt, dateTime, Quality.fromDbChar(quality));
     }
 
@@ -66,11 +66,6 @@ public class ArchiveEntryMapper extends OpenDcsTableMapper<ArchiveEntry,ArchiveE
         Columns()
         {
             this.column = this.name().toLowerCase();
-        }
-
-        Columns(String column)
-        {
-            this.column = column;
         }
 
         @Override

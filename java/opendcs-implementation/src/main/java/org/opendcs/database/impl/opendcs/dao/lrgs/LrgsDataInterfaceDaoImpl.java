@@ -1,7 +1,6 @@
 package org.opendcs.database.impl.opendcs.dao.lrgs;
 
 import static org.opendcs.utils.sql.SqlQueries.COLLATE_CLAUSE;
-import static org.opendcs.utils.sql.SqlQueries.LEFT_OUTER;
 import static org.opendcs.utils.sql.SqlQueries.LIMIT_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.OFFSET_CLAUSE;
 import static org.opendcs.utils.sql.SqlQueries.WHERE_CLAUSE;
@@ -38,12 +37,12 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
+    public static final String SELECT_QUERY = "select";
+    public static final String MERGE_QUERY = "merge";
+    public static final String DELETE_QUERY = "delete";
+
     private final STGroup queries;
     private final LrgsDataInterfaceMapper mapper = LrgsDataInterfaceMapper.withPrefix("ldi");
-
-    public static final String SELECT = "select";
-    public static final String MERGE = "merge";
-    public static final String DELETE = "delete";
 
     public LrgsDataInterfaceDaoImpl()
     {
@@ -68,7 +67,7 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
 
-        var selectTemplate = queries.getInstanceOf(SELECT);
+        var selectTemplate = queries.getInstanceOf(SELECT_QUERY);
 
         if (selectTemplate == null)
         {
@@ -96,7 +95,7 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
         var handle = getHandle(tx);
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
-        var mergeTemplate = queries.getInstanceOf(MERGE)
+        var mergeTemplate = queries.getInstanceOf(MERGE_QUERY)
                                    .add("dual", dbEngine == DatabaseEngine.ORACLE ? "from dual" : "");
         try (var merge = handle.createUpdate(mergeTemplate.render()))
         {
@@ -143,7 +142,7 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
             return;
         }
         
-        var deleteTemplate = queries.getInstanceOf(DELETE);
+        var deleteTemplate = queries.getInstanceOf(DELETE_QUERY);
         if (deleteTemplate == null)
         {
             throw new OpenDcsDataException("Unable to get query template");
@@ -170,7 +169,7 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
         var ctx = tx.getContext();
         var dbEngine = ctx.getDatabaseEngine();
 
-        var selectTemplate = queries.getInstanceOf(SELECT);
+        var selectTemplate = queries.getInstanceOf(SELECT_QUERY);
 
         if (selectTemplate == null)
         {

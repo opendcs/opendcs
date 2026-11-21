@@ -1,6 +1,5 @@
 package org.opendcs.database.impl.opendcs.jdbi.column.io;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
@@ -10,7 +9,6 @@ import java.sql.Types;
 import org.jdbi.v3.core.argument.AbstractArgumentFactory;
 import org.jdbi.v3.core.argument.Argument;
 import org.jdbi.v3.core.config.ConfigRegistry;
-import org.jdbi.v3.core.statement.StatementContext;
 
 public class ByteBufferArgumentFactory extends AbstractArgumentFactory<ByteBuffer>
 {
@@ -33,17 +31,17 @@ public class ByteBufferArgumentFactory extends AbstractArgumentFactory<ByteBuffe
             {
                 if (value.hasArray())
                 {
-                    mapByArray(value, position, statement, ctx);
+                    mapByArray(value, position, statement);
                 }
                 else
                 {
-                    mapByStream(value, position, statement, ctx);
+                    mapByStream(value, position, statement);
                 }
             }
         };
     }
 
-    private void mapByStream(ByteBuffer value, int position, PreparedStatement statement, StatementContext ctx) throws SQLException
+    private void mapByStream(ByteBuffer value, int position, PreparedStatement statement) throws SQLException
     {
         try (var stream = new ByteBufferOutputStream(value))
         {
@@ -55,7 +53,7 @@ public class ByteBufferArgumentFactory extends AbstractArgumentFactory<ByteBuffe
         }
     }
 
-    private void mapByArray(ByteBuffer value, int position, PreparedStatement statement, StatementContext ctx) throws SQLException
+    private void mapByArray(ByteBuffer value, int position, PreparedStatement statement) throws SQLException
     {
         statement.setBytes(position, value.array());
     }

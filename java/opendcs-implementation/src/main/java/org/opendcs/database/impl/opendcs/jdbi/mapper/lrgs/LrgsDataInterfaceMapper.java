@@ -15,13 +15,13 @@ import org.opendcs.utils.sql.SqlErrorMessages;
 
 import decodes.sql.DbKey;
 
-public class LrgsDataInterfaceMapper extends OpenDcsTableMapper<LrgsDataInterface, LrgsDataInterfaceMapper.Columns>
+public final class LrgsDataInterfaceMapper extends OpenDcsTableMapper<LrgsDataInterface, LrgsDataInterfaceMapper.Columns>
 {
     private LrgsDataInterfaceMapper(String prefix)
     {
         super(prefix, "lrgs_data_interface", Columns.class);
     }
-        
+
     @Override
     public LrgsDataInterface map(ResultSet rs, StatementContext ctx) throws SQLException
     {
@@ -37,7 +37,7 @@ public class LrgsDataInterfaceMapper extends OpenDcsTableMapper<LrgsDataInterfac
             return null;
         }
         var name = rs.getString(column(Columns.NAME));
-        var config = (Map<String, Object>)configMapper.map(rs, column(Columns.CONFIG), ctx);
+        var config = configMapper.map(rs, column(Columns.CONFIG), ctx);
         var createdAt = zdtMapper.map(rs, column(Columns.CREATED_AT), ctx);
         var updatedAt = zdtMapper.map(rs, column(Columns.UPDATED_AT), ctx);
         var typeName = rs.getString(column(Columns.TYPE_NAME));
