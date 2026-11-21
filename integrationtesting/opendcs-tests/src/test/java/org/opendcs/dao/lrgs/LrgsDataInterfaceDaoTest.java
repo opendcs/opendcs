@@ -10,10 +10,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.data.lrgs.LrgsDataInterface;
-import org.opendcs.data.lrgs.LrgsDataInterfaceType;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.dao.lrgs.LrgsDataInterfaceDao;
-import org.opendcs.database.dao.lrgs.LrgsDataInterfaceTypeDao;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
@@ -28,14 +26,10 @@ class LrgsDataInterfaceDaoTest extends AppTestBase
     void test_basic_operations() throws Exception
     {
         var dao = db.getDao(LrgsDataInterfaceDao.class).orElseThrow();
-        var typeDao = db.getDao(LrgsDataInterfaceTypeDao.class).orElseThrow();
+        
         try (var tx = db.newTransaction())
         {
-            var typeIn = new LrgsDataInterfaceType(null, "testType", "provider", null, null);
-
-            var typeOut = typeDao.save(tx, typeIn);
-
-            var interfaceIn = new LrgsDataInterface(null, "test", typeOut, Map.of(), null, null );
+            var interfaceIn = new LrgsDataInterface(null, "test", "testType", Map.of(), null, null );
 
             var interfaceOut = dao.save(tx, interfaceIn);
 
@@ -51,7 +45,7 @@ class LrgsDataInterfaceDaoTest extends AppTestBase
                                  .orElseGet(() -> fail("could not retrieve by name"));
             assertEquals(interfaceOut, interfaceOutName);
 
-            var interfaceInUpdate = new LrgsDataInterface(interfaceOut.id(), interfaceOut.name(), interfaceOut.type(), Map.of("test", "value"), null, null);
+            var interfaceInUpdate = new LrgsDataInterface(interfaceOut.id(), interfaceOut.name(), interfaceOut.typeName(), Map.of("test", "value"), null, null);
             Thread.sleep(20); // needs a brief amount of time to that the update_at is different
             var interfaceOutUpdate = dao.save(tx, interfaceInUpdate);
             assertNotEquals(interfaceOut, interfaceOutUpdate);
@@ -77,17 +71,13 @@ class LrgsDataInterfaceDaoTest extends AppTestBase
     void test_paging() throws Exception
     {
         var dao = db.getDao(LrgsDataInterfaceDao.class).orElseThrow();
-        var typeDao = db.getDao(LrgsDataInterfaceTypeDao.class).orElseThrow();
         try (var tx = db.newTransaction())
         {
-            var typeIn = new LrgsDataInterfaceType(null, "testType", "provider", null, null);
-            var typeOut = typeDao.save(tx, typeIn);
-
             final int COUNT = 50;
             for (int i = 0; i < COUNT; i++)
             {
                 var name = String.format("AAA-Interface-%03d", i);
-                var interfaceIn = new LrgsDataInterface(null, name, typeOut, Map.of("value", i), null, null);
+                var interfaceIn = new LrgsDataInterface(null, name, "testType", Map.of("value", i), null, null);
                 dao.save(tx, interfaceIn);
             }
 

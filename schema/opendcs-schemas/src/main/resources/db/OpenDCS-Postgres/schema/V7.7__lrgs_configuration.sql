@@ -1,14 +1,3 @@
--- Should we even have this table, or just move service_provider
--- to lrgs_data_interface?
--- I'm not really sure, though having it does allow an administrator to
--- limit what can be selected.
-create table lrgs_data_interface_type (
-    id bigserial not null primary key,
-    name text unique,
-    service_provider text,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null
-);
 
 -- instead of "data source" we'll just have "data interfaces"
 -- Those could be input, output, or both
@@ -16,7 +5,7 @@ create table lrgs_data_interface_type (
 create table lrgs_data_interface (
 	id bigserial not null primary key,
 	name varchar(64) not null unique,
-	type_id bigint references lrgs_data_interface_type(id),
+	type_name varchar(256) not null,
     config jsonb default '{}'::jsonb,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null

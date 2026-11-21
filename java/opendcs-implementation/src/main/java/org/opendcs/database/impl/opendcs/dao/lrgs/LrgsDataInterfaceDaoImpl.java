@@ -24,7 +24,6 @@ import org.opendcs.database.dao.lrgs.LrgsDataInterfaceDao;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigArgumentFactory;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.impl.opendcs.jdbi.mapper.lrgs.LrgsDataInterfaceMapper;
-import org.opendcs.database.impl.opendcs.jdbi.mapper.lrgs.LrgsDataInterfaceTypeMapper;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.GenericColumns;
 import org.opendcs.utils.sql.SqlErrorMessages;
@@ -41,7 +40,6 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
 
     private final STGroup queries;
     private final LrgsDataInterfaceMapper mapper = LrgsDataInterfaceMapper.withPrefix("ldi");
-    private final LrgsDataInterfaceTypeMapper typeMapper = LrgsDataInterfaceTypeMapper.withPrefix("ldit");
 
     public static final String SELECT = "select";
     public static final String MERGE = "merge";
@@ -79,16 +77,12 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
 
         selectTemplate.add(WHERE_CLAUSE, whereClause);
         selectTemplate.add("columns", mapper.columnsForSelect(LrgsDataInterfaceMapper.Columns.CONFIG));
-        selectTemplate.add("type_columns", typeMapper.columnsForSelect());
-        selectTemplate.add("type_join",
-                           typeMapper.joinStatement(LEFT_OUTER, LrgsDataInterfaceTypeMapper.Columns.ID,
-                                                    "ldi", "id"));
+        
         selectTemplate.add("prefix", mapper.getPrefix());
         selectTemplate.add(COLLATE_CLAUSE, collateClauseFor(dbEngine));
         try (var select = handle.createQuery(selectTemplate.render()))
         {
-            return select.registerRowMapper(typeMapper)
-                         .registerRowMapper(mapper)
+            return select.registerRowMapper(mapper)
                          .bind(whereKey, whereVal)
                          .mapTo(LrgsDataInterface.class)
                          .findFirst();
@@ -131,7 +125,7 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
                                                                    // however, at present we only use
                                                                    // DbKey
                  .bind(GenericColumns.NAME.column(), entry.name())
-                 .bindByType(LrgsDataInterfaceMapper.Columns.TYPE_ID.column(), entry.type() != null ? entry.type().id() : null, DbKey.class)
+                 .bind(LrgsDataInterfaceMapper.Columns.TYPE_NAME.column(), entry.typeName())
                  .bind(LrgsDataInterfaceMapper.Columns.CONFIG.column(), entry.config())
                  .execute();
 
@@ -183,10 +177,6 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
             throw new OpenDcsDataException("Could not find template");
         }
         selectTemplate.add("columns", mapper.columnsForSelect(LrgsDataInterfaceMapper.Columns.CONFIG));
-        selectTemplate.add("type_columns", typeMapper.columnsForSelect());
-        selectTemplate.add("type_join",
-                           typeMapper.joinStatement(LEFT_OUTER, LrgsDataInterfaceTypeMapper.Columns.ID,
-                                                    "ldi", "id"));
         selectTemplate.add("prefix", mapper.getPrefix());
         selectTemplate.add(COLLATE_CLAUSE, collateClauseFor(dbEngine));
         selectTemplate.add(LIMIT_CLAUSE, addLimitOffset(limit, offset));
@@ -204,8 +194,7 @@ public class LrgsDataInterfaceDaoImpl implements LrgsDataInterfaceDao
                 select.bind(OFFSET_CLAUSE, offset);
             }
 
-            return select.registerRowMapper(typeMapper)
-                         .registerRowMapper(mapper)
+            return select.registerRowMapper(mapper)
                          .mapTo(LrgsDataInterface.class)
                          .list();
         }

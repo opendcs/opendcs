@@ -1,8 +1,7 @@
 
-select(where, limit, offset, prefix, collate, columns, type_columns, type_join) ::= <<
-    select <columns>, <prefix>.config::text as <prefix>_config, <type_columns>
+select(where, limit, offset, prefix, collate, columns) ::= <<
+    select <columns>, <prefix>.config::text as <prefix>_config
      from lrgs_data_interface <prefix>
-     <type_join>
      <if(where)>where <where> <endif>
     order by <prefix>.name <collate> asc
     <if(limit)>  <limit> <endif>
@@ -10,13 +9,13 @@ select(where, limit, offset, prefix, collate, columns, type_columns, type_join) 
 
 merge(dual) ::= <<
     merge into lrgs_data_interface ldi
-    using (select :id id, :name name, :type_id type_id, :config::jsonb config <dual>)  input
+    using (select :id id, :name name, :type_name type_name, :config::jsonb config <dual>)  input
     on (ldi.id = input.id)
     when matched then
-        update set name = input.name, type_id = input.type_id, config = input.config
+        update set name = input.name, type_name = input.type_name, config = input.config
     when not matched then
-        insert(name, type_id, config)
-        values(input.name, input.type_id, input.config)
+        insert(name, type_name, config)
+        values(input.name, input.type_name, input.config)
 >>
 
 

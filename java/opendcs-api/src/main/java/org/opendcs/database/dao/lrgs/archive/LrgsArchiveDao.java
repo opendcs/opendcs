@@ -4,7 +4,6 @@ import java.time.ZonedDateTime;
 import java.util.EnumSet;
 import java.util.List;
 
-import org.opendcs.data.lrgs.LrgsDataInterfaceType;
 import org.opendcs.data.lrgs.archive.ArchiveEntry;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
@@ -90,7 +89,7 @@ public interface LrgsArchiveDao extends OpenDcsDao
     public interface LrgsSearchCriteria
     {
         List<String> getIdentifiers();
-        List<LrgsDataInterfaceType> getTypes();
+        List<String> getTypes();
 
         /**
          * Start time of the data itself.

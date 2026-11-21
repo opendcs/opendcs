@@ -7,8 +7,6 @@ import java.util.Map;
 
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.data.lrgs.LrgsDataInterface;
-import org.opendcs.data.lrgs.LrgsDataInterfaceType;
-import org.opendcs.database.DatabaseKey;
 import org.opendcs.database.impl.opendcs.jdbi.column.json.ConfigColumnMapper;
 import org.opendcs.database.model.mappers.OpenDcsTableMapper;
 import org.opendcs.database.sql.TableColumnDefinition;
@@ -42,14 +40,9 @@ public class LrgsDataInterfaceMapper extends OpenDcsTableMapper<LrgsDataInterfac
         var config = (Map<String, Object>)configMapper.map(rs, column(Columns.CONFIG), ctx);
         var createdAt = zdtMapper.map(rs, column(Columns.CREATED_AT), ctx);
         var updatedAt = zdtMapper.map(rs, column(Columns.UPDATED_AT), ctx);
-        var typeMapper = ctx.findRowMapperFor(LrgsDataInterfaceType.class);
-        LrgsDataInterfaceType interfaceType = null;
-        if (typeMapper.isPresent()) {
-            var mapper = typeMapper.get();
-            interfaceType = mapper.map(rs, ctx);
-        }
+        var typeName = rs.getString(column(Columns.TYPE_NAME));
         
-        return new LrgsDataInterface(key, name, interfaceType, config, createdAt, updatedAt);
+        return new LrgsDataInterface(key, name, typeName, config, createdAt, updatedAt);
 
     }
 
@@ -63,7 +56,7 @@ public class LrgsDataInterfaceMapper extends OpenDcsTableMapper<LrgsDataInterfac
     {
         ID(GenericColumns.ID),
         NAME(GenericColumns.NAME),
-        TYPE_ID("type_id"),
+        TYPE_NAME("type_name"),
         CONFIG(GenericColumns.CONFIG),
         CREATED_AT(GenericColumns.CREATED_AT),
         UPDATED_AT(GenericColumns.UPDATED_AT)
