@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
-import java.util.Map;
 
 import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.data.lrgs.archive.ArchiveEntry;
