@@ -41,6 +41,7 @@ public class DdsProtocol14Handler extends ChannelInboundHandlerAdapter
            .pipeline()
            .addAfter(NAME, "msgblockext", new GetMessageBlockExHandler())
            .addAfter(NAME, "goodbyte", new GoodByeHandler())
+           
            // add the rest of the appropriate handlers
         ;
     }

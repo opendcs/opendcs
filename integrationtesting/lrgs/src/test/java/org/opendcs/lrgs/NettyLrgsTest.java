@@ -21,6 +21,7 @@ import lrgs.archive.XmlMsgArchive;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
+import lrgs.common.SearchCriteria;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.ServerError;
 import lrgs.lrgsmain.LrgsInputInterface;
@@ -87,6 +88,10 @@ class NettyLrgsTest
         3, TimeUnit.MINUTES,
         5, TimeUnit.SECONDS,
         "No Data returned within reasonable time frame");
+
+        var sc = new SearchCriteria();
+        sc.DcpNames.add("TEST");
+        assertDoesNotThrow(() -> client.sendSearchCrit(sc));
 
         client.sendGoodbye();
         client.disconnect();

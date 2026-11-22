@@ -21,6 +21,9 @@ import org.slf4j.Logger;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
+import lrgs.common.LrgsErrorCode;
+import lrgs.ldds.LddsCommand;
+import lrgs.ldds.ServerError;
 
 /**
  * Catch all error handler the terminates the connection after logging the error.
@@ -36,6 +39,19 @@ public class LddsErrorHandler extends ChannelInboundHandlerAdapter
     {
         log.atError().log("message not processed type was {}, pipeline was {}", msg.getClass().getName(), ctx.channel().pipeline().names());
         ReferenceCountUtil.release(msg);
+    
+        String resptext = "?" + LrgsErrorCode.DBADKEYWORD +
+                ",0,Unrecognized request ID '";
+        if (msg instanceof LddsCommand cmd)
+        {
+            resptext += cmd.getCommandCode();
+        } 
+        else 
+        {
+            resptext += "not a DDS command code.";
+        }
+        resptext += "'";
+        throw new ServerError(resptext);
     }
 
     @Override
