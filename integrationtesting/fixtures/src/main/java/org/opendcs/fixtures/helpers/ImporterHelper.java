@@ -36,6 +36,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsImporter;
 import decodes.tsdb.TsdbException;
 import decodes.util.DecodesSettings;
+import decodes.util.TSUtil;
 import ilex.util.FileUtil;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.SiteDAI;
@@ -241,6 +242,7 @@ public class ImporterHelper
 				Collection<CTimeSeries> allTs = importer.readTimeSeriesFile(inputStream);
 				for (CTimeSeries tsIn: allTs)
 				{
+					String originalUnits = tsIn.getUnitsAbbr();
 					log.info("load: {}", tsIn.getDisplayName());
 					log.info("Saving {}", tsIn.getTimeSeriesIdentifier());
 
@@ -252,6 +254,7 @@ public class ImporterHelper
 							log.error("Failed to save time series: {}", tsIn.getTimeSeriesIdentifier().getUniqueString(), ex);
 						throw ex;
 					}
+					TSUtil.convertUnits(tsIn, originalUnits);
 				}
 				fullTs.addAll(allTs);
 			}
