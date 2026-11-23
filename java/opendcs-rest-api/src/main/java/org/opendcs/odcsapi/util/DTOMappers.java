@@ -41,7 +41,7 @@ public final class DTOMappers
 			IntFunction<String> flagRenderer)
 	{
 		ApiTimeSeriesData ret = new ApiTimeSeriesData();
-		ret.setTsid(mapTsId(cts.getTimeSeriesIdentifier()));		
+		ret.setTsid(mapTsId(cts.getTimeSeriesIdentifier()));
 		ret.setValues(map(cts, start, end, flagRenderer));
 		ret.setUnits(cts.getUnitsAbbr());
 		return ret;
@@ -191,7 +191,7 @@ public final class DTOMappers
 
 	/**
 	 * NOTE: this and the above reverse need to be changed to an OpenDcsOperation set
-	 * that is handled by the given implementation. Otherwise we'd hvave 
+	 * that is handled by the given implementation. Otherwise we'd hvave
 	 * @return
 	 */
 	public static TimeSeriesIdentifier mapTsId(ApiTimeSeriesIdentifier tsId)
@@ -201,7 +201,7 @@ public final class DTOMappers
 		{
 			ret.setKey(DbKey.createDbKey(tsId.getKey()));
 		}
-		
+
 		ret.setUniqueString(tsId.getUniqueString());
 		ret.setActive(tsId.isActive());
 		ret.setDescription(tsId.getDescription());

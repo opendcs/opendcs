@@ -103,7 +103,7 @@ public abstract class DbAlgorithmExecutive
 	 * The default is [lower,upper)
 	 */
 	protected boolean aggUpperBoundClosed = false;
-	
+
 	/** If true, then deltas can be interpolated up to maxDeltaInterp intervals */
 	protected boolean interpDeltas = false;
 
@@ -429,7 +429,7 @@ public abstract class DbAlgorithmExecutive
 	private void mapParm(String role, TimeSeriesDb tsdb)
 	{
 		DbCompParm parm = comp.getParm(role);
-	
+
 		if (parm == null)
 		{
 			log.debug("No param defined for role '{}'", role);
@@ -522,7 +522,10 @@ public abstract class DbAlgorithmExecutive
 			if (TextUtil.strEqualIgnoreCase(tabsel, "M_"))
 				ref.timeSeries.setModelRunId(modelRunId);
 			if (ref.tsid != null)
+			{
 				ref.timeSeries.setTimeSeriesIdentifier(ref.tsid);
+			}
+
 			log.atDebug()
 			   .log(() -> "addTsToParmRef: Made empty time series for "
 						+ ref.getDescription()

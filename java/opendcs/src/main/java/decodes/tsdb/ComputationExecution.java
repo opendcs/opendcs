@@ -173,9 +173,9 @@ public final class ComputationExecution implements AutoCloseable
 
 	/**
 	 * Run computations using the given data, date range, progress listener, and afterComp handler.
-	 * 
 	 *
-	 * 
+	 *
+	 *
 	 * @param toRun
 	 * @param theData
 	 * @param start

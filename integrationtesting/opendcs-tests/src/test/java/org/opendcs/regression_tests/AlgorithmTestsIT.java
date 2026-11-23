@@ -111,7 +111,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
 
     @ConfiguredField
     private TimeSeriesDb tsDb;
-    
+
     @ConfiguredField
     private OpenDcsDatabase db;
 
@@ -119,11 +119,11 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
 
     /**
      * This just tests that timeseries can be saved to the database, retrieved, and totally deleted.
-     * 
+     *
      * @throws Exception
      */
     @SuppressWarnings("null")
-    @TestFactory 
+    @TestFactory
     @Execution(value = ExecutionMode.SAME_THREAD, reason = "Comp system needs rework before this could reasonably be parallel.")
     @EnableIfTsDb
     public Collection<DynamicNode> test_algorithm_operations() throws Exception
@@ -132,7 +132,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
         try (TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
              SiteDAI siteDAO = tsDb.makeSiteDAO();)
         {
-            TsImporter importer = new TsImporter(TimeZone.getTimeZone("UTC"), settings.siteNameTypePreference, (tsIdStr) -> 
+            TsImporter importer = new TsImporter(TimeZone.getTimeZone("UTC"), settings.siteNameTypePreference, (tsIdStr) ->
             {
                 try
                 {
@@ -180,18 +180,18 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                         if (comp.isDirectory()) {
                             algoTests.add(
                                 dynamicContainer(
-                                    comp.getName(), 
+                                    comp.getName(),
                                     Arrays.stream(comp.listFiles(File::isDirectory))
                                          .filter(test -> filterTest == "" || filterTest.equals(comp.getName()+test.getName()))
                                          .map(test -> getDynamicTest(test, comp, importer, tsDao))
                                          .collect(Collectors.toList())
                                 )
-                            );  
+                            );
                         }
                     }
                 }
-            } 
-            else 
+            }
+            else
             {
                 log.error(String.format("Invalid directory: %s", current_Directory));
             }
@@ -209,8 +209,8 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
             initializeComputation(context),
             createComputationAppTest(context),
             createComputationApiTest(context)
-        )); 
-            
+        ));
+
     }
 
     /**
@@ -286,8 +286,8 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
     {
         final var testName = "Initalize Data";
         return DynamicTest.dynamicTest(testName, () -> {
-            
-            for (File comp_data : ctx.test.listFiles()) 
+
+            for (File comp_data : ctx.test.listFiles())
             {
                 // Process comp xml
                 String name = comp_data.getName();
@@ -311,7 +311,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
 					ctx.helper.executeSqlFile(db, comp_data);
                 }
             }
-            
+
             ctx.inputTS = ctx.helper.loadTSimport(buildFilePath(ctx.test.getAbsolutePath(),"timeseries","inputs"), ctx.importer);
             ctx.outputTS = ctx.helper.loadTSimport(buildFilePath(ctx.test.getAbsolutePath(),"timeseries","outputs"), ctx.importer);
             ctx.expectedOutputTS = ctx.helper.loadTSimport(buildFilePath(ctx.test.getAbsolutePath(),"timeseries","expectedOutputs"), ctx.importer);
@@ -401,7 +401,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                 {
                     for (var ts: dcOut.getAllTimeSeries())
                     {
-                        try 
+                        try
                         {
                             ctx.dataOut.addTimeSeries(ts);
                         }
@@ -421,7 +421,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
             }
 
             Iterator<CTimeSeries> iterExpect = ctx.expectedOutputTS.iterator();
-            
+
             while (iterExpect.hasNext())
             {
                 CTimeSeries currExpect = iterExpect.next();
@@ -435,8 +435,8 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                 log.info("expected units: " + currExpect.getUnitsAbbr());
                 TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
 
-                
-                if (log.isInfoEnabled()) 
+
+                if (log.isInfoEnabled())
                 {
                     for (int i = 0; i < algoOutput.size(); i++)
                     {
@@ -465,14 +465,14 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
     {
         final var testName = "RestAPI";
 
-        return DynamicTest.dynamicTest(testName, () -> 
+        return DynamicTest.dynamicTest(testName, () ->
         {
             assumeTrue(ctx.comp != null);
             assumeTrue(ctx.config.expectError() == null); // will work out later
 
             setUpCreds();
 		    authenticate();
-            
+
             String organization = getOrganization();
             for (var concreteComp: ctx.comps)
             {
@@ -649,7 +649,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                                 return cts;
                             }
                            )
-                           .forEach(pair -> 
+                           .forEach(pair ->
                            {
                             assertEquals(pair.first, pair.second, "expected true", ctx.comp.getValidStart(),
                                                                               ctx.comp.getValidEnd());
@@ -687,7 +687,7 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
         List<DbComputation> comps; // list of computations after makeConcrete
         DataCollection dataIn;
         DataCollection dataOut;
-        
+
         public ExecutionContext(File test, ImporterHelper helper, File compFile, TsImporter importer, TimeSeriesDAI tsDao)
         {
             this.test = test;
