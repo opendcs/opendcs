@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -91,6 +92,12 @@ import static org.opendcs.odcsapi.util.DTOMappers.mapTsId;
 public final class TimeSeriesResources extends OpenDcsResource
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
+	/** Orders parms by role name, comparing a trailing number by value so input2 comes before input10. */
+	private static final Comparator<DbCompParm> ROLE_ORDER = Comparator
+			.comparing((DbCompParm p) -> p.getRoleName().replaceAll("\\d+$", ""))
+			.thenComparingInt(p -> p.getRoleName().length())
+			.thenComparing(DbCompParm::getRoleName);
 
 	@Context HttpHeaders httpHeaders;
 
@@ -955,11 +962,11 @@ public final class TimeSeriesResources extends OpenDcsResource
 					specified group, including members from sub-groups, attribute-based filters, \
 					and include/exclude/intersect relationships. \s
 
-					When computationid is also supplied, each expanded member is transformed against \
-					that computation's first input parameter -- the same filtering the desktop client's \
-					Run Computation dialog performs before offering a group's members for selection -- \
-					so only members the computation can actually resolve an input time series for are \
-					returned. \s
+					When computationid is also supplied, the result is instead the time series a run of \
+					that computation can be started from: each expanded member is transformed through the \
+					computation's first required input (in role order), and kept only if every required \
+					input resolves from it -- the same check a run makes before it starts. Members that \
+					lead to the same run are returned once. \s
 
 					Example URL: \s
 
@@ -980,9 +987,9 @@ public final class TimeSeriesResources extends OpenDcsResource
 			schema = @Schema(implementation = Long.class), example = "9")
 		@QueryParam("groupid") Long groupId,
 			@Parameter(description = """
-					Optional computation ID. When supplied, expanded members are \
-					transformed against the computation's first input parameter and only the \
-					members that resolve are returned.""",
+					Optional computation ID. When supplied, only the time series a run of \
+					this computation can be started from are returned, transformed through its \
+					first required input.""",
 					schema = @Schema(implementation = Long.class))
 		@QueryParam("computationid") Long computationId)
 			throws WebAppException, DbException
@@ -994,14 +1001,17 @@ public final class TimeSeriesResources extends OpenDcsResource
 		try (TsGroupDAI dai = getLegacyTimeseriesDB().makeTsGroupDAO();
 			TimeSeriesDAI tsDai = getLegacyTimeseriesDB().makeTimeSeriesDAO())
 		{
-			TsGroup group = dai.getTsGroupById(DbKey.createDbKey(groupId));
+			// Read the group from the database, not the DAO's shared cache. A cached group keeps
+			// the sub-group objects it was first loaded with, so edits to a sub-group (or to the
+			// group itself on another server) wouldn't show up here for up to 20 minutes.
+			TsGroup group = dai.getTsGroupById(DbKey.createDbKey(groupId), true);
 			if (group == null)
 			{
 				throw new DatabaseItemNotFoundException("Time series group with ID=" + groupId + " not found");
 			}
 			ArrayList<TimeSeriesIdentifier> expanded = getLegacyTimeseriesDB().expandTsGroup(group);
 			List<TimeSeriesIdentifier> candidates = computationId != null
-					? transformByFirstInput(expanded, computationId, tsDai)
+					? runnableMembers(expanded, loadComputation(computationId), tsDai)
 					: expanded;
 			List<ApiTimeSeriesIdentifier> result = new ArrayList<>();
 			for (TimeSeriesIdentifier tsid : candidates)
@@ -1020,56 +1030,102 @@ public final class TimeSeriesResources extends OpenDcsResource
 		}
 	}
 
-	/**
-	 * A group's raw expansion is typically broader than any single computation parameter needs
-	 * (it can span datatypes/intervals the parm doesn't use), so its members aren't all valid
-	 * run candidates as-is. Mirrors decodes.tsdb.comprungui.CompRunGuiFrame#buildComputationList:
-	 * transform each raw member through the computation's first input parameter, keeping only
-	 * the ones that resolve, deduplicated.
-	 */
-	private List<TimeSeriesIdentifier> transformByFirstInput(List<TimeSeriesIdentifier> expanded,
-			Long computationId, TimeSeriesDAI tsDai) throws DbIoException, NoSuchObjectException
+	private DbComputation loadComputation(Long computationId) throws DbIoException, NoSuchObjectException
 	{
-		DbCompParm firstInput = null;
 		try (ComputationDAI compDai = getLegacyTimeseriesDB().makeComputationDAO())
 		{
-			DbComputation comp = compDai.getComputationById(DbKey.createDbKey(computationId));
-			for (Iterator<DbCompParm> it = comp.getParms(); it.hasNext();)
+			return compDai.getComputationById(DbKey.createDbKey(computationId));
+		}
+	}
+
+	/**
+	 * A group's raw expansion is broader than what a computation can run for: it can span
+	 * datatypes, intervals and versions the computation's inputs don't use. Returns the time
+	 * series a manual run of {@code comp} can be started from, one per distinct run.
+	 *
+	 * <p>Each member is transformed through the computation's primary input into the trigger a run
+	 * would receive, and that trigger is kept only if every input the run requires resolves from it.
+	 * That is the same check {@link decodes.tsdb.DbCompResolver#makeConcrete} makes when the run
+	 * starts, so nothing offered here fails there with "Cannot create resolve computation".
+	 *
+	 * <p>The primary input is the first required input in role order, not the first input the
+	 * database returns. An unused optional input usually names no datatype, so it maps every member
+	 * to itself and would offer the whole group.
+	 */
+	List<TimeSeriesIdentifier> runnableMembers(List<TimeSeriesIdentifier> expanded, DbComputation comp,
+			TimeSeriesDAI tsDai) throws DbIoException
+	{
+		List<DbCompParm> inputs = new ArrayList<>();
+		for (Iterator<DbCompParm> it = comp.getParms(); it.hasNext();)
+		{
+			DbCompParm parm = it.next();
+			if (parm.isInput())
 			{
-				DbCompParm parm = it.next();
-				if (parm.isInput())
-				{
-					firstInput = parm;
-					break;
-				}
+				inputs.add(parm);
 			}
 		}
-		if (firstInput == null)
+		if (inputs.isEmpty())
 		{
 			return expanded;
 		}
-		TreeSet<TimeSeriesIdentifier> transformed = new TreeSet<>();
-		for (TimeSeriesIdentifier tsid : expanded)
+		inputs.sort(ROLE_ORDER);
+		List<DbCompParm> required = inputs.stream().filter(p -> isRequired(comp, p)).toList();
+		DbCompParm primary = required.isEmpty() ? inputs.get(0) : required.get(0);
+
+		TreeSet<TimeSeriesIdentifier> triggers = new TreeSet<>();
+		for (TimeSeriesIdentifier member : expanded)
 		{
-			try
+			TimeSeriesIdentifier trigger = transform(member, primary, tsDai);
+			if (trigger != null)
 			{
-				TimeSeriesIdentifier candidate =
-						getLegacyTimeseriesDB().transformTsidByCompParm(tsDai, tsid, firstInput, false, false, "");
-				if (candidate != null)
-				{
-					transformed.add(candidate);
-				}
-			}
-			catch (NoSuchObjectException | BadTimeSeriesException ex)
-			{
-				// Member doesn't match the parm's site/datatype template; skip it, same as the
-				// desktop's Run Computation dialog does.
-				log.atTrace()
-				   .setCause(ex)
-				   .log("Skipping time series '{}': doesn't match computation parm's site/datatype template.", tsid);
+				triggers.add(trigger);
 			}
 		}
-		return new ArrayList<>(transformed);
+		List<TimeSeriesIdentifier> runnable = new ArrayList<>();
+		for (TimeSeriesIdentifier trigger : triggers)
+		{
+			if (resolvesAll(trigger, required, tsDai))
+			{
+				runnable.add(trigger);
+			}
+		}
+		return runnable;
+	}
+
+	/** Same rule as {@code DbCompResolver.makeConcrete}: an input is required unless its _MISSING property is "ignore". */
+	private static boolean isRequired(DbComputation comp, DbCompParm parm)
+	{
+		return !"ignore".equalsIgnoreCase(comp.getProperty(parm.getRoleName() + "_MISSING"));
+	}
+
+	private boolean resolvesAll(TimeSeriesIdentifier trigger, List<DbCompParm> parms, TimeSeriesDAI tsDai)
+			throws DbIoException
+	{
+		for (DbCompParm parm : parms)
+		{
+			if (transform(trigger, parm, tsDai) == null)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** Transforms {@code tsid} through {@code parm}, or returns null when no such time series exists. */
+	private TimeSeriesIdentifier transform(TimeSeriesIdentifier tsid, DbCompParm parm, TimeSeriesDAI tsDai)
+			throws DbIoException
+	{
+		try
+		{
+			return getLegacyTimeseriesDB().transformTsidByCompParm(tsDai, tsid, parm, false, false, "");
+		}
+		catch (NoSuchObjectException | BadTimeSeriesException ex)
+		{
+			log.atTrace()
+			   .setCause(ex)
+			   .log("Time series '{}' doesn't resolve computation parm '{}'.", tsid, parm.getRoleName());
+			return null;
+		}
 	}
 
 	@POST

@@ -15,12 +15,15 @@
 
 package org.opendcs.odcsapi.res;
 
-import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import decodes.cwms.CwmsTsId;
 import decodes.db.Site;
@@ -36,8 +39,8 @@ import decodes.tsdb.TsGroup;
 import ilex.var.NoConversionException;
 import jakarta.ws.rs.core.Response;
 import ilex.var.TimedVariable;
-import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dai.TsGroupDAI;
 import opendcs.opentsdb.Interval;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiInterval;
@@ -57,7 +60,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.idMap;
 import static org.opendcs.odcsapi.res.TimeSeriesResources.map;
@@ -541,20 +546,16 @@ final class TimeSeriesResourcesTest
 	}
 
 	@Test
-	void testTransformByFirstInputSkipsMembersThatDontMatch() throws Exception
+	void testRunnableMembersSkipsMembersThatDontMatch() throws Exception
 	{
 		TimeSeriesResources resources = spy(new TimeSeriesResources());
 		TimeSeriesDb tsdb = mock(TimeSeriesDb.class);
 		doReturn(tsdb).when(resources).getLegacyTimeseriesDB();
 
-		ComputationDAI compDai = mock(ComputationDAI.class);
-		when(tsdb.makeComputationDAO()).thenReturn(compDai);
-
 		DbComputation comp = new DbComputation(DbKey.createDbKey(1L), "TestComp");
 		DbCompParm input = new DbCompParm("input", DbKey.createDbKey(2L), "hour", "", 0);
 		input.setAlgoParmType("i");
 		comp.addParm(input);
-		when(compDai.getComputationById(DbKey.createDbKey(1L))).thenReturn(comp);
 
 		TimeSeriesDAI tsDai = mock(TimeSeriesDAI.class);
 
@@ -563,15 +564,153 @@ final class TimeSeriesResourcesTest
 		when(tsdb.transformTsidByCompParm(eq(tsDai), eq(tsid), eq(input), eq(false), eq(false), any()))
 				.thenThrow(new BadTimeSeriesException("Member doesn't match parm template"));
 
-		Method transformByFirstInput = TimeSeriesResources.class.getDeclaredMethod(
-				"transformByFirstInput", List.class, Long.class, TimeSeriesDAI.class);
-		transformByFirstInput.setAccessible(true);
-
-		@SuppressWarnings("unchecked")
-		List<TimeSeriesIdentifier> result = (List<TimeSeriesIdentifier>)
-				transformByFirstInput.invoke(resources, List.of(tsid), 1L, tsDai);
+		List<TimeSeriesIdentifier> result = resources.runnableMembers(List.of(tsid), comp, tsDai);
 
 		assertNotNull(result);
 		assertTrue(result.isEmpty());
+	}
+
+	/**
+	 * Issue #2350: the computation's unused optional inputs (no datatype) came back from the
+	 * database ahead of input1. An input with no datatype maps every member to itself, so the
+	 * whole group was offered, and picking a member the computation can't use failed the run
+	 * with "Cannot create resolve computation ... for role 'input1'".
+	 */
+	@Test
+	void testRunnableMembersIgnoresUnusedOptionalInputReadFirst() throws Exception
+	{
+		GroupRunFixture fixture = new GroupRunFixture();
+		fixture.input("input10", null, true);
+		fixture.input("input1", "Flow-BP1", false);
+		fixture.input("input2", "Flow-BP2", false);
+		fixture.exists("Barren.Flow-BP1.Inst.0.0.comp", "Barren.Flow-BP2.Inst.0.0.comp");
+
+		List<String> runnable = fixture.runnable(
+				"Barren.Depth-SnowWE.Inst.~1Day.0.raw",
+				"Barren.Elev.Inst.0.0.raw",
+				"Barren-Lake.Elev.Inst.0.0.raw");
+
+		assertEquals(List.of("Barren.Flow-BP1.Inst.0.0.comp"), runnable);
+	}
+
+	@Test
+	void testRunnableMembersRequiresEveryRequiredInput() throws Exception
+	{
+		GroupRunFixture fixture = new GroupRunFixture();
+		fixture.input("input1", "Flow-BP1", false);
+		fixture.input("input2", "Flow-BP2", false);
+		fixture.input("input3", "Flow-MG1", true);
+		// Nolin has input1's series but not input2's, so a run there can't start. Neither site has
+		// input3's series, which is optional, so that doesn't rule either one out.
+		fixture.exists("Barren.Flow-BP1.Inst.0.0.comp", "Barren.Flow-BP2.Inst.0.0.comp",
+				"Nolin.Flow-BP1.Inst.0.0.comp");
+
+		List<String> runnable = fixture.runnable("Barren.Elev.Inst.0.0.raw", "Nolin.Elev.Inst.0.0.raw");
+
+		assertEquals(List.of("Barren.Flow-BP1.Inst.0.0.comp"), runnable);
+	}
+
+	@Test
+	void testRunnableMembersOrdersRolesByNumber() throws Exception
+	{
+		GroupRunFixture fixture = new GroupRunFixture();
+		fixture.input("input10", "Flow-BP10", false);
+		fixture.input("input2", "Flow-BP2", false);
+		fixture.exists("Barren.Flow-BP2.Inst.0.0.comp", "Barren.Flow-BP10.Inst.0.0.comp");
+
+		assertEquals(List.of("Barren.Flow-BP2.Inst.0.0.comp"), fixture.runnable("Barren.Elev.Inst.0.0.raw"));
+	}
+
+	@Test
+	void testExpandGroupReadsGroupFromDatabase() throws Exception
+	{
+		TimeSeriesResources resources = spy(new TimeSeriesResources());
+		TimeSeriesDb tsdb = mock(TimeSeriesDb.class);
+		doReturn(tsdb).when(resources).getLegacyTimeseriesDB();
+		TsGroupDAI groupDai = mock(TsGroupDAI.class);
+		when(tsdb.makeTsGroupDAO()).thenReturn(groupDai);
+		when(tsdb.makeTimeSeriesDAO()).thenReturn(mock(TimeSeriesDAI.class));
+
+		TsGroup group = new TsGroup();
+		group.setGroupId(DbKey.createDbKey(9L));
+		when(groupDai.getTsGroupById(DbKey.createDbKey(9L), true)).thenReturn(group);
+		TimeSeriesIdentifier member = new CwmsTsId();
+		member.setUniqueString("Barren.Elev.Inst.0.0.raw");
+		when(tsdb.expandTsGroup(group)).thenReturn(new ArrayList<>(List.of(member)));
+
+		Response response = resources.expandGroup(9L, null);
+
+		@SuppressWarnings("unchecked")
+		List<ApiTimeSeriesIdentifier> body = (List<ApiTimeSeriesIdentifier>) response.getEntity();
+		assertEquals(List.of("Barren.Elev.Inst.0.0.raw"),
+				body.stream().map(ApiTimeSeriesIdentifier::getUniqueString).toList());
+		verify(groupDai, never()).getTsGroupById(any());
+	}
+
+	/**
+	 * A group computation over CWMS-style identifiers. An input with a datatype swaps the
+	 * member's parameter for that datatype and version "comp"; one with no datatype leaves the
+	 * member as it is, like an unused input does. A result only exists if it was registered
+	 * with {@link #exists}.
+	 */
+	private static final class GroupRunFixture
+	{
+		private final TimeSeriesResources resources = spy(new TimeSeriesResources());
+		private final TimeSeriesDb tsdb = mock(TimeSeriesDb.class);
+		private final TimeSeriesDAI tsDai = mock(TimeSeriesDAI.class);
+		private final DbComputation comp = new DbComputation(DbKey.createDbKey(1L), "Total_Outflow");
+		private final Map<String, String> datatypes = new HashMap<>();
+		private final Set<String> existing = new HashSet<>();
+
+		GroupRunFixture() throws Exception
+		{
+			doReturn(tsdb).when(resources).getLegacyTimeseriesDB();
+			when(tsdb.transformTsidByCompParm(eq(tsDai), any(), any(), eq(false), eq(false), any()))
+					.thenAnswer(inv -> transform(inv.getArgument(1), inv.getArgument(2)));
+		}
+
+		void input(String role, String datatype, boolean optional)
+		{
+			DbCompParm parm = new DbCompParm(role, DbKey.NullKey, "", "", 0);
+			parm.setAlgoParmType("i");
+			comp.addParm(parm);
+			datatypes.put(role, datatype);
+			comp.setProperty(role + "_MISSING", optional ? "ignore" : "fail");
+		}
+
+		void exists(String... uniqueStrings)
+		{
+			existing.addAll(List.of(uniqueStrings));
+		}
+
+		List<String> runnable(String... members) throws Exception
+		{
+			List<TimeSeriesIdentifier> expanded = new ArrayList<>();
+			for (String member : members)
+			{
+				expanded.add(tsid(member));
+			}
+			return resources.runnableMembers(expanded, comp, tsDai).stream()
+					.map(TimeSeriesIdentifier::getUniqueString)
+					.toList();
+		}
+
+		private TimeSeriesIdentifier transform(TimeSeriesIdentifier member, DbCompParm parm) throws Exception
+		{
+			String datatype = datatypes.get(parm.getRoleName());
+			if (datatype == null)
+			{
+				return member;
+			}
+			String transformed = member.getSiteName() + "." + datatype + ".Inst.0.0.comp";
+			return existing.contains(transformed) ? tsid(transformed) : null;
+		}
+
+		private static TimeSeriesIdentifier tsid(String uniqueString) throws Exception
+		{
+			TimeSeriesIdentifier tsid = new CwmsTsId();
+			tsid.setUniqueString(uniqueString);
+			return tsid;
+		}
 	}
 }
