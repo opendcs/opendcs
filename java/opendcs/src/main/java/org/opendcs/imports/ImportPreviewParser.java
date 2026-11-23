@@ -15,26 +15,29 @@
 
 package org.opendcs.imports;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.Supplier;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+
+import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.TsImporter;
 
 /** Inspects import content without database access. */
 public final class ImportPreviewParser
@@ -48,7 +51,6 @@ public final class ImportPreviewParser
             "ScheduleEntry", "PlatformStatus", "EngineeringUnit", "Enum", "DataTypeEquivalence", "Interval");
     private static final List<String> COMPUTATION_OBJECTS = List.of("Algorithm", "Computation",
             "LoadingApplication", "TsGroup");
-    private static final int MAX_WARNINGS = 20;
 
     private ImportPreviewParser()
     {
@@ -99,7 +101,8 @@ public final class ImportPreviewParser
     }
 
     /** Inspects decoded UTF-8 content using the supplied time zone until a SET:TZ record overrides it. */
-    public static ImportPreview inspect(String content, TimeZone defaultTimeZone) throws InspectionException
+    public static ImportPreview inspect(String content, TimeZone defaultTimeZone,
+            Supplier<TimeSeriesIdentifier> makeEmptyTsId) throws InspectionException
     {
         ImportType type = detectImportType(content);
         long sizeBytes = content.getBytes(StandardCharsets.UTF_8).length;
@@ -107,7 +110,7 @@ public final class ImportPreviewParser
         List<String> warnings = new ArrayList<>();
         if (type == ImportType.TIMESERIES)
         {
-            return inspectTimeSeries(content, sizeBytes, defaultTimeZone, counts, warnings);
+            return inspectTimeSeries(content, sizeBytes, defaultTimeZone, makeEmptyTsId, counts, warnings);
         }
 
         inspectXml(content, type == ImportType.COMPUTATIONS, counts, warnings);
@@ -218,161 +221,45 @@ public final class ImportPreviewParser
         }
         if (counts.isEmpty())
         {
-            warn(warnings, "No recognized import object elements were found.");
+            warnings.add("No recognized import object elements were found.");
         }
     }
 
     private static ImportPreview inspectTimeSeries(String content, long sizeBytes, TimeZone defaultTimeZone,
-            Map<String, Long> counts, List<String> warnings) throws InspectionException
+            Supplier<TimeSeriesIdentifier> makeEmptyTsId, Map<String, Long> counts, List<String> warnings)
+            throws InspectionException
     {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-        format.setTimeZone(defaultTimeZone);
-        Set<String> identifiers = new HashSet<>();
-        String currentId = null;
+        TsImporter importer = new TsImporter(defaultTimeZone, makeEmptyTsId);
+        Collection<CTimeSeries> series;
+        try
+        {
+            series = importer.readTimeSeriesFile(new StringReader(content));
+        }
+        catch (IOException | IllegalArgumentException ex)
+        {
+            throw new InspectionException("Unable to read time series import content.", ex);
+        }
         Date first = null;
         Date last = null;
         long samples = 0;
-        int lineNumber = 0;
-        for (var lines = content.lines().iterator(); lines.hasNext();)
+        for (CTimeSeries timeSeries : series)
         {
-            String line = lines.next().trim();
-            lineNumber++;
-            if (line.isEmpty() || line.startsWith("#"))
+            samples += timeSeries.size();
+            if (timeSeries.size() > 0)
             {
-                continue;
-            }
-            if (line.regionMatches(true, 0, "TSID:", 0, 5))
-            {
-                currentId = line.substring(5).trim();
-                if (currentId.isEmpty())
-                {
-                    throw new InspectionException("Empty time series identifier on line " + lineNumber + ".");
-                }
-                identifiers.add(currentId);
-            }
-            else if (line.regionMatches(true, 0, "SET:", 0, 4))
-            {
-                inspectTimeSeriesSetting(line, lineNumber, format, warnings);
-            }
-            else if (Character.isDigit(line.charAt(0)))
-            {
-                if (currentId == null)
-                {
-                    throw new InspectionException("Sample before a TSID on line " + lineNumber + ".");
-                }
-                int comment = line.indexOf('#');
-                String[] fields = (comment >= 0 ? line.substring(0, comment) : line).split(",");
-                Date time = sampleTime(fields, format);
-                if (time == null)
-                {
-                    warn(warnings, "Invalid sample on line " + lineNumber + "; excluded from statistics.");
-                    continue;
-                }
-                samples++;
-                first = first == null || time.before(first) ? time : first;
-                last = last == null || time.after(last) ? time : last;
-            }
-            else
-            {
-                warn(warnings, "Unrecognized record on line " + lineNumber + "; ignored.");
+                Date start = timeSeries.sampleAt(0).getTime();
+                Date end = timeSeries.sampleAt(timeSeries.size() - 1).getTime();
+                first = first == null || start.before(first) ? start : first;
+                last = last == null || end.after(last) ? end : last;
             }
         }
-        if (identifiers.isEmpty())
-        {
-            throw new InspectionException("No time series identifiers found in import content.");
-        }
-        counts.put("timeSeries", (long) identifiers.size());
+        counts.put("timeSeries", (long) series.size());
         counts.put("samples", samples);
         if (samples == 0)
         {
-            warn(warnings, "No valid samples were found.");
+            warnings.add("No valid samples were found.");
         }
         return new ImportPreview(ImportType.TIMESERIES, sizeBytes, counts,
                 first == null ? null : first.toInstant(), last == null ? null : last.toInstant(), warnings);
-    }
-
-    private static void inspectTimeSeriesSetting(String line, int lineNumber, SimpleDateFormat format,
-            List<String> warnings) throws InspectionException
-    {
-        int equals = line.indexOf('=');
-        if (equals < 0)
-        {
-            warn(warnings, "SET record without '=' on line " + lineNumber + "; ignored.");
-            return;
-        }
-        String name = line.substring(4, equals).trim().toUpperCase(Locale.ROOT);
-        String value = line.substring(equals + 1).trim();
-        switch (name)
-        {
-            case "TZ" -> format.setTimeZone(TimeZone.getTimeZone(value));
-            case "DATEFORMAT" ->
-            {
-                try
-                {
-                    format.applyPattern(value);
-                }
-                catch (IllegalArgumentException ex)
-                {
-                    throw new InspectionException("Invalid DATEFORMAT on line " + lineNumber + ".", ex);
-                }
-            }
-            case "UNITS", "SITENAMETYPE" ->
-            {
-            }
-            default -> warn(warnings, "Unknown setting on line " + lineNumber + "; ignored.");
-        }
-    }
-
-    private static Date sampleTime(String[] fields, SimpleDateFormat format)
-    {
-        if (fields.length < 2)
-        {
-            return null;
-        }
-        Date time = format.parse(fields[0].trim(), new ParsePosition(0));
-        if (time == null)
-        {
-            return null;
-        }
-        try
-        {
-            if (!"m".equalsIgnoreCase(fields[1].trim()))
-            {
-                Double.parseDouble(fields[1].trim());
-            }
-            if (fields.length > 2)
-            {
-                String flags = fields[2].trim();
-                if (flags.regionMatches(true, 0, "0x", 0, 2))
-                {
-                    Integer.parseInt(flags.substring(2), 16);
-                }
-                else if (flags.regionMatches(true, 0, "0b", 0, 2))
-                {
-                    Integer.parseInt(flags.substring(2), 2);
-                }
-                else
-                {
-                    Integer.parseInt(flags);
-                }
-            }
-            return time;
-        }
-        catch (NumberFormatException ex)
-        {
-            return null;
-        }
-    }
-
-    private static void warn(List<String> warnings, String message)
-    {
-        if (warnings.size() < MAX_WARNINGS)
-        {
-            warnings.add(message);
-        }
-        else if (warnings.size() == MAX_WARNINGS)
-        {
-            warnings.add("Further warnings omitted.");
-        }
     }
 }
