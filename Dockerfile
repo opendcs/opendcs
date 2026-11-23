@@ -88,35 +88,41 @@ ENV APPLICATION_NAME="compdepends"
 
 CMD ["/compdepends.sh"]
 
-FROM alpine:3.24.1 AS tomcat_base
+FROM alpine:3.24.4 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
         openjdk21-jre \
         curl \
         bash
-
+RUN addgroup tomcat && adduser -D tomcat -G tomcat
 RUN mkdir /download && \
     cd /download && \
-    wget https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.25/bin/apache-tomcat-11.0.25.tar.gz && \
-    echo "81339c046dff1b363a80a3bccf80cb391660a6828dd8ae042180ceb11c8b1614317143e60b311b9e791dab585bb046b777234667acce7dca2203a74b37bf20f2 *apache-tomcat-11.0.25.tar.gz" > checksum.txt && \
+    wget https://dlcdn.apache.org/tomcat/tomcat-11/v11.0.29/bin/apache-tomcat-11.0.29.tar.gz && \
+    echo "be277ce58876a584653f980fd695c82e6708029f05fc7ad9fcfbdcede3836ae6ffa4f858eac26de6ff938f130f31158be8a54b5f546393ea1ad5da0cd202873c *apache-tomcat-11.0.29.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
-    mv apache-tomcat-11.0.25 /usr/local/tomcat/ && \
+    mv apache-tomcat-11.0.29 /usr/local/tomcat/ && \
     cd / && \
     rm -rf /download && \
-    rm -rf /usr/local/tomcat/webapps/*
+    rm -rf /usr/local/tomcat/webapps/* && \
+    chown -R root:tomcat /usr/local/tomcat
+RUN mkdir -p /var/tomcat/webapps && mkdir -p /var/tomcat/conf && \
+    cp /usr/local/tomcat/conf/web.xml /var/tomcat/conf/web.xml && \
+    chown -R tomcat:tomcat /var/tomcat
+
+ENV CATALINA_HOME=/usr/local/tomcat
+ENV CATALINA_BASE=/var/tomcat
+USER tomcat:tomcat
 CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
 
 FROM tomcat_base AS web-api
 
-COPY --from=builder /app/java/opendcs-rest-api/build/libs/*.war /usr/local/tomcat/webapps/odcsapi.war
-COPY --from=builder /app/javascript/opendcs-web-ui-react/build/libs/*.war /usr/local/tomcat/webapps/ROOT.war
-COPY /docker_files/tomcat/conf/context.xml /usr/local/tomcat/conf/Catalina/localhost/odcsapi.xml
-COPY /docker_files/tomcat/conf/tomcat-server.xml /usr/local/tomcat/conf/server.xml
-COPY /docker_files/tomcat/conf/setenv.sh /usr/local/tomcat/bin
+COPY --from=builder /app/java/opendcs-rest-api/build/libs/*.war /var/tomcat/webapps/odcsapi.war
+COPY --from=builder /app/javascript/opendcs-web-ui-react/build/libs/*.war /var/tomcat/webapps/ROOT.war
+COPY /docker_files/tomcat/conf/context.xml /var/tomcat/conf/Catalina/localhost/odcsapi.xml
+COPY /docker_files/tomcat/conf/tomcat-server.xml /var/tomcat/conf/server.xml
+COPY /docker_files/tomcat/conf/setenv.sh /var/tomcat/bin/setenv.sh
 ENV DCSTOOL_HOME="/opt/opendcs"
-
-
 
 FROM tsdbapp AS migration
 COPY docker_scripts/migration.sh /
