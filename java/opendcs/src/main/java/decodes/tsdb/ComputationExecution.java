@@ -252,57 +252,6 @@ public final class ComputationExecution implements AutoCloseable
 	}
 
 	/**
-	 * Execute a single computation with the provided inputs, date range, and progress listener.
-	 * @param computation
-	 * @param tsIds
-	 * @param start
-	 * @param end
-	 * @param listener
-	 * @return
-	 * @throws DbIoException
-	 */
-	public CompResults execute(DbComputation computation,
-			List<TimeSeriesIdentifier> tsIds, Date start, Date end, ProgressListener listener)
-		throws DbIoException
-	{
-		DataCollection theData = new DataCollection();
-		try (TimeSeriesDAI timeSeriesDAO = getTsDb().makeTimeSeriesDAO();
-			 var compTimer = MDCTimer.startTimer("fill time series"))
-		{
-			for(TimeSeriesIdentifier tsid : tsIds)
-			{
-				try (var compTimer2 = MDCTimer.startTimer("saving: " + tsid.getUniqueString()))
-				{
-					CTimeSeries cts = timeSeriesDAO.makeTimeSeries(tsid);
-					int n = timeSeriesDAO.fillTimeSeries(cts, start, end);
-					listener.onProgress(String.format("Read tsid '%s' since=%s, until=%s, result=%d values.",
-							tsid.getUniqueString(), start, end, n), Level.INFO, null);
-					// Set the flag so that every value read is treated as a trigger.
-					for(int idx = 0; idx < n; idx++)
-					{
-						VarFlags.setWasAdded(cts.sampleAt(idx));
-					}
-					theData.addTimeSeries(cts);
-				}
-				catch(Exception ex)
-				{
-					listener.onProgress("Error fetching input data.", Level.WARN, ex);
-					numErrors.incrementAndGet();
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			listener.onProgress("Unexpected error fetching input data.", Level.WARN, ex);
-		}
-		try (var mdcComputation = MDC.putCloseable(COMPUTATION_KEY, computation.getName()))
-		{
-			executeSingleComp(computation, start, end, theData, false, listener);
-		}
-		return new CompResults(numErrors.get(), computesTried.get());
-	}
-
-	/**
 	 * Run single computation using the provided data, date range and default LoggingProgressListener
 	 * @param comp
 	 * @param start
@@ -367,6 +316,7 @@ public final class ComputationExecution implements AutoCloseable
 
 						// Read values between previous and this run. Then flag them as DB_ADDED
 						// Thus, they will be treated as triggers by the computation.
+						listener.logEvent("Reading time series " + cts.getTimeSeriesIdentifier().getUniqueString(), Level.INFO, null);
 						int numRead = timeSeriesDAO.fillTimeSeries(cts, start, end, true, true, false);
 						if (numRead > 0)
 						{
@@ -381,6 +331,7 @@ public final class ComputationExecution implements AutoCloseable
 								try
 								{
 									dataCollection.addTimeSeries(cts);
+									log.trace("Time series added to collection.");
 								}
 								catch (DuplicateTimeSeriesException ex)
 								{
