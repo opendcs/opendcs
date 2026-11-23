@@ -629,7 +629,8 @@ final class TimeSeriesResourcesTest
 		doReturn(tsdb).when(resources).getLegacyTimeseriesDB();
 		TsGroupDAI groupDai = mock(TsGroupDAI.class);
 		when(tsdb.makeTsGroupDAO()).thenReturn(groupDai);
-		when(tsdb.makeTimeSeriesDAO()).thenReturn(mock(TimeSeriesDAI.class));
+		TimeSeriesDAI tsDai = mock(TimeSeriesDAI.class);
+		when(tsdb.makeTimeSeriesDAO()).thenReturn(tsDai);
 
 		TsGroup group = new TsGroup();
 		group.setGroupId(DbKey.createDbKey(9L));

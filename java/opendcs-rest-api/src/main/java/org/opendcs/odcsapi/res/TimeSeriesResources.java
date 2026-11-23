@@ -95,7 +95,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 
 	/** Orders parms by role name, comparing a trailing number by value so input2 comes before input10. */
 	private static final Comparator<DbCompParm> ROLE_ORDER = Comparator
-			.comparing((DbCompParm p) -> p.getRoleName().replaceAll("\\d+$", ""))
+			.comparing((DbCompParm p) -> withoutTrailingDigits(p.getRoleName()))
 			.thenComparingInt(p -> p.getRoleName().length())
 			.thenComparing(DbCompParm::getRoleName);
 
@@ -1096,6 +1096,17 @@ public final class TimeSeriesResources extends OpenDcsResource
 	private static boolean isRequired(DbComputation comp, DbCompParm parm)
 	{
 		return !"ignore".equalsIgnoreCase(comp.getProperty(parm.getRoleName() + "_MISSING"));
+	}
+
+	/** Returns the role name without its trailing number, e.g. "input10" becomes "input". */
+	private static String withoutTrailingDigits(String roleName)
+	{
+		int end = roleName.length();
+		while (end > 0 && roleName.charAt(end - 1) >= '0' && roleName.charAt(end - 1) <= '9')
+		{
+			end--;
+		}
+		return roleName.substring(0, end);
 	}
 
 	private boolean resolvesAll(TimeSeriesIdentifier trigger, List<DbCompParm> parms, TimeSeriesDAI tsDai)
