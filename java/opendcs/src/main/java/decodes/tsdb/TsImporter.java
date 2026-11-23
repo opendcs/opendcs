@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.function.Supplier;
 
 import org.opendcs.util.functional.ThrowingFunction;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -58,6 +59,27 @@ public class TsImporter
     private SimpleDateFormat dataSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
     private final ThrowingFunction<String,TimeSeriesIdentifier, DbIoException> makeTsIdFunc;
     private Collection<String> selectedTsIds = null;
+
+    public TsImporter(TimeZone tz, Supplier<TimeSeriesIdentifier> makeEmptyTsId)
+    {
+        this(tz, null, tsIdStr ->
+        {
+            if (tsIdStr == null || tsIdStr.isBlank())
+            {
+                throw new IllegalArgumentException("Sample without a time series identifier.");
+            }
+            try
+            {
+                TimeSeriesIdentifier tsId = makeEmptyTsId.get();
+                tsId.setUniqueString(tsIdStr);
+                return tsId;
+            }
+            catch (BadTimeSeriesException ex)
+            {
+                throw new DbIoException("Unable to create TimeSeriesIdentifier from: " + tsIdStr, ex);
+            }
+        });
+    }
 
     public TsImporter(TimeZone tz, String siteNameType, ThrowingFunction<String, TimeSeriesIdentifier, DbIoException> makeTsFunc)
     {
@@ -125,18 +147,26 @@ public class TsImporter
 
     public Collection<CTimeSeries> readTimeSeriesFile(InputStream stream, Collection<String> selectedTsIds) throws IOException
     {
+        return readTimeSeriesFile(new InputStreamReader(stream), selectedTsIds);
+    }
+
+    public Collection<CTimeSeries> readTimeSeriesFile(Reader reader) throws IOException
+    {
+        return readTimeSeriesFile(reader, null);
+    }
+
+    public Collection<CTimeSeries> readTimeSeriesFile(Reader reader, Collection<String> selectedTsIds) throws IOException
+    {
         if (this.filename == null)
         {
-            this.filename = "Provided InputStream";
+            this.filename = "Provided Reader";
         }
 
         this.selectedTsIds = selectedTsIds;
         log.info("Processing '{}'", filename);
-        LineNumberReader lnr = null;
         lineNum = 0;
-        try (Reader reader = new InputStreamReader(stream))
+        try (LineNumberReader lnr = new LineNumberReader(reader))
         {
-            lnr = new LineNumberReader(reader);
             String line = null;
             beginFile();
             while((line = lnr.readLine()) != null)
@@ -153,11 +183,6 @@ public class TsImporter
         catch(IOException ex)
         {
             log.warn("I/O Error.", ex);
-        }
-        finally
-        {
-            if (lnr != null)
-                try { lnr.close(); } catch(Exception ex) {}
         }
         return dc.values();
     }
