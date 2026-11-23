@@ -20,6 +20,7 @@ configurations {
 }
 
 dependencies {
+    testAnnotationProcessor(project(":opendcs-annotations")) // for those few embedded elements like algorithms we may have.
     implementation project(":install")
     implementation(libs.bundles.junit)
     implementation(libs.bundles.junit.platform)

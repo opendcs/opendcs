@@ -21,15 +21,16 @@ import io.restassured.filter.log.LogDetail;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
+
+import decodes.tsdb.algo.CopyAlgorithm;
 
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 final class AlgorithmResourcesIT extends BaseApiIT
@@ -139,7 +140,7 @@ final class AlgorithmResourcesIT extends BaseApiIT
 	@Test
 	void catalogImportRoundTrip()
 	{
-		String copyAlgoExecClass = "decodes.tsdb.algo.CopyAlgorithm";
+		final String copyAlgoExecClass = AlgoDut.class.getName();
 
 		// 1. GET catalog — CopyAlgorithm should be available and not yet imported
 		given()
@@ -247,10 +248,10 @@ final class AlgorithmResourcesIT extends BaseApiIT
 	@Test
 	void catalogImportAfterDeleteRoundTrip()
 	{
-		String copyAlgoExecClass = "decodes.tsdb.algo.CopyAlgorithm";
+		final String copyAlgoExecClass = AlgoDut.class.getName();
 
 		// Import CopyAlgorithm...
-		Long algorithmId = importCopyAlgorithm(copyAlgoExecClass);
+		Long algorithmId = importAlgorithm(copyAlgoExecClass);
 
 		// ...delete it...
 		given()
@@ -284,7 +285,7 @@ final class AlgorithmResourcesIT extends BaseApiIT
 			.body("findAll { it.execClass == '" + copyAlgoExecClass + "' }[0].alreadyImported", is(false))
 		;
 
-		Long reimportedId = importCopyAlgorithm(copyAlgoExecClass);
+		Long reimportedId = importAlgorithm(copyAlgoExecClass);
 		try
 		{
 			given()
@@ -321,7 +322,7 @@ final class AlgorithmResourcesIT extends BaseApiIT
 		}
 	}
 
-	private Long importCopyAlgorithm(String execClass)
+	private Long importAlgorithm(String execClass)
 	{
 		List<ApiAlgorithm> imported = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
@@ -344,5 +345,18 @@ final class AlgorithmResourcesIT extends BaseApiIT
 			.getList(".", ApiAlgorithm.class)
 		;
 		return imported.get(0).getAlgorithmId();
+	}
+
+
+	/**
+	 * We need an algorithm to load and delete that won't be used by the algorithm/comp execution tests.
+	 * This also conviently verifies we can load algorithms from the runtime class path.
+	 * (The api is running in the test JVM - if that ever becomes no true this will need to be adjusted)
+	 * AlgoDut
+	 */
+	@Algorithm(name = "copyAlgoForTest", description = "dummy instance so we can be destructive.")
+	public static final class AlgoDut extends CopyAlgorithm
+	{
+
 	}
 }

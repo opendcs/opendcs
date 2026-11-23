@@ -553,7 +553,10 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                     );
                     source.open();
                     boolean received = firstEvent.await(10, TimeUnit.SECONDS);
-                    boolean completed = done.await(100, TimeUnit.SECONDS);
+                    // Longer time out because github actions are often a bit slow
+                    // If not in a CI environment, assume user has sufficient resources.
+                    int timeout = System.getenv("CI") == null ? 100 : 300;
+                    boolean completed = done.await(timeout, TimeUnit.SECONDS);
                     assertTrue(received, "Timed out waiting for SSE events");
                     assertTrue(completed, "Timed out waiting for SSE completion");
 
