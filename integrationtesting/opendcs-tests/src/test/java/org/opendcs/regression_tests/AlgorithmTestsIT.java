@@ -633,6 +633,22 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                            .map(ats -> DTOMappers.dataMap(ats))
                            .map(cts -> Pair.of(ctx.getExpected(cts.getSDI()), cts))
                            .filter(cts -> cts != null)
+                           .map(cts ->
+                            {
+                                var parm = roleForTs(ctx.comp, comp, cts.second.getTimeSeriesIdentifier());
+                                // There are cases where units either aren't specified
+                                // and/or or forced to be explicit for a given computation
+                                // So they are returned in the computation forced units
+                                // In those cases we need to converted them to the expected units
+                                // before comparison. This is unfortunately normal behavior
+                                // that should be addressed in a future computation execution design.
+                                if (parm != null && (parm.getUnitsAbbr() == null || "unknown".equalsIgnoreCase(parm.getUnitsAbbr())))
+                                {
+                                    TSUtil.convertUnits(cts.second, cts.first.getUnitsAbbr());
+                                }
+                                return cts;
+                            }
+                           )
                            .forEach(pair -> 
                            {
                             assertEquals(pair.first, pair.second, "expected true", ctx.comp.getValidStart(),
@@ -640,7 +656,21 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                            });
                 }
             }
-    }    
+    }
+
+    private DbCompParm roleForTs(DbComputation rawComp, DbComputation concreteComp, TimeSeriesIdentifier tsId)
+    {
+        DbCompParm ret = null;
+        for (var parm: concreteComp.getParmList())
+        {
+            var parmTs = concreteComp.getExecutive().getParmTsId(parm.getRoleName());
+            if (tsId.equals(parmTs))
+            {
+                ret = rawComp.getParm(parm.getRoleName());
+            }
+        }
+        return ret;
+    }
 
     private static final class ExecutionContext
     {
