@@ -271,10 +271,14 @@ public class DbCompResolver
 				{
 					// The units were not specified in the computation, so we will have the concrete
 					// form set it here.
-					dcp.setUnitsAbbr(
-						parmTsid.getStorageUnits() != null
+					var units = parmTsid.getStorageUnits() != null
 						? parmTsid.getStorageUnits()
-						: theDb.getStorageUnitsForDataType(parmTsid.getDataType()));
+						: theDb.getStorageUnitsForDataType(parmTsid.getDataType());
+					if (units == null)
+					{
+						log.warn("Unable to establish units for {}", dcp.getRoleName());
+					}
+					dcp.setUnitsAbbr(units);
 				}
 			}
 			return comp;
