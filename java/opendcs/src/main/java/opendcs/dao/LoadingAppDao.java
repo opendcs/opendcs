@@ -659,8 +659,7 @@ public class LoadingAppDao extends DaoBase implements LoadingAppDAI
         }
         catch(SQLException ex)
         {
-            log.atWarn().setCause(ex).log("Error iterating results for query '{}'", q);
-            return new ArrayList<>();
+            throw new DbIoException("Cannot read computation process locks.", ex);
         }
     }
 

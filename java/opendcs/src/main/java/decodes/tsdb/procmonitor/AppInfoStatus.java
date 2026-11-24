@@ -59,6 +59,8 @@ public class AppInfoStatus
 	private ProcessMonitorFrame frame = null;
 	
 	private boolean checked = true;
+
+	private long queueCount = 0L;
 	
 	/** Constructed with immutable compAppInfo */
 	public AppInfoStatus(CompAppInfo compAppInfo, ProcessMonitorFrame frame)
@@ -126,5 +128,15 @@ public class AppInfoStatus
 	public void setChecked(boolean checked)
 	{
 		this.checked = checked;
+	}
+
+	public long getQueueCount()
+	{
+		return queueCount;
+	}
+
+	public void setQueueCount(long queueCount)
+	{
+		this.queueCount = queueCount;
 	}
 }

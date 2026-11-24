@@ -21,7 +21,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintStream;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
@@ -241,7 +240,7 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements Sorting
 		.getString("ProcessListPanel.TableColumn4") };
 	static int columnWidths[] = { 10, 25, 10, 55 };
 
-	static Class[] sortType = {Integer.class, String.class, Integer.class, String.class};
+	static Class[] sortType = {Long.class, String.class, Integer.class, String.class};
 	int sortedBy = -1;
 	int minProcId = -1;
 
@@ -387,48 +386,4 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements Sorting
 			return tmp;
 	}
 
-}
-
-class ProcessesListComparator implements Comparator<CompAppInfo>
-{
-	int column;
-	Class<?> sortType;
-
-	public ProcessesListComparator(int column, Class<?> sortType)
-	{
-		this.column = column;
-		this.sortType = sortType;
-	}
-
-	/**
-	 * Compare the eqMod names of the specified type.
-	 */
-	public int compare(CompAppInfo ds1, CompAppInfo ds2)
-	{
-		if (ds1 == ds2)
-			return 0;
-
-		Object s1 = ProcessesListPanelTableModel.getNlColumn(ds1, column);
-		Object s2 = ProcessesListPanelTableModel.getNlColumn(ds2, column);
-		if (sortType == Integer.class)
-		{
-			try
-			{
-				int i1 = (Integer)s1;
-				int i2 = (Integer)s2;
-				return i1 - i2;
-			}
-			catch(Exception ex)
-			{
-				/* fall through to string compare */
-			}
-		}
-
-		return ((String)s1).compareToIgnoreCase((String)s2);
-	}
-
-	public boolean equals(Object ob)
-	{
-		return false;
-	}
 }

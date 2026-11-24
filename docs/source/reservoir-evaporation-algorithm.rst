@@ -60,6 +60,7 @@ The following tables detail the Inputs, Outputs, and Properties for the ResEvap 
     :widths: 25, 60, 15
 
     "hourlySurfaceTemp", "Hourly surface temperature", "°C"
+    "hourlyEvapRate", "Hourly evaporation rate", "mm/hr"
     "hourlyEvapDepth", "Depth of hourly evaporation", "mm"
     "dailyEvapDepth", "Depth of daily evaporation", "mm"
     "dailyEvapAsFlow", "Daily evaporation as flow", "cms"
@@ -68,6 +69,22 @@ The following tables detail the Inputs, Outputs, and Properties for the ResEvap 
     "hourlySolar", "Hourly solar radiation", "W/m²"
     "hourlyLatent", "Hourly latent heat flux", "W/m²"
     "hourlySensible", "Hourly sensible heat flux", "W/m²"
+
+Upgrading existing computations
+-------------------------------
+
+``hourlyEvapRate`` was previously named ``hourlyEvap``, and
+``dailyEvapDepth`` was previously named ``dailyEvap``. The algorithm updater
+renames unambiguous existing assignments while keeping their time series and
+settings. See :ref:`algorithm-updates` for complete preview/apply commands,
+required credentials, and CWMS office configuration.
+
+``hourlyEvapDepth`` is a new output. The updater adds missing output parameters;
+assign a time series if you want to save that output. If both an old and a new
+parameter name already exist, the updater preserves the assignments and reports
+that they need review.
+
+The 7.0 computation editor does not have an **Update parameters** action.
 
 
 **Properties**
@@ -159,4 +176,3 @@ The following tables detail the Inputs, Outputs, and Properties for the ResEvap 
 
 .. note::
    See :ref:`ResEvap Documentation <resevap-computation>` to better understand how the algorithm behaves.
-

@@ -1,0 +1,5 @@
+SET:TZ=UTC
+SET:UNITS=cfs
+TSID:TESTSITE1.Flow.Inst.1Hour.0.irb-fallback-output
+2024/01/01-02:00:00,7.0,0
+2024/01/01-03:00:00,7.0,0

@@ -153,6 +153,15 @@ from the main menu. To add a new process click "New".
 #. Launch the Computations Editor and navigate to the "Processes"
 tab. To add a new process click "New".
 
+For CWMS databases, the Process Monitor also displays each process queue count
+and the total CCP queue. A rolling graph retains the total queue history from
+the past two hours, sampled every 10 seconds. Its time axis expands as history
+is collected, up to the two-hour retention window. Use "Process Queue Details"
+to group a selected process queue by time series, or "Stop and Clear Process
+Queue" to stop the process and delete its queued records. The process remains
+stopped after its queue is cleared and must be restarted manually using the
+normal startup procedure for your system.
+
 .. image:: ./media/start/computations/im-05-process.JPG
    :alt: new process window
    :width: 650
@@ -586,6 +595,17 @@ To stop a process add the following to a Stop or Off script.
 
    stopcomp -a compproc-examples
 
+For CWMS computation processes, add ``-Q`` to stop the process and clear its
+outstanding computation queue:
+
+::
+
+   stopcomp -a compproc-examples -Q
+
+The queue option permanently deletes queued computation triggers for the
+selected process. The process remains stopped afterward and must be restarted
+manually using the normal startup procedure for your system.
+
 
 More about Computations
 =======================
@@ -600,6 +620,3 @@ computations, including some of the following:
 * Redefining floor/ceiling criteria
 * Defining trigger input criteria
 * Writing custom algorithms that pull data from the database
-
-
-

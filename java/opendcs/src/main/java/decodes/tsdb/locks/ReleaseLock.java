@@ -5,15 +5,22 @@ import java.util.List;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dai.LoadingAppDAI;
 
 import decodes.tsdb.*;
+import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.db.Constants;
+import ilex.cmdline.BooleanToken;
+import ilex.cmdline.TokenOptions;
 
 public class ReleaseLock extends TsdbAppTemplate
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private BooleanToken clearQueueArg = new BooleanToken("Q",
+		"Clear the application's computation queue after stopping it.", "",
+		TokenOptions.optSwitch, false);
 
 	public ReleaseLock()
 	{
@@ -30,15 +37,17 @@ public class ReleaseLock extends TsdbAppTemplate
 		}
 		// Note, the -a arg will have us connect to the database as the
 		// desired application.
+		boolean releasedLock = false;
 		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 		try
 		{
 			List<TsdbCompLock> locks = loadingAppDAO.getAllCompProcLocks();
 			log.info("{} Locks Retrieved.", locks.size());
 			for(TsdbCompLock lock : locks)
-				if (lock.getAppId() == getAppId())
+				if (lock.getAppId().equals(getAppId()))
 				{
 					loadingAppDAO.releaseCompProcLock(lock);
+					releasedLock = true;
 					break;
 				}
 		}
@@ -46,6 +55,28 @@ public class ReleaseLock extends TsdbAppTemplate
 		{
 			loadingAppDAO.close();
 		}
+
+		if (clearQueueArg.getValue())
+		{
+			if (!theDb.isCwms())
+			{
+				log.error("-Q is only supported for CWMS computation queues.");
+				return;
+			}
+			if (releasedLock)
+				Thread.sleep(6000L);
+			try (ComputationQueueDAI queueDao = theDb.makeComputationQueueDAO())
+			{
+				int deleted = queueDao.clearQueueIfStopped(getAppId());
+				log.info("Deleted {} queued records for application {}.", deleted, appNameArg.getValue());
+			}
+		}
+	}
+
+	@Override
+	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
+	{
+		cmdLineArgs.addToken(clearQueueArg);
 	}
 	
 	public void initDecodes()

@@ -29,6 +29,9 @@ import lrgs.gui.DecodesInterface;
 
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.db.Database;
+import opendcs.dai.ComputationQueueDAI;
+import opendcs.dao.DatabaseConnectionOwner;
 
 public class ProcessMonitor extends TsdbAppTemplate
 {
@@ -37,6 +40,7 @@ public class ProcessMonitor extends TsdbAppTemplate
 	private ProcessMonitorFrame pmFrame = null;
 	private boolean exitOnClose = true;
 	private DbPollThread dbPollThread = null;
+	private DatabaseConnectionOwner databaseConnectionOwner = null;
 
 	public ProcessMonitor()
 	{
@@ -47,7 +51,11 @@ public class ProcessMonitor extends TsdbAppTemplate
 	@Override
 	protected void runApp() throws Exception
 	{
-		pmFrame = new ProcessMonitorFrame();
+		if (Database.getDb() != null
+		 && Database.getDb().getDbIo() instanceof DatabaseConnectionOwner)
+			databaseConnectionOwner = (DatabaseConnectionOwner)Database.getDb().getDbIo();
+
+		pmFrame = new ProcessMonitorFrame(databaseConnectionOwner);
 		pmFrame.setTsdb(theDb);
 		ImageIcon titleIcon = new ImageIcon(
 				EnvExpander.expand("$DECODES_INSTALL_DIR/icons/toolkit24x24.gif"));
@@ -102,6 +110,18 @@ public class ProcessMonitor extends TsdbAppTemplate
 	public TimeSeriesDb getTsdb() { return theDb; }
 
 	public ProcessMonitorFrame getFrame() { return pmFrame; }
+
+	public boolean isComputationQueueAvailable()
+	{
+		return databaseConnectionOwner != null && databaseConnectionOwner.isCwms();
+	}
+
+	public ComputationQueueDAI makeComputationQueueDao()
+	{
+		if (!isComputationQueueAvailable())
+			throw new IllegalStateException("Computation queue monitoring requires a CWMS database.");
+		return databaseConnectionOwner.makeComputationQueueDAO();
+	}
 
 	@Override
 	public void createDatabase()

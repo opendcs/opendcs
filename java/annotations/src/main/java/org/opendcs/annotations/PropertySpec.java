@@ -37,4 +37,6 @@ public @interface PropertySpec
     String value() default "";
     String propertySpecType() default "";
     String description() default "";
+    /** Previous names that can be migrated without losing configured values. */
+    String[] formerNames() default {};
 }

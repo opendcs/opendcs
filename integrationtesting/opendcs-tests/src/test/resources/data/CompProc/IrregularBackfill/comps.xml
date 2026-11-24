@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="IrregularBackfillQueuedAdder">
+    <ExecClass>decodes.tsdb.algo.BigAdder</ExecClass>
+    <AlgoParm roleName="input1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="IrregularBackfillQueued">
+    <Enabled>true</Enabled>
+    <CompProcName>compproc_regtest</CompProcName>
+    <AlgorithmName>IrregularBackfillQueuedAdder</AlgorithmName>
+    <CompProperty name="input1_MISSING">prev</CompProperty>
+    <CompProperty name="input1_TRIGGER_RANGE">next-or-now</CompProperty>
+    <CompProperty name="maxMissingTimeForFill">86400</CompProperty>
+    <CompProperty name="maxMissingValuesForFill">2147483647</CompProperty>
+    <CompParm roleName="input1">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>~15Minutes</Interval>
+      <TableSelector>Inst.0.irb-queue-gate</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="input2">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>15Minutes</Interval>
+      <TableSelector>Inst.0.irb-queue-driver</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>15Minutes</Interval>
+      <TableSelector>Inst.0.irb-queue-output</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>

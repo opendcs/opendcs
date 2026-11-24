@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="IrregularBackfillOutputInterval">
+    <ExecClass>decodes.tsdb.algo.BigAdder</ExecClass>
+    <AlgoParm roleName="input1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="Test2IrregularBackfill">
+    <Enabled>true</Enabled>
+    <AlgorithmName>IrregularBackfillOutputInterval</AlgorithmName>
+    <CompProperty name="input1_MISSING">prev</CompProperty>
+    <CompProperty name="input1_TRIGGER_RANGE">next-or-now</CompProperty>
+    <CompProperty name="maxMissingTimeForFill">9000</CompProperty>
+    <CompParm roleName="input1">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>0</Interval>
+      <TableSelector>Inst.0.irb-fallback-gate</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Flow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.irb-fallback-output</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>

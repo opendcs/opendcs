@@ -137,11 +137,11 @@ final public class ResEvapAlgo
     //AW:OUTPUTS
     @Output
     public NamedVariable hourlySurfaceTemp = new NamedVariable("hourlySurfaceTemp", 0);
-    @Output
+    @Output(formerNames = {"hourlyEvap"})
     public NamedVariable hourlyEvapRate = new NamedVariable(HOURLY_EVAP_RATE, 0);
     @Output
     public NamedVariable hourlyEvapDepth = new NamedVariable("hourlyEvapDepth", 0);
-    @Output
+    @Output(formerNames = {"dailyEvap"})
     public NamedVariable dailyEvapDepth = new NamedVariable(DAILY_EVAP_DEPTH, 0);
     @Output
     public NamedVariable dailyEvapAsFlow = new NamedVariable("dailyEvapAsFlow", 0);
@@ -368,6 +368,12 @@ final public class ResEvapAlgo
     @Override
     public void beforeAllTimeSlices() throws DbCompException
     {
+        // The executive is reused across compproc cycles; discard state from the previous run so it
+        // doesn't retain the old input time series and hourly profiles.
+        hourlyWTP = null;
+        resEvap = null;
+        reservoir = null;
+
         //initialize database connections
         siteDAO = tsdb.makeSiteDAO();
         timeSeriesDAO = tsdb.makeTimeSeriesDAO();
@@ -411,10 +417,12 @@ final public class ResEvapAlgo
         totalDailyEvapDepthM = 0.0;
         count = 0;
 
-        String evapInterval = getParmRef(DAILY_EVAP_DEPTH).tsid.getInterval();
-        String flowInterval = getParmRef("dailyEvapAsFlow").tsid.getInterval();
-        boolean evapIR = Objects.equals(evapInterval, IntervalCodes.int_one_day_dst);
-        boolean flowIR = Objects.equals(flowInterval, IntervalCodes.int_one_day_dst);
+        String evapInterval = getParmRef(DAILY_EVAP_DEPTH) == null || getParmRef(DAILY_EVAP_DEPTH).tsid == null
+                ? null : getParmRef(DAILY_EVAP_DEPTH).tsid.getInterval();
+        String flowInterval = getParmRef("dailyEvapAsFlow") == null || getParmRef("dailyEvapAsFlow").tsid == null
+                ? null : getParmRef("dailyEvapAsFlow").tsid.getInterval();
+        boolean evapIR = evapInterval == null || Objects.equals(evapInterval, IntervalCodes.int_one_day_dst);
+        boolean flowIR = flowInterval == null || Objects.equals(flowInterval, IntervalCodes.int_one_day_dst);
 
 
         if (aggTZ.useDaylightTime() && !(evapIR && flowIR))
@@ -486,7 +494,8 @@ final public class ResEvapAlgo
                 }
 
                 //initialize output timeseries
-                hourlyEvapRateTS = getParmRef(HOURLY_EVAP_RATE).timeSeries;
+                hourlyEvapRateTS = getParmRef(HOURLY_EVAP_RATE) == null
+                        ? null : getParmRef(HOURLY_EVAP_RATE).timeSeries;
 
                 //initialize input timeseries
                 windSpeedTS = getParmRef("windSpeed").timeSeries;
@@ -589,6 +598,10 @@ final public class ResEvapAlgo
                 //retrieve Evaporation Rate from Previous Timestep to be used to calculate average instantaneous EvapRate over the hour
                 try
                 {
+                    if (hourlyEvapRateTS == null)
+                    {
+                        throw new IllegalStateException("hourlyEvapRate output is not assigned");
+                    }
                     CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapRateTS.getTimeSeriesIdentifier());
                     cts.setUnitsAbbr("mm/hr");
                     TimedVariable prevTv = tsdb.getPreviousValue(cts, baseTimes.first());
@@ -736,6 +749,7 @@ final public class ResEvapAlgo
             {
                 throw new DbCompException("Failed to append hourly water temperature profiles", ex);
             }
+            trimHourlyProfiles();
         }
         else
         {
@@ -744,6 +758,27 @@ final public class ResEvapAlgo
 
 //AW:AFTER_TIMESLICES
 //AW:AFTER_TIMESLICES_END
+    }
+
+    /**
+     * Drop all but the last hour of each hourly water temperature profile once the day has been
+     * appended to dailyWTP. The hourly profiles are not saved, so keeping every hour for the whole
+     * compute window only consumes memory (large windows can be months of hours times every depth layer).
+     * NOTE: if hourlyWTP is ever saved (see the TODO in afterAllTimeSlices), it must be saved before
+     * this trim, or this trim removed.
+     */
+    private void trimHourlyProfiles()
+    {
+        for (CTimeSeries cts : hourlyWTP.getTimeSeries().getAllTimeSeries())
+        {
+            int size = cts.size();
+            if (size > 1)
+            {
+                TimedVariable last = cts.sampleAt(size - 1);
+                cts.deleteAll();
+                cts.addSample(last);
+            }
+        }
     }
 
     @Override

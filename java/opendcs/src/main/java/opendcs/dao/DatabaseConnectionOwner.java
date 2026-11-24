@@ -49,6 +49,7 @@ import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.ComputationQueueDAI;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
@@ -241,6 +242,19 @@ public interface DatabaseConnectionOwner
 	public ComputationDAI makeComputationDAO();
 
 	public CompDependsNotifyDAI makeCompDependsNotifyDAO();
+
+	/**
+	 * Construct a DAO for monitoring and clearing computation queues.
+	 *
+	 * @return the database-specific computation queue DAO
+	 * @throws UnsupportedOperationException if this database does not support
+	 * computation queue management
+	 */
+	public default ComputationQueueDAI makeComputationQueueDAO()
+	{
+		throw new UnsupportedOperationException(
+			"Computation queue management is not supported by this database.");
+	}
 	
 	/**
 	 * Factory method to make a DAO for Time Series

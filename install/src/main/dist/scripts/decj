@@ -173,16 +173,8 @@ while [[ ${#_ARGS[@]} -gt 0 ]]; do
     fi;
   fi
 done
-# remaining args are assumed correct as is and the application will deal
-while [[ ${#_ARGS[@]} -gt 0 ]]; do
-  arg="${_ARGS[0]}"
-  if [[ "$arg" =~ ^(-)?[a-zA-Z0-9\.]*$ ]]; then
-    APP_ARGS+=("${arg}") # pass through
-  else
-    APP_ARGS+=("${arg@Q}") # pass through, quoting the value
-  fi;
-  shift_globally "${_ARGS[@]}"
-done
+# Arguments after -- are already separate array elements; preserve them literally.
+APP_ARGS+=("${_ARGS[@]}")
 
 
 if [ "${LOGBACK_OVERRIDE+x}" ]; then
