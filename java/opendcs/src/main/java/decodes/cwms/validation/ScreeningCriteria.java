@@ -126,9 +126,13 @@ public class ScreeningCriteria
 	{
 		TimedVariable tv = input.findWithin(dataTime, alg.roundSec);
 		if (tv == null)
+		{
 			return;
+		}
 		if (!isUsableForScreening(tv, dataTime, alg))
+		{
 			return;
+		}
 
 		boolean setInputFlags = true;
 		boolean noOverwrite = false;
@@ -173,7 +177,9 @@ public class ScreeningCriteria
 		if (inputIsOutput)
 		{
 			if (alg instanceof ScreeningAlgorithm)
+			{
 				flags = ((ScreeningAlgorithm)alg).applyIfQuestionable(flags, tv.getFlags());
+			}
 			if ((flags&mask) != (tv.getFlags()&mask))
 				// Flags are changed as a result of validation.
 			{
@@ -212,7 +218,9 @@ public class ScreeningCriteria
 				}
 			}
 			if (alg instanceof ScreeningAlgorithm)
+			{
 				outputFlags = ((ScreeningAlgorithm)alg).applyIfQuestionable(outputFlags, tv.getFlags());
+			}
 			alg.clearFlagBits(output, mask);
 			alg.setFlagBits(output, outputFlags);
 		}
@@ -383,7 +391,9 @@ public class ScreeningCriteria
 				}
 			}
 			else if (rocPerHourChecks.size() > 0)
+			{
 				log.debug("Not checking dataTime={} because no usable previous value was found.", dataTime);
+			}
 				
 		}
 		
@@ -470,7 +480,9 @@ public class ScreeningCriteria
 	private Date rateComparisonTime(Date dataTime, AW_AlgorithmBase alg)
 	{
 		if (alg instanceof ScreeningAlgorithm)
+		{
 			return ((ScreeningAlgorithm)alg).rateComparisonTime(dataTime);
+		}
 		return new Date(dataTime.getTime() - 3600000L);
 	}
 
@@ -478,12 +490,18 @@ public class ScreeningCriteria
 		AW_AlgorithmBase alg)
 	{
 		if ((value.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) != 0)
+		{
 			return false;
+		}
 		if (!(alg instanceof ScreeningAlgorithm))
+		{
 			return true;
+		}
 		ScreeningAlgorithm scrAlg = (ScreeningAlgorithm)alg;
 		if (!scrAlg.checkOutputFlags || scrAlg.inputIsOutput())
+		{
 			return true;
+		}
 		decodes.tsdb.ParmRef outputParm = alg.getParmRef("output");
 		TimedVariable outputValue = outputParm == null ? null
 			: outputParm.timeSeries.findWithin(valueTime, alg.roundSec);
@@ -495,16 +513,22 @@ public class ScreeningCriteria
 		TimedVariable candidate, AW_AlgorithmBase alg)
 	{
 		if (candidate == null)
+		{
 			return null;
+		}
 		int idx = 0;
 		for (; idx < input.size() && input.sampleAt(idx) != candidate; idx++);
 		if (idx == input.size())
+		{
 			return null;
+		}
 		for (; idx >= 0; idx--)
 		{
 			TimedVariable value = input.sampleAt(idx);
 			if (isUsableForRateComparison(value, alg))
+			{
 				return value;
+			}
 		}
 		return null;
 	}
@@ -512,8 +536,10 @@ public class ScreeningCriteria
 	private boolean isUsableForRateComparison(TimedVariable value, AW_AlgorithmBase alg)
 	{
 		if (alg instanceof ScreeningAlgorithm)
+		{
 			return ((ScreeningAlgorithm)alg).isUsableForRateComparison(value,
 				alg.getParmRef("output"));
+		}
 		return (value.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0;
 	}
 	

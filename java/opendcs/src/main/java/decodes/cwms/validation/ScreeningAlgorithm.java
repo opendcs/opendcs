@@ -235,7 +235,9 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		{
 			TreeSet<Date> outputTimes = new TreeSet<Date>();
 			for (int idx = 0; idx < inputParm.timeSeries.size(); idx++)
+			{
 				outputTimes.add(inputParm.timeSeries.sampleAt(idx).getTime());
+			}
 			TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 			try { loadOutputFlags(timeSeriesDAO, outputParm, outputTimes); }
 			catch (Exception ex)
@@ -291,7 +293,9 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 //AW:TIMESLICE
 		if (!canScreen(_timeSliceBaseTime))
+		{
 			return;
+		}
 
 		ScreeningCriteria crit =
 			screening != null ? screening.findForDate(_timeSliceBaseTime, aggTZ) : null;
@@ -339,8 +343,10 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 		if (_questionOutput
 			&& (inputFlags & CwmsFlags.VALIDITY_MASK) == CwmsFlags.VALIDITY_QUESTIONABLE)
+		{
 			return (flags & ~CwmsFlags.VALIDITY_MASK)
 				| CwmsFlags.VALIDITY_QUESTIONABLE;
+		}
 		return flags;
 	}
 
@@ -349,9 +355,13 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		Variable inputV = _timeSliceVars.findByNameIgnoreCase("input");
 		if (inputV == null
 			|| (inputV.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) != 0)
+		{
 			return false;
+		}
 		if (!checkOutputFlags || inputIsOutput())
+		{
 			return true;
+		}
 		ParmRef outputParm = getParmRef("output");
 		TimedVariable outputV = outputParm == null ? null
 			: outputParm.timeSeries.findWithin(dataTime, roundSec);
@@ -369,17 +379,23 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			{
 				TimedVariable inputValue = inputParm.timeSeries.sampleAt(idx);
 				if (!VarFlags.wasAdded(inputValue))
+				{
 					continue;
+				}
 				ScreeningCriteria criteria = screening.findForDate(inputValue.getTime(), aggTZ);
 				if (criteria == null || !screening.isRocActive()
 					|| !criteria.hasRocPerHourChecks())
+				{
 					continue;
+				}
 				TimedVariable prior = inputParm.timeSeries.findWithin(
 					rateComparisonTime(inputValue.getTime()), roundSec);
 				while (prior != null)
 				{
 					if (timeSeriesDAO == null)
+					{
 						timeSeriesDAO = tsdb.makeTimeSeriesDAO();
+					}
 					if (checkOutputFlags && !inputIsOutput() && outputParm != null)
 					{
 						TreeSet<Date> outputTime = new TreeSet<Date>();
@@ -387,7 +403,9 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 						loadOutputFlags(timeSeriesDAO, outputParm, outputTime);
 					}
 					if (isUsableForRateComparison(prior, outputParm))
+					{
 						break;
+					}
 					prior = timeSeriesDAO.getPreviousValue(inputParm.timeSeries, prior.getTime());
 				}
 			}
@@ -399,7 +417,9 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		finally
 		{
 			if (timeSeriesDAO != null)
+			{
 				timeSeriesDAO.close();
+			}
 		}
 	}
 
@@ -407,10 +427,14 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		TreeSet<Date> outputTimes) throws Exception
 	{
 		if (timeSeriesDAO instanceof CwmsTimeSeriesDAO)
+		{
 			((CwmsTimeSeriesDAO)timeSeriesDAO).fillTimeSeries(
 				outputParm.timeSeries, outputTimes, true);
+		}
 		else
+		{
 			timeSeriesDAO.fillTimeSeries(outputParm.timeSeries, outputTimes);
+		}
 	}
 
 	boolean isUsableForRateComparison(TimedVariable inputValue, ParmRef outputParm)
@@ -418,9 +442,13 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		if (isMissingRejected(inputValue.getFlags())
 			|| (findPreviousForQuestionable()
 				&& isQuestionable(inputValue.getFlags())))
+		{
 			return false;
+		}
 		if (!checkOutputFlags || inputIsOutput())
+		{
 			return true;
+		}
 		TimedVariable outputValue = outputParm.timeSeries.findWithin(inputValue.getTime(), roundSec);
 		return outputValue == null
 			|| (!isMissingRejected(outputValue.getFlags())
@@ -436,7 +464,9 @@ public class ScreeningAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		IntervalIncrement outputInterval = outputTsid == null ? null
 			: IntervalCodes.getIntervalCalIncr(outputTsid.getInterval());
 		if (outputInterval == null || outputInterval.getCount() <= 0)
+		{
 			return new Date(dataTime.getTime() - 3600000L);
+		}
 		aggCal.setTime(dataTime);
 		aggCal.add(outputInterval.getCalConstant(), -outputInterval.getCount());
 		return aggCal.getTime();
