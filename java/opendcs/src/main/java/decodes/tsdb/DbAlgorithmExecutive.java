@@ -524,6 +524,8 @@ public abstract class DbAlgorithmExecutive
 			if (ref.tsid != null)
 			{
 				ref.timeSeries.setTimeSeriesIdentifier(ref.tsid);
+				var units = ref.compParm.getUnitsAbbr();
+				ref.timeSeries.setUnitsAbbr(units != null ? units : "raw");
 			}
 
 			log.atDebug()

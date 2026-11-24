@@ -274,10 +274,6 @@ public class DbCompResolver
 					var units = parmTsid.getStorageUnits() != null
 						? parmTsid.getStorageUnits()
 						: theDb.getStorageUnitsForDataType(parmTsid.getDataType());
-					if (units == null)
-					{
-						log.warn("Unable to establish units for {}", dcp.getRoleName());
-					}
 					dcp.setUnitsAbbr(units);
 				}
 			}
