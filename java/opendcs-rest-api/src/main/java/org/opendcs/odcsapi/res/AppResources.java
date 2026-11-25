@@ -252,7 +252,9 @@ public final class AppResources extends OpenDcsResource
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted application"),
 					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required appId parameter"),
-					@ApiResponse(responseCode = "409", description = "Unable to process request, Application is in use."),
+					@ApiResponse(responseCode = "409", description = "Unable to process request, Application is in use.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "404", description = "Not Found - No app found with the given ID"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			},

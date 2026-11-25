@@ -23,6 +23,7 @@ import decodes.db.DataSource;
 import decodes.db.DataSourceList;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
+import decodes.db.RoutingSpec;
 import decodes.db.ValueNotFoundException;
 import decodes.sql.DbKey;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,6 +46,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.database.dai.RoutingSpecDao;
 import org.opendcs.odcsapi.beans.ApiDataSource;
 import org.opendcs.odcsapi.beans.ApiDataSourceGroupMember;
 import org.opendcs.odcsapi.beans.ApiDataSourceRef;
@@ -378,14 +381,16 @@ public class DataSourceResources extends OpenDcsResource
 	@Operation(
 			summary = "Delete Existing Data Source",
 			description = "Required argument datasourceid must be passed. " +
-					"\n\nError 405 will be returned if datasource is used by one or more routing specs and cannot" +
+					"\n\nError 409 will be returned if datasource is used by one or more routing specs and cannot" +
 					" be deleted. The body of the error will be a message containing the name of the" +
 					" routing specs using the referenced datasource.",
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted data source"),
 					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required datasourceid parameter"),
 					@ApiResponse(responseCode = "404", description = "Not Found - No such data source"),
-					@ApiResponse(responseCode = "405", description = "Method Not Allowed - Currently in use by routing specs"),
+					@ApiResponse(responseCode = "409", description = "Conflict - Currently in use by routing specs",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			},
 			tags = {"REST - DECODES Data Source Records"}
@@ -409,12 +414,16 @@ public class DataSourceResources extends OpenDcsResource
 				throw new DatabaseItemNotFoundException(String.format("No such data source with ID: %s", datasourceId));
 			}
 
-			if (ds.numUsedBy > 0)
+			// readDataSource never fills ds.numUsedBy, so look the routing specs up directly.
+			List<String> usedBy = routingSpecsUsing(ds.getId());
+			if (!usedBy.isEmpty())
 			{
-				return Response.status(Response.Status.METHOD_NOT_ALLOWED)
-						.entity(" Cannot delete datasource with ID " + datasourceId
-								+ " because it is used by the following number of routing specs: "
-								+ ds.numUsedBy).build();
+				return Response.status(Response.Status.CONFLICT)
+						.entity(new Status("Cannot delete datasource with ID " + datasourceId
+								+ " because it is used by the following routing specs: "
+								+ String.join(", ", usedBy)))
+						.type(MediaType.APPLICATION_JSON)
+						.build();
 			}
 
 			dbIo.deleteDataSource(ds);
@@ -428,6 +437,27 @@ public class DataSourceResources extends OpenDcsResource
 		finally
 		{
 			dbIo.close();
+		}
+	}
+
+	private List<String> routingSpecsUsing(DbKey dataSourceId) throws WebAppException
+	{
+		final var db = createDb();
+		final var dao = db.getDao(RoutingSpecDao.class)
+						  .orElseThrow(() -> new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+								  "No RoutingSpec DAO available."));
+		try (var tx = db.newTransaction())
+		{
+			return tx.wrapErrors(() -> dao.getAll(tx, -1, -1, false)
+					.stream()
+					.filter(spec -> spec.dataSource != null && dataSourceId.equals(spec.dataSource.getId()))
+					.map(RoutingSpec::getName)
+					.toList());
+		}
+		catch (OpenDcsDataException ex)
+		{
+			throw new WebAppException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+					"Unable to check which routing specs use the data source.", ex);
 		}
 	}
 }

@@ -41,6 +41,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.EquipmentModelDao;
 import org.opendcs.odcsapi.beans.ApiEquipmentModel;
 import org.opendcs.odcsapi.beans.ApiEquipmentModelRef;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -190,6 +191,9 @@ public final class EquipmentResources extends OpenDcsResource
             responses = {
                     @ApiResponse(responseCode = "204", description = "Successfully deleted equipment model"),
                     @ApiResponse(responseCode = "400", description = "Bad Request - Missing required equipmentid parameter"),
+                    @ApiResponse(responseCode = "409", description = "Equipment model is in use and cannot be deleted",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = Status.class))),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )

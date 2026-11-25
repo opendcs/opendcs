@@ -52,6 +52,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.dai.SiteDao;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.beans.ApiSiteRef;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -337,6 +338,9 @@ public final class SiteResources extends OpenDcsResource
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Site deleted successfully"),
 					@ApiResponse(responseCode = "400", description = "Missing or invalid site ID parameter"),
+					@ApiResponse(responseCode = "409", description = "Site is in use and cannot be deleted",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal server error - see error message for details")
 			}
 	)

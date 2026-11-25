@@ -59,6 +59,7 @@ import org.opendcs.odcsapi.beans.ApiPlatformRef;
 import org.opendcs.odcsapi.beans.ApiPlatformSensor;
 import org.opendcs.odcsapi.beans.ApiPlatformStatus;
 import org.opendcs.odcsapi.beans.ApiTransportMedium;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -549,6 +550,9 @@ public final class PlatformResources extends OpenDcsResource
 					@ApiResponse(responseCode = "204", description = "Platform deleted successfully"),
 					@ApiResponse(responseCode = "400",
 							description = "Missing or invalid platform ID"),
+					@ApiResponse(responseCode = "409", description = "Platform is in use and cannot be deleted",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500",
 							description = "Database error occurred while deleting the platform")
 			},

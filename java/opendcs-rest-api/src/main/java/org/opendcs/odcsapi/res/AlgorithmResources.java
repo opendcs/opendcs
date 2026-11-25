@@ -427,6 +427,9 @@ public final class AlgorithmResources extends OpenDcsResource
 			responses = {
 					@ApiResponse(responseCode = "204", description = "Successfully deleted algorithm"),
 					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required parameter"),
+					@ApiResponse(responseCode = "409", description = "Conflict - Algorithm is used by one or more computations",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = Status.class))),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
