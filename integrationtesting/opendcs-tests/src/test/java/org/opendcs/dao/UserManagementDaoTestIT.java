@@ -206,6 +206,37 @@ class UserManagementDaoTestIT extends AppTestBase
     }
 
     @Test
+    void test_user_preferences_update() throws Exception
+    {
+        var userDao = db.getDao(UsersDao.class)
+                        .orElseGet(() -> fail("user dao not supported."));
+        var idpDao = db.getDao(IdentityProviderDao.class)
+                       .orElseGet(() -> fail("identity provider dao not supported."));
+        try (DataTransaction tx = db.newTransaction())
+        {
+            var idp = idpDao.addIdentityProvider(tx, new BuiltInIdentityProvider(DbKey.NullKey, "prefs-idp", null, null));
+            User userIn = new UserBuilder()
+                                .withEmail("prefs@test.com")
+                                .withPreference("preferredUserName", "prefs")
+                                .withIdentityMapping(new IdentityProviderMapping(idp, "prefs"))
+                                .build();
+            User userOut = userDao.addUser(tx, userIn);
+
+            HashMap<String, Object> preferences = new HashMap<>();
+            preferences.put("colorMode", "dark");
+            User updated = userDao.updatePreferences(tx, userOut.id, preferences);
+
+            assertEquals(preferences, updated.preferences, "preferences must be replaced, not merged");
+            assertEquals(userIn.email, updated.email);
+            assertEquals(1, updated.identityProviders.size(), "identity provider mappings must be left alone");
+            assertEquals("prefs", updated.identityProviders.get(0).subject);
+
+            userDao.deleteUser(tx, userOut.id);
+            idpDao.deleteIdentityProvider(tx, idp.getId());
+        }
+    }
+
+    @Test
     void test_user_pagination() throws Exception
     {
         var dao = db.getDao(UsersDao.class)
