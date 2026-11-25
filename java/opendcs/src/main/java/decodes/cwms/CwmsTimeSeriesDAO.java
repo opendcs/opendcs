@@ -440,19 +440,9 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                     return;
                 }
 
-                if (tv != null && ((tv.getFlags() & IFlags.IS_MISSING) == 0))
+                if (tv != null)
                 {
-                    if (unitConverter != null)
-                    {
-                        try
-                        {
-                            tv.setValue(unitConverter.convert(tv.getDoubleValue()));
-                        }
-                        catch (Exception ex)
-                        {
-                            log.warn("unable to fillTimeSeries: ", ex);
-                        }
-                    }
+                    trySetValue(unitConverter, tv);
                     cts.addSample(tv);
                     numAdded[0]++;
                 }
@@ -539,17 +529,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                                 return;
                             }
 
-                            if (unitConverter != null)
-                            {
-                                try
-                                {
-                                    tv.setValue(unitConverter.convert(tv.getDoubleValue()));
-                                }
-                                catch (Exception ex)
-                                {
-                                    log.warn("unable to set value.", ex);
-                                }
-                            }
+                            trySetValue(unitConverter, tv);
                             cts.addSample(tv);
                             numAdded[0]++;
                         }
@@ -1034,12 +1014,31 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         }
     }
 
+    private void trySetValue(UnitConverter unitConverter, TimedVariable sample)
+    {
+        if (unitConverter != null && !isMissing(sample))
+        {
+            try
+            {
+                sample.setValue(unitConverter.convert(sample.getDoubleValue()));
+            }
+            catch (Exception ex)
+            {
+                log.warn("Unable to convert time series sample.", ex);
+            }
+        }
+    }
+
+    private static boolean isMissing(TimedVariable sample)
+    {
+        return (sample.getFlags() & IFlags.IS_MISSING) != 0;
+    }
+
     /**
      * Pass ResultSet containing DATE_TIME, VALUE, QUALITY_CODE.
      * NOTE: *always* returns a timed variable. Including if value null or flag is marked missing.
      * CWMS May embedded additional information in flags that may determine additional behavior for an algorithm
      * receiving a missing value.
-     * @return TimedVariable or null if this value flagged as missing.
      */
     private TimedVariable rs2TimedVariable(ResultSet rs)
         throws SQLException
@@ -1047,8 +1046,13 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         Date timeStamp = db.getFullDate(rs, 1);
         double value = rs.getDouble(2);
 
+        boolean missingValue = rs.wasNull() || Double.isInfinite(value);
         long lf = rs.getLong(3);
         int f =    CwmsFlags.cwmsQuality2flag(lf);
+        if (missingValue || (f & CwmsFlags.VALIDITY_MISSING) != 0)
+        {
+            f |= IFlags.IS_MISSING;
+        }
 
         TimedVariable tv = new TimedVariable(value);
         tv.setTime(timeStamp);
