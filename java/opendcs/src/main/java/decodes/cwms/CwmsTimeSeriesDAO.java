@@ -408,7 +408,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             parameters.add(until);
         }
         // do not exclude by infinity, irregular time series especially the presense of a row
-        // has meaning even if the value is missing. Thus we all *all* rows returned.
+        // has meaning even if the value is missing. Thus we want *all* rows returned.
         try
         {
             int numAdded[] = new int[1];
