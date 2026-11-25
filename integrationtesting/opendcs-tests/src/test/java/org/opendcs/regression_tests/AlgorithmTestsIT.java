@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -19,7 +20,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import decodes.db.Constants;
@@ -181,7 +181,6 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
                                     Arrays.stream(comp.listFiles(File::isDirectory))
                                          .filter(test -> filterTest == "" || filterTest.equals(comp.getName()+test.getName()))
                                          .map(test -> getDynamicTest(test, comp, importer, tsDao))
-                                         .collect(Collectors.toList())
                                 )
                             );
                         }
@@ -630,9 +629,9 @@ public class AlgorithmTestsIT extends BaseApiIT // we also want to run these thr
 		            var dataOut = compResult.getData();
                     assertNotNull(dataOut);
                     dataOut.stream()
-                           .map(ats -> DTOMappers.dataMap(ats))
+                           .map(DTOMappers::dataMap)
                            .map(cts -> Pair.of(ctx.getExpected(cts.getSDI()), cts))
-                           .filter(cts -> cts != null)
+                           .filter(Objects::nonNull)
                            .map(cts ->
                             {
                                 var parm = roleForTs(ctx.comp, comp, cts.second.getTimeSeriesIdentifier());
