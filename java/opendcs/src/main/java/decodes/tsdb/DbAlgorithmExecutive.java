@@ -524,8 +524,11 @@ public abstract class DbAlgorithmExecutive
 			if (ref.tsid != null)
 			{
 				ref.timeSeries.setTimeSeriesIdentifier(ref.tsid);
-				var units = ref.compParm.getUnitsAbbr();
-				ref.timeSeries.setUnitsAbbr(units != null ? units : "raw");
+				// The stored computation rarely carries units for its roles, so ask the resolved
+				// time series what it stores. 'raw' says "there are no units", which is wrong for
+				// stored data and makes every later conversion quietly do nothing.
+				var units = DbCompResolver.unitsFor(tsdb, ref.compParm, ref.tsid);
+				ref.timeSeries.setUnitsAbbr(units);
 			}
 
 			log.atDebug()

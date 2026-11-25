@@ -149,7 +149,7 @@ public class DataCollection
 				+ ", selector=" + ts.getTableSelector());
 		}
 
-		if (ts.getUnitsAbbr() == null || "uknown".equalsIgnoreCase(ts.getUnitsAbbr()))
+		if (ts.getUnitsAbbr() == null || "unknown".equalsIgnoreCase(ts.getUnitsAbbr()))
 		{
 			throw new OpenDcsDataRuntimeException("Attempt to save Time series " + ts.getDisplayName() + " with no units.");
 		}
