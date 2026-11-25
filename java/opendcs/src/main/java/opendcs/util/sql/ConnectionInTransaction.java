@@ -28,4 +28,10 @@ public class ConnectionInTransaction extends WrappedConnection
             throw new SQLException("This connection is in a specific transaction. The auto commit state cannot be changed.");
         }
     }
+
+    @Override
+    public void close()   throws SQLException
+    {
+        throw new SQLException("cant vclosw ot mine");
+    }
 }

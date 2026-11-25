@@ -368,9 +368,7 @@ public class DataTypeDAO extends DaoBase implements DataTypeDAI
 			if (msg.toLowerCase().contains("unique"))
 				; // Do nothing. It means equivalence is already asserted.
 			else
-			{
-				log.warn("Cannot assert equivalence '{}'", q);
-			}
+				log.atWarn().setCause(ex).log("Cannot assert equivalence '{}'", q);
 		}
 	}
 }

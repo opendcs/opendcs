@@ -1,4 +1,5 @@
 org.opendcs.fixtures.configurations.xml.XmlConfigurationProvider
 org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfigurationProvider
+org.opendcs.fixtures.configurations.opendcs.sqlite.OpenDCSSqliteConfigurationProvider
 org.opendcs.fixtures.configurations.cwms.CwmsOracleConfigurationProvider
 org.opendcs.fixtures.configurations.opendcs.oracle.OpenDCSOracleConfigurationProvider
