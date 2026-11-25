@@ -55,6 +55,7 @@ const baseHandlers = {
     HttpResponse.json<ApiPlatformConfig>({}),
   ),
   deleteConfig: http.delete("/odcsapi/config", () => HttpResponse.json({})),
+  equipmentRefs: http.get("/odcsapi/equipmentrefs", () => HttpResponse.json([])),
 };
 
 const meta = {
