@@ -12,6 +12,10 @@
 */
 package decodes.tsdb;
 
+import java.util.Objects;
+
+import ilex.util.TextUtil;
+
 /**
 This is a data-structure class holding meta-data for a single parameter
 for an algorithm.
@@ -70,5 +74,31 @@ public class DbAlgoParm
 	public void setParmType(String parmType)
 	{
 		this.parmType = parmType;
+	}
+
+	@Override
+	public String toString()
+	{
+		return String.format("AlgoTsParm{roleName=%s, type=%s}", roleName, parmType);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj instanceof DbAlgoParm rhs)
+		{
+			return TextUtil.strEqual(roleName, rhs.roleName) && TextUtil.strEqual(parmType, rhs.parmType);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(roleName, parmType);
 	}
 }

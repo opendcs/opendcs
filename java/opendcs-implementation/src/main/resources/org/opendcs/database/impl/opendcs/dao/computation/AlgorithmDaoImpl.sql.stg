@@ -1,0 +1,60 @@
+group AlgorithmDaoImpl;
+
+select(algo_columns, parm_columns, parm_join, script_columns, script_join, prop_columns, prop_join, where, limit,
+       collate, dual, algo_prefix, parm_prefix, script_prefix, prop_prefix) ::= <<
+with algos(id, name) as (
+    select algorithm_id, algorithm_name
+      from cp_algorithm <algo_prefix>
+      <if(where)>where <where><endif>
+      order by <algo_prefix>.algorithm_name <collate> asc
+      <if(limit)><limit><endif>
+)
+select 
+    <algo_columns>,
+    <parm_columns>
+    <if(script_columns)>, <script_columns> <endif>
+    <if(prop_columns)>, <prop_columns> <endif>
+from algos
+join cp_algorithm <algo_prefix> on <algo_prefix>.algorithm_id = algos.id
+<parm_join>
+<if(script_join)> <script_join> <endif>
+<if(prop_join)> <prop_join> <endif>
+order by <algo_prefix>.algorithm_name <collate> asc, <parm_prefix>.algo_role_name <collate> asc
+<if(script_join)> , <script_prefix>.script_type <collate> asc, <script_prefix>.block_num asc <endif>
+
+>>
+
+
+merge(dual) ::= <<
+merge into cp_algorithm algo
+using (select
+        :algorithm_id algorithm_id, :algorithm_name algorithm_name, 
+        :exec_class exec_class, :cmmnt cmmnt <dual>) input
+on (algo.algorithm_id = input.algorithm_id)
+when matched then
+    update set algorithm_name = input.algorithm_name, exec_class = input.exec_class,
+               cmmnt = input.cmmnt
+when not matched then
+    insert (algorithm_id, algorithm_name, exec_class, cmmnt)
+    values (input.algorithm_id, input.algorithm_name, input.exec_class, input.cmmnt)
+>>
+
+deleteAlgo() ::= "delete from cp_algorithm where algorithm_id = :id"
+deleteProps() ::= "delete from cp_algo_property where algorithm_id = :id"
+deleteScripts() ::= "delete from cp_algo_script where algorithm_id = :id"
+deleteParms() ::= "delete from cp_algo_ts_parm where algorithm_id = :id"
+
+insertProp() ::= <<
+insert into cp_algo_property(algorithm_id, prop_name, prop_value)
+values (:algorithm_id, :name, :prop_value)
+>>
+
+insertScript() ::= <<
+insert into cp_algo_script(algorithm_id, script_type, block_num, script_data)
+values (:algorithm_id, :script_type, :block_num, :script_data)
+>>
+
+insertParm() ::= <<
+insert into cp_algo_ts_parm(algorithm_id, algo_role_name, parm_type)
+values (:algorithm_id, :algo_role_name, :parm_type)
+>>

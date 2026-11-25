@@ -18,6 +18,16 @@ public interface TableColumnDefinition
     String column();
 
     /**
+     * Some table definition will create and use "virtual" columns.
+     * Pulled in from other tables. This allows them to override this behavior.
+     * @return
+     */
+    default boolean includeInSelect()
+    {
+        return true;
+    }
+
+    /**
      *
      * @param <T> Expected Enum type
      * @param enumClass Class for the enum type
@@ -35,5 +45,5 @@ public interface TableColumnDefinition
             }
         }
         return Optional.empty();
-    }
+    }    
 }
