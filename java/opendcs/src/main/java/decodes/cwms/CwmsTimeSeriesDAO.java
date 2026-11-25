@@ -16,6 +16,7 @@
 package decodes.cwms;
 
 import ilex.util.TextUtil;
+import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
@@ -439,7 +440,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                     return;
                 }
 
-                if (tv != null && ((tv.getFlags() & TimedVariable.IS_MISSING) == 0))
+                if (tv != null && ((tv.getFlags() & IFlags.IS_MISSING) == 0))
                 {
                     if (unitConverter != null)
                     {

@@ -42,38 +42,38 @@ public abstract interface IFlags
 	* Do not define any application-specific bits in the reserved mask.
 	* These bits are defined herein or are reserved for future use.
 	*/
-	public static final int RESERVED_MASK = 0xf0000000; 
+	final int RESERVED_MASK = 0xf0000000; 
 
 	/**
 	* You can define any bits within this mask for application-specific
 	* meaning. The Variable family of classes do not use these bits.
 	*/
-	public static final int APPLICATION_MASK = 0x0fffffff;
+	final int APPLICATION_MASK = 0x0fffffff;
 
  	/**
 	* If the IS_CHANGED bit is set, this variable (or list) has been modified
 	* since the last time resetChanged() was called. You can check the value
 	* of this bit by calling isChanged().
 	*/
-	public static final int IS_CHANGED = 0x10000000; 
+	final int IS_CHANGED = 0x10000000; 
 
 	/**
 	* If the IS_ERROR flag is set, it means the value contains an error,
 	* and should probably not be used.
 	*/
-	public static final int IS_ERROR = 0x20000000;
+	final int IS_ERROR = 0x20000000;
 
 	/**
 	* The IS_MISSING flag means that this variable is a place-holder and
 	* actually contains no usable data. The delegate is most-likely an
 	* integer.
 	*/
-	public static final int IS_MISSING = 0x40000000;
+	final int IS_MISSING = 0x40000000;
 	
 	/**
 	* Value is out of preset limits
 	*/
-	public static final int LIMIT_VIOLATION = 0x80000000;
+	final int LIMIT_VIOLATION = 0x80000000;
 
 	/**
 	* @return the complete 32-bit integer flag value.
