@@ -16,6 +16,7 @@
 package decodes.cwms;
 
 import ilex.util.TextUtil;
+import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
@@ -232,7 +233,6 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                 ret.setDataType(dbdt);
             }
         }
-
         return ret;
     }
 
@@ -407,7 +407,8 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             q.append(" AND DATE_TIME " + upper_check + " ?");
             parameters.add(until);
         }
-        q.append(" AND VALUE IS NOT INFINITE");
+        // do not exclude by infinity, irregular time series especially the presense of a row
+        // has meaning even if the value is missing. Thus we want *all* rows returned.
         try
         {
             int numAdded[] = new int[1];
@@ -441,17 +442,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
                 if (tv != null)
                 {
-                    if (unitConverter != null)
-                    {
-                        try
-                        {
-                            tv.setValue(unitConverter.convert(tv.getDoubleValue()));
-                        }
-                        catch (Exception ex)
-                        {
-                            log.warn("unable to fillTimeSeries: ", ex);
-                        }
-                    }
+                    trySetValue(unitConverter, tv);
                     cts.addSample(tv);
                     numAdded[0]++;
                 }
@@ -500,8 +491,9 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             end++;
             if (end - start >= datesPerQuery || end == size)
             {
-                sb.append(")");
-                sb.append(" AND VALUE IS NOT INFINITE");
+                sb.append(") ");
+                // do not exclude by infinity, irregular time series especially the presense of a row
+                // has meaning even if the value is missing. Thus we all *all* rows returned.
                 String q = qbase + sb.toString();
                 sb.setLength(0);
                 start = end;
@@ -537,17 +529,7 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
                                 return;
                             }
 
-                            if (unitConverter != null)
-                            {
-                                try
-                                {
-                                    tv.setValue(unitConverter.convert(tv.getDoubleValue()));
-                                }
-                                catch (Exception ex)
-                                {
-                                    log.warn("unable to set value.", ex);
-                                }
-                            }
+                            trySetValue(unitConverter, tv);
                             cts.addSample(tv);
                             numAdded[0]++;
                         }
@@ -592,8 +574,8 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
              +       " and date_time < ?"
             +         " AND VALUE IS NOT NULL "
             +         " AND BITAND(QUALITY_CODE, ?) = 0 "
-            +    ")"
-            + " AND VALUE IS NOT INFINITE";
+            +    ") "
+            + " AND VALUE IS NOT INFINITE"; // infinite/missing check is here as the logic is "last actual value"
 
         ArrayList<Object> parameters = new ArrayList<>();
         parameters.add(cts.getSDI());
@@ -651,11 +633,11 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
             + " and DATE_TIME = "
             +   "(select min(date_time) from CWMS_V_TSV "
             +       "where TS_CODE = ?"
-             +       " and date_time > ?"
+            +       " and date_time > ?"
             +         " AND VALUE IS NOT NULL "
             +         " AND BITAND(QUALITY_CODE, ?) = 0 "
-            +    ")"
-            + " AND VALUE IS NOT INFINITE";
+            +    ") "
+            + " AND VALUE IS NOT INFINITE"; // infinite/missing check is here as the logic is "last actual value"
         ArrayList<Object> parameters = new ArrayList<>();
         parameters.add(cts.getSDI());
         parameters.add(cts.getSDI());
@@ -1032,9 +1014,31 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         }
     }
 
+    private void trySetValue(UnitConverter unitConverter, TimedVariable sample)
+    {
+        if (unitConverter != null && !isMissing(sample))
+        {
+            try
+            {
+                sample.setValue(unitConverter.convert(sample.getDoubleValue()));
+            }
+            catch (Exception ex)
+            {
+                log.warn("Unable to convert time series sample.", ex);
+            }
+        }
+    }
+
+    private static boolean isMissing(TimedVariable sample)
+    {
+        return (sample.getFlags() & IFlags.IS_MISSING) != 0;
+    }
+
     /**
      * Pass ResultSet containing DATE_TIME, VALUE, QUALITY_CODE.
-     * @return TimedVariable or null if this value flagged as missing.
+     * NOTE: *always* returns a timed variable. Including if value null or flag is marked missing.
+     * CWMS May embedded additional information in flags that may determine additional behavior for an algorithm
+     * receiving a missing value.
      */
     private TimedVariable rs2TimedVariable(ResultSet rs)
         throws SQLException
@@ -1042,16 +1046,12 @@ public class CwmsTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
         Date timeStamp = db.getFullDate(rs, 1);
         double value = rs.getDouble(2);
 
-        // Check for missing, deleted, or rejected data
-        if (rs.wasNull())
-        {
-            return null;
-        }
+        boolean missingValue = rs.wasNull() || Double.isInfinite(value);
         long lf = rs.getLong(3);
         int f =    CwmsFlags.cwmsQuality2flag(lf);
-        if ((f & CwmsFlags.VALIDITY_MISSING) != 0)
+        if (missingValue || (f & CwmsFlags.VALIDITY_MISSING) != 0)
         {
-            return null;
+            f |= IFlags.IS_MISSING;
         }
 
         TimedVariable tv = new TimedVariable(value);

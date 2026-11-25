@@ -321,8 +321,8 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			try { offsetErrorAction = OffsetErrorAction.valueOf(s.toUpperCase()); }
 			catch(Exception ex)
 			{
-				log.atWarn().setCause(ex).log("Invalid value for offsetErrorAction '{}", s);
-				offsetErrorAction = null;
+				log.atWarn().setCause(ex).log("Invalid value for offsetErrorAction '{}', using default value of ignore", s);
+				offsetErrorAction = OffsetErrorAction.IGNORE;
 			}
 		}
 
@@ -1409,7 +1409,6 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			storageUnits = dp.getUnitsAbbr();
 			ctsid.setStorageUnits(storageUnits);
 		}
-
 
 		ctsid.setKey(getKey("TS_SPEC"));
 		String q = "insert into TS_SPEC(" + ts_spec_columns + ") values ("

@@ -266,6 +266,8 @@ public class DbCompResolver
 				{
 					throw new NoSuchObjectException("Cannot resolve parm " + parmName);
 				}
+
+				dcp.setUnitsAbbr(unitsFor(theDb, dcp, parmTsid));
 			}
 			return comp;
 		}
@@ -280,6 +282,33 @@ public class DbCompResolver
 			throw new DbIoException("Cannot resolve computation '" + comp.getName()
 				+ "' for input " + tsid.getDisplayName(), ex);
 		}
+	}
+
+	/**
+	 * What units the data for a parameter is in. A computation may ask for specific units on
+	 * the role; otherwise the time series' storage units decide, falling back to the default
+	 * for the data type. Only returns null when nothing can say, which is not the same as
+	 * being unit-less: labeling stored data as 'raw' makes every later conversion a silent
+	 * no-op.
+	 *
+	 * @param theDb the time series database
+	 * @param parm the parameter, may be null
+	 * @param tsid the resolved time series identifier for the parameter, may be null
+	 * @return the units abbreviation, or null if it cannot be determined
+	 */
+	public static String unitsFor(TimeSeriesDb theDb, DbCompParm parm, TimeSeriesIdentifier tsid)
+	{
+		if (parm != null && parm.getUnitsAbbr() != null)
+		{
+			return parm.getUnitsAbbr();
+		}
+		if (tsid == null)
+		{
+			return null;
+		}
+		return tsid.getStorageUnits() != null
+			? tsid.getStorageUnits()
+			: theDb.getStorageUnitsForDataType(tsid.getDataType());
 	}
 
 	/**

@@ -136,6 +136,7 @@ public class DbCompParm
 		this.dataType = rhs.dataType;
 		this.site.copyFrom(rhs.site);
 		this.site.forceSetId(rhs.site.getId());
+		this.unitsAbbr = rhs.unitsAbbr;
 	}
 
 	/**
@@ -341,7 +342,7 @@ public class DbCompParm
 	{
 		return algoRoleName + "(" + algoParmType + "):"
 			+ getSiteDataTypeId() + ":" + interval + ":" + tableSelector
-			+ ":deltaT=" + deltaT + "(" + deltaTUnits + ")";
+			+ ":deltaT=" + deltaT + "(" + deltaTUnits + "):units=" + unitsAbbr;
 	}
 
 	public boolean equals(DbCompParm rhs)

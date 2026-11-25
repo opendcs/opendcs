@@ -297,7 +297,7 @@ public final class ComputationResources extends OpenDcsResource
 					var typeVal = p.getParamType() != null ? p.getParamType() : "";
 					var durationVal = p.getDuration() != null ? p.getDuration() : "";
 					var versionVal = p.getVersion() != null ? p.getVersion() : "";
-					
+
 					p.setTableSelector(typeVal + "." + durationVal + "." + versionVal);
 				});
 			DbComputation dbComp = DTOMappers.map(comp);
@@ -614,17 +614,34 @@ public final class ComputationResources extends OpenDcsResource
 		return comp;
 	}
 
-	/** Roles of the input parms that cannot currently be resolved to a stored time series. */
+	/**
+	 * Roles of the parms that cannot currently be resolved to a stored time series.
+	 * Attempts to expand parameter time series regardless of input/output.
+	 * This allows getting appropriate units set on the algorithm parmref time series which
+	 * only happens with the resolver when exanding a group computation.
+	 *
+	 * NOTE: I *think* the ComputationApp resolve just always passes computations into makeConrete regardless
+	 * of whether it's a group comp. In that case this endpoint should just behave the same way. However, the
+	 * PR this was written for was for just running a group comp correctly in the UI when there were unmapped roles
+	 * and the need to fix the units was just a side affect.
+	 *
+	 * Further consolidations of behavior in regards to computation execution will be performed in a follow up.
+	 *
+	 * I also think the the endpoint should bother with gathering the data and ComputationExecution should *only and always*
+	 * just take a DataCollection object to expand... but that's certainly up for debate, to be had later.
+	 *
+	 * In the mean time, for anyone else that edits computation execution from the api or anywhere else; please be
+	 * careful of your assumptions. Good news is, there's more tests so more issues should be caught early.
+	 *
+	 * @param comp
+	 * @return
+	 */
 	private List<String> unresolvedInputRoles(DbComputation comp)
 	{
 		TimeSeriesDb tsdb = getLegacyTimeseriesDB();
 		List<String> unresolved = new ArrayList<>();
 		for(DbCompParm parm : comp.getParmList())
 		{
-			if (!parm.isInput())
-			{
-				continue;
-			}
 			try
 			{
 				// expandSDI also fills the parm's site and data type, which is what the executive
@@ -636,7 +653,7 @@ public final class ComputationResources extends OpenDcsResource
 			}
 			catch(DbIoException | NoSuchObjectException ex)
 			{
-				log.debug("Input parm '{}' does not resolve -- {}", parm.getRoleName(), ex.getMessage());
+				log.debug("{} parm '{}' does not resolve -- {}", parm.isInput() ? "Input" : "Output", parm.getRoleName(), ex.getMessage());
 				unresolved.add(parm.getRoleName());
 			}
 		}

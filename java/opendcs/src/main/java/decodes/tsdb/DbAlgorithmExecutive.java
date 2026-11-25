@@ -103,7 +103,7 @@ public abstract class DbAlgorithmExecutive
 	 * The default is [lower,upper)
 	 */
 	protected boolean aggUpperBoundClosed = false;
-	
+
 	/** If true, then deltas can be interpolated up to maxDeltaInterp intervals */
 	protected boolean interpDeltas = false;
 
@@ -428,13 +428,14 @@ public abstract class DbAlgorithmExecutive
 	 */
 	private void mapParm(String role, TimeSeriesDb tsdb)
 	{
-		log.debug("mapParm({})", role);
 		DbCompParm parm = comp.getParm(role);
+
 		if (parm == null)
 		{
 			log.debug("No param defined for role '{}'", role);
 			return;
 		}
+		log.debug("mapParm({}) -> {}", role, parm);
 
 		TimeSeriesIdentifier tsid = null;
 		try
@@ -449,7 +450,13 @@ public abstract class DbAlgorithmExecutive
 
 		ParmRef parmRef = new ParmRef(role, parm, null);
 		if (tsid != null)
+		{
 			parmRef.tsid = tsid;
+		}
+		else
+		{
+			return; // if we don't have a full time series by now, we don't have an assigned role.
+		}
 
 		// Retrieve the 'missing action' property, either specific to this
 		// role, or global for the whole algorithm.
@@ -515,15 +522,22 @@ public abstract class DbAlgorithmExecutive
 			if (TextUtil.strEqualIgnoreCase(tabsel, "M_"))
 				ref.timeSeries.setModelRunId(modelRunId);
 			if (ref.tsid != null)
+			{
 				ref.timeSeries.setTimeSeriesIdentifier(ref.tsid);
+				// The stored computation rarely carries units for its roles, so ask the resolved
+				// time series what it stores. 'raw' says "there are no units", which is wrong for
+				// stored data and makes every later conversion quietly do nothing.
+				var units = DbCompResolver.unitsFor(tsdb, ref.compParm, ref.tsid);
+				ref.timeSeries.setUnitsAbbr(units);
+			}
+
 			log.atDebug()
 			   .log(() -> "addTsToParmRef: Made empty time series for "
 						+ ref.getDescription()
 						+ ", sdiIsUnique=" + TimeSeriesDb.sdiIsUnique
 						+ ", sdi=" + ref.compParm.getSiteDataTypeId() + ", intv='"
-						+ intv + "', + tabsel='" + tabsel + "'");
-
-
+						+ intv + "', + tabsel='" + tabsel + "'"
+						+ ", units=" + ref.timeSeries.getUnitsAbbr());
 			try { dc.addTimeSeries(ref.timeSeries); }
 			catch(DuplicateTimeSeriesException ex)
 			{
@@ -554,7 +568,9 @@ public abstract class DbAlgorithmExecutive
 		// Make sure params are in the correct units.
 		String propName = ref.role + "_EU";
 		String neededEU = comp.getProperty(propName);
-		log.trace("addTsToParmRef: propName='{}', neededEU='{}'", propName, neededEU);
+
+		log.trace("addTsToParmRef: propName='{}', neededEU='{}', currentEu='{}'",
+				  propName, neededEU, ref.timeSeries.getUnitsAbbr());
 		if (neededEU != null)
 		{
 			String tsEU = ref.timeSeries.getUnitsAbbr();

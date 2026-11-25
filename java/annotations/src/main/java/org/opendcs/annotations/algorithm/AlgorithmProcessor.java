@@ -93,7 +93,20 @@ final public class AlgorithmProcessor extends AbstractProcessor
             out.writeCharacters(algo.description());
             out.writeEndElement();
             out.writeStartElement("ExecClass");
-            out.writeCharacters(element.toString());
+            // We need the binary name here. Otherwise a nested class looses its $ and the system
+            // can't create an instance. Why would an Algorithm be in a nested class you ask?
+            // To be fair, can't directly think of a good reason, though not a bad way to have shared then additional
+            // behavior for something very related. At the moment, the resason is to contain an "test" algorithm
+            // in a test class so it is difficult for anything else to use it.
+            if (element instanceof TypeElement te)
+            {
+                out.writeCharacters(processingEnv.getElementUtils().getBinaryName(te).toString());
+            }
+            else // In theory this should always be a type element; however, we at least want to not fail and this was
+                 // working for most cases.
+            {
+                out.writeCharacters(element.toString());
+            }
             out.writeEndElement();
 
             writeProperties(out, element);

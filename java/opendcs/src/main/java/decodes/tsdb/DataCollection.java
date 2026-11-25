@@ -26,6 +26,8 @@ package decodes.tsdb;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.opendcs.database.api.OpenDcsDataRuntimeException;
+
 import ilex.util.TextUtil;
 import decodes.db.Constants;
 import decodes.sql.DbKey;
@@ -140,10 +142,17 @@ public class DataCollection
 		if (getTimeSeries(ts.getSDI(), ts.getInterval(), ts.getTableSelector(),
 			ts.getModelRunId())
 			!= null)
+		{
 			throw new DuplicateTimeSeriesException(
 				"Time Series already exists with SDI=" + ts.getSDI()
 				+ ", interval=" + ts.getInterval() 
 				+ ", selector=" + ts.getTableSelector());
+		}
+
+		if (ts.getUnitsAbbr() == null || "unknown".equalsIgnoreCase(ts.getUnitsAbbr()))
+		{
+			throw new OpenDcsDataRuntimeException("Attempt to save Time series " + ts.getDisplayName() + " with no units.");
+		}
 		tseries.add(ts);
 	}
 	
