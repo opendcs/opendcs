@@ -17,9 +17,16 @@ package org.opendcs.odcsapi.res;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
@@ -52,9 +59,6 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
-import org.opendcs.imports.ImportPreviewParser;
-import org.opendcs.imports.ImportPreviewParser.ImportPreview;
-import org.opendcs.imports.ImportPreviewParser.InspectionException;
 import org.slf4j.Logger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
@@ -71,6 +75,11 @@ public final class ImportResources extends OpenDcsResource
     static final String DECODES_IMPORT_TYPE = "decodes";
     static final String COMPUTATIONS_IMPORT_TYPE = "computations";
     static final String TIMESERIES_IMPORT_TYPE = "timeseries";
+    private static final Set<String> DECODES_ROOTS = Set.of("Database", "EnumList", "Platform",
+            "DataTypeEquivalenceList", "EngineeringUnitList", "RoutingSpec", "NetworkList",
+            "PresentationGroup", "PlatformConfig", "EquipmentModel", "DataSource", "Site",
+            "PlatformList", "IntervalList", "ScheduleEntry", "PlatformStatus");
+
     @Context
     HttpServletRequest httpRequest;
 
@@ -96,7 +105,7 @@ public final class ImportResources extends OpenDcsResource
     public Response previewUpload(InputStream content) throws WebAppException
     {
         String text = readImportContent(content);
-        ApiImportResult result = inspectImport(text);
+        ApiImportResult result = ImportPreviewParser.inspect(text);
         HttpSession session = httpRequest.getSession(false);
         if (session == null)
         {
@@ -155,40 +164,6 @@ public final class ImportResources extends OpenDcsResource
         }
     }
 
-    static ApiImportResult inspectImport(String content) throws WebAppException
-    {
-        if (content == null || content.isBlank())
-        {
-            throw new MissingParameterException("Missing import content in request body.");
-        }
-
-        ImportPreview preview;
-        try
-        {
-            preview = ImportPreviewParser.inspect(content, TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone));
-        }
-        catch (InspectionException ex)
-        {
-            throw new WebAppException(400, ex.getMessage(), ex);
-        }
-
-        String type = switch (preview.type())
-        {
-            case DECODES -> DECODES_IMPORT_TYPE;
-            case COMPUTATIONS -> COMPUTATIONS_IMPORT_TYPE;
-            case TIMESERIES -> TIMESERIES_IMPORT_TYPE;
-        };
-        ApiImportResult result = importResult(type, true, "File inspected successfully.");
-        result.setImporter(preview.type().importer());
-        result.setValidateOnly(true);
-        result.setSizeBytes(preview.sizeBytes());
-        result.getCounts().putAll(preview.counts());
-        result.getWarnings().addAll(preview.warnings());
-        result.setFirstSampleTime(preview.firstSampleTime() == null ? null : preview.firstSampleTime().toString());
-        result.setLastSampleTime(preview.lastSampleTime() == null ? null : preview.lastSampleTime().toString());
-        return result;
-    }
-
     static String readImportContent(InputStream content) throws WebAppException
     {
         if (content == null)
@@ -240,6 +215,57 @@ public final class ImportResources extends OpenDcsResource
         return result;
     }
 
+    static String detectImportType(String content) throws WebAppException
+    {
+        requireContent(content);
+        String first = content.lines().map(String::trim)
+                .filter(line -> !line.isEmpty() && !line.startsWith("#")).findFirst().orElse("");
+        if (!first.startsWith("<"))
+        {
+            if (first.regionMatches(true, 0, "TSID:", 0, 5)
+                    || first.regionMatches(true, 0, "SET:", 0, 4))
+            {
+                return TIMESERIES_IMPORT_TYPE;
+            }
+            throw new WebAppException(400, "Unsupported import content. Expected DECODES XML, CompMetaData XML, or TSID:/SET: records.");
+        }
+        XMLInputFactory factory = XMLInputFactory.newFactory();
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        try
+        {
+            XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(content));
+            try
+            {
+                String root = null;
+                while (reader.hasNext())
+                {
+                    if (reader.next() == XMLStreamConstants.START_ELEMENT && root == null)
+                    {
+                        root = reader.getLocalName();
+                    }
+                }
+                if ("CompMetaData".equalsIgnoreCase(root) || "LoadingApplication".equalsIgnoreCase(root))
+                {
+                    return COMPUTATIONS_IMPORT_TYPE;
+                }
+                if (root != null && DECODES_ROOTS.stream().anyMatch(root::equalsIgnoreCase))
+                {
+                    return DECODES_IMPORT_TYPE;
+                }
+                throw new WebAppException(400, "Unsupported XML root element: " + root);
+            }
+            finally
+            {
+                reader.close();
+            }
+        }
+        catch (XMLStreamException ex)
+        {
+            throw new WebAppException(400, "Malformed XML import content.", ex);
+        }
+    }
+
     private ApiImportResult importTimeSeries(java.nio.file.Path file) throws IOException, DbIoException
     {
         TimeSeriesDb tsdb = getLegacyTimeseriesDB();
@@ -249,5 +275,13 @@ public final class ImportResources extends OpenDcsResource
                 TimeZone.getTimeZone(settings.sqlTimeZone), settings.siteNameTypePreference);
         return importResult(TIMESERIES_IMPORT_TYPE, count == expected,
                 "Imported " + count + " of " + expected + " time series.");
+    }
+
+    private static void requireContent(String xmlContent) throws MissingParameterException
+    {
+        if (xmlContent == null || xmlContent.isBlank())
+        {
+            throw new MissingParameterException("Missing import content in request body.");
+        }
     }
 }
