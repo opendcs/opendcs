@@ -62,11 +62,40 @@ public final class ImportUploads implements ServletContextListener
             {
                 Files.createDirectories(directory);
             }
+            cleanup(directory);
             context.setAttribute(DIRECTORY_KEY, directory);
         }
         catch (IOException ex)
         {
             throw new IllegalStateException("Unable to initialize import upload directory.", ex);
+        }
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent event)
+    {
+        Path directory = (Path) event.getServletContext().getAttribute(DIRECTORY_KEY);
+        if (directory != null)
+        {
+            try
+            {
+                cleanup(directory);
+            }
+            catch (IOException ex)
+            {
+                log.warn("Unable to clean import uploads at shutdown.", ex);
+            }
+        }
+    }
+
+    private static void cleanup(Path directory) throws IOException
+    {
+        try (var files = Files.newDirectoryStream(directory, "*.upload"))
+        {
+            for (Path file : files)
+            {
+                Files.deleteIfExists(file);
+            }
         }
     }
 
@@ -80,15 +109,14 @@ public final class ImportUploads implements ServletContextListener
         {
             // Example staged filename: import-1234567890123456789.upload
             file = Files.createTempFile(directory, "import-", ".upload");
-            file.toFile().deleteOnExit();
             Files.writeString(file, content);
             String id = UUID.randomUUID().toString();
             synchronized (session)
             {
-                SessionUploads pending = (SessionUploads) session.getAttribute(SESSION_KEY);
+                PendingUploads pending = (PendingUploads) session.getAttribute(SESSION_KEY);
                 if (pending == null)
                 {
-                    pending = new SessionUploads();
+                    pending = new PendingUploads();
                     session.setAttribute(SESSION_KEY, pending);
                 }
                 pending.add(id, new Upload(file, organization, preview));
@@ -119,7 +147,7 @@ public final class ImportUploads implements ServletContextListener
         {
             try
             {
-                SessionUploads pending = (SessionUploads) session.getAttribute(SESSION_KEY);
+                PendingUploads pending = (PendingUploads) session.getAttribute(SESSION_KEY);
                 if (pending != null)
                 {
                     Upload upload = pending.take(id, organization);
@@ -154,16 +182,11 @@ public final class ImportUploads implements ServletContextListener
         @Override
         public void close()
         {
-            deleteFile();
-        }
-
-        void deleteFile()
-        {
             delete(file);
         }
     }
 
-    private static final class SessionUploads implements HttpSessionBindingListener
+    private static final class PendingUploads implements HttpSessionBindingListener
     {
         private final Map<String, Upload> uploads = new HashMap<>();
         private boolean closed;
@@ -191,16 +214,8 @@ public final class ImportUploads implements ServletContextListener
         @Override
         public synchronized void valueUnbound(HttpSessionBindingEvent event)
         {
-            deleteSessionUploads();
-        }
-
-        private void deleteSessionUploads()
-        {
             closed = true;
-            for (Upload upload : uploads.values())
-            {
-                upload.deleteFile();
-            }
+            uploads.values().forEach(Upload::close);
             uploads.clear();
         }
     }
