@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.TimeZone;
 
-import decodes.cwms.CwmsTsId;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.dbimport.DbImport;
@@ -166,8 +165,7 @@ public final class ImportResources extends OpenDcsResource
         ImportPreview preview;
         try
         {
-            preview = ImportPreviewParser.inspect(content, TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone),
-                    CwmsTsId::new);
+            preview = ImportPreviewParser.inspect(content, TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone));
         }
         catch (InspectionException ex)
         {
