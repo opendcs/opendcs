@@ -47,7 +47,6 @@ public class ImportComp
     final private boolean noOverwrite;
     final private List<String> files;
     final private TimeSeriesDb theDb;
-    private final List<String> errors = new ArrayList<>();
 
     //=======================================================================
     /**
@@ -61,23 +60,11 @@ public class ImportComp
         this.theDb = db;
     }
 
-    /** Non-fatal errors recorded by the last runApp() execution. */
-    public List<String> getErrors()
-    {
-        return List.copyOf(errors);
-    }
-
-    public boolean hasErrors()
-    {
-        return !errors.isEmpty();
-    }
-
     /**
      * The run method.
      */
     public void runApp( )
     {
-        errors.clear();
         siteDAO = theDb.makeSiteDAO();
         LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
         AlgorithmDAI algorithmDao = theDb.makeAlgorithmDAO();
@@ -99,7 +86,6 @@ public class ImportComp
                     log.atWarn()
                        .setCause(ex)
                        .log("Could not parse '{}'", fn);
-                    errors.add(String.format("Could not parse '%s': %s", fn, ex.getMessage()));
                     continue;
                 }
                 log.info("Processing Timeseries groups.");
@@ -157,8 +143,6 @@ public class ImportComp
                                .setCause(ex)
                                .log("Could not import object of type '{}' of name '{}'",
                                     g.getObjectType(), g.getObjectName());
-                            errors.add(String.format("Could not import %s '%s': %s",
-                                    g.getObjectType(), g.getObjectName(), ex.getMessage()));
                         }
                     }
                 }
@@ -307,8 +291,6 @@ public class ImportComp
                         log.atWarn()
                             .setCause(ex)
                             .log(msg, mdobj.getObjectType(), mdobj.getObjectName());
-                        errors.add(String.format("Could not import %s '%s': %s",
-                                mdobj.getObjectType(), mdobj.getObjectName(), ex.getMessage()));
                     }
                 }
             }
